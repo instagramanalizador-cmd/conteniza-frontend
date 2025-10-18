@@ -1,0 +1,1677 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🛡️ Panel de Administración - Conteniza</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    :root {
+  --primary: #8B5FBF;
+  --primary-dark: #7A4BA8;
+  --secondary: #FF6B9D;
+  --accent: #6ECBF5;
+  --success: #2CD4A4;
+  --danger: #FF6B6B;
+  --warning: #FFA36B;
+  --bg: #0F0F1E;
+  --bg-light: #1A1A2E;
+  --gradient-primary: linear-gradient(135deg, #8B5FBF 0%, #FF6B9D 100%);
+  --gradient-success: linear-gradient(135deg, #2CD4A4 0%, #6ECBF5 100%);
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, var(--bg) 0%, var(--bg-light) 100%);
+  color: white;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.container {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 24px;
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+}
+
+.header h1 {
+  font-size: 28px;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 30px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 12px;
+  border-radius: 16px;
+  flex-wrap: wrap;
+}
+
+.tab {
+  flex: 1;
+  min-width: 150px;
+  padding: 12px 24px;
+  background: transparent;
+  color: white;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.tab:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.tab.active {
+  background: var(--gradient-primary);
+  border-color: var(--primary);
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  padding: 28px;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 32px rgba(139, 95, 191, 0.2);
+  color: #2D3748;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.stat-card {
+  background: linear-gradient(135deg, rgba(139, 95, 191, 0.1), rgba(110, 203, 245, 0.1));
+  border: 2px solid var(--primary);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+}
+
+.stat-number {
+  font-size: 42px;
+  font-weight: 900;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  color: #718096;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.btn-primary {
+  background: var(--gradient-primary);
+  color: white;
+}
+
+.btn-success {
+  background: var(--gradient-success);
+  color: white;
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead tr {
+  background: var(--gradient-primary);
+  color: white;
+}
+
+th, td {
+  padding: 14px 12px;
+  text-align: left;
+}
+
+tbody tr {
+  border-bottom: 1px solid #e5e7eb;
+  transition: background 0.2s;
+}
+
+tbody tr:hover {
+  background: #f9fafb;
+}
+
+.plan-badge {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.plan-badge.free {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.plan-badge.pro {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  color: white;
+}
+
+.plan-badge.premium {
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  color: white;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.status-badge.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge.contacted {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.status-badge.converted {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 16px 24px;
+  border-radius: 12px;
+  color: white;
+  font-weight: 600;
+  z-index: 10000;
+  display: none;
+  animation: slideIn 0.3s ease;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+
+.notification.show { display: block; }
+.notification.success { background: var(--gradient-success); }
+.notification.error { background: linear-gradient(135deg, #ef4444, #dc2626); }
+
+@keyframes slideIn {
+  from { transform: translateX(400px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.loading {
+  text-align: center;
+  padding: 60px;
+  font-size: 18px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #718096;
+}
+
+.empty-state-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.search-box {
+  padding: 12px 20px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 14px;
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 20px;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.filter-btn {
+  padding: 8px 16px;
+  background: #f3f4f6;
+  color: #374151;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  transition: all 0.3s ease;
+}
+
+.filter-btn:hover {
+  background: #e5e7eb;
+}
+
+.filter-btn.active {
+  background: var(--gradient-primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.hidden { display: none !important; }
+
+@media (max-width: 768px) {
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .tabs {
+    flex-direction: column;
+  }
+  
+  table {
+    font-size: 12px;
+  }
+  
+  th, td {
+    padding: 8px;
+  }
+  
+  .header {
+    flex-direction: column;
+    gap: 16px;
+  }
+}
+</style>
+</head>
+<body>
+  <div id="notification" class="notification"></div>
+  <div class="container">
+<!-- Header -->
+<div class="header">
+  <div>
+    <h1>🛡️ Panel de Administración</h1>
+    <p id="adminEmail" style="color: rgba(255,255,255,0.7); font-size: 14px; margin-top: 4px;"></p>
+  </div>
+  <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+    <button onclick="exportData()" class="btn btn-success">
+      📥 Exportar CSV
+    </button>
+    <button onclick="goToApp()" class="btn btn-primary">
+      🏠 Ir a la App
+    </button>
+    <button onclick="logout()" class="btn btn-danger">
+      🚪 Salir
+    </button>
+  </div>
+</div>
+
+<!-- Loading -->
+<div id="loading" class="loading">
+  🔄 Cargando panel de administración...
+</div>
+
+<!-- Main Content -->
+<div id="mainContent" class="hidden">
+  
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('dashboard')">
+      📊 Dashboard
+    </button>
+    <button class="tab" onclick="switchTab('free-users')">
+      👥 Usuarios FREE
+    </button>
+    <button class="tab" onclick="switchTab('tokens')">
+      💰 Tokens y Costos
+    </button>
+    <button class="tab" onclick="switchTab('waitlist')">
+      📋 Lista de Espera
+    </button>
+    <button class="tab" onclick="switchTab('actions')">
+      ⚡ Acciones Rápidas
+    </button>
+  </div>
+
+  <!-- TAB 1: Dashboard -->
+  <div id="tab-dashboard" class="tab-content active">
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-number" id="stat-total-users">0</div>
+        <div class="stat-label">👥 Usuarios FREE</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="stat-waitlist">0</div>
+        <div class="stat-label">📋 En Lista de Espera</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="stat-analyses">0</div>
+        <div class="stat-label">📊 Total Análisis</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="stat-today">0</div>
+        <div class="stat-label">🆕 Registros Hoy</div>
+      </div>
+    </div>
+
+<div class="card">
+  <h2 style="color: var(--primary); margin-bottom: 20px;">📈 Actividad Reciente (Últimos 30 días)</h2>
+  <canvas id="activityChart"></canvas>
+</div>
+
+    <div class="card">
+      <h2 style="color: var(--primary); margin-bottom: 20px;">🎯 Interés por Planes</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+        <div style="text-align: center; padding: 20px; background: #f3f4f6; border-radius: 12px;">
+          <div style="font-size: 32px; font-weight: 900; color: #3b82f6;">
+            <span id="waitlist-pro">0</span>
+          </div>
+          <div style="color: #718096; font-weight: 600; margin-top: 8px;">Interesados en PRO</div>
+        </div>
+        <div style="text-align: center; padding: 20px; background: #f3f4f6; border-radius: 12px;">
+          <div style="font-size: 32px; font-weight: 900; color: #f59e0b;">
+            <span id="waitlist-premium">0</span>
+          </div>
+          <div style="color: #718096; font-weight: 600; margin-top: 8px;">Interesados en PREMIUM</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: Usuarios FREE -->
+  <div id="tab-free-users" class="tab-content">
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <h2 style="color: var(--primary); margin: 0;">👥 Usuarios FREE Registrados</h2>
+        <button onclick="loadData()" class="btn btn-primary">🔄 Recargar</button>
+      </div>
+
+      <input type="text" id="search-users" class="search-box" placeholder="🔍 Buscar por email..." onkeyup="filterUsers()">
+
+      <div style="overflow-x: auto;">
+        <table id="users-table">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th style="text-align: center;">Créditos</th>
+              <th style="text-align: center;">Análisis</th>
+              <th style="text-align: center;">Registro</th>
+              <th style="text-align: center;">Última Actividad</th>
+              <th style="text-align: center;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody"></tbody>
+        </table>
+      </div>
+
+      <div id="no-users" class="empty-state hidden">
+        <div class="empty-state-icon">🔭</div>
+        <h3>No hay usuarios registrados</h3>
+        <p>Los nuevos usuarios aparecerán aquí</p>
+      </div>
+    </div>
+  </div>
+
+<button class="tab" onclick="switchTab('reports')">
+  📊 Reportes
+</button>
+
+  <!-- TAB 3: Tokens y Costos -->
+  <div id="tab-tokens" class="tab-content">
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-number" id="stat-total-tokens">0</div>
+        <div class="stat-label">🎯 Total Tokens</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="stat-total-cost">$0</div>
+        <div class="stat-label">💰 Costo Total</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="stat-avg-tokens">0</div>
+        <div class="stat-label">📊 Promedio/Análisis</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="stat-cost-per-user">$0</div>
+        <div class="stat-label">👤 Costo/Usuario</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="color: var(--primary); margin-bottom: 20px;">👥 Uso por Usuario</h2>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th style="text-align: center;">Plan</th>
+              <th style="text-align: center;">Análisis</th>
+              <th style="text-align: center;">Total Tokens</th>
+              <th style="text-align: center;">Promedio</th>
+              <th style="text-align: center;">Costo Total</th>
+            </tr>
+          </thead>
+          <tbody id="token-stats-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="color: var(--primary); margin-bottom: 20px;">📈 Últimos 30 Días</h2>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th style="text-align: center;">Análisis</th>
+              <th style="text-align: center;">Tokens</th>
+              <th style="text-align: center;">Costo</th>
+            </tr>
+          </thead>
+          <tbody id="daily-stats-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="color: var(--primary); margin-bottom: 20px;">🏆 Top 10 Usuarios por Costo</h2>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th style="text-align: center;">Plan</th>
+              <th style="text-align: center;">Análisis</th>
+              <th style="text-align: center;">Tokens</th>
+              <th style="text-align: center;">Costo</th>
+            </tr>
+          </thead>
+          <tbody id="top-users-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: Lista de Espera -->
+  <div id="tab-waitlist" class="tab-content">
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <h2 style="color: var(--primary); margin: 0;">📋 Lista de Espera (PRO & PREMIUM)</h2>
+        <button onclick="loadWaitlist()" class="btn btn-primary">🔄 Recargar</button>
+      </div>
+
+      <div class="filter-buttons">
+        <button class="filter-btn active" onclick="filterWaitlist('all')">Todos</button>
+        <button class="filter-btn" onclick="filterWaitlist('pro')">PRO</button>
+        <button class="filter-btn" onclick="filterWaitlist('premium')">PREMIUM</button>
+        <button class="filter-btn" onclick="filterWaitlist('pending')">Pendientes</button>
+        <button class="filter-btn" onclick="filterWaitlist('contacted')">Contactados</button>
+      </div>
+
+      <input type="text" id="search-waitlist" class="search-box" placeholder="🔍 Buscar en lista de espera..." onkeyup="filterWaitlistSearch()">
+
+      <div style="overflow-x: auto;">
+        <table id="waitlist-table">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th style="text-align: center;">Plan Interesado</th>
+              <th style="text-align: center;">Fecha</th>
+              <th style="text-align: center;">Estado</th>
+              <th style="text-align: center;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="waitlist-tbody"></tbody>
+        </table>
+      </div>
+
+      <div id="no-waitlist" class="empty-state hidden">
+        <div class="empty-state-icon">🔭</div>
+        <h3>No hay personas en lista de espera</h3>
+        <p>Los interesados en PRO y PREMIUM aparecerán aquí</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 5: Acciones Rápidas -->
+  <div id="tab-actions" class="tab-content">
+    <div class="card">
+      <h2 style="color: var(--primary); margin-bottom: 20px;">⚡ Gestión de Créditos</h2>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <button class="btn btn-success" onclick="resetAllCredits()">
+          🔄 Reset FREE (20 créditos)
+        </button>
+        <button class="btn btn-primary" onclick="giveCreditsToAll()">
+          🎁 Dar créditos a todos
+        </button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="color: var(--primary); margin-bottom: 20px;">📧 Gestión de Lista de Espera</h2>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <button class="btn btn-primary" onclick="exportWaitlist('pro')">
+          📥 Exportar PRO
+        </button>
+        <button class="btn btn-primary" onclick="exportWaitlist('premium')">
+          📥 Exportar PREMIUM
+        </button>
+        <button class="btn btn-success" onclick="markAllContacted()">
+          ✅ Marcar todos contactados
+        </button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="color: var(--primary); margin-bottom: 20px;">🗑️ Limpieza</h2>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <button class="btn btn-danger" onclick="deleteInactiveUsers()">
+          🗑️ Eliminar usuarios sin uso
+        </button>
+        <button class="btn btn-danger" onclick="clearWaitlist()">
+          🗑️ Limpiar lista de espera
+        </button>
+      </div>
+    </div>
+  </div>
+<!-- TAB 6: Reportes -->
+<div id="tab-reports" class="tab-content">
+  <div class="card">
+    <h2 style="color: var(--primary); margin-bottom: 20px;">📊 Reportes y Estadísticas</h2>
+    
+    <!-- Selector de período -->
+    <div style="display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;">
+      <button class="btn btn-primary" onclick="loadReportData('today')" id="btn-today">
+        📅 Hoy
+      </button>
+      <button class="btn btn-primary" onclick="loadReportData('week')" id="btn-week">
+        📆 Esta Semana (7 días)
+      </button>
+      <button class="btn btn-primary" onclick="loadReportData('month')" id="btn-month">
+        📊 Este Mes (30 días)
+      </button>
+    </div>
+
+    <!-- Estadísticas del período seleccionado -->
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-number" id="report-users">0</div>
+        <div class="stat-label">👥 Nuevos Usuarios</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="report-analyses">0</div>
+        <div class="stat-label">📊 Análisis</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="report-tokens">0</div>
+        <div class="stat-label">🎯 Tokens</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="report-cost">$0</div>
+        <div class="stat-label">💰 Costo</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="report-avg">0</div>
+        <div class="stat-label">📈 Promedio Diario</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="report-active">0</div>
+        <div class="stat-label">👤 Usuarios Activos</div>
+      </div>
+    </div>
+
+    <!-- Gráfico del período -->
+    <h3 style="color: #374151; margin: 24px 0 12px;">📈 Evolución del Período</h3>
+    <canvas id="reportChart" style="max-height: 300px;"></canvas>
+
+    <!-- Top usuarios del período -->
+    <h3 style="color: #374151; margin: 24px 0 12px;">🏆 Top 10 Usuarios del Período</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th style="text-align: center;">Plan</th>
+          <th style="text-align: center;">Análisis</th>
+          <th style="text-align: center;">Tokens</th>
+          <th style="text-align: center;">Costo</th>
+        </tr>
+      </thead>
+      <tbody id="report-top-users"></tbody>
+    </table>
+
+    <!-- Exportar -->
+    <button class="btn btn-success" onclick="exportCurrentReport()" style="margin-top: 20px;">
+      📥 Exportar Reporte Actual
+    </button>
+  </div>
+</div>
+</div>
+</div>
+  <script>
+    const API_URL = 'http://127.0.0.1:5002/api';
+    let allUsers = [];
+    let allWaitlist = [];
+    let currentWaitlistFilter = 'all';
+let activityChart = null;
+
+    function showNotification(message, type = 'success') {
+      const notification = document.getElementById('notification');
+      notification.textContent = message;
+      notification.className = `notification ${type} show`;
+      setTimeout(() => notification.classList.remove('show'), 5000);
+    }
+
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      
+      document.querySelectorAll('.tab').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      
+      document.getElementById(`tab-${tabName}`).classList.add('active');
+      event.target.classList.add('active');
+    }
+
+    async function checkAccess() {
+      const token = localStorage.getItem('token');
+      const user = localStorage.getItem('user');
+      
+      if (!token || !user) {
+        showNotification('❌ No estás autenticado', 'error');
+        setTimeout(() => window.location.href = 'index.html', 2000);
+        return false;
+      }
+      
+      try {
+        const userData = JSON.parse(user);
+        document.getElementById('adminEmail').textContent = `Admin: ${userData.email}`;
+        
+        const response = await fetch(`${API_URL}/admin/stats`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!response.ok) {
+          showNotification('❌ No tienes permisos de administrador', 'error');
+          setTimeout(() => window.location.href = 'index.html', 2000);
+          return false;
+        }
+        
+        return true;
+      } catch (error) {
+        showNotification('❌ Error verificando acceso', 'error');
+        setTimeout(() => window.location.href = 'index.html', 2000);
+        return false;
+      }
+    }
+
+async function loadData() {
+  const token = localStorage.getItem('token');
+  
+  try {
+    showNotification('🔄 Cargando datos...', 'success');
+    
+    const statsRes = await fetch(`${API_URL}/admin/stats`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const statsData = await statsRes.json();
+    renderStats(statsData.stats);
+    
+    const usersRes = await fetch(`${API_URL}/admin/users`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const usersData = await usersRes.json();
+    allUsers = usersData.users || [];
+    renderUsers();
+    
+    await loadWaitlist();
+    await loadTokenStats(); // ✅ loadTokenStats() ya llama a loadActivityChart() internamente
+    
+    showNotification('✅ Datos cargados', 'success');
+  } catch (error) {
+    console.error('Error:', error);
+    showNotification('❌ Error cargando datos', 'error');
+  }
+}
+
+    async function loadWaitlist() {
+      const token = localStorage.getItem('token');
+      
+      try {
+        const res = await fetch(`${API_URL}/auth/waitlist`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        allWaitlist = data.waitlist || [];
+        renderWaitlist();
+      } catch (error) {
+        console.error('Error loading waitlist:', error);
+      }
+    }
+
+    async function loadTokenStats() {
+  const token = localStorage.getItem('token');
+  
+  try {
+    const res = await fetch(`${API_URL}/admin/token-stats`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (!res.ok) {
+      console.error('Error cargando token stats');
+      return;
+    }
+    
+    const data = await res.json();
+    
+    if (!data.success) return;
+    
+    const total = data.totalStats;
+    document.getElementById('stat-total-tokens').textContent = 
+      (total.total_tokens || 0).toLocaleString();
+    document.getElementById('stat-total-cost').textContent = 
+      '$' + (total.total_cost || 0).toFixed(4);
+    document.getElementById('stat-avg-tokens').textContent = 
+      Math.round(total.avg_tokens_per_analysis || 0).toLocaleString();
+    document.getElementById('stat-cost-per-user').textContent = 
+      '$' + ((total.total_cost || 0) / Math.max(total.total_users_with_analyses || 1, 1)).toFixed(4);
+    
+    const tbody = document.getElementById('token-stats-tbody');
+    tbody.innerHTML = data.userStats.map(user => `
+      <tr>
+        <td style="font-weight: 600;">${user.email}</td>
+        <td style="text-align: center;">
+          <span class="plan-badge ${user.plan_type}">${user.plan_type.toUpperCase()}</span>
+        </td>
+        <td style="text-align: center;">${user.total_analyses || 0}</td>
+        <td style="text-align: center; font-weight: 700;">
+          ${(user.total_tokens || 0).toLocaleString()}
+        </td>
+        <td style="text-align: center; font-size: 12px; color: #718096;">
+          ${Math.round(user.avg_tokens_per_analysis || 0).toLocaleString()}
+        </td>
+        <td style="text-align: center; color: #059669; font-weight: 700;">
+          $${(user.total_cost || 0).toFixed(6)}
+        </td>
+      </tr>
+    `).join('');
+    
+    const dailyTbody = document.getElementById('daily-stats-tbody');
+    dailyTbody.innerHTML = data.dailyStats.map(day => `
+      <tr>
+        <td style="font-weight: 600;">${formatDate(day.date)}</td>
+        <td style="text-align: center;">${day.analyses}</td>
+        <td style="text-align: center; font-weight: 700;">
+          ${(day.tokens || 0).toLocaleString()}
+        </td>
+        <td style="text-align: center; color: #059669; font-weight: 700;">
+          $${(day.cost || 0).toFixed(4)}
+        </td>
+      </tr>
+    `).join('');
+    
+    const topTbody = document.getElementById('top-users-tbody');
+    topTbody.innerHTML = data.topUsers.map((user, index) => `
+      <tr>
+        <td>
+          ${index < 3 ? ['🥇', '🥈', '🥉'][index] : (index + 1) + '.'} 
+          <strong>${user.email}</strong>
+        </td>
+        <td style="text-align: center;">
+          <span class="plan-badge ${user.plan_type}">${user.plan_type.toUpperCase()}</span>
+        </td>
+        <td style="text-align: center;">${user.analyses}</td>
+        <td style="text-align: center; font-weight: 700;">
+          ${(user.tokens || 0).toLocaleString()}
+        </td>
+        <td style="text-align: center; color: #059669; font-weight: 700; font-size: 16px;">
+          $${(user.cost || 0).toFixed(4)}
+        </td>
+      </tr>
+    `).join('');
+    
+    // ✅ Cargar gráfico de actividad
+    await loadActivityChart();
+    
+  } catch (error) {
+    console.error('❌ Error cargando gráfico:', error);
+  }
+}
+
+// ✅ FUNCIÓN SEPARADA para el gráfico
+
+async function loadActivityChart() {
+  const token = localStorage.getItem('token');
+  
+  try {
+    const res = await fetch(`${API_URL}/admin/token-stats`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (!res.ok) return;
+    
+    const data = await res.json();
+    
+    if (!data.success || !data.dailyStats) return;
+    
+    const sortedData = data.dailyStats.sort((a, b) => 
+      new Date(a.date) - new Date(b.date)
+    );
+    
+    const labels = sortedData.map(d => formatDate(d.date));
+    const analyses = sortedData.map(d => d.analyses || 0);
+    
+    if (activityChart) {
+      activityChart.destroy();
+    }
+    
+    const ctx = document.getElementById('activityChart');
+    if (!ctx) {
+      console.error('Canvas activityChart no encontrado');
+      return;
+    }
+    
+    activityChart = new Chart(ctx.getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Análisis por día',
+          data: analyses,
+          borderColor: '#8B5FBF',
+          backgroundColor: 'rgba(139, 95, 191, 0.1)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 4,
+          pointHoverRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { precision: 0 }
+          }
+        }
+      }
+    });
+    
+    console.log('✅ Gráfico de actividad cargado');
+  } catch (error) {
+    console.error('❌ Error cargando gráfico:', error);
+  }
+}
+
+        
+function renderStats(stats) {
+  document.getElementById('stat-total-users').textContent = stats.totalUsers || 0;
+  document.getElementById('stat-analyses').textContent = stats.totalAnalyses || 0;
+  
+  const proCount = allWaitlist.filter(w => w.plan === 'pro').length;
+  const premiumCount = allWaitlist.filter(w => w.plan === 'premium').length;
+  
+  document.getElementById('stat-waitlist').textContent = allWaitlist.length;
+  document.getElementById('waitlist-pro').textContent = proCount;
+  document.getElementById('waitlist-premium').textContent = premiumCount;
+  
+  const today = new Date().toISOString().split('T')[0];
+  const todayUsers = allUsers.filter(u => 
+    u.created_at && u.created_at.startsWith(today)
+  ).length;
+  document.getElementById('stat-today').textContent = todayUsers;
+}
+function renderUsers() {
+  const tbody = document.getElementById('users-tbody');
+  const noUsers = document.getElementById('no-users');
+  
+  if (allUsers.length === 0) {
+    tbody.innerHTML = '';
+    noUsers.classList.remove('hidden');
+    return;
+  }
+  
+  noUsers.classList.add('hidden');
+  
+  tbody.innerHTML = allUsers.map(user => `
+    <tr>
+      <td style="font-weight: 600; color: var(--primary);">${user.email}</td>
+      <td style="text-align: center; font-weight: 700;">${user.credits_remaining || 0}</td>
+      <td style="text-align: center;">${user.total_analyses || 0}</td>
+      <td style="text-align: center; font-size: 12px; color: #718096;">
+        ${formatDate(user.created_at)}
+      </td>
+      <td style="text-align: center; font-size: 12px; color: #718096;">
+        ${user.last_analysis_at ? formatDate(user.last_analysis_at) : 'Nunca'}
+      </td>
+      <td style="text-align: center;">
+        <div style="display: flex; gap: 6px; justify-content: center;">
+          <button onclick="resetUserCredits(${user.id}, '${user.email}')" 
+                  class="btn btn-success" style="padding: 6px 12px; font-size: 12px;">
+            🔄
+          </button>
+          <button onclick="deleteUser(${user.id}, '${user.email}')" 
+                  class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;">
+            🗑️
+          </button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function renderWaitlist() {
+  const tbody = document.getElementById('waitlist-tbody');
+  const noWaitlist = document.getElementById('no-waitlist');
+  
+  let filtered = allWaitlist;
+  
+  if (currentWaitlistFilter !== 'all') {
+    if (currentWaitlistFilter === 'pro' || currentWaitlistFilter === 'premium') {
+      filtered = filtered.filter(w => w.plan === currentWaitlistFilter);
+    } else if (currentWaitlistFilter === 'pending') {
+      filtered = filtered.filter(w => !w.status || w.status === 'pending');
+    } else if (currentWaitlistFilter === 'contacted') {
+      filtered = filtered.filter(w => w.status === 'contacted');
+    }
+  }
+  
+  if (filtered.length === 0) {
+    tbody.innerHTML = '';
+    noWaitlist.classList.remove('hidden');
+    return;
+  }
+  
+  noWaitlist.classList.add('hidden');
+  
+  tbody.innerHTML = filtered.map(item => `
+    <tr>
+      <td style="font-weight: 600;">${item.email}</td>
+      <td style="text-align: center;">
+        <span class="plan-badge ${item.plan}">${item.plan.toUpperCase()}</span>
+      </td>
+      <td style="text-align: center; font-size: 12px; color: #718096;">
+        ${formatDate(item.created_at)}
+      </td>
+      <td style="text-align: center;">
+        <span class="status-badge ${item.status || 'pending'}">
+          ${getStatusText(item.status)}
+        </span>
+      </td>
+      <td style="text-align: center;">
+        <div style="display: flex; gap: 6px; justify-content: center;">
+          <button onclick="changeWaitlistStatus(${item.id}, 'contacted')" 
+                  class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;">
+            ✅ Contactado
+          </button>
+          <button onclick="deleteWaitlistItem(${item.id})" 
+                  class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;">
+            🗑️
+          </button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filterUsers() {
+  const search = document.getElementById('search-users').value.toLowerCase();
+  const rows = document.querySelectorAll('#users-tbody tr');
+  
+  rows.forEach(row => {
+    const email = row.querySelector('td:first-child').textContent.toLowerCase();
+    row.style.display = email.includes(search) ? '' : 'none';
+  });
+}
+
+function filterWaitlist(type) {
+  currentWaitlistFilter = type;
+  
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  event.target.classList.add('active');
+  
+  renderWaitlist();
+}
+
+function filterWaitlistSearch() {
+  const search = document.getElementById('search-waitlist').value.toLowerCase();
+  const rows = document.querySelectorAll('#waitlist-tbody tr');
+  
+  rows.forEach(row => {
+    const email = row.querySelector('td:first-child').textContent.toLowerCase();
+    row.style.display = email.includes(search) ? '' : 'none';
+  });
+}
+
+async function resetUserCredits(userId, email) {
+  const credits = prompt(`¿Cuántos créditos para ${email}?`, '20');
+  if (!credits) return;
+  
+  const token = localStorage.getItem('token');
+  
+  try {
+    const res = await fetch(`${API_URL}/admin/reset-credits`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ userId, credits: parseInt(credits) })
+    });
+    
+    if (!res.ok) throw new Error('Error al actualizar créditos');
+    
+    showNotification(`✅ Créditos actualizados: ${email}`, 'success');
+    await loadData();
+  } catch (error) {
+    showNotification(`❌ ${error.message}`, 'error');
+  }
+}
+
+async function deleteUser(userId, email) {
+  if (!confirm(`⚠️ ¿Eliminar ${email}?\n\nEsta acción NO se puede deshacer.`)) return;
+  
+  const token = localStorage.getItem('token');
+  
+  try {
+    const res = await fetch(`${API_URL}/admin/users/${userId}`, {
+      method: 'DELETE',
+      headers: { 
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ confirm: 'DELETE' })
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) throw new Error(data.error || 'Error al eliminar usuario');
+    
+    showNotification(`✅ Usuario eliminado`, 'success');
+    await loadData();
+  } catch (error) {
+    showNotification(`❌ ${error.message}`, 'error');
+  }
+}
+
+async function changeWaitlistStatus(id, status) {
+  const token = localStorage.getItem('token');
+  
+  try {
+    const res = await fetch(`${API_URL}/auth/waitlist/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ status })
+    });
+    
+    if (!res.ok) throw new Error('Error al actualizar estado');
+    
+    showNotification(`✅ Estado actualizado`, 'success');
+    await loadWaitlist();
+  } catch (error) {
+    showNotification(`❌ ${error.message}`, 'error');
+  }
+}
+
+async function deleteWaitlistItem(id) {
+  if (!confirm('¿Eliminar de la lista de espera?')) return;
+  
+  const token = localStorage.getItem('token');
+  
+  try {
+    const res = await fetch(`${API_URL}/auth/waitlist/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (!res.ok) throw new Error('Error al eliminar');
+    
+    showNotification(`✅ Eliminado de lista de espera`, 'success');
+    await loadWaitlist();
+  } catch (error) {
+    showNotification(`❌ ${error.message}`, 'error');
+  }
+}
+
+async function resetAllCredits() {
+  if (!confirm('¿Resetear TODOS los usuarios FREE a 20 créditos?')) return;
+  
+  const token = localStorage.getItem('token');
+  
+  try {
+    const res = await fetch(`${API_URL}/admin/reset-all-credits`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ planType: 'free' })
+    });
+    
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    
+    showNotification(`✅ ${data.usersUpdated} usuarios actualizados`, 'success');
+    await loadData();
+  } catch (error) {
+    showNotification(`❌ ${error.message}`, 'error');
+  }
+}
+
+async function giveCreditsToAll() {
+  const plan = prompt('¿A qué plan dar créditos? (free/pro/premium)', 'free');
+  if (!plan || !['free', 'pro', 'premium'].includes(plan)) {
+    showNotification('❌ Plan inválido. Usa: free, pro o premium', 'error');
+    return;
+  }
+  
+  const credits = prompt(`¿Cuántos créditos dar a TODOS los usuarios ${plan.toUpperCase()}?`, '20');
+  if (!credits || isNaN(credits)) return;
+  
+  if (!confirm(`⚠️ ¿Dar ${credits} créditos a TODOS los usuarios ${plan.toUpperCase()}?`)) return;
+  
+  const token = localStorage.getItem('token');
+  
+  try {
+    const res = await fetch(`${API_URL}/admin/give-credits-all`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ 
+        planType: plan,
+        credits: parseInt(credits)
+      })
+    });
+    
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    
+    showNotification(`✅ ${data.usersUpdated} usuarios ${plan.toUpperCase()} actualizados con ${credits} créditos`, 'success');
+    await loadData();
+  } catch (error) {
+    showNotification(`❌ ${error.message}`, 'error');
+  }
+}
+
+async function markAllContacted() {
+  const plan = prompt('¿Qué lista marcar como contactada? (pro/premium/all)', 'all');
+  if (!plan || !['pro', 'premium', 'all'].includes(plan)) {
+    showNotification('❌ Opción inválida. Usa: pro, premium o all', 'error');
+    return;
+  }
+  
+  const toMark = plan === 'all' 
+    ? allWaitlist 
+    : allWaitlist.filter(w => w.plan === plan);
+  
+  if (toMark.length === 0) {
+    showNotification('❌ No hay nadie en esa lista', 'error');
+    return;
+  }
+  
+  if (!confirm(`⚠️ ¿Marcar ${toMark.length} personas como CONTACTADAS?`)) return;
+  
+  const token = localStorage.getItem('token');
+  let updated = 0;
+  
+  try {
+    for (const item of toMark) {
+      if (item.status !== 'contacted') {
+        const res = await fetch(`${API_URL}/auth/waitlist/${item.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ status: 'contacted' })
+        });
+        
+        if (res.ok) updated++;
+      }
+    }
+    
+    showNotification(`✅ ${updated} personas marcadas como contactadas`, 'success');
+    await loadWaitlist();
+  } catch (error) {
+    showNotification(`❌ ${error.message}`, 'error');
+  }
+}
+
+async function deleteInactiveUsers() {
+  const days = prompt('¿Eliminar usuarios sin actividad por cuántos días?', '30');
+  if (!days || isNaN(days)) return;
+  
+  const inactiveDays = parseInt(days);
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - inactiveDays);
+  
+  const inactiveUsers = allUsers.filter(u => {
+    const createdDate = new Date(u.created_at);
+    const hasNoAnalyses = !u.total_analyses || u.total_analyses === 0;
+    const isOld = createdDate < cutoffDate;
+    return hasNoAnalyses && isOld;
+  });
+  
+  if (inactiveUsers.length === 0) {
+    showNotification(`✅ No hay usuarios inactivos por ${days} días`, 'success');
+    return;
+  }
+  
+  if (!confirm(`⚠️ ¿ELIMINAR ${inactiveUsers.length} usuarios sin uso en ${days} días?`)) return;
+  
+  const token = localStorage.getItem('token');
+  let deleted = 0;
+  
+  try {
+    for (const user of inactiveUsers) {
+      const res = await fetch(`${API_URL}/admin/users/${user.id}`, {
+        method: 'DELETE',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ confirm: 'DELETE' })
+      });
+      
+      if (res.ok) deleted++;
+    }
+    
+    showNotification(`✅ ${deleted} usuarios inactivos eliminados`, 'success');
+    await loadData();
+  } catch (error) {
+    showNotification(`❌ ${error.message}`, 'error');
+  }
+}
+
+async function clearWaitlist() {
+  const status = prompt('¿Qué estado eliminar? (contacted/converted/all)', 'contacted');
+  if (!status || !['contacted', 'converted', 'all', 'pending'].includes(status)) {
+    showNotification('❌ Estado inválido. Usa: contacted, converted, pending o all', 'error');
+    return;
+  }
+  
+  const toDelete = status === 'all' 
+    ? allWaitlist 
+    : allWaitlist.filter(w => w.status === status);
+  
+  if (toDelete.length === 0) {
+    showNotification(`✅ No hay nadie con estado "${status}"`, 'success');
+    return;
+  }
+  
+  if (!confirm(`⚠️ ¿ELIMINAR ${toDelete.length} personas de waitlist con estado "${status}"?`)) return;
+  
+  const token = localStorage.getItem('token');
+  let deleted = 0;
+  
+  try {
+    for (const item of toDelete) {
+      const res = await fetch(`${API_URL}/auth/waitlist/${item.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (res.ok) deleted++;
+    }
+    
+    showNotification(`✅ ${deleted} personas eliminadas de waitlist`, 'success');
+    await loadWaitlist();
+  } catch (error) {
+    showNotification(`❌ ${error.message}`, 'error');
+  }
+}
+
+function exportData() {
+  const csv = ['Email,Plan,Credits,Analyses,Created'].concat(
+    allUsers.map(u => 
+      `${u.email},${u.plan_type},${u.credits_remaining},${u.total_analyses},${u.created_at}`
+    )
+  ).join('\n');
+  
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `usuarios_${Date.now()}.csv`;
+  a.click();
+  
+  showNotification('✅ CSV exportado', 'success');
+}
+
+function exportWaitlist(plan) {
+  const filtered = allWaitlist.filter(w => w.plan === plan);
+  const csv = ['Email,Plan,Date,Status'].concat(
+    filtered.map(w => 
+      `${w.email},${w.plan},${w.created_at},${w.status || 'pending'}`
+    )
+  ).join('\n');
+  
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `waitlist_${plan}_${Date.now()}.csv`;
+  a.click();
+  
+  showNotification(`✅ Lista ${plan.toUpperCase()} exportada`, 'success');
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return 'N/A';
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('es-ES', { 
+    day: '2-digit', 
+    month: '2-digit', 
+    year: 'numeric' 
+  });
+}
+
+function getStatusText(status) {
+  const map = {
+    'pending': 'Pendiente',
+    'contacted': 'Contactado',
+    'converted': 'Convertido'
+  };
+  return map[status] || 'Pendiente';
+}
+
+function goToApp() {
+  window.location.href = 'index.html';
+}
+
+function logout() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  window.location.href = 'index.html';
+}
+
+window.addEventListener('DOMContentLoaded', async function() {
+  const hasAccess = await checkAccess();
+  
+  if (hasAccess) {
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('mainContent').classList.remove('hidden');
+    await loadData();
+  }
+});
+// ============================================
+// SISTEMA DE REPORTES
+// ============================================
+let reportChart = null;
+let currentReportPeriod = 'today';
+
+async function loadReportData(period) {
+  currentReportPeriod = period;
+  const token = localStorage.getItem('token');
+  
+  try {
+    showNotification('🔄 Generando reporte...', 'success');
+    
+    // Resaltar botón activo
+    ['btn-today', 'btn-week', 'btn-month'].forEach(id => {
+      document.getElementById(id).style.opacity = '0.6';
+    });
+    document.getElementById(`btn-${period}`).style.opacity = '1';
+    
+    // Obtener datos
+    const [tokenRes, usersRes] = await Promise.all([
+      fetch(`${API_URL}/admin/token-stats`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      }),
+      fetch(`${API_URL}/admin/users`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+    ]);
+    
+    const tokenData = await tokenRes.json();
+    const usersData = await usersRes.json();
+    
+    // Calcular fechas del período
+    const now = new Date();
+    let startDate;
+    
+    if (period === 'today') {
+      startDate = new Date(now);
+      startDate.setHours(0, 0, 0, 0);
+    } else if (period === 'week') {
+      startDate = new Date(now);
+      startDate.setDate(startDate.getDate() - 7);
+    } else if (period === 'month') {
+      startDate = new Date(now);
+      startDate.setDate(startDate.getDate() - 30);
+    }
+    
+    // Filtrar datos del período
+    const periodData = tokenData.dailyStats.filter(d => {
+      const date = new Date(d.date);
+      return date >= startDate;
+    });
+    
+    // Calcular totales
+    const totalAnalyses = periodData.reduce((sum, d) => sum + (d.analyses || 0), 0);
+    const totalTokens = periodData.reduce((sum, d) => sum + (d.tokens || 0), 0);
+    const totalCost = periodData.reduce((sum, d) => sum + (d.cost || 0), 0);
+    
+    // Usuarios nuevos del período
+    const newUsers = usersData.users.filter(u => {
+      const created = new Date(u.created_at);
+      return created >= startDate;
+    }).length;
+    
+    // Usuarios activos (con análisis en el período)
+    const activeUsers = usersData.users.filter(u => {
+      if (!u.last_analysis_at) return false;
+      const lastAnalysis = new Date(u.last_analysis_at);
+      return lastAnalysis >= startDate;
+    }).length;
+    
+    // Promedio diario
+    const days = period === 'today' ? 1 : period === 'week' ? 7 : 30;
+    const avgDaily = Math.round(totalAnalyses / days);
+    
+    // Actualizar stats
+    document.getElementById('report-users').textContent = newUsers;
+    document.getElementById('report-analyses').textContent = totalAnalyses;
+    document.getElementById('report-tokens').textContent = totalTokens.toLocaleString();
+    document.getElementById('report-cost').textContent = '$' + totalCost.toFixed(4);
+    document.getElementById('report-avg').textContent = avgDaily;
+    document.getElementById('report-active').textContent = activeUsers;
+    
+    // Crear gráfico
+    createReportChart(periodData, period);
+    
+    // Top usuarios
+    renderReportTopUsers(tokenData.userStats.slice(0, 10));
+    
+    showNotification('✅ Reporte generado', 'success');
+  } catch (error) {
+    console.error('Error:', error);
+    showNotification('❌ Error generando reporte', 'error');
+  }
+}
+
+function createReportChart(data, period) {
+  if (reportChart) {
+    reportChart.destroy();
+  }
+  
+  const ctx = document.getElementById('reportChart');
+  if (!ctx) return;
+  
+  const sortedData = data.sort((a, b) => new Date(a.date) - new Date(b.date));
+  
+  reportChart = new Chart(ctx.getContext('2d'), {
+    type: period === 'today' ? 'bar' : 'line',
+    data: {
+      labels: sortedData.map(d => formatDate(d.date)),
+      datasets: [{
+        label: 'Análisis',
+        data: sortedData.map(d => d.analyses || 0),
+        borderColor: '#8B5FBF',
+        backgroundColor: period === 'today' ? 'rgba(139, 95, 191, 0.7)' : 'rgba(139, 95, 191, 0.1)',
+        borderWidth: 3,
+        fill: period !== 'today',
+        tension: 0.4,
+        pointRadius: 5,
+        pointHoverRadius: 7
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (context) => `${context.parsed.y} análisis`
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { precision: 0 }
+        }
+      }
+    }
+  });
+}
+
+function renderReportTopUsers(users) {
+  const tbody = document.getElementById('report-top-users');
+  
+  tbody.innerHTML = users.map((user, i) => `
+    <tr>
+      <td>
+        ${i < 3 ? ['🥇', '🥈', '🥉'][i] : (i + 1) + '.'} 
+        <strong>${user.email}</strong>
+      </td>
+      <td style="text-align: center;">
+        <span class="plan-badge ${user.plan_type}">${user.plan_type.toUpperCase()}</span>
+      </td>
+      <td style="text-align: center; font-weight: 700;">${user.total_analyses}</td>
+      <td style="text-align: center;">${(user.total_tokens || 0).toLocaleString()}</td>
+      <td style="text-align: center; color: #059669; font-weight: 700;">
+        $${(user.total_cost || 0).toFixed(4)}
+      </td>
+    </tr>
+  `).join('');
+}
+
+function exportCurrentReport() {
+  const period = currentReportPeriod;
+  const periodNames = { today: 'Hoy', week: 'Semana', month: 'Mes' };
+  
+  const users = document.getElementById('report-users').textContent;
+  const analyses = document.getElementById('report-analyses').textContent;
+  const tokens = document.getElementById('report-tokens').textContent;
+  const cost = document.getElementById('report-cost').textContent;
+  
+  const csv = [
+    `Reporte: ${periodNames[period]}`,
+    `Fecha: ${new Date().toLocaleDateString('es-ES')}`,
+    '',
+    'Métrica,Valor',
+    `Nuevos Usuarios,${users}`,
+    `Análisis,${analyses}`,
+    `Tokens,${tokens}`,
+    `Costo,${cost}`,
+    '',
+    'Top Usuarios:',
+    'Posición,Email,Plan,Análisis,Tokens,Costo'
+  ];
+  
+  // Agregar top usuarios
+  const rows = document.querySelectorAll('#report-top-users tr');
+  rows.forEach((row, i) => {
+    const cells = row.querySelectorAll('td');
+    const email = cells[0].textContent.trim().replace(/[🥇🥈🥉\d.]/g, '').trim();
+    const plan = cells[1].textContent.trim();
+    const analyses = cells[2].textContent.trim();
+    const tokens = cells[3].textContent.trim();
+    const cost = cells[4].textContent.trim();
+    csv.push(`${i + 1},${email},${plan},${analyses},${tokens},${cost}`);
+  });
+  
+  const blob = new Blob([csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `reporte_${period}_${Date.now()}.csv`;
+  a.click();
+  
+  showNotification('✅ Reporte exportado', 'success');
+}
+</script>
+</body>
+</html>
