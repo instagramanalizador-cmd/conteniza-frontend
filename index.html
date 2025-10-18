@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Conteniza - Generador de Contenido con IA</title>
+  <link rel="icon" type="image/jpeg" href="logo.jpg">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -99,7 +100,41 @@
       font-size: 16px;
       font-weight: 500;
     }
-    
+
+/* Estilos del logo */
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.logo {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(139, 95, 191, 0.2);
+  animation: fadeInLogo 0.6s ease;
+  transition: transform 0.3s ease;
+}
+
+.logo:hover {
+  transform: scale(1.05) rotate(2deg);
+}
+
+@keyframes fadeInLogo {
+  from { 
+    opacity: 0; 
+    transform: scale(0.8) rotate(-5deg); 
+  }
+  to { 
+    opacity: 1; 
+    transform: scale(1) rotate(0deg); 
+  }
+}    
+
     .card {
       background: rgba(255, 255, 255, 0.95);
       border-radius: 24px;
@@ -686,6 +721,19 @@
       .container {
         padding: 12px;
       }
+.logo {
+    width: 45px;
+    height: 45px;
+  }
+  
+  .header-content {
+    justify-content: center;
+  }
+  /* FIN ✅ */
+  
+  .header h1 {
+    font-size: 24px;
+  }
       
       .header h1 {
         font-size: 24px;
@@ -822,10 +870,13 @@
   
   <div class="container">
     <!-- Header con logo -->
-    <div class="header">
-      <h1>🚀 Conteniza</h1>
-      <p class="subtitle">Genera contenido viral para Instagram en segundos</p>
-    </div>
+<div class="header">
+  <div class="header-content">
+    <img src="logo.jpg" alt="Conteniza Logo" class="logo">
+    <h1 style="margin: 0;">Conteniza</h1>
+  </div>
+  <p class="subtitle">Genera contenido viral para Instagram en segundos</p>
+</div>
     
     <!-- Pantalla de selección de planes -->
     <div id="plansScreen">
@@ -2238,383 +2289,292 @@ async function loadAnalysisById(analysisId) {
         .trim();
     }
 
-    function generatePDF() {
-      if (!window.jspdf) {
-        showNotification('Librería PDF no disponible', 'error');
-        return;
-      }
-      
-      if (!currentResults) {
-        showNotification('No hay resultados para exportar', 'error');
-        return;
-      }
-      
-      try {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        
-        doc.setFont('helvetica');
-        doc.setFontSize(20);
-        doc.setTextColor(139, 95, 191);
-        
-        doc.text('Conteniza - Reporte', 20, 30);
-        
-        doc.setFontSize(12);
-        doc.setTextColor(100, 100, 100);
-        doc.text(`Generado: ${new Date().toLocaleDateString('es-ES')}`, 20, 45);
-        doc.text(`Nicho: ${cleanTextForPDF(document.getElementById('niche').value || 'No especificado')}`, 20, 55);
-        doc.text(`Tono: ${cleanTextForPDF(document.getElementById('tone').value || 'No especificado')}`, 20, 65);
-        doc.text(`Tipo: ${cleanTextForPDF(document.getElementById('contentType').value || 'No especificado')}`, 20, 75);
-        
-        let y = 90;
-        
-        function addSection(title, content, isArray = false, maxLines = 50) {
-          if (y > 250) {
-            doc.addPage();
-            y = 30;
-          }
-          
-          doc.setFontSize(14);
-          doc.setTextColor(139, 95, 191);
-          doc.text(cleanTextForPDF(title), 20, y);
-          y += 10;
-          
-          doc.setFontSize(10);
-          doc.setTextColor(40, 40, 40);
-          
-          if (isArray && Array.isArray(content)) {
-            let lineCount = 0;
-            content.forEach((item, index) => {
-              if (lineCount >= maxLines) {
-                doc.addPage();
-                y = 30;
-                lineCount = 0;
-              }
-              
-              if (y > 270) {
-                doc.addPage();
-                y = 30;
-                lineCount = 0;
-              }
-              
-              const cleanItem = cleanTextForPDF(item);
-              const lines = doc.splitTextToSize(`${index + 1}. ${cleanItem}`, 170);
-              
-              lines.forEach(line => {
-                if (y > 270) {
-                  doc.addPage();
-                  y = 30;
-                  lineCount = 0;
-                }
-                doc.text(line, 25, y);
-                y += 7;
-                lineCount++;
-              });
-            });
-          } else if (content) {
-            const cleanContent = cleanTextForPDF(String(content));
-            const lines = doc.splitTextToSize(cleanContent, 170);
-            let lineCount = 0;
-            
-            lines.forEach(line => {
-              if (lineCount >= maxLines) {
-                doc.addPage();
-                y = 30;
-                lineCount = 0;
-              }
-              
-              if (y > 270) {
-                doc.addPage();
-                y = 30;
-                lineCount = 0;
-              }
-              doc.text(line, 20, y);
-              y += 7;
-              lineCount++;
-            });
-          }
-          y += 10;
-        }
-
-        addSection('HOOKS MAGNÉTICOS', currentResults.hooks, true);
-        addSection('CALL-TO-ACTIONS', currentResults.ctas, true);
-        addSection('HASHTAGS', currentResults.hashtags, true);
-        
-        // CAPTIONS
-        if (currentResults.captions) {
-          if (y > 200) {
-            doc.addPage();
-            y = 30;
-          }
-          
-          doc.setFontSize(14);
-          doc.setTextColor(139, 95, 191);
-          doc.text('CAPTIONS OPTIMIZADOS', 20, y);
-          y += 15;
-          
-          currentResults.captions.forEach((caption, index) => {
-            if (y > 220) {
-              doc.addPage();
-              y = 30;
-            }
-            
-            doc.setFontSize(12);
-            doc.setTextColor(30, 30, 30);
-            doc.text(`Caption ${index + 1}:`, 20, y);
-            y += 7;
-            
-            doc.setFontSize(10);
-            const cleanCaption = cleanTextForPDF(caption);
-            const captionLines = doc.splitTextToSize(cleanCaption, 170);
-            
-            let lineCount = 0;
-            captionLines.forEach(line => {
-              if (lineCount >= 25) {
-                doc.addPage();
-                y = 30;
-                lineCount = 0;
-              }
-              
-              if (y > 270) {
-                doc.addPage();
-                y = 30;
-                lineCount = 0;
-              }
-              doc.text(line, 25, y);
-              y += 6;
-              lineCount++;
-            });
-            y += 10;
-          });
-        }
-        
-        // MINIATURAS CON ESPECIFICACIONES COMPLETAS
-        if (currentResults.thumbnails && currentResults.thumbnails.length > 0) {
-          doc.addPage();
-          y = 30;
-          
-          doc.setFontSize(16);
-          doc.setTextColor(139, 95, 191);
-          doc.text('IDEAS DE MINIATURAS', 20, y);
-          y += 15;
-          
-          currentResults.thumbnails.forEach((thumb, index) => {
-            if (y > 220) {
-              doc.addPage();
-              y = 30;
-            }
-            
-            doc.setFontSize(12);
-            doc.setTextColor(30, 30, 30);
-            doc.text(`Miniatura ${index + 1}: ${cleanTextForPDF(thumb.text || 'TEXTO')}`, 20, y);
-            y += 10;
-            
-            doc.setFontSize(10);
-            doc.setTextColor(60, 60, 60);
-            
-            // Texto principal
-            doc.text(`Texto principal: ${cleanTextForPDF(thumb.text || 'No especificado')}`, 25, y);
-            y += 6;
-            
-            if (thumb.secondary_text) {
-              doc.text(`Texto secundario: ${cleanTextForPDF(thumb.secondary_text)}`, 25, y);
-              y += 6;
-            }
-            
-            // Tipografía
-            doc.text(`Fuente principal: ${cleanTextForPDF(thumb.font_family || 'No especificada')}`, 25, y);
-            y += 6;
-            doc.text(`Tamaño: ${cleanTextForPDF(thumb.font_size || 'No especificado')}`, 25, y);
-            y += 6;
-            doc.text(`Color texto: ${cleanTextForPDF(thumb.text_color || 'No especificado')}`, 25, y);
-            y += 6;
-            
-            if (thumb.secondary_font) {
-              doc.text(`Fuente secundaria: ${cleanTextForPDF(thumb.secondary_font)}`, 25, y);
-              y += 6;
-            }
-            
-            // Fondo
-            doc.text(`Fondo: ${cleanTextForPDF(thumb.background_gradient || 'No especificado')}`, 25, y);
-            y += 6;
-            
-            // Imagen sugerida
-            if (thumb.image_suggestion) {
-              doc.setFontSize(9);
-              doc.text('Imagen recomendada:', 25, y);
-              y += 5;
-              const imgLines = doc.splitTextToSize(cleanTextForPDF(thumb.image_suggestion), 165);
-              imgLines.forEach(line => {
-                if (y > 270) {
-                  doc.addPage();
-                  y = 30;
-                }
-                doc.text(line, 30, y);
-                y += 5;
-              });
-            }
-            
-            // Layout
-            if (thumb.layout) {
-              doc.setFontSize(9);
-              doc.text('Layout:', 25, y);
-              y += 5;
-              const layoutLines = doc.splitTextToSize(cleanTextForPDF(thumb.layout), 165);
-              layoutLines.forEach(line => {
-                if (y > 270) {
-                  doc.addPage();
-                  y = 30;
-                }
-                doc.text(line, 30, y);
-                y += 5;
-              });
-            }
-            
-            y += 8;
-          });
-        }
-        
-        // CARRUSEL CON ESPECIFICACIONES COMPLETAS
-        if (currentResults.carousel_slides && currentResults.carousel_slides.length > 0) {
-          doc.addPage();
-          y = 30;
-          
-          doc.setFontSize(16);
-          doc.setTextColor(139, 95, 191);
-          doc.text('CARRUSEL - 8 SLIDES', 20, y);
-          y += 15;
-          
-          doc.setFontSize(10);
-          doc.setTextColor(60, 60, 60);
-          doc.text('Dimensiones: 1080x1350px (Ratio 4:5)', 20, y);
-          y += 6;
-          doc.text('Tipografía: Montserrat, Poppins, Inter', 20, y);
-          y += 6;
-          doc.text('Exportación: PNG 300dpi o JPG alta calidad', 20, y);
-          y += 12;
-          
-          currentResults.carousel_slides.forEach((slide, index) => {
-            if (y > 230) {
-              doc.addPage();
-              y = 30;
-            }
-            
-            doc.setFontSize(12);
-            doc.setTextColor(30, 30, 30);
-            doc.text(`Slide ${index + 1}: ${cleanTextForPDF(slide.title || 'Sin título')}`, 20, y);
-            y += 8;
-            
-            // Texto exacto
-            if (slide.exact_text) {
-              doc.setFontSize(10);
-              doc.setTextColor(80, 80, 80);
-              doc.text('Texto exacto para copiar:', 25, y);
-              y += 5;
-              
-              doc.setFontSize(9);
-              const exactText = cleanTextForPDF(slide.exact_text);
-              const exactLines = doc.splitTextToSize(exactText, 160);
-              exactLines.forEach(line => {
-                if (y > 270) {
-                  doc.addPage();
-                  y = 30;
-                }
-                doc.text(line, 30, y);
-                y += 5;
-              });
-              y += 3;
-            }
-            
-            // Contenido
-            doc.setFontSize(10);
-            doc.setTextColor(40, 40, 40);
-            doc.text('Contenido:', 25, y);
-            y += 5;
-            
-            const content = cleanTextForPDF(slide.content || '');
-            const contentLines = doc.splitTextToSize(content, 165);
-            
-            let lineCount = 0;
-            contentLines.forEach(line => {
-              if (lineCount >= 15 || y > 270) {
-                doc.addPage();
-                y = 30;
-                lineCount = 0;
-              }
-              doc.text(line, 30, y);
-              y += 5;
-              lineCount++;
-            });
-            
-            // Tipografía recomendada
-            doc.setFontSize(9);
-            doc.setTextColor(60, 60, 60);
-            doc.text('Tipografía: Título - Montserrat Bold 36-42px, Contenido - Inter Regular 18-22px', 25, y);
-            y += 5;
-            doc.text('Color: Blanco con sombra', 25, y);
-            y += 5;
-            
-            // Imagen sugerida
-            if (slide.image_suggestion) {
-              doc.text('Imagen recomendada:', 25, y);
-              y += 5;
-              const imgLines = doc.splitTextToSize(cleanTextForPDF(slide.image_suggestion), 165);
-              imgLines.forEach(line => {
-                if (y > 270) {
-                  doc.addPage();
-                  y = 30;
-                }
-                doc.text(line, 30, y);
-                y += 5;
-              });
-            }
-            
-            y += 8;
-          });
-        }
-        
-        addSection('IDEAS PARA STORIES', currentResults.stories, true);
-        addSection('ANÁLISIS SEO & TENDENCIAS', currentResults.seo_analysis);
-        
-        // Guía de implementación
+async function generatePDF() {
+  if (!window.jspdf) {
+    showNotification('Librería PDF no disponible', 'error');
+    return;
+  }
+  
+  if (!currentResults) {
+    showNotification('No hay resultados para exportar', 'error');
+    return;
+  }
+  
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // ✅ COLORES DE MARCA
+    const colors = {
+      primary: [139, 95, 191],      // Morado
+      secondary: [255, 107, 157],   // Rosa
+      accent: [110, 203, 245],      // Azul claro
+      success: [44, 212, 164],      // Verde
+      text: [45, 55, 72],           // Gris oscuro
+      textLight: [113, 128, 150]    // Gris claro
+    };
+    
+    // ✅ AGREGAR LOGO (convertido a base64)
+    const logo = await loadImageAsBase64('logo.jpg');
+    if (logo) {
+      doc.addImage(logo, 'JPEG', 15, 10, 25, 25);
+    }
+    
+    // ✅ HEADER CON COLORES
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(24);
+    doc.setTextColor(...colors.primary);
+    doc.text('Conteniza', logo ? 45 : 20, 22);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(...colors.textLight);
+    doc.text('Reporte de Análisis de Contenido', logo ? 45 : 20, 28);
+    
+    // ✅ LÍNEA DECORATIVA CON GRADIENTE
+    doc.setDrawColor(...colors.primary);
+    doc.setLineWidth(1);
+    doc.line(15, 38, 195, 38);
+    
+    // Información del reporte
+    let y = 48;
+    doc.setFontSize(9);
+    doc.setTextColor(...colors.text);
+    doc.text(`Generado: ${new Date().toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: 'long', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })}`, 15, y);
+    y += 6;
+    
+    doc.text(`Nicho: ${cleanTextForPDF(document.getElementById('niche').value || 'No especificado')}`, 15, y);
+    y += 6;
+    doc.text(`Tono: ${cleanTextForPDF(document.getElementById('tone').value || 'No especificado')}`, 15, y);
+    y += 6;
+    doc.text(`Tipo: ${cleanTextForPDF(document.getElementById('contentType').value || 'No especificado')}`, 15, y);
+    y += 10;
+    
+    // ✅ FUNCIÓN PARA AGREGAR SECCIONES CON ESTILO
+    function addSection(title, content, isArray = false, maxLines = 50) {
+      if (y > 250) {
         doc.addPage();
         y = 30;
-        doc.setFontSize(16);
-        doc.setTextColor(139, 95, 191);
-        doc.text('GUÍA DE IMPLEMENTACIÓN', 20, y);
-        
-        y += 20;
-        doc.setFontSize(10);
-        doc.setTextColor(40, 40, 40);
-        
-        const guideText = `1. HOOKS: Usa los primeros 3 segundos para captar atención
-2. CTAS: Incluye al menos un call-to-action por contenido  
-3. CAPTIONS: Combina storytelling con valor específico
-4. HASHTAGS: Usa 5-8 hashtags relevantes por post
-5. CARRUSEL: Slide 1 = Hook, Slides 2-6 = Valor, Slide 7-8 = CTA
-6. STORIES: Crea engagement con preguntas y encuestas
-7. MINIATURAS: Usa colores contrastantes y texto legible
-
-CONSEJO: Programa tu contenido con 3-4 días de anticipación
-MÉTRICAS: Revisa insights después de 48 horas  
-OPTIMIZA: Repite lo que funciona, mejora lo que no`;
-        
-        const guideLines = doc.splitTextToSize(guideText, 170);
-        guideLines.forEach(line => {
-          doc.text(line, 20, y);
-          y += 6;
-        });
-        
-        const filename = `Instagram_Analyzer_${Date.now()}.pdf`;
-        doc.save(filename);
-        
-        showNotification('¡PDF generado exitosamente!', 'success');
-        
-      } catch (error) {
-        console.error('Error generando PDF:', error);
-        showNotification('Error al generar el PDF', 'error');
       }
+      
+      // Título con fondo de color
+      doc.setFillColor(...colors.primary);
+      doc.rect(15, y - 5, 180, 8, 'F');
+      
+      doc.setFontSize(12);
+      doc.setTextColor(255, 255, 255); // Blanco
+      doc.text(cleanTextForPDF(title), 18, y);
+      y += 12;
+      
+      // Contenido
+      doc.setFontSize(9);
+      doc.setTextColor(...colors.text);
+      
+      if (isArray && Array.isArray(content)) {
+        let lineCount = 0;
+        content.forEach((item, index) => {
+          if (lineCount >= maxLines || y > 270) {
+            doc.addPage();
+            y = 30;
+            lineCount = 0;
+          }
+          
+          // Bullet point con color
+          doc.setFillColor(...colors.accent);
+          doc.circle(18, y - 1, 1, 'F');
+          
+          const cleanItem = cleanTextForPDF(item);
+          const lines = doc.splitTextToSize(cleanItem, 165);
+          
+          lines.forEach((line, i) => {
+            if (y > 270) {
+              doc.addPage();
+              y = 30;
+              lineCount = 0;
+            }
+            doc.text(line, i === 0 ? 23 : 23, y);
+            y += 5;
+            lineCount++;
+          });
+          y += 2;
+        });
+      } else if (content) {
+        const cleanContent = cleanTextForPDF(String(content));
+        const lines = doc.splitTextToSize(cleanContent, 175);
+        
+        lines.forEach(line => {
+          if (y > 270) {
+            doc.addPage();
+            y = 30;
+          }
+          doc.text(line, 18, y);
+          y += 5;
+        });
+      }
+      y += 8;
     }
+    
+    // ✅ AGREGAR SECCIONES CON ESTILO
+    addSection('🎣 HOOKS MAGNÉTICOS', currentResults.hooks, true);
+    addSection('📢 CALL-TO-ACTIONS', currentResults.ctas, true);
+    addSection('🏷️ HASHTAGS', currentResults.hashtags, true);
+    
+    // CAPTIONS con diseño especial
+    if (currentResults.captions && currentResults.captions.length > 0) {
+      if (y > 200) {
+        doc.addPage();
+        y = 30;
+      }
+      
+      doc.setFillColor(...colors.secondary);
+      doc.rect(15, y - 5, 180, 8, 'F');
+      doc.setFontSize(12);
+      doc.setTextColor(255, 255, 255);
+      doc.text('📝 CAPTIONS OPTIMIZADOS', 18, y);
+      y += 15;
+      
+      currentResults.captions.forEach((caption, index) => {
+        if (y > 220) {
+          doc.addPage();
+          y = 30;
+        }
+        
+        // Número del caption con círculo
+        doc.setFillColor(...colors.primary);
+        doc.circle(20, y - 2, 4, 'F');
+        doc.setFontSize(10);
+        doc.setTextColor(255, 255, 255);
+        doc.text(String(index + 1), 18.5, y);
+        
+        // Texto del caption
+        doc.setFontSize(9);
+        doc.setTextColor(...colors.text);
+        const cleanCaption = cleanTextForPDF(caption);
+        const captionLines = doc.splitTextToSize(cleanCaption, 165);
+        
+        captionLines.forEach((line, i) => {
+          if (y > 270) {
+            doc.addPage();
+            y = 30;
+          }
+          doc.text(line, 28, y);
+          y += 5;
+        });
+        y += 5;
+      });
+    }
+    
+    // Ideas para Stories
+    if (currentResults.stories && currentResults.stories.length > 0) {
+      addSection('📱 IDEAS PARA STORIES', currentResults.stories, true);
+    }
+    
+    // Análisis SEO
+    if (currentResults.seo_analysis) {
+      addSection('📈 ANÁLISIS SEO & TENDENCIAS', currentResults.seo_analysis);
+    }
+    
+    // ✅ PÁGINA FINAL - GUÍA DE IMPLEMENTACIÓN
+    doc.addPage();
+    y = 30;
+    
+    doc.setFillColor(...colors.success);
+    doc.rect(15, y - 5, 180, 10, 'F');
+    doc.setFontSize(14);
+    doc.setTextColor(255, 255, 255);
+    doc.text('✨ GUÍA DE IMPLEMENTACIÓN', 18, y + 2);
+    y += 20;
+    
+    doc.setFontSize(9);
+    doc.setTextColor(...colors.text);
+    
+    const guideSteps = [
+      '1. HOOKS: Usa los primeros 3 segundos para captar atención',
+      '2. CTAS: Incluye al menos un call-to-action por contenido',
+      '3. CAPTIONS: Combina storytelling con valor específico',
+      '4. HASHTAGS: Usa 5-8 hashtags relevantes por post',
+      '5. CARRUSEL: Slide 1 = Hook, Slides 2-6 = Valor, Slide 7-8 = CTA',
+      '6. STORIES: Crea engagement con preguntas y encuestas',
+      '7. MINIATURAS: Usa colores contrastantes y texto legible'
+    ];
+    
+    guideSteps.forEach((step, i) => {
+      doc.setFillColor(...colors.accent);
+      doc.circle(18, y - 1, 1.5, 'F');
+      doc.text(cleanTextForPDF(step), 23, y);
+      y += 8;
+    });
+    
+    y += 10;
+    doc.setFillColor(...colors.primary);
+    doc.rect(15, y - 5, 180, 8, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(10);
+    doc.text('💡 CONSEJOS FINALES', 18, y);
+    y += 10;
+    
+    doc.setTextColor(...colors.text);
+    doc.setFontSize(9);
+    doc.text('• Programa tu contenido con 3-4 días de anticipación', 18, y);
+    y += 6;
+    doc.text('• Revisa insights después de 48 horas', 18, y);
+    y += 6;
+    doc.text('• Optimiza: Repite lo que funciona, mejora lo que no', 18, y);
+    
+    // ✅ FOOTER EN TODAS LAS PÁGINAS
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(...colors.textLight);
+      doc.text(`Conteniza.com - Página ${i} de ${totalPages}`, 105, 285, { align: 'center' });
+    }
+    
+    const filename = `Conteniza_${Date.now()}.pdf`;
+    doc.save(filename);
+    
+    showNotification('¡PDF generado exitosamente!', 'success');
+    
+  } catch (error) {
+    console.error('Error generando PDF:', error);
+    showNotification('Error al generar el PDF', 'error');
+  }
+}
+
+// ✅ FUNCIÓN PARA CONVERTIR IMAGEN A BASE64
+async function loadImageAsBase64(imagePath) {
+  return new Promise((resolve) => {
+    try {
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const dataURL = canvas.toDataURL('image/jpeg');
+        resolve(dataURL);
+      };
+      
+      img.onerror = function() {
+        console.warn('No se pudo cargar el logo');
+        resolve(null);
+      };
+      
+      img.src = imagePath;
+    } catch (error) {
+      console.error('Error cargando imagen:', error);
+      resolve(null);
+    }
+  });
+}
 
    // ✅ FUNCIÓN PARA ABRIR ADMIN
 function openAdmin() {
