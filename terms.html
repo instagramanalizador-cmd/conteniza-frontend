@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Términos y Condiciones - Conteniza</title>
+  <link rel="icon" type="image/jpeg" href="logo.jpg">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    :root {
+      --primary: #8B5FBF;
+      --secondary: #FF6B9D;
+      --accent: #6ECBF5;
+      --success: #2CD4A4;
+      --warning: #FFA36B;
+      --bg: #0F0F1E;
+      --bg-light: #1A1A2E;
+      --text: #2D3748;
+      --text-light: #718096;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: linear-gradient(135deg, var(--bg) 0%, var(--bg-light) 100%);
+      color: var(--text);
+      line-height: 1.7;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 24px;
+      padding: 48px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding-bottom: 24px;
+      border-bottom: 3px solid var(--primary);
+    }
+    
+    .logo {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 16px;
+      display: block;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(139, 95, 191, 0.3);
+    }
+    
+    h1 {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-size: 36px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    
+    .last-updated {
+      color: var(--text-light);
+      font-size: 14px;
+      font-style: italic;
+    }
+    
+    h2 {
+      color: var(--primary);
+      font-size: 24px;
+      margin-top: 40px;
+      margin-bottom: 16px;
+      font-weight: 700;
+    }
+    
+    h3 {
+      color: var(--secondary);
+      font-size: 18px;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+    
+    p { margin-bottom: 16px; color: var(--text); }
+    ul, ol { margin: 16px 0; padding-left: 24px; }
+    li { margin-bottom: 12px; color: var(--text); }
+    strong { color: var(--primary); font-weight: 600; }
+    
+    a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    
+    a:hover {
+      color: var(--secondary);
+      text-decoration: underline;
+    }
+    
+    .warning-box {
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      padding: 20px;
+      border-radius: 12px;
+      border-left: 4px solid var(--warning);
+      margin: 24px 0;
+    }
+    
+    .info-box {
+      background: linear-gradient(135deg, #eff6ff, #dbeafe);
+      padding: 20px;
+      border-radius: 12px;
+      border-left: 4px solid var(--accent);
+      margin: 24px 0;
+    }
+    
+    .success-box {
+      background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+      padding: 20px;
+      border-radius: 12px;
+      border-left: 4px solid var(--success);
+      margin: 24px 0;
+    }
+    
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      padding: 14px 28px;
+      border-radius: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(139, 95, 191, 0.3);
+      margin-top: 40px;
+    }
+    
+    .back-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(139, 95, 191, 0.4);
+      color: white;
+      text-decoration: none;
+    }
+    
+    .section-divider {
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--primary), transparent);
+      margin: 40px 0;
+    }
+    
+    @media (max-width: 768px) {
+      .container { padding: 24px; }
+      h1 { font-size: 28px; }
+      h2 { font-size: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <img src="logo.jpg" alt="Conteniza Logo" class="logo" onerror="this.style.display='none'">
+      <h1>📜 Términos y Condiciones Globales</h1>
+      <p class="last-updated">Última actualización: Diciembre 2024</p>
+      <p style="font-size: 13px; color: var(--text-light); margin-top: 8px;">
+        Aplicables en: 🇪🇺 Europa | 🇲🇽 México | 🌎 América Latina
+      </p>
+    </div>
+    
+    <h2>1. Aceptación de los Términos</h2>
+    <p>Al registrarte y usar <strong>Conteniza</strong>, aceptas estos Términos y Condiciones en su totalidad. Si no estás de acuerdo con alguna parte, por favor no uses el servicio.</p>
+    
+    <div class="info-box">
+      <p><strong>📋 Prestador del Servicio:</strong></p>
+      
+      <div style="margin-top: 12px; padding: 14px; background: rgba(255,107,157,0.1); border-radius: 8px; border-left: 4px solid var(--secondary);">
+        <p style="margin: 0; font-weight: 600; color: var(--secondary); margin-bottom: 10px;">
+          ⚠️ COMPLETA ANTES DE LANZAR:
+        </p>
+        <p style="margin: 6px 0; font-size: 14px;">
+          <strong>🏢 Razón Social / Nombre:</strong> <span style="color: #dc2626; font-weight: 600;">[ST910]</span>
+        </p>
+        <p style="margin: 6px 0; font-size: 14px;">
+          <strong>🆔 RFC / NIF / CIF:</strong> <span style="color: #dc2626; font-weight: 600;">[FIBD7807308WA]</span>
+        </p>
+        <p style="margin: 6px 0; font-size: 14px;">
+          <strong>📍 Domicilio:</strong> <span style="color: #dc2626; font-weight: 600;">[AV IGNACIO ZARAGOZA 279 INT-207A, QUERETARO, MEXICO CP76000]</span>
+        </p>
+      </div>
+      
+      <p style="margin-top: 14px; font-size: 14px;">
+        📧 <strong>Contacto:</strong> <a href="mailto:instagram.analizador@gmail.com">instagram.analizador@gmail.com</a>
+      </p>
+    </div>
+    
+    <div class="warning-box">
+      <p style="margin: 0;"><strong>⚠️ Importante:</strong> Estos términos constituyen un contrato legal vinculante entre tú y Conteniza. Al hacer clic en "Registrarse" o usar el servicio, confirmas que has leído, entendido y aceptado estos términos.</p>
+    </div>
+    
+    <h2>2. Descripción del Servicio</h2>
+    <p><strong>Conteniza</strong> es una plataforma SaaS (Software as a Service) de generación de contenido para redes sociales mediante Inteligencia Artificial. Ofrecemos:</p>
+    <ul>
+      <li>✨ Generación automática de captions, hashtags, hooks y CTAs</li>
+      <li>🖼️ Análisis de imágenes mediante OCR (reconocimiento óptico de caracteres)</li>
+      <li>🎤 Transcripción automática de audios y videos</li>
+      <li>🎨 Ideas visuales para miniaturas y carruseles</li>
+      <li>📄 Exportación de resultados en formato PDF</li>
+      <li>💾 Historial de análisis (según plan contratado)</li>
+      <li>📊 Diferentes planes: Free, Pro y Premium</li>
+    </ul>
+    
+    <div class="warning-box">
+      <p style="margin: 0;"><strong>⚠️ Importante - Servicio "AS IS":</strong> Conteniza se proporciona "tal cual" y "según disponibilidad". No garantizamos resultados específicos, viralidad ni éxito comercial de tu contenido en redes sociales. La IA puede cometer errores - siempre revisa el contenido antes de publicarlo.</p>
+    </div>
+    
+    <h2>3. Registro y Cuenta de Usuario</h2>
+    
+    <h3>3.1 Requisitos de Elegibilidad</h3>
+    <ul>
+      <li><strong>Edad mínima:</strong>
+        <ul style="margin-top: 8px;">
+          <li>🇪🇺 Europa: 16 años (o 18 según país)</li>
+          <li>🇲🇽 México: 18 años</li>
+          <li>🌎 LATAM: 18 años (o edad legal en tu país)</li>
+        </ul>
+      </li>
+      <li>Si eres menor de edad, necesitas consentimiento de un tutor legal</li>
+      <li>Debes proporcionar información veraz y actualizada</li>
+      <li>Una persona solo puede tener UNA cuenta</li>
+    </ul>
+    
+    <h3>3.2 Seguridad de la Cuenta</h3>
+    <ul>
+      <li>Eres responsable de mantener tu contraseña segura</li>
+      <li>No compartas tu cuenta con terceros</li>
+      <li>Notifícanos inmediatamente si detectas uso no autorizado</li>
+      <li>Eres responsable de todas las actividades en tu cuenta</li>
+    </ul>
+    
+    <h3>3.3 Suspensión y Terminación</h3>
+    <p>Nos reservamos el derecho de suspender o terminar tu cuenta si:</p>
+    <ul>
+      <li>Violas estos Términos y Condiciones</li>
+      <li>Proporcionas información falsa</li>
+      <li>Realizas actividades fraudulentas o ilegales</li>
+      <li>Abusas del servicio o intentas dañarlo</li>
+    </ul>
+    
+    <div class="section-divider"></div>
+    
+    <h2>4. Planes, Precios y Pagos</h2>
+    
+    <h3>4.1 Plan FREE (Gratuito)</h3>
+    <ul>
+      <li>✅ Gratuito permanentemente</li>
+      <li>✅ 20 análisis por mes</li>
+      <li>✅ Funcionalidades básicas completas</li>
+      <li>✅ OCR y transcripción incluidos</li>
+      <li>❌ Sin exportación a PDF</li>
+      <li>❌ Sin historial completo</li>
+    </ul>
+    
+    <h3>4.2 Planes de Pago (Pro y Premium)</h3>
+    
+    <div class="info-box">
+      <p><strong>🚧 Actualmente en Lista de Espera</strong></p>
+      <p>Los planes de pago se activarán próximamente. Beneficios para usuarios de lista de espera:</p>
+      <ul style="margin-top: 12px;">
+        <li>🔔 Notificación prioritaria de lanzamiento</li>
+        <li>💰 Descuento especial del 20% en el primer mes</li>
+        <li>⭐ Acceso anticipado antes del lanzamiento público</li>
+        <li>🎁 Créditos bonus de bienvenida</li>
+      </ul>
+    </div>
+    
+    <h3>4.3 Métodos de Pago (cuando se activen)</h3>
+    <p>Aceptaremos:</p>
+    <ul>
+      <li>💳 Tarjetas de crédito y débito (Visa, Mastercard, AmEx)</li>
+      <li>💰 PayPal</li>
+      <li>💵 Stripe (procesamiento seguro)</li>
+      <li>🇲🇽 OXXO Pay (solo México)</li>
+      <li>🇦🇷 MercadoPago (Argentina)</li>
+    </ul>
+    
+    <h3>4.4 Política de Reembolsos</h3>
+    <p>Una vez implementados los planes de pago:</p>
+    
+    <ul>
+      <li>🔄 <strong>Reembolso completo (100%):</strong>
+        <ul style="margin-top: 8px;">
+          <li>Primeros 7 días si no has usado más del 10% de tus créditos</li>
+          <li>Si cancelamos el servicio unilateralmente</li>
+          <li>Si hay un error técnico que impide usar el servicio por más de 72 horas</li>
+        </ul>
+      </li>
+      <li>⚖️ <strong>Reembolso proporcional:</strong>
+        <ul style="margin-top: 8px;">
+          <li>Si el servicio es discontinuado con menos de 30 días de aviso</li>
+        </ul>
+      </li>
+      <li>❌ <strong>NO reembolsable:</strong>
+        <ul style="margin-top: 8px;">
+          <li>Después del período de prueba de 7 días</li>
+          <li>Si has usado más del 50% de tus créditos mensuales</li>
+          <li>Si tu cuenta fue terminada por violación de términos</li>
+          <li>Cambios de opinión después del período de prueba</li>
+        </ul>
+      </li>
+    </ul>
+    
+    <h3>4.5 Renovación y Cancelación</h3>
+    <ul>
+      <li>Las suscripciones se renuevan automáticamente cada mes</li>
+      <li>Puedes cancelar en cualquier momento desde tu panel</li>
+      <li>La cancelación será efectiva al final del período de facturación actual</li>
+      <li>No hay reembolso parcial por cancelación anticipada</li>
+    </ul>
+    
+    <div class="section-divider"></div>
+    
+    <h2>5. Uso Aceptable del Servicio</h2>
+    
+    <h3>5.1 Usos PERMITIDOS ✅</h3>
+    <ul>
+      <li>Uso personal y comercial</li>
+      <li>Generar contenido para tus propias redes sociales</li>
+      <li>Generar contenido para clientes (si eres agencia/freelancer)</li>
+      <li>Exportar y usar el contenido generado sin atribución</li>
+      <li>Editar y modificar el contenido generado</li>
+    </ul>
+    
+    <h3>5.2 Usos PROHIBIDOS ❌</h3>
+    <ul>
+      <li>❌ Generar contenido ilegal, difamatorio, discriminatorio u ofensivo</li>
+      <li>❌ Incitar al odio, violencia o discriminación por raza, género, religión, etc.</li>
+      <li>❌ Generar contenido pornográfico o sexualmente explícito</li>
+      <li>❌ Generar spam o contenido engañoso (fake news, estafas)</li>
+      <li>❌ Violar derechos de autor o propiedad intelectual de terceros</li>
+      <li>❌ Suplantar identidades o crear contenido fraudulento</li>
+      <li>❌ Intentar hackear, sobrecargar o dañar el servicio</li>
+      <li>❌ Usar bots o scripts para abusar del sistema</li>
+      <li>❌ Revender o redistribuir el acceso al servicio sin autorización</li>
+      <li>❌ Compartir tu cuenta con múltiples usuarios</li>
+      <li>❌ Realizar ingeniería inversa del código o la IA</li>
+    </ul>
+    
+    <div class="warning-box">
+      <p style="margin: 0;"><strong>⚠️ Consecuencias por Violación:</strong></p>
+      <ul style="margin-top: 12px;">
+        <li>Suspensión inmediata de la cuenta</li>
+        <li>Terminación permanente sin previo aviso</li>
+        <li>Sin derecho a reembolso</li>
+        <li>Posibles acciones legales si corresponde</li>
+        <li>Reporte a autoridades competentes en casos graves</li>
+      </ul>
+    </div>
+    
+    <div class="section-divider"></div>
+    
+    <h2>6. Propiedad Intelectual</h2>
+    
+    <h3>6.1 Contenido que Subes (Tu Propiedad)</h3>
+    <ul>
+      <li>✅ Tú mantienes TODOS los derechos sobre tus archivos originales</li>
+      <li>✅ Nos otorgas una licencia temporal y limitada para procesarlos</li>
+      <li>✅ Eliminamos tus archivos multimedia a las <strong>48 horas</strong></li>
+      <li>✅ No usamos tus archivos para entrenar la IA</li>
+      <li>✅ No compartimos tus archivos con terceros</li>
+    </ul>
+    
+    <h3>6.2 Contenido Generado por la IA (Tu Propiedad)</h3>
+    <ul>
+      <li>✅ El contenido generado (captions, hashtags, etc.) es <strong>TUYO</strong></li>
+      <li>✅ Puedes usarlo comercialmente sin atribución</li>
+      <li>✅ Puedes modificarlo, editarlo y distribuirlo libremente</li>
+      <li>⚠️ No garantizamos que sea único (la IA puede generar resultados similares para otros usuarios)</li>
+      <li>⚠️ Eres responsable de verificar que no viole derechos de terceros antes de publicarlo</li>
+    </ul>
+    
+    <h3>6.3 Propiedad de Conteniza (Nuestra Propiedad)</h3>
+    <ul>
+      <li>La plataforma, código, diseño, marca "Conteniza" y logotipo son propiedad exclusiva</li>
+      <li>No puedes copiar, modificar, distribuir o crear obras derivadas de nuestra plataforma</li>
+      <li>No puedes usar nuestra marca o logotipo sin autorización escrita</li>
+      <li>Todos los derechos reservados</li>
+    </ul>
+    
+    <h2>7. Limitación de Responsabilidad</h2>
+    
+    <div class="warning-box">
+      <p><strong>⚠️ LEE ESTO CUIDADOSAMENTE - ES MUY IMPORTANTE:</strong></p>
+      <ul style="margin-top: 12px;">
+        <li>Conteniza se proporciona "TAL CUAL" sin garantías de ningún tipo (explícitas o implícitas)</li>
+        <li>No garantizamos disponibilidad 24/7 - puede haber mantenimientos o interrupciones</li>
+        <li>La IA puede cometer errores - TÚ eres responsable de revisar el contenido antes de publicar</li>
+        <li>No somos responsables de pérdidas económicas derivadas del uso del contenido generado</li>
+        <li>No garantizamos viralidad, engagement o resultados específicos en redes sociales</li>
+        <li>No somos responsables si las redes sociales rechazan, penalizan o banean tu contenido</li>
+        <li>No somos responsables de violaciones de copyright en el contenido generado (tú debes verificarlo)</li>
+        <li>La responsabilidad máxima se limita al monto pagado por tu suscripción en los últimos 12 meses</li>
+      </ul>
+    </div>
+    
+    <h3>7.1 Exclusiones Específicas</h3>
+    <p>NO somos responsables por:</p>
+    <ul>
+      <li>Daños indirectos, incidentales, especiales o consecuentes</li>
+      <li>Pérdida de beneficios, ingresos, datos o uso del servicio</li>
+      <li>Daño a tu reputación o marca</li>
+      <li>Decisiones comerciales basadas en el contenido generado</li>
+      <li>Interrupción de tu negocio</li>
+      <li>Fallos técnicos, errores de la IA o pérdida de datos</li>
+      <li>Acciones de terceros (hackers, ataques DDoS, etc.)</li>
+    </ul>
+    
+    <h2>8. Cancelación y Terminación</h2>
+    
+    <h3>8.1 Cancelación por Tu Parte</h3>
+    <ul>
+      <li>✅ Puedes cancelar tu cuenta en cualquier momento</li>
+      <li>✅ Desde tu panel de usuario → Configuración → Cerrar cuenta</li>
+      <li>✅ Los datos se eliminan según nuestra <a href="privacy.html">Política de Privacidad</a></li>
+      <li>🆓 <strong>Plan Free:</strong> Cancelas inmediatamente sin penalización</li>
+      <li>💳 <strong>Planes de pago:</strong> La cancelación es efectiva al final del período actual (sin reembolso)</li>
+    </ul>
+    
+    <h3>8.2 Terminación por Nuestra Parte</h3>
+    <p>Podemos suspender o terminar tu cuenta INMEDIATAMENTE si:</p>
+    <ul>
+      <li>Violas estos Términos y Condiciones</li>
+      <li>Realizas actividades fraudulentas o ilegales</li>
+      <li>Generas contenido prohibido (odio, violencia, spam, etc.)</li>
+      <li>Intentas hackear o dañar el servicio</li>
+      <li>No pagas tu suscripción (planes de pago)</li>
+      <li>Recibes múltiples reportes de abuso</li>
+    </ul>
+    
+    <h3>8.3 Discontinuación del Servicio</h3>
+    <p>Si decidimos discontinuar Conteniza:</p>
+    <ul>
+      <li>📧 Te notificaremos con <strong>30 días de anticipación</strong></li>
+      <li>💰 Recibirás reembolso proporcional del tiempo no usado (planes de pago)</li>
+      <li>📥 Podrás exportar todos tus datos antes del cierre</li>
+    </ul>
+    
+    <div class="section-divider"></div>
+    
+    <h2>9. Privacidad y Protección de Datos</h2>
+    <p>Tu privacidad es fundamental. Consulta nuestra <a href="privacy.html">Política de Privacidad</a> completa que forma parte integral de estos términos.</p>
+    
+    <div class="info-box">
+      <p><strong>Resumen de Privacidad:</strong></p>
+      <ul style="margin-top: 12px;">
+        <li>✅ Cumplimos RGPD (Europa), LFPDPPP (México) y normativas LATAM</li>
+        <li>✅ NO vendemos tus datos a terceros bajo ninguna circunstancia</li>
+        <li>✅ Tienes derechos ARCO/RGPD: Acceder, Rectificar, Cancelar, Oponerte</li>
+        <li>✅ Archivos multimedia se eliminan a las 48 horas automáticamente</li>
+        <li>✅ No usamos cookies invasivas ni tracking de terceros</li>
+        <li>✅ Encriptación bcrypt para contraseñas (irreversible)</li>
+        <li>✅ Conexiones HTTPS/TLS en toda la plataforma</li>
+      </ul>
+    </div>
+    
+    <h2>10. Modificaciones a los Términos</h2>
+    <p>Podemos actualizar estos términos ocasionalmente. Cuando lo hagamos:</p>
+    
+    <h3>10.1 Cambios Importantes</h3>
+    <ul>
+      <li>📧 Te notificaremos por email con <strong>30 días de anticipación</strong></li>
+      <li>📅 Publicaremos los nuevos términos en esta página</li>
+      <li>✅ Si continúas usando el servicio después de la fecha efectiva, aceptas los cambios</li>
+      <li>🚫 Si no aceptas los cambios, puedes cerrar tu cuenta antes de la fecha efectiva</li>
+    </ul>
+    
+    <h3>10.2 Cambios Menores</h3>
+    <ul>
+      <li>Actualizaremos solo la fecha de "última actualización"</li>
+      <li>No requieren notificación individual</li>
+      <li>Te recomendamos revisar esta página periódicamente</li>
+    </ul>
+    
+    <h2>11. Ley Aplicable y Jurisdicción</h2>
+    
+    <h3>🇪🇺 Para usuarios de la Unión Europea:</h3>
+    <ul>
+      <li>Se aplica el RGPD y la normativa del país del consumidor</li>
+      <li>Jurisdicción: Tribunales del país de residencia del usuario</li>
+      <li>Derecho aplicable: Leyes de protección al consumidor del país del usuario</li>
+    </ul>
+    
+    <h3>🇲🇽 Para usuarios de México:</h3>
+    <ul>
+      <li>Se aplica la LFPDPPP y legislación mexicana</li>
+      <li>Jurisdicción: Tribunales federales de México</li>
+      <li>Derecho aplicable: Leyes federales de México</li>
+      <li>Mediación ante PROFECO (Procuraduría Federal del Consumidor)</li>
+    </ul>
+    
+    <h3>🌎 Para usuarios de LATAM:</h3>
+    <ul>
+      <li>Se aplica la normativa local de cada país</li>
+      <li>Jurisdicción: Tribunales del país de residencia del usuario</li>
+      <li>Derecho aplicable: Leyes locales de protección al consumidor</li>
+    </ul>
+    
+    <h3>11.1 Resolución de Disputas</h3>
+    <p>En caso de conflicto:</p>
+    <ol>
+      <li><strong>Negociación amistosa:</strong> Contacta a instagram.analizador@gmail.com</li>
+      <li><strong>Mediación:</strong> Si no se resuelve en 30 días, mediación voluntaria</li>
+      <li><strong>Arbitraje o tribunales:</strong> Según corresponda por ley local</li>
+    </ol>
+    
+    <div class="section-divider"></div>
+    
+    <h2>12. Disposiciones Generales</h2>
+    
+    <h3>12.1 Independencia de Cláusulas</h3>
+    <p>Si alguna cláusula es inválida o inaplicable, las demás permanecen en vigor.</p>
+    
+    <h3>12.2 Ausencia de Renuncia</h3>
+    <p>Si no ejercemos un derecho, no significa que renunciemos a él.</p>
+    
+    <h3>12.3 Acuerdo Completo</h3>
+    <p>Estos términos (junto con la Política de Privacidad) constituyen el acuerdo completo entre tú y Conteniza.</p>
+    
+    <h3>12.4 Cesión</h3>
+    <ul>
+      <li>No puedes transferir tus derechos u obligaciones sin nuestro consentimiento</li>
+      <li>Nosotros podemos ceder estos términos a un sucesor o afiliado</li>
+    </ul>
+    
+    <h3>12.5 Fuerza Mayor</h3>
+    <p>No somos responsables por incumplimientos causados por eventos fuera de nuestro control razonable (desastres naturales, guerras, pandemias, fallos de internet, etc.).</p>
+    
+    <h3>12.6 Idioma</h3>
+    <p>En caso de conflicto entre versiones traducidas, la versión en español prevalece.</p>
+    
+    <div class="section-divider"></div>
+    
+    <h2>13. Contacto</h2>
+    
+    <div class="success-box">
+      <p><strong>¿Preguntas sobre estos términos?</strong></p>
+      <p style="margin: 12px 0 0 0;">
+        📧 Email General: <a href="mailto:instagram.analizador@gmail.com">instagram.analizador@gmail.com</a><br>
+        📧 Email Legal: <a href="mailto:legal@conteniza.com">legal@conteniza.com</a><br>
+        🔒 Email Privacidad: <a href="mailto:instagram.analizador@gmail.com">instagram.analizador@gmail.com</a>
+      </p>
+      <p style="margin-top: 16px; font-size: 14px;">
+        📄 También puedes consultar nuestra <a href="privacy.html">Política de Privacidad</a>
+      </p>
+    </div>
+    
+    <div class="warning-box">
+      <p style="margin: 0; font-size: 14px; line-height: 1.6;">
+        <strong>📋 Nota Legal:</strong> Estos términos están diseñados para un proyecto en fase de comercialización con alcance global (México, LATAM y Europa). A medida que la empresa se formalice, se actualizarán los datos fiscales y se ajustarán cláusulas específicas según corresponda. Cualquier cambio material será notificado con 30 días de anticipación.
+      </p>
+    </div>
+    
+    <div class="info-box">
+      <p style="margin: 0; font-size: 13px;">
+        <strong>🛡️ Protección del Consumidor:</strong><br><br>
+        
+        <strong>🇪🇺 Europa:</strong> Estos términos respetan la Directiva 2011/83/UE sobre derechos de los consumidores y el RGPD.<br><br>
+        
+        <strong>🇲🇽 México:</strong> Cumplimos con la Ley Federal de Protección al Consumidor y LFPDPPP. Puedes presentar quejas ante PROFECO.<br><br>
+        
+        <strong>🌎 LATAM:</strong> Aplicamos las normativas locales de protección al consumidor de cada país.
+      </p>
+    </div>
+    
+    <div class="success-box">
+      <p style="margin: 0; line-height: 1.6;">
+        <strong>✅ Compromiso de Conteniza:</strong><br><br>
+        Nos comprometemos a operar con total transparencia, honestidad y respeto hacia nuestros usuarios. Estos términos están diseñados para ser justos y equilibrados, protegiendo tanto tus derechos como la viabilidad del servicio. Si algo no te queda claro, no dudes en contactarnos.
+      </p>
+    </div>
+    
+    <div style="text-align: center; margin-top: 40px;">
+      <p style="font-size: 14px; color: var(--text-light); margin-bottom: 20px;">
+        Al usar Conteniza, confirmas que tienes al menos 18 años (o la edad legal en tu país) y que has leído, entendido y aceptado estos Términos y Condiciones, así como nuestra Política de Privacidad.
+      </p>
+      <a href="index.html" class="back-btn">
+        ← Volver a Conteniza
+      </a>
+    </div>
+  </div>
+</body>
+</html>
