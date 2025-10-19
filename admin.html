@@ -704,12 +704,15 @@ tbody tr:hover {
 </div>
 </div>
 </div>
-  <script>
-    const API_URL = 'http://127.0.0.1:5002/api';
+<script>
+    const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      ? 'http://127.0.0.1:5002/api'
+      : 'https://conteniza-backend.onrender.com/api';
+    
     let allUsers = [];
     let allWaitlist = [];
     let currentWaitlistFilter = 'all';
-let activityChart = null;
+    let activityChart = null;
 
     function showNotification(message, type = 'success') {
       const notification = document.getElementById('notification');
