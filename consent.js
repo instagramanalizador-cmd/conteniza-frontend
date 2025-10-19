@@ -76,23 +76,17 @@
   // INYECTAR UI DE CONSENTIMIENTOS
   // ========================================
   
-  function injectConsentUI() {
-    const authForm = document.getElementById('authForm');
-    if (!authForm) {
-      console.warn('⚠️ Formulario authForm no encontrado');
-      return;
-    }
-    
-    const planInput = document.getElementById('selectedPlan');
-    if (!planInput) {
-      console.warn('⚠️ selectedPlan no encontrado');
-      return;
-    }
-    
-    // Verificar si ya existe (evitar duplicados)
-    if (document.getElementById('consentSection')) {
-      return;
-    }
+function injectConsentUI() {
+  const authForm = document.getElementById('authForm');
+  if (!authForm) {
+    console.warn('⚠️ Formulario authForm no encontrado');
+    return;
+  }
+  
+  // Verificar si ya existe (evitar duplicados)
+  if (document.getElementById('consentSection')) {
+    return;
+  }
     
     // Textos adaptados según región
     const regionTexts = {
@@ -121,8 +115,8 @@
     const texts = regionTexts[userRegion] || regionTexts['OTHER'];
     
     // Crear sección de consentimientos
-    const consentHTML = `
-      <div id="consentSection" style="display: none; margin: 20px 0; padding: 20px; background: linear-gradient(135deg, #f8fafc, #f1f5f9); border-radius: 16px; border: 2px solid #E9D8FD; box-shadow: 0 2px 8px rgba(139, 95, 191, 0.1);">
+const consentHTML = `
+      <div id="consentSection" style="display: block; margin: 20px 0; padding: 20px; background: linear-gradient(135deg, #f8fafc, #f1f5f9); border-radius: 16px; border: 2px solid #E9D8FD; box-shadow: 0 2px 8px rgba(139, 95, 191, 0.1);">
         
         <!-- Info de región detectada -->
         <div style="padding: 10px; background: linear-gradient(135deg, #dbeafe, #bfdbfe); border-radius: 8px; margin-bottom: 16px; text-align: center;">
@@ -174,17 +168,16 @@
         </div>
       </div>
     `;
-    
-    // Insertar después del selectedPlan
-    planInput.insertAdjacentHTML('afterend', consentHTML);
-    console.log('✅ UI de consentimientos inyectada para región:', userRegion);
-  }
-  
+    if (authForm) {
+  authForm.insertAdjacentHTML('beforeend', consentHTML);
+}
+console.log('✅ UI de consentimientos inyectada para región:', userRegion);
+}
   // ========================================
   // INTERCEPTAR toggleAuthMode
   // ========================================
   
-  function interceptToggleAuthMode() {
+function interceptToggleAuthMode() {
     const originalToggleAuthMode = window.toggleAuthMode;
     
     if (!originalToggleAuthMode) {
@@ -195,20 +188,22 @@
     window.toggleAuthMode = function() {
       originalToggleAuthMode();
       
-      const consentSection = document.getElementById('consentSection');
-      const authTitle = document.getElementById('authTitle');
-      
-      if (consentSection && authTitle) {
-        const isRegisterMode = authTitle.textContent.includes('Crear') || 
-                               authTitle.textContent.includes('Regístrate');
-        consentSection.style.display = isRegisterMode ? 'block' : 'none';
-      }
+      // Esperar a que el DOM se actualice
+      setTimeout(() => {
+        const consentSection = document.getElementById('consentSection');
+        const authTitle = document.getElementById('authTitle');
+        
+        if (consentSection && authTitle) {
+          const isRegisterMode = authTitle.textContent.includes('Crear Cuenta');
+          consentSection.style.display = isRegisterMode ? 'block' : 'none';
+        }
+      }, 100);
     };
     
     console.log('✅ toggleAuthMode interceptada');
   }
   
-  // ========================================
+// ========================================
   // INTERCEPTAR handleAuth
   // ========================================
   
@@ -227,10 +222,7 @@
       event.preventDefault();
       
       const authTitle = document.getElementById('authTitle');
-      const isRegisterMode = authTitle && (
-        authTitle.textContent.includes('Crear') || 
-        authTitle.textContent.includes('Regístrate')
-      );
+      const isRegisterMode = authTitle && authTitle.textContent.includes('Crear Cuenta');
       
       // VALIDAR CONSENTIMIENTO OBLIGATORIO en registro
       if (isRegisterMode) {
