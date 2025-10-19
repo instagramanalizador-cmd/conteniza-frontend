@@ -2633,19 +2633,24 @@ window.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
-});
-  </script>
-<!-- Modal de Historial -->
-  <div id="historyModal" class="modal hidden">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>📜 Historial de Análisis</h2>
-        <button onclick="closeHistoryModal()" class="btn-close">✕</button>
-      </div>
-      <div class="modal-body" id="historyContent">
-        <div class="loading">Cargando historial...</div>
-      </div>
+}); // ⬅️ CIERRE del DOMContentLoaded
+
+</script> <!-- ⬅️ CIERRE del <script> -->
+
+</div> <!-- ⬅️ CIERRE del div.container -->
+
+<!-- ✅ Modal de Historial (fuera del container, después del </script>) -->
+<div id="historyModal" class="modal hidden">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>📜 Historial de Análisis</h2>
+      <button onclick="closeHistoryModal()" class="btn-close">✕</button>
+    </div>
+    <div class="modal-body" id="historyContent">
+      <div class="loading">Cargando historial...</div>
     </div>
   </div>
+</div>
+
 </body>
 </html>
