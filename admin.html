@@ -388,7 +388,11 @@ tbody tr:hover {
     <button class="tab" onclick="switchTab('actions')">
       ⚡ Acciones Rápidas
     </button>
-  </div>
+  <button class="tab" onclick="switchTab('reports')">
+    📊 Reportes
+  </button>
+</div>
+
 
   <!-- TAB 1: Dashboard -->
   <div id="tab-dashboard" class="tab-content active">
@@ -469,9 +473,7 @@ tbody tr:hover {
     </div>
   </div>
 
-<button class="tab" onclick="switchTab('reports')">
-  📊 Reportes
-</button>
+
 
   <!-- TAB 3: Tokens y Costos -->
   <div id="tab-tokens" class="tab-content">
@@ -770,45 +772,80 @@ async function loadData() {
   const token = localStorage.getItem('token');
   
   try {
-    showNotification('🔄 Cargando datos...', 'success');
+    showNotification('📄 Cargando datos...', 'success');
     
+    // ✅ CARGAR ESTADÍSTICAS
     const statsRes = await fetch(`${API_URL}/admin/stats`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
-    const statsData = await statsRes.json();
-    renderStats(statsData.stats);
     
+    if (!statsRes.ok) {
+      throw new Error(`Error cargando estadísticas: ${statsRes.status}`);
+    }
+    
+    const statsData = await statsRes.json();
+    
+    if (statsData.success && statsData.stats) {
+      renderStats(statsData.stats);
+    } else {
+      console.warn('⚠️ No hay estadísticas disponibles');
+    }
+    
+    // ✅ CARGAR USUARIOS
     const usersRes = await fetch(`${API_URL}/admin/users`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
+    
+    if (!usersRes.ok) {
+      throw new Error(`Error cargando usuarios: ${usersRes.status}`);
+    }
+    
     const usersData = await usersRes.json();
-    allUsers = usersData.users || [];
-    renderUsers();
     
+    if (usersData.success && usersData.users) {
+      allUsers = usersData.users;
+      console.log(`✅ ${allUsers.length} usuarios cargados`);
+      renderUsers();
+    } else {
+      console.warn('⚠️ No hay usuarios disponibles');
+      allUsers = [];
+      renderUsers();
+    }
+    
+    // ✅ CARGAR WAITLIST Y TOKEN STATS
     await loadWaitlist();
-    await loadTokenStats(); // ✅ loadTokenStats() ya llama a loadActivityChart() internamente
+    await loadTokenStats();
     
-    showNotification('✅ Datos cargados', 'success');
+    showNotification('✅ Datos cargados correctamente', 'success');
   } catch (error) {
-    console.error('Error:', error);
-    showNotification('❌ Error cargando datos', 'error');
+    console.error('❌ Error cargando datos:', error);
+    showNotification(`❌ Error: ${error.message}`, 'error');
   }
 }
 
-    async function loadWaitlist() {
-      const token = localStorage.getItem('token');
-      
-      try {
-        const res = await fetch(`${API_URL}/auth/waitlist`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
-        allWaitlist = data.waitlist || [];
-        renderWaitlist();
-      } catch (error) {
-        console.error('Error loading waitlist:', error);
-      }
+async function loadWaitlist() {
+  const token = localStorage.getItem('token');
+  
+  try {
+    const res = await fetch(`${API_URL}/auth/waitlist`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    // ✅ AGREGAR: Validar respuesta del servidor
+    if (!res.ok) {
+      console.error('Error cargando waitlist:', res.status);
+      showNotification('❌ Error cargando lista de espera', 'error');
+      return;
     }
+    
+    const data = await res.json();
+    allWaitlist = data.waitlist || [];
+    renderWaitlist();
+  } catch (error) {
+    console.error('Error loading waitlist:', error);
+    showNotification('❌ Error de conexión con el servidor', 'error');
+  }
+}
 
     async function loadTokenStats() {
   const token = localStorage.getItem('token');
@@ -909,11 +946,31 @@ async function loadActivityChart() {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     
-    if (!res.ok) return;
+    // ✅ MEJORADO: Avisar si falla
+    if (!res.ok) {
+      console.warn('⚠️ No se pudo cargar datos del gráfico');
+      showNotification('⚠️ No se pudo cargar el gráfico de actividad', 'error');
+      return;
+    }
     
     const data = await res.json();
     
-    if (!data.success || !data.dailyStats) return;
+    // ✅ MEJORADO: Avisar si no hay datos
+    if (!data.success || !data.dailyStats || data.dailyStats.length === 0) {
+      console.warn('⚠️ No hay datos para mostrar en el gráfico');
+      
+      // Mostrar mensaje en el canvas
+      const ctx = document.getElementById('activityChart');
+      if (ctx) {
+        const context = ctx.getContext('2d');
+        context.clearRect(0, 0, ctx.width, ctx.height);
+        context.font = '16px Inter';
+        context.fillStyle = '#718096';
+        context.textAlign = 'center';
+        context.fillText('📊 No hay datos disponibles', ctx.width / 2, ctx.height / 2);
+      }
+      return;
+    }
     
     const sortedData = data.dailyStats.sort((a, b) => 
       new Date(a.date) - new Date(b.date)
@@ -966,9 +1023,9 @@ async function loadActivityChart() {
     console.log('✅ Gráfico de actividad cargado');
   } catch (error) {
     console.error('❌ Error cargando gráfico:', error);
+    showNotification('⚠️ Error al cargar el gráfico', 'error');
   }
 }
-
         
 function renderStats(stats) {
   document.getElementById('stat-total-users').textContent = stats.totalUsers || 0;
