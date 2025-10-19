@@ -1229,9 +1229,7 @@
   </div>
 
   <script>
-    const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://127.0.0.1:5002/api'
-  : 'https://conteniza-backend.onrender.com/api';
+    const API_URL = 'http://127.0.0.1:5002/api';
     
     let currentUser = null;
     let currentPlan = 'free';
@@ -2633,23 +2631,19 @@ window.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
-}); // ⬅️ CIERRE del DOMContentLoaded
-
-</script>
-</div> <!-- Cierre del container -->
-
-<!-- ✅ AQUÍ VA EL MODAL -->
-<div id="historyModal" class="modal hidden">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h2>📜 Historial de Análisis</h2>
-      <button onclick="closeHistoryModal()" class="btn-close">✕</button>
-    </div>
-    <div class="modal-body" id="historyContent">
-      <div class="loading">Cargando historial...</div>
+});
+  </script>
+<!-- Modal de Historial -->
+  <div id="historyModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>📜 Historial de Análisis</h2>
+        <button onclick="closeHistoryModal()" class="btn-close">✕</button>
+      </div>
+      <div class="modal-body" id="historyContent">
+        <div class="loading">Cargando historial...</div>
+      </div>
     </div>
   </div>
-</div>
-
-</body> <!-- ⬅️ EL MODAL VA JUSTO ANTES DE ESTA LÍNEA -->
+</body>
 </html>
