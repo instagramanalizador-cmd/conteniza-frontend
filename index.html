@@ -1094,6 +1094,33 @@
 <body>
   <div id="notification" class="notification"></div>
   
+  <!-- ============================================
+       🎨 SIDEBAR DE HISTORIAL - FUERA DEL CONTAINER
+       ============================================ -->
+  
+  <!-- Overlay oscuro de fondo -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+  
+  <!-- Sidebar contenedor -->
+  <div class="sidebar" id="historySidebar">
+    <div class="sidebar-header">
+      <h2>📜 Historial</h2>
+      <button class="sidebar-close" onclick="closeSidebar()">×</button>
+    </div>
+    <div class="sidebar-content" id="sidebarContent">
+      <div class="empty-state">
+        <div class="empty-state-icon">🔭</div>
+        <h3>No hay análisis previos</h3>
+        <p>Tus análisis aparecerán aquí</p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Botón flotante para abrir sidebar -->
+  <button class="sidebar-toggle-btn" id="sidebarToggleBtn" onclick="openSidebar()">
+    📜
+  </button>
+  
   <div class="container">
     <!-- Header con logo -->
 <div class="header">
@@ -1218,7 +1245,9 @@
           </div>
         </div>
         <div style="display: flex; gap: 12px;">
-
+          <button class="btn btn-secondary" onclick="openSidebar()">
+            📜 Ver Historial
+          </button>
           <button class="btn btn-danger" onclick="logout()">
             🚪 Cerrar Sesión
           </button>
@@ -2909,28 +2938,7 @@ window.addEventListener('DOMContentLoaded', function() {
 });
   </script>
   
-<!-- ============================================
-     🎨 SIDEBAR DE HISTORIAL - NUEVO
-     ============================================ -->
 
-<!-- Overlay oscuro de fondo -->
-<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
-
-<!-- Sidebar contenedor -->
-<div class="sidebar" id="historySidebar">
-  <div class="sidebar-header">
-    <h2>📜 Historial</h2>
-    <button class="sidebar-close" onclick="closeSidebar()">×</button>
-  </div>
-  <div class="sidebar-content" id="sidebarContent">
-    <div class="loading">Cargando historial...</div>
-  </div>
-</div>
-
-<!-- Botón flotante para abrir sidebar -->
-<button class="sidebar-toggle-btn" id="sidebarToggleBtn" onclick="openSidebar()">
-  📜
-</button>
 
 </body>
 </html>
