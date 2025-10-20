@@ -1943,29 +1943,41 @@ async function loadSidebarHistory() {
       }
     }
     
-    function showForgotPassword() {
-      const email = prompt('Ingresa tu email para recuperar tu contraseña:');
-      
-      if (!email) return;
-      
-      if (!validateEmail(email)) {
-        showNotification('Email inválido', 'error');
-        return;
-      }
-      
-      fetch(`${API_URL}/auth/forgot-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      })
-      .then(response => response.json())
-      .then(data => {
-        showNotification('Si el email existe, recibirás instrucciones para resetear tu contraseña', 'success');
-      })
-      .catch(error => {
-        showNotification('Error al procesar la solicitud', 'error');
-      });
+async function showForgotPassword() {
+  const email = prompt('Ingresa tu email para recuperar tu contraseña:');
+  
+  if (!email) return;
+  
+  if (!validateEmail(email)) {
+    showNotification('Email inválido', 'error');
+    return;
+  }
+  
+  console.log('🔄 Enviando solicitud de reset a:', `${API_URL}/auth/forgot-password`);
+  console.log('📧 Email:', email);
+  
+  try {
+    const response = await fetch(`${API_URL}/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    
+    console.log('📡 Respuesta del servidor:', response.status);
+    
+    const data = await response.json();
+    console.log('📦 Data recibida:', data);
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Error en el servidor');
     }
+    
+    showNotification('✅ Si el email existe, recibirás instrucciones para resetear tu contraseña', 'success');
+  } catch (error) {
+    console.error('❌ Error:', error);
+    showNotification('Error: ' + error.message, 'error');
+  }
+}
     
 function showMainApp() {
   document.getElementById('plansScreen').classList.add('hidden');
@@ -2864,26 +2876,9 @@ async function loadImageAsBase64(imagePath) {
   });
 }
 
-   // ✅ FUNCIÓN PARA ABRIR ADMIN
+// ✅ FUNCIÓN PARA ABRIR ADMIN
 function openAdmin() {
   window.open('admin.html', '_blank', 'width=1400,height=800,scrollbars=yes');
-}
-
-// ✅ MODIFICAR updateUserPanel PARA MOSTRAR BOTÓN ADMIN
-function updateUserPanel() {
-  if (!currentUser) return;
-  
-  document.getElementById('userEmail').textContent = currentUser.email;
-  document.getElementById('userCredits').textContent = userCredits;
-  document.getElementById('userPlan').textContent = currentUser.plan_type.toUpperCase();
-
-  // ✅ MOSTRAR BOTÓN HISTORIAL SIEMPRE QUE HAY SESIÓN
-  document.getElementById('historyBtn').style.display = 'inline-block';
-  
-  // ✅ MOSTRAR BOTÓN ADMIN SI EL USUARIO ES ADMINISTRADOR
-  if (currentUser.is_admin) {
-    document.getElementById('adminBtn').style.display = 'inline-block';
-  }
 }
 
 // ✅ ÚNICO DOMContentLoaded - UNIFICADO
@@ -2897,7 +2892,7 @@ window.addEventListener('DOMContentLoaded', function() {
       userCredits = currentUser.credits_remaining;
       showMainApp();
       
-// ✅ VERIFICAR SI ES ADMIN Y MOSTRAR BOTÓN
+      // ✅ VERIFICAR SI ES ADMIN Y MOSTRAR BOTÓN
       if (currentUser.is_admin) {
         document.getElementById('adminBtn').style.display = 'inline-block';
         console.log('👑 Usuario administrador detectado');
@@ -2911,7 +2906,7 @@ window.addEventListener('DOMContentLoaded', function() {
   window.scrollSlider = scrollSlider;
   window.validateInputs = validateInputs;
   window.generatePDF = generatePDF;
-});  // ← ✅ AGREGAR ESTA LÍNEA (cierra el addEventListener)
+});
   </script>
   
 <!-- ============================================
