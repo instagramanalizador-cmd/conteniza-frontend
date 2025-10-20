@@ -765,16 +765,331 @@
     .hidden {
       display: none !important;
     }
-// 3️⃣ AGREGAR ESTILOS CSS (en el <style>)
 
-/* Responsive */
+/* ============================================
+   🎨 SIDEBAR DE HISTORIAL - NUEVO
+   ============================================ */
+
+/* Overlay oscuro de fondo */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 15, 30, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 9998;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.sidebar-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Sidebar contenedor */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: -25%; /* Oculto inicialmente */
+  width: 25%;
+  height: 100vh;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.98) 100%);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
+  z-index: 9999;
+  overflow-y: auto;
+  transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border-right: 1px solid rgba(139, 95, 191, 0.2);
+}
+
+.sidebar.active {
+  left: 0; /* Visible */
+}
+
+/* Header del sidebar */
+.sidebar-header {
+  position: sticky;
+  top: 0;
+  background: var(--gradient-primary);
+  padding: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-header h2 {
+  color: white;
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebar-close {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.sidebar-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
+}
+
+/* Contenido del sidebar */
+.sidebar-content {
+  padding: 20px;
+}
+
+/* Items del historial */
+.history-item {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.history-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--gradient-primary);
+  transition: width 0.3s ease;
+}
+
+.history-item:hover {
+  transform: translateX(4px);
+  box-shadow: 0 8px 24px rgba(139, 95, 191, 0.2);
+  border-color: rgba(139, 95, 191, 0.3);
+}
+
+.history-item:hover::before {
+  width: 8px;
+}
+
+.history-date {
+  font-size: 12px;
+  color: var(--text-light);
+  font-weight: 500;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.history-niche {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.history-description {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+  margin-bottom: 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Badge de coherencia */
+.coherence-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.coherence-badge.coherent {
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+}
+
+.coherence-badge.incoherent {
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+/* Estado vacío */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.empty-state-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.empty-state h3 {
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.empty-state p {
+  color: var(--text-light);
+  font-size: 14px;
+}
+
+/* Botón flotante para abrir sidebar */
+.sidebar-toggle-btn {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  width: 60px;
+  height: 60px;
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: none; /* Oculto por defecto */
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  box-shadow: 0 8px 24px rgba(139, 95, 191, 0.4);
+  z-index: 9997;
+  transition: all 0.3s ease;
+}
+
+.sidebar-toggle-btn:hover {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 0 12px 32px rgba(139, 95, 191, 0.6);
+}
+
+.sidebar-toggle-btn.active {
+  display: flex; /* Visible cuando hay sesión */
+}
+
+/* Scrollbar personalizado para sidebar */
+.sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: rgba(139, 95, 191, 0.1);
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 4px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-dark);
+}
+
+/* ============================================
+   📱 RESPONSIVE MÓVIL
+   ============================================ */
 @media (max-width: 768px) {
-  .modal-content {
-    width: 100%;
-    max-width: 100%;
+  .container {
+    padding: 12px;
+  }
+  
+  .logo {
+    width: 45px;
+    height: 45px;
+  }
+  
+  .header-content {
+    justify-content: center;
+  }
+  
+  .header h1 {
+    font-size: 24px;
+  }
+  
+  .plans-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .plan-card.featured {
+    transform: scale(1);
+  }
+  
+  .user-info {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .result-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .card {
+    padding: 20px;
+  }
+  
+  /* ✅ SIDEBAR RESPONSIVE - AGREGADO */
+  .sidebar {
+    width: 80%;
+    left: -80%;
+  }
+  
+  .sidebar-toggle-btn {
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+    bottom: 20px;
+    left: 20px;
+  }
+  
+  .sidebar-header h2 {
+    font-size: 18px;
+  }
+  
+  .history-item {
+    padding: 16px;
   }
 }
- </style>
+
+.hidden {
+  display: none !important;
+}
+</style>
 </head>
 <body>
   <div id="notification" class="notification"></div>
@@ -903,10 +1218,7 @@
           </div>
         </div>
         <div style="display: flex; gap: 12px;">
-<button class="btn btn-secondary" onclick="showHistoryModal()" id="historyBtn"
-        style="background: rgba(255,255,255,0.2); border: none; color: white; display: inline-block;">
-  📜 Ver Historial
-</button>
+
           <button class="btn btn-danger" onclick="logout()">
             🚪 Cerrar Sesión
           </button>
@@ -1148,72 +1460,6 @@
     let currentResults = null;
     let userCredits = 5;
 
-async function showHistoryModal() {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    showNotification('Debes iniciar sesión primero', 'error');
-    return;
-  }
-  
-  document.getElementById('historyModal').classList.remove('hidden');
-  
-  try {
-    const response = await fetch(`${API_URL}/analyze`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    
-    const data = await response.json();
-    
-    const historyContent = document.getElementById('historyContent');
-    
-    if (!data.analyses || data.analyses.length === 0) {
-      historyContent.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-state-icon">📭</div>
-          <h3>No hay análisis previos</h3>
-          <p>Tus análisis aparecerán aquí</p>
-        </div>
-      `;
-      return;
-    }
-    
-    historyContent.innerHTML = data.analyses.map(analysis => `
-      <div class="history-item">
-        <div class="history-date">
-          📅 ${new Date(analysis.created_at).toLocaleDateString('es-ES', {
-            day: '2-digit',
-            month: 'long',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          })}
-        </div>
-        <div class="history-niche">
-          🎯 ${escapeHtml(analysis.niche || 'Sin nicho especificado')}
-        </div>
-        <div class="history-description">
-          ${escapeHtml(analysis.description ? 
-            analysis.description.substring(0, 150) + '...' : 
-            'Sin descripción'
-          )}
-        </div>
-        <button onclick="loadAnalysisById(${analysis.id})" 
-                class="btn btn-primary" 
-                style="margin-top: 12px; padding: 8px 16px; font-size: 13px;">
-          🔄 Cargar este análisis
-        </button>
-      </div>
-    `).join('');
-    
-  } catch (error) {
-    console.error('Error cargando historial:', error);
-    showNotification('Error cargando historial', 'error');
-  }
-}
-
-function closeHistoryModal() {
-  document.getElementById('historyModal').classList.add('hidden');
-}
 
 async function loadAnalysisById(analysisId) {
   const token = localStorage.getItem('token');
@@ -1232,7 +1478,7 @@ async function loadAnalysisById(analysisId) {
       document.getElementById('resultsSection').style.display = 'block';
       document.getElementById('resultsSection').classList.remove('hidden');
       
-      closeHistoryModal();
+      closeSidebar(); // ✅ CAMBIADO DE closeHistoryModal()
       
       showNotification('✅ Análisis cargado correctamente', 'success');
       
@@ -1248,6 +1494,113 @@ async function loadAnalysisById(analysisId) {
   }
 }
 
+// ============================================
+// 🎨 FUNCIONES DEL SIDEBAR DE HISTORIAL
+// ============================================
+
+// Abrir sidebar
+function openSidebar() {
+  const sidebar = document.getElementById('historySidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  
+  if (sidebar && overlay) {
+    sidebar.classList.add('active');
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    
+    loadSidebarHistory();
+  }
+}
+
+// Cerrar sidebar
+function closeSidebar() {
+  const sidebar = document.getElementById('historySidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  
+  if (sidebar && overlay) {
+    sidebar.classList.remove('active');
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+}
+
+// Cargar historial en el sidebar
+async function loadSidebarHistory() {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    showNotification('Debes iniciar sesión primero', 'error');
+    return;
+  }
+  
+  const sidebarContent = document.getElementById('sidebarContent');
+  
+  try {
+    sidebarContent.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="spinner" style="margin: 0 auto;"></div><p style="margin-top: 12px; color: var(--text-light);">Cargando historial...</p></div>';
+    
+    const response = await fetch(`${API_URL}/analyze`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    const data = await response.json();
+    
+    if (!data.analyses || data.analyses.length === 0) {
+      sidebarContent.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">🔭</div>
+          <h3>No hay análisis previos</h3>
+          <p>Tus análisis aparecerán aquí</p>
+        </div>
+      `;
+      return;
+    }
+    
+    sidebarContent.innerHTML = data.analyses.map(analysis => {
+      const isCoherent = analysis.is_coherent !== false;
+      const coherenceBadge = `
+        <span class="coherence-badge ${isCoherent ? 'coherent' : 'incoherent'}">
+          ${isCoherent ? '✓ Coherente' : '⚠ Revisar coherencia'}
+        </span>
+      `;
+      
+      return `
+        <div class="history-item">
+          <div class="history-date">
+            📅 ${new Date(analysis.created_at).toLocaleDateString('es-ES', {
+              day: '2-digit',
+              month: 'long',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })}
+          </div>
+          <div class="history-niche">
+            🎯 ${escapeHtml(analysis.detected_niche || analysis.niche || 'Sin nicho')}
+          </div>
+          <div class="history-description">
+            ${escapeHtml(analysis.input_description || analysis.description || 'Sin descripción')}
+          </div>
+          ${coherenceBadge}
+          <button onclick="loadAnalysisById(${analysis.id})" 
+                  class="btn btn-primary" 
+                  style="margin-top: 12px; padding: 8px 16px; font-size: 13px; width: 100%;">
+            🔄 Cargar análisis
+          </button>
+        </div>
+      `;
+    }).join('');
+    
+  } catch (error) {
+    console.error('Error cargando historial:', error);
+    sidebarContent.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">❌</div>
+        <h3>Error al cargar</h3>
+        <p>Intenta de nuevo más tarde</p>
+      </div>
+    `;
+    showNotification('Error cargando historial', 'error');
+  }
+}
 
     function showNotification(message, type = 'success') {
       const notification = document.getElementById('notification');
@@ -1614,42 +1967,64 @@ async function loadAnalysisById(analysisId) {
       });
     }
     
-    function showMainApp() {
-      document.getElementById('plansScreen').classList.add('hidden');
-      document.getElementById('authScreen').classList.add('hidden');
-      document.getElementById('userPanel').style.display = 'block';
-      document.getElementById('mainApp').classList.remove('hidden');
-      
-      updateUserPanel();
-      setupRealTimeValidation();
-    }
+function showMainApp() {
+  document.getElementById('plansScreen').classList.add('hidden');
+  document.getElementById('authScreen').classList.add('hidden');
+  document.getElementById('userPanel').style.display = 'block';
+  document.getElementById('mainApp').classList.remove('hidden');
+  
+  // ✅ MOSTRAR BOTÓN FLOTANTE DEL SIDEBAR
+  const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+  if (sidebarToggleBtn) {
+    sidebarToggleBtn.classList.add('active');
+  }
+  
+  updateUserPanel();
+  setupRealTimeValidation();
+}
     
     function updateUserPanel() {
-      if (!currentUser) return;
-      
-      document.getElementById('userEmail').textContent = currentUser.email;
-      document.getElementById('userCredits').textContent = userCredits;
-      document.getElementById('userPlan').textContent = currentUser.plan_type.toUpperCase();
+  if (!currentUser) return;
+  
+  document.getElementById('userEmail').textContent = currentUser.email;
+  document.getElementById('userCredits').textContent = userCredits;
+  document.getElementById('userPlan').textContent = currentUser.plan_type.toUpperCase();
+  
+  // ✅ MOSTRAR BOTÓN ADMIN SI EL USUARIO ES ADMINISTRADOR
+  if (currentUser.is_admin) {
+    const adminBtn = document.getElementById('adminBtn');
+    if (adminBtn) {
+      adminBtn.style.display = 'inline-block';
     }
+  }
+}
     
     function logout() {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      currentUser = null;
-      uploadedFiles = [];
-      currentResults = null;
-      userCredits = 5;
-      
-      document.getElementById('userPanel').style.display = 'none';
-      document.getElementById('mainApp').classList.add('hidden');
-      document.getElementById('resultsSection').classList.add('hidden');
-      document.getElementById('plansScreen').classList.remove('hidden');
-      document.getElementById('historyBtn').style.display = 'none';
-      document.getElementById('adminBtn').style.display = 'none';
-      
-      clearForm();
-      showNotification('Sesión cerrada correctamente', 'success');
-    }
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  currentUser = null;
+  uploadedFiles = [];
+  currentResults = null;
+  userCredits = 5;
+  
+  document.getElementById('userPanel').style.display = 'none';
+  document.getElementById('mainApp').classList.add('hidden');
+  document.getElementById('resultsSection').classList.add('hidden');
+  document.getElementById('plansScreen').classList.remove('hidden');
+  
+  // ✅ OCULTAR BOTÓN FLOTANTE Y ADMIN AL CERRAR SESIÓN
+  const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+  const adminBtn = document.getElementById('adminBtn');
+  
+  if (sidebarToggleBtn) sidebarToggleBtn.classList.remove('active');
+  if (adminBtn) adminBtn.style.display = 'none';
+  
+  // Cerrar sidebar si está abierto
+  closeSidebar();
+  
+  clearForm();
+  showNotification('Sesión cerrada correctamente', 'success');
+}
 
     function handleFileSelect(event) {
       const files = Array.from(event.target.files);
@@ -2522,7 +2897,7 @@ window.addEventListener('DOMContentLoaded', function() {
       userCredits = currentUser.credits_remaining;
       showMainApp();
       
-      // ✅ VERIFICAR SI ES ADMIN Y MOSTRAR BOTÓN
+// ✅ VERIFICAR SI ES ADMIN Y MOSTRAR BOTÓN
       if (currentUser.is_admin) {
         document.getElementById('adminBtn').style.display = 'inline-block';
         console.log('👑 Usuario administrador detectado');
@@ -2536,29 +2911,31 @@ window.addEventListener('DOMContentLoaded', function() {
   window.scrollSlider = scrollSlider;
   window.validateInputs = validateInputs;
   window.generatePDF = generatePDF;
-
-  // ✅ Cerrar modal de historial al hacer click fuera
-  const modal = document.getElementById('historyModal');
-  if (modal) {
-    modal.addEventListener('click', function(e) {
-      if (e.target === modal) {
-        closeHistoryModal();
-      }
-    });
-  }
-});
+});  // ← ✅ AGREGAR ESTA LÍNEA (cierra el addEventListener)
   </script>
-<!-- Modal de Historial -->
-  <div id="historyModal" class="modal hidden">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>📜 Historial de Análisis</h2>
-        <button onclick="closeHistoryModal()" class="btn-close">✕</button>
-      </div>
-      <div class="modal-body" id="historyContent">
-        <div class="loading">Cargando historial...</div>
-      </div>
-    </div>
+  
+<!-- ============================================
+     🎨 SIDEBAR DE HISTORIAL - NUEVO
+     ============================================ -->
+
+<!-- Overlay oscuro de fondo -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- Sidebar contenedor -->
+<div class="sidebar" id="historySidebar">
+  <div class="sidebar-header">
+    <h2>📜 Historial</h2>
+    <button class="sidebar-close" onclick="closeSidebar()">×</button>
   </div>
+  <div class="sidebar-content" id="sidebarContent">
+    <div class="loading">Cargando historial...</div>
+  </div>
+</div>
+
+<!-- Botón flotante para abrir sidebar -->
+<button class="sidebar-toggle-btn" id="sidebarToggleBtn" onclick="openSidebar()">
+  📜
+</button>
+
 </body>
 </html>
