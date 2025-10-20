@@ -767,104 +767,14 @@
     }
 // 3️⃣ AGREGAR ESTILOS CSS (en el <style>)
 
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.8);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
+/* Responsive */
+@media (max-width: 768px) {
+  .modal-content {
+    width: 100%;
+    max-width: 100%;
+  }
 }
-
-.modal.hidden {
-  display: none;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 24px;
-  max-width: 900px;
-  width: 90%;
-  max-height: 80vh;
-  overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 24px;
-  border-bottom: 2px solid #e5e7eb;
-}
-
-.modal-header h2 {
-  color: var(--primary);
-  margin: 0;
-}
-
-.btn-close {
-  background: transparent;
-  border: none;
-  font-size: 28px;
-  color: #718096;
-  cursor: pointer;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-}
-
-.btn-close:hover {
-  background: #f3f4f6;
-  color: var(--danger);
-}
-
-.modal-body {
-  padding: 24px;
-}
-
-.history-item {
-  background: #f8fafc;
-  border-radius: 16px;
-  padding: 20px;
-  margin-bottom: 16px;
-  border-left: 4px solid var(--primary);
-  transition: all 0.3s ease;
-}
-
-.history-item:hover {
-  transform: translateX(4px);
-  box-shadow: 0 4px 12px rgba(139, 95, 191, 0.2);
-}
-
-.history-date {
-  font-size: 12px;
-  color: #718096;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
-.history-niche {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--primary);
-  margin-bottom: 8px;
-}
-
-.history-description {
-  font-size: 14px;
-  color: #374151;
-  line-height: 1.5;
-}
-  </style>
+ </style>
 </head>
 <body>
   <div id="notification" class="notification"></div>
@@ -993,8 +903,8 @@
           </div>
         </div>
         <div style="display: flex; gap: 12px;">
-<button class="btn btn-secondary" onclick="showHistoryModal()" 
-        style="background: rgba(255,255,255,0.2); border: none; color: white;">
+<button class="btn btn-secondary" onclick="showHistoryModal()" id="historyBtn"
+        style="background: rgba(255,255,255,0.2); border: none; color: white; display: inline-block;">
   📜 Ver Historial
 </button>
           <button class="btn btn-danger" onclick="logout()">
@@ -1734,6 +1644,8 @@ async function loadAnalysisById(analysisId) {
       document.getElementById('mainApp').classList.add('hidden');
       document.getElementById('resultsSection').classList.add('hidden');
       document.getElementById('plansScreen').classList.remove('hidden');
+      document.getElementById('historyBtn').style.display = 'none';
+      document.getElementById('adminBtn').style.display = 'none';
       
       clearForm();
       showNotification('Sesión cerrada correctamente', 'success');
@@ -2589,6 +2501,9 @@ function updateUserPanel() {
   document.getElementById('userEmail').textContent = currentUser.email;
   document.getElementById('userCredits').textContent = userCredits;
   document.getElementById('userPlan').textContent = currentUser.plan_type.toUpperCase();
+
+  // ✅ MOSTRAR BOTÓN HISTORIAL SIEMPRE QUE HAY SESIÓN
+  document.getElementById('historyBtn').style.display = 'inline-block';
   
   // ✅ MOSTRAR BOTÓN ADMIN SI EL USUARIO ES ADMINISTRADOR
   if (currentUser.is_admin) {
