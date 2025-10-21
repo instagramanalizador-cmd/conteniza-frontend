@@ -1038,11 +1038,22 @@ function renderStats(stats) {
   document.getElementById('waitlist-pro').textContent = proCount;
   document.getElementById('waitlist-premium').textContent = premiumCount;
   
-  const today = new Date().toISOString().split('T')[0];
-  const todayUsers = allUsers.filter(u => 
-    u.created_at && u.created_at.startsWith(today)
-  ).length;
+  // ✅ MEJORADO: Comparación robusta de fechas
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const todayUsers = allUsers.filter(u => {
+    if (!u.created_at) return false;
+    
+    const userDate = new Date(u.created_at);
+    userDate.setHours(0, 0, 0, 0);
+    
+    return userDate.getTime() === today.getTime();
+  }).length;
+  
   document.getElementById('stat-today').textContent = todayUsers;
+  
+  console.log(`📊 Usuarios registrados hoy: ${todayUsers}`);
 }
 function renderUsers() {
   const tbody = document.getElementById('users-tbody');
