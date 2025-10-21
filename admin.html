@@ -707,9 +707,19 @@ tbody tr:hover {
 </div>
 </div>
 <script>
-    const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-      ? 'http://127.0.0.1:5002/api'
-      : 'https://conteniza-backend.onrender.com/api';
+// ✅ API_URL mejorada
+const API_URL = (() => {
+  const hostname = window.location.hostname;
+  
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:5002/api';
+  }
+  
+  return 'https://conteniza-backend.onrender.com/api';
+})();
+
+console.log('📡 API URL:', API_URL);
+console.log('🌍 Hostname:', window.location.hostname);
     
     let allUsers = [];
     let allWaitlist = [];
