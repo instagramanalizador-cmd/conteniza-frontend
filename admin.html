@@ -878,11 +878,11 @@ async function loadWaitlist() {
     document.getElementById('stat-total-tokens').textContent = 
       (total.total_tokens || 0).toLocaleString();
     document.getElementById('stat-total-cost').textContent = 
-      '$' + (total.total_cost || 0).toFixed(4);
+      '$' + (Number(total.total_cost) || 0).toFixed(4);
     document.getElementById('stat-avg-tokens').textContent = 
       Math.round(total.avg_tokens_per_analysis || 0).toLocaleString();
     document.getElementById('stat-cost-per-user').textContent = 
-      '$' + ((total.total_cost || 0) / Math.max(total.total_users_with_analyses || 1, 1)).toFixed(4);
+      '$' + ((Number(total.total_cost) || 0) / Math.max(total.total_users_with_analyses || 1, 1)).toFixed(4);
     
     const tbody = document.getElementById('token-stats-tbody');
     tbody.innerHTML = data.userStats.map(user => `
@@ -1601,7 +1601,7 @@ async function loadReportData(period) {
     // Calcular totales
     const totalAnalyses = periodData.reduce((sum, d) => sum + (d.analyses || 0), 0);
     const totalTokens = periodData.reduce((sum, d) => sum + (d.tokens || 0), 0);
-    const totalCost = periodData.reduce((sum, d) => sum + (d.cost || 0), 0);
+    const totalCost = periodData.reduce((sum, d) => sum + (Number(d.cost) || 0), 0);
     
     // Usuarios nuevos del período
     const newUsers = usersData.users.filter(u => {
@@ -1624,7 +1624,7 @@ async function loadReportData(period) {
     document.getElementById('report-users').textContent = newUsers;
     document.getElementById('report-analyses').textContent = totalAnalyses;
     document.getElementById('report-tokens').textContent = totalTokens.toLocaleString();
-    document.getElementById('report-cost').textContent = '$' + totalCost.toFixed(4);
+    document.getElementById('report-cost').textContent = '$' + (Number(totalCost) || 0).toFixed(4);
     document.getElementById('report-avg').textContent = avgDaily;
     document.getElementById('report-active').textContent = activeUsers;
     
