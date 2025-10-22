@@ -882,7 +882,7 @@ async function loadWaitlist() {
     document.getElementById('stat-avg-tokens').textContent = 
       Math.round(total.avg_tokens_per_analysis || 0).toLocaleString();
     document.getElementById('stat-cost-per-user').textContent = 
-      '$' + ((Number(total.total_cost) || 0) / Math.max(total.total_users_with_analyses || 1, 1)).toFixed(4);
+      '$' + ((Number(total.total_cost) || 0) / Math.max(...)).toFixed(4);
     
     const tbody = document.getElementById('token-stats-tbody');
     tbody.innerHTML = data.userStats.map(user => `
@@ -899,7 +899,7 @@ async function loadWaitlist() {
           ${Math.round(user.avg_tokens_per_analysis || 0).toLocaleString()}
         </td>
         <td style="text-align: center; color: #059669; font-weight: 700;">
-          $${(user.total_cost || 0).toFixed(6)}
+          $${(Number(user.total_cost) || 0).toFixed(6)}
         </td>
       </tr>
     `).join('');
@@ -913,7 +913,7 @@ async function loadWaitlist() {
           ${(day.tokens || 0).toLocaleString()}
         </td>
         <td style="text-align: center; color: #059669; font-weight: 700;">
-          $${(day.cost || 0).toFixed(4)}
+          $${(Number(day.cost) || 0).toFixed(4)}
         </td>
       </tr>
     `).join('');
@@ -933,7 +933,7 @@ async function loadWaitlist() {
           ${(user.tokens || 0).toLocaleString()}
         </td>
         <td style="text-align: center; color: #059669; font-weight: 700; font-size: 16px;">
-          $${(user.cost || 0).toFixed(4)}
+          $${(Number(user.cost) || 0).toFixed(4)}
         </td>
       </tr>
     `).join('');
@@ -1703,7 +1703,7 @@ function renderReportTopUsers(users) {
       <td style="text-align: center; font-weight: 700;">${user.total_analyses}</td>
       <td style="text-align: center;">${(user.total_tokens || 0).toLocaleString()}</td>
       <td style="text-align: center; color: #059669; font-weight: 700;">
-        $${(user.total_cost || 0).toFixed(4)}
+        $${(Number(user.total_cost) || 0).toFixed(4)}
       </td>
     </tr>
   `).join('');
