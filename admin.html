@@ -1651,17 +1651,34 @@ function createReportChart(data, period) {
   
   const sortedData = data.sort((a, b) => new Date(a.date) - new Date(b.date));
   
+  // ✅ NUEVO: Variables específicas para cada período
+  let chartType, fillChart, backgroundColor;
+  
+  if (period === 'today') {
+    chartType = 'bar';
+    fillChart = false;
+    backgroundColor = 'rgba(139, 95, 191, 0.7)';
+  } else if (period === 'week') {
+    chartType = 'line';
+    fillChart = true;
+    backgroundColor = 'rgba(139, 95, 191, 0.2)';
+  } else if (period === 'month') {
+    chartType = 'line';
+    fillChart = true;
+    backgroundColor = 'rgba(139, 95, 191, 0.1)';
+  }
+  
   reportChart = new Chart(ctx.getContext('2d'), {
-    type: period === 'today' ? 'bar' : 'line',
+    type: chartType,
     data: {
       labels: sortedData.map(d => formatDate(d.date)),
       datasets: [{
         label: 'Análisis',
         data: sortedData.map(d => d.analyses || 0),
         borderColor: '#8B5FBF',
-        backgroundColor: period === 'today' ? 'rgba(139, 95, 191, 0.7)' : 'rgba(139, 95, 191, 0.1)',
+        backgroundColor: backgroundColor,  // ⬅️ USA LA VARIABLE
         borderWidth: 3,
-        fill: period !== 'today',
+        fill: fillChart,  // ⬅️ USA LA VARIABLE
         tension: 0.4,
         pointRadius: 5,
         pointHoverRadius: 7
@@ -1687,7 +1704,6 @@ function createReportChart(data, period) {
     }
   });
 }
-
 function renderReportTopUsers(users) {
   const tbody = document.getElementById('report-top-users');
   
