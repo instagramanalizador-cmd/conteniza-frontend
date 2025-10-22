@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verificar Email - Conteniza</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    :root {
+      --primary: #8B5FBF;
+      --primary-dark: #7A4BA8;
+      --secondary: #FF6B9D;
+      --success: #2CD4A4;
+      --danger: #FF6B6B;
+      --bg: #0F0F1E;
+      --bg-light: #1A1A2E;
+      --card: #FFFFFF;
+      --text: #2D3748;
+      --text-light: #718096;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, var(--bg) 0%, var(--bg-light) 100%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 500px;
+      width: 100%;
+    }
+    
+    .card {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 24px;
+      padding: 40px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(139, 95, 191, 0.3);
+      border: 1px solid rgba(255,255,255,0.2);
+      backdrop-filter: blur(20px);
+    }
+    
+    .logo {
+      width: 80px;
+      height: 80px;
+      border-radius: 16px;
+      margin: 0 auto 20px;
+      display: block;
+    }
+    
+    h1 {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-size: 32px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    
+    .subtitle {
+      color: var(--text-light);
+      margin-bottom: 32px;
+    }
+    
+    .status-icon {
+      font-size: 64px;
+      margin-bottom: 24px;
+    }
+    
+    .message {
+      font-size: 18px;
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+    
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 16px 32px;
+      border-radius: 16px;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      border: none;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      margin: 8px;
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(139, 95, 191, 0.4);
+    }
+    
+    .btn-secondary {
+      background: transparent;
+      color: var(--primary);
+      border: 2px solid var(--primary);
+    }
+    
+    .btn-secondary:hover {
+      background: var(--primary);
+      color: white;
+    }
+    
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .error {
+      color: var(--danger);
+    }
+    
+    .success {
+      color: var(--success);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <img src="logo.jpg" alt="Conteniza" class="logo">
+      <h1>Conteniza</h1>
+      <p class="subtitle">Verificación de Email</p>
+      
+      <div id="statusContent">
+        <div class="status-icon">⏳</div>
+        <div class="message">Verificando tu email...</div>
+        <div class="loading"></div>
+      </div>
+      
+      <div id="actionButtons" style="display: none; margin-top: 24px;">
+        <button class="btn" onclick="goToApp()">🚀 Ir a la App</button>
+        <button class="btn btn-secondary" onclick="goToLogin()">🔐 Iniciar Sesión</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'https://conteniza-backend.onrender.com/api';
+    
+    async function verifyEmail() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+      const email = urlParams.get('email');
+      
+      const statusContent = document.getElementById('statusContent');
+      const actionButtons = document.getElementById('actionButtons');
+      
+      if (!token || !email) {
+        showError('Enlace de verificación inválido. Faltan parámetros.');
+        return;
+      }
+      
+      try {
+        console.log('🔍 Verificando email...', { token, email });
+        
+        const response = await fetch(`${API_URL}/auth/verify-email?token=${token}&email=${encodeURIComponent(email)}`);
+        
+        if (response.redirected) {
+          // El backend ya redirigió al frontend con los parámetros
+          window.location.href = response.url;
+          return;
+        }
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Error en la verificación');
+        }
+        
+        // Verificación exitosa
+        showSuccess('¡Email verificado correctamente! Ya puedes iniciar sesión.');
+        
+        // Guardar token si viene en la respuesta
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+        }
+        
+      } catch (error) {
+        console.error('❌ Error verificando email:', error);
+        
+        if (error.message.includes('expirado')) {
+          showError('El enlace de verificación ha expirado. Solicita uno nuevo.', true);
+        } else if (error.message.includes('inválido')) {
+          showError('El enlace de verificación no es válido.', true);
+        } else {
+          showError('Error verificando el email: ' + error.message, true);
+        }
+      }
+    }
+    
+    function showError(message, showRetry = false) {
+      const statusContent = document.getElementById('statusContent');
+      const actionButtons = document.getElementById('actionButtons');
+      
+      statusContent.innerHTML = `
+        <div class="status-icon error">❌</div>
+        <div class="message error">${message}</div>
+      `;
+      
+      if (showRetry) {
+        actionButtons.innerHTML = `
+          <button class="btn" onclick="resendVerification()">📧 Reenviar Email</button>
+          <button class="btn btn-secondary" onclick="goToLogin()">🔐 Iniciar Sesión</button>
+        `;
+      }
+      
+      actionButtons.style.display = 'flex';
+      actionButtons.style.flexDirection = 'column';
+      actionButtons.style.alignItems = 'center';
+    }
+    
+    function showSuccess(message) {
+      const statusContent = document.getElementById('statusContent');
+      const actionButtons = document.getElementById('actionButtons');
+      
+      statusContent.innerHTML = `
+        <div class="status-icon success">✅</div>
+        <div class="message success">${message}</div>
+      `;
+      
+      actionButtons.style.display = 'flex';
+      actionButtons.style.flexDirection = 'column';
+      actionButtons.style.alignItems = 'center';
+    }
+    
+    async function resendVerification() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const email = urlParams.get('email');
+      
+      if (!email) {
+        const userEmail = prompt('Por favor ingresa tu email:');
+        if (!userEmail) return;
+        
+        await sendVerificationEmail(userEmail);
+        return;
+      }
+      
+      await sendVerificationEmail(email);
+    }
+    
+    async function sendVerificationEmail(email) {
+      try {
+        const response = await fetch(`${API_URL}/auth/resend-verification`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Error enviando email');
+        }
+        
+        showSuccess('Se ha enviado un nuevo enlace de verificación a tu email.');
+        
+      } catch (error) {
+        showError('Error enviando email: ' + error.message);
+      }
+    }
+    
+    function goToApp() {
+      window.location.href = 'index.html';
+    }
+    
+    function goToLogin() {
+      window.location.href = 'index.html';
+    }
+    
+    // Verificar automáticamente al cargar la página
+    window.addEventListener('DOMContentLoaded', verifyEmail);
+  </script>
+</body>
+</html>
