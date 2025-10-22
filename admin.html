@@ -882,7 +882,7 @@ async function loadWaitlist() {
     document.getElementById('stat-avg-tokens').textContent = 
       Math.round(total.avg_tokens_per_analysis || 0).toLocaleString();
     document.getElementById('stat-cost-per-user').textContent = 
-      '$' + ((Number(total.total_cost) || 0) / Math.max(...)).toFixed(4);
+      '$' + ((Number(total.total_cost) || 0) / Math.max(total.total_users_with_analyses || 1, 1)).toFixed(4);
     
     const tbody = document.getElementById('token-stats-tbody');
     tbody.innerHTML = data.userStats.map(user => `
