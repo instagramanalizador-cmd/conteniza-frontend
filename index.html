@@ -2595,7 +2595,7 @@ function renderThumbnailSpecs(index) {
 }
 
 // ============================================
-// 📥 DESCARGAR MINIATURA COMO PNG (1080x1350)
+// 📥 DESCARGAR MINIATURA COMO PNG EXTENDIDO (1080x2400)
 // ============================================
 async function downloadThumbnailImage(index) {
   if (!currentThumbnails[index]) {
@@ -2606,13 +2606,17 @@ async function downloadThumbnailImage(index) {
   const thumb = currentThumbnails[index];
   
   try {
-    showNotification('⏳ Generando PNG...', 'success');
+    showNotification('⏳ Generando PNG extendido...', 'success');
     
-    // Crear canvas con ratio 4:5 (Instagram)
+    // Crear canvas EXTENDIDO (1080x2400 para incluir especificaciones)
     const canvas = document.createElement('canvas');
     canvas.width = 1080;
-    canvas.height = 1350;
+    canvas.height = 2400; // ⬅️ MÁS ALTO para incluir specs
     const ctx = canvas.getContext('2d');
+    
+    // ========================================
+    // PARTE 1: MINIATURA VISUAL (0-1350px)
+    // ========================================
     
     // Fondo con gradiente
     const gradient = parseGradient(thumb.background_gradient || 'linear-gradient(135deg, #667eea, #764ba2)');
@@ -2631,7 +2635,6 @@ async function downloadThumbnailImage(index) {
     ctx.shadowBlur = 10;
     ctx.shadowOffsetY = 4;
     
-    // Dividir texto en líneas si es muy largo
     const maxWidth = 900;
     const lines = wrapText(ctx, thumb.text || 'TEXTO', maxWidth);
     const lineHeight = parseInt(thumb.font_size || '42') * 2.2;
@@ -2662,22 +2665,147 @@ async function downloadThumbnailImage(index) {
     
     ctx.fillStyle = '#FFFFFF';
     ctx.font = '700 36px Arial';
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
     ctx.fillText((index + 1).toString(), 980, 85);
+    
+    // ========================================
+    // PARTE 2: ESPECIFICACIONES (1350-2400px)
+    // ========================================
+    
+    let y = 1380; // Empezar debajo de la miniatura
+    
+    // Fondo blanco para especificaciones
+    ctx.fillStyle = '#F8FAFC';
+    ctx.fillRect(0, 1350, 1080, 1050);
+    
+    // Título de especificaciones
+    ctx.fillStyle = '#8B5FBF';
+    ctx.fillRect(40, y, 1000, 60);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '700 36px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillText(`📐 Especificaciones - Miniatura ${index + 1}`, 60, y + 42);
+    
+    y += 90;
+    
+    // Texto Principal
+    ctx.fillStyle = '#3B82F6';
+    ctx.font = '600 28px Arial';
+    ctx.fillText('📝 Texto Principal:', 60, y);
+    y += 40;
+    
+    ctx.fillStyle = '#1E40AF';
+    ctx.font = '700 32px Arial';
+    const textLines = wrapText(ctx, `"${thumb.text || ''}"`, 960);
+    textLines.forEach(line => {
+      ctx.fillText(line, 60, y);
+      y += 40;
+    });
+    
+    y += 20;
+    
+    // Tipografía Principal
+    ctx.fillStyle = '#3B82F6';
+    ctx.font = '600 28px Arial';
+    ctx.fillText('🔤 Tipografía Principal:', 60, y);
+    y += 40;
+    
+    ctx.fillStyle = '#374151';
+    ctx.font = '400 24px Arial';
+    ctx.fillText(`Fuente: ${thumb.font_family || 'No especificada'}`, 80, y);
+    y += 35;
+    ctx.fillText(`Tamaño: ${thumb.font_size || 'No especificado'}`, 80, y);
+    y += 35;
+    ctx.fillText(`Color: ${thumb.text_color || 'No especificado'}`, 80, y);
+    y += 50;
+    
+    // Texto Secundario (si existe)
+    if (thumb.secondary_text) {
+      ctx.fillStyle = '#3B82F6';
+      ctx.font = '600 28px Arial';
+      ctx.fillText('📝 Texto Secundario:', 60, y);
+      y += 40;
+      
+      ctx.fillStyle = '#374151';
+      ctx.font = '400 24px Arial';
+      ctx.fillText(`Fuente: ${thumb.secondary_font || 'No especificada'}`, 80, y);
+      y += 35;
+      ctx.fillText(`Tamaño: ${thumb.secondary_size || 'No especificado'}`, 80, y);
+      y += 35;
+      
+      const secLines = wrapText(ctx, `"${thumb.secondary_text}"`, 920);
+      secLines.forEach(line => {
+        ctx.fillText(line, 80, y);
+        y += 35;
+      });
+      y += 20;
+    }
+    
+    // Fondo/Gradiente
+    ctx.fillStyle = '#3B82F6';
+    ctx.font = '600 28px Arial';
+    ctx.fillText('🎨 Fondo:', 60, y);
+    y += 40;
+    
+    // Dibujar preview del gradiente
+    const gradPreview = parseGradient(thumb.background_gradient || 'linear-gradient(135deg, #667eea, #764ba2)');
+    const grdPreview = ctx.createLinearGradient(80, y, 500, y);
+    grdPreview.addColorStop(0, gradPreview.color1);
+    grdPreview.addColorStop(1, gradPreview.color2);
+    ctx.fillStyle = grdPreview;
+    ctx.fillRect(80, y, 420, 60);
+    
+    y += 80;
+    
+    ctx.fillStyle = '#6B7280';
+    ctx.font = '400 20px Arial';
+    const gradText = thumb.background_gradient || 'linear-gradient(135deg, #667eea, #764ba2)';
+    const gradLines = wrapText(ctx, gradText, 960);
+    gradLines.forEach(line => {
+      ctx.fillText(line, 60, y);
+      y += 28;
+    });
+    
+    y += 30;
+    
+    // Imagen Recomendada
+    if (thumb.image_suggestion && y < 2300) {
+      ctx.fillStyle = '#3B82F6';
+      ctx.font = '600 28px Arial';
+      ctx.fillText('📷 Imagen Recomendada:', 60, y);
+      y += 40;
+      
+      ctx.fillStyle = '#374151';
+      ctx.font = '400 24px Arial';
+      const imgLines = wrapText(ctx, thumb.image_suggestion, 960);
+      imgLines.forEach(line => {
+        if (y < 2350) {
+          ctx.fillText(line, 80, y);
+          y += 32;
+        }
+      });
+    }
+    
+    // Footer con marca
+    ctx.fillStyle = '#8B5FBF';
+    ctx.font = '600 24px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Conteniza.com - Generado con IA', 540, 2360);
     
     // Descargar
     const link = document.createElement('a');
-    link.download = `Conteniza_Miniatura_${index + 1}_${Date.now()}.png`;
+    link.download = `Conteniza_Miniatura_Extendida_${index + 1}_${Date.now()}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
     
-    showNotification('✅ PNG descargado exitosamente', 'success');
+    showNotification('✅ PNG extendido descargado exitosamente', 'success');
     
   } catch (error) {
-    console.error('Error generando PNG:', error);
-    showNotification('Error al generar PNG', 'error');
+    console.error('Error generando PNG extendido:', error);
+    showNotification('Error al generar PNG extendido', 'error');
   }
 }
-
 // ============================================
 // 🎠 RENDERIZADO DE CARRUSEL (MEJORADO)
 // ============================================
@@ -2944,7 +3072,7 @@ function renderCarouselSlideSpecs(index) {
 }
 
 // ============================================
-// 📥 DESCARGAR SLIDE DE CARRUSEL COMO PNG
+// 📥 DESCARGAR SLIDE DE CARRUSEL COMO PNG EXTENDIDO (1080x2400)
 // ============================================
 async function downloadCarouselSlideImage(index) {
   if (!currentCarouselSlides[index]) {
@@ -2955,7 +3083,7 @@ async function downloadCarouselSlideImage(index) {
   const slide = currentCarouselSlides[index];
   
   try {
-    showNotification('⏳ Generando PNG del slide...', 'success');
+    showNotification('⏳ Generando PNG extendido del slide...', 'success');
     
     const colors = [
       'linear-gradient(135deg, #8B5FBF, #FF6B9D)',
@@ -2968,10 +3096,15 @@ async function downloadCarouselSlideImage(index) {
       'linear-gradient(135deg, #FFA36B, #2CD4A4)'
     ];
     
+    // Crear canvas EXTENDIDO (1080x2400)
     const canvas = document.createElement('canvas');
     canvas.width = 1080;
-    canvas.height = 1350;
+    canvas.height = 2400;
     const ctx = canvas.getContext('2d');
+    
+    // ========================================
+    // PARTE 1: SLIDE VISUAL (0-1350px)
+    // ========================================
     
     const gradientStr = slide.color_scheme || colors[index % colors.length];
     const gradient = parseGradient(gradientStr);
@@ -2981,6 +3114,7 @@ async function downloadCarouselSlideImage(index) {
     ctx.fillStyle = grd;
     ctx.fillRect(0, 0, 1080, 1350);
     
+    // Número de slide (círculo arriba a la derecha)
     ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
     ctx.beginPath();
     ctx.arc(940, 100, 50, 0, 2 * Math.PI);
@@ -2989,8 +3123,11 @@ async function downloadCarouselSlideImage(index) {
     ctx.fillStyle = '#FFFFFF';
     ctx.font = '700 48px Arial';
     ctx.textAlign = 'center';
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
     ctx.fillText((index + 1).toString(), 940, 115);
     
+    // Título
     ctx.fillStyle = '#FFFFFF';
     ctx.font = '900 64px Montserrat, Arial';
     ctx.textAlign = 'center';
@@ -3006,6 +3143,7 @@ async function downloadCarouselSlideImage(index) {
       currentY += 80;
     });
     
+    // Contenido
     currentY += 60;
     ctx.font = '400 42px Inter, Arial';
     ctx.shadowBlur = 8;
@@ -3019,8 +3157,163 @@ async function downloadCarouselSlideImage(index) {
       }
     });
     
+    // ========================================
+    // PARTE 2: ESPECIFICACIONES (1350-2400px)
+    // ========================================
+    
+    let y = 1380;
+    
+    // Fondo blanco para especificaciones
+    ctx.fillStyle = '#F8FAFC';
+    ctx.fillRect(0, 1350, 1080, 1050);
+    
+    // Título de especificaciones
+    ctx.fillStyle = '#8B5FBF';
+    ctx.fillRect(40, y, 1000, 60);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '700 36px Arial';
+    ctx.textAlign = 'left';
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.fillText(`📐 Especificaciones - Slide ${index + 1} de 8`, 60, y + 42);
+    
+    y += 90;
+    
+    // Título del slide
+    ctx.fillStyle = '#1E40AF';
+    ctx.font = '700 32px Arial';
+    const slideTitleLines = wrapText(ctx, slide.title || `Slide ${index + 1}`, 960);
+    slideTitleLines.forEach(line => {
+      ctx.fillText(line, 60, y);
+      y += 40;
+    });
+    
+    y += 30;
+    
+    // Contenido del slide
+    ctx.fillStyle = '#3B82F6';
+    ctx.font = '600 28px Arial';
+    ctx.fillText('📝 Contenido:', 60, y);
+    y += 40;
+    
+    ctx.fillStyle = '#374151';
+    ctx.font = '400 24px Arial';
+    const slideContentLines = wrapText(ctx, slide.content || '', 960);
+    slideContentLines.forEach(line => {
+      if (y < 2100) {
+        ctx.fillText(line, 80, y);
+        y += 32;
+      }
+    });
+    
+    y += 30;
+    
+    // Texto Exacto (si existe)
+    if (slide.exact_text && y < 2100) {
+      ctx.fillStyle = '#15803D';
+      ctx.font = '600 28px Arial';
+      ctx.fillText('✏️ Texto Exacto para Copiar:', 60, y);
+      y += 40;
+      
+      ctx.fillStyle = '#166534';
+      ctx.font = 'italic 24px Arial';
+      const exactLines = wrapText(ctx, `"${slide.exact_text}"`, 960);
+      exactLines.forEach(line => {
+        if (y < 2120) {
+          ctx.fillText(line, 80, y);
+          y += 32;
+        }
+      });
+      y += 30;
+    }
+    
+    // Esquema de Color
+    if (y < 2150) {
+      ctx.fillStyle = '#3B82F6';
+      ctx.font = '600 28px Arial';
+      ctx.fillText('🎨 Esquema de Color:', 60, y);
+      y += 40;
+      
+      // Preview del gradiente
+      const colorScheme = slide.color_scheme || colors[index % colors.length];
+      const gradPreview = parseGradient(colorScheme);
+      const grdPreview = ctx.createLinearGradient(80, y, 500, y);
+      grdPreview.addColorStop(0, gradPreview.color1);
+      grdPreview.addColorStop(1, gradPreview.color2);
+      ctx.fillStyle = grdPreview;
+      ctx.fillRect(80, y, 420, 60);
+      
+      y += 80;
+      
+      ctx.fillStyle = '#6B7280';
+      ctx.font = '400 20px Arial';
+      const colorLines = wrapText(ctx, colorScheme, 960);
+      colorLines.forEach(line => {
+        if (y < 2180) {
+          ctx.fillText(line, 60, y);
+          y += 28;
+        }
+      });
+      
+      y += 30;
+    }
+    
+    // Tipografía Recomendada
+    if (y < 2200) {
+      ctx.fillStyle = '#3B82F6';
+      ctx.font = '600 28px Arial';
+      ctx.fillText('🔤 Tipografía Recomendada:', 60, y);
+      y += 40;
+      
+      ctx.fillStyle = '#374151';
+      ctx.font = '400 24px Arial';
+      ctx.fillText('• Título: Montserrat Bold, 36-42px', 80, y);
+      y += 35;
+      ctx.fillText('• Contenido: Inter Regular, 18-22px', 80, y);
+      y += 35;
+      ctx.fillText('• Color: Blanco con sombra', 80, y);
+      y += 50;
+    }
+    
+    // Emojis (si existen)
+    if (slide.emoji_usage && y < 2250) {
+      ctx.fillStyle = '#3B82F6';
+      ctx.font = '600 28px Arial';
+      ctx.fillText('😊 Emojis Recomendados:', 60, y);
+      y += 40;
+      
+      ctx.font = '48px Arial';
+      ctx.fillText(slide.emoji_usage, 80, y);
+      y += 60;
+    }
+    
+    // Imagen Sugerida (si existe y hay espacio)
+    if (slide.image_suggestion && y < 2250) {
+      ctx.fillStyle = '#3B82F6';
+      ctx.font = '600 28px Arial';
+      ctx.fillText('📷 Imagen Sugerida:', 60, y);
+      y += 40;
+      
+      ctx.fillStyle = '#374151';
+      ctx.font = '400 24px Arial';
+      const imgLines = wrapText(ctx, slide.image_suggestion, 960);
+      imgLines.forEach(line => {
+        if (y < 2320) {
+          ctx.fillText(line, 80, y);
+          y += 32;
+        }
+      });
+    }
+    
+    // Footer con marca
+    ctx.fillStyle = '#8B5FBF';
+    ctx.font = '600 24px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Conteniza.com - Carrusel de Instagram', 540, 2360);
+    
+    // Descargar
     const link = document.createElement('a');
-    link.download = `Conteniza_Carrusel_Slide_${index + 1}_${Date.now()}.png`;
+    link.download = `Conteniza_Carrusel_Slide_${index + 1}_Extendido_${Date.now()}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
     
@@ -3031,7 +3324,6 @@ async function downloadCarouselSlideImage(index) {
     showNotification('Error al generar PNG', 'error');
   }
 }
-
 // ============================================
 // 🛠️ FUNCIONES AUXILIARES
 // ============================================
@@ -3151,21 +3443,21 @@ async function generatePDF() {
     
     // ✅ COLORES DE MARCA
     const colors = {
-      primary: [139, 95, 191],      // Morado
-      secondary: [255, 107, 157],   // Rosa
-      accent: [110, 203, 245],      // Azul claro
-      success: [44, 212, 164],      // Verde
-      text: [45, 55, 72],           // Gris oscuro
-      textLight: [113, 128, 150]    // Gris claro
+      primary: [139, 95, 191],
+      secondary: [255, 107, 157],
+      accent: [110, 203, 245],
+      success: [44, 212, 164],
+      text: [45, 55, 72],
+      textLight: [113, 128, 150]
     };
     
-    // ✅ AGREGAR LOGO (convertido a base64)
+    // ✅ AGREGAR LOGO
     const logo = await loadImageAsBase64('logo.jpg');
     if (logo) {
       doc.addImage(logo, 'JPEG', 15, 10, 25, 25);
     }
     
-    // ✅ HEADER CON COLORES
+    // ✅ HEADER
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(24);
     doc.setTextColor(...colors.primary);
@@ -3173,9 +3465,8 @@ async function generatePDF() {
     
     doc.setFontSize(10);
     doc.setTextColor(...colors.textLight);
-    doc.text('Reporte de Análisis de Contenido', logo ? 45 : 20, 28);
+    doc.text('Reporte de Analisis de Contenido', logo ? 45 : 20, 28);
     
-    // ✅ LÍNEA DECORATIVA CON GRADIENTE
     doc.setDrawColor(...colors.primary);
     doc.setLineWidth(1);
     doc.line(15, 38, 195, 38);
@@ -3200,49 +3491,46 @@ async function generatePDF() {
     doc.text(`Tipo: ${cleanTextForPDF(document.getElementById('contentType').value || 'No especificado')}`, 15, y);
     y += 10;
     
-    // ✅ FUNCIÓN PARA AGREGAR SECCIONES CON ESTILO
+    // ✅ FUNCIÓN PARA AGREGAR SECCIONES
     function addSection(title, content, isArray = false, maxLines = 50) {
       if (y > 250) {
         doc.addPage();
         y = 30;
       }
       
-      // Título con fondo de color
       doc.setFillColor(...colors.primary);
       doc.rect(15, y - 5, 180, 8, 'F');
       
       doc.setFontSize(12);
-      doc.setTextColor(255, 255, 255); // Blanco
+      doc.setTextColor(255, 255, 255);
       doc.text(cleanTextForPDF(title), 18, y);
       y += 12;
       
-      // Contenido
       doc.setFontSize(9);
       doc.setTextColor(...colors.text);
       
       if (isArray && Array.isArray(content)) {
         let lineCount = 0;
-        content.forEach((item, index) => {
+        content.forEach((item) => {
           if (lineCount >= maxLines || y > 270) {
             doc.addPage();
             y = 30;
             lineCount = 0;
           }
           
-          // Bullet point con color
           doc.setFillColor(...colors.accent);
           doc.circle(18, y - 1, 1, 'F');
           
           const cleanItem = cleanTextForPDF(item);
           const lines = doc.splitTextToSize(cleanItem, 165);
           
-          lines.forEach((line, i) => {
+          lines.forEach((line) => {
             if (y > 270) {
               doc.addPage();
               y = 30;
               lineCount = 0;
             }
-            doc.text(line, i === 0 ? 23 : 23, y);
+            doc.text(line, 23, y);
             y += 5;
             lineCount++;
           });
@@ -3264,12 +3552,12 @@ async function generatePDF() {
       y += 8;
     }
     
-    // ✅ AGREGAR SECCIONES CON ESTILO
-    addSection('🎣 HOOKS MAGNÉTICOS', currentResults.hooks, true);
-    addSection('📢 CALL-TO-ACTIONS', currentResults.ctas, true);
-    addSection('🏷️ HASHTAGS', currentResults.hashtags, true);
+    // ✅ AGREGAR SECCIONES BÁSICAS
+    addSection('HOOKS MAGNETICOS', currentResults.hooks, true);
+    addSection('CALL-TO-ACTIONS', currentResults.ctas, true);
+    addSection('HASHTAGS', currentResults.hashtags, true);
     
-    // CAPTIONS con diseño especial
+    // CAPTIONS
     if (currentResults.captions && currentResults.captions.length > 0) {
       if (y > 200) {
         doc.addPage();
@@ -3280,7 +3568,7 @@ async function generatePDF() {
       doc.rect(15, y - 5, 180, 8, 'F');
       doc.setFontSize(12);
       doc.setTextColor(255, 255, 255);
-      doc.text('📝 CAPTIONS OPTIMIZADOS', 18, y);
+      doc.text('CAPTIONS OPTIMIZADOS', 18, y);
       y += 15;
       
       currentResults.captions.forEach((caption, index) => {
@@ -3289,20 +3577,18 @@ async function generatePDF() {
           y = 30;
         }
         
-        // Número del caption con círculo
         doc.setFillColor(...colors.primary);
         doc.circle(20, y - 2, 4, 'F');
         doc.setFontSize(10);
         doc.setTextColor(255, 255, 255);
         doc.text(String(index + 1), 18.5, y);
         
-        // Texto del caption
         doc.setFontSize(9);
         doc.setTextColor(...colors.text);
         const cleanCaption = cleanTextForPDF(caption);
         const captionLines = doc.splitTextToSize(cleanCaption, 165);
         
-        captionLines.forEach((line, i) => {
+        captionLines.forEach((line) => {
           if (y > 270) {
             doc.addPage();
             y = 30;
@@ -3314,17 +3600,149 @@ async function generatePDF() {
       });
     }
     
-    // Ideas para Stories
+    // ✅ NUEVA SECCIÓN: MINIATURAS
+    if (currentResults.thumbnails && currentResults.thumbnails.length > 0) {
+      doc.addPage();
+      y = 30;
+      
+      doc.setFillColor(...colors.primary);
+      doc.rect(15, y - 5, 180, 10, 'F');
+      doc.setFontSize(14);
+      doc.setTextColor(255, 255, 255);
+      doc.text('IDEAS DE MINIATURAS', 18, y + 2);
+      y += 20;
+      
+      currentResults.thumbnails.forEach((thumb, index) => {
+        if (y > 220) {
+          doc.addPage();
+          y = 30;
+        }
+        
+        // Título de miniatura
+        doc.setFillColor(...colors.accent);
+        doc.circle(20, y - 2, 4, 'F');
+        doc.setFontSize(11);
+        doc.setTextColor(...colors.primary);
+        doc.text(`Miniatura ${index + 1}`, 28, y);
+        y += 10;
+        
+        // Texto principal
+        doc.setFontSize(9);
+        doc.setTextColor(...colors.text);
+        doc.text(`Texto: ${cleanTextForPDF(thumb.text || '')}`, 28, y);
+        y += 6;
+        
+        // Tipografía
+        doc.text(`Fuente: ${cleanTextForPDF(thumb.font_family || 'No especificada')}`, 28, y);
+        y += 5;
+        doc.text(`Tamano: ${cleanTextForPDF(thumb.font_size || 'No especificado')}`, 28, y);
+        y += 5;
+        doc.text(`Color: ${cleanTextForPDF(thumb.text_color || 'No especificado')}`, 28, y);
+        y += 6;
+        
+        // Texto secundario
+        if (thumb.secondary_text) {
+          doc.text(`Texto secundario: ${cleanTextForPDF(thumb.secondary_text)}`, 28, y);
+          y += 5;
+          doc.text(`Fuente sec.: ${cleanTextForPDF(thumb.secondary_font || 'No especificada')}`, 28, y);
+          y += 5;
+        }
+        
+        // Gradiente
+        if (thumb.background_gradient) {
+          const gradLines = doc.splitTextToSize(`Gradiente: ${cleanTextForPDF(thumb.background_gradient)}`, 165);
+          gradLines.forEach(line => {
+            if (y > 270) {
+              doc.addPage();
+              y = 30;
+            }
+            doc.text(line, 28, y);
+            y += 5;
+          });
+        }
+        
+        y += 8;
+      });
+    }
+    
+    // ✅ NUEVA SECCIÓN: CARRUSEL
+    if (currentResults.carousel_slides && currentResults.carousel_slides.length > 0) {
+      doc.addPage();
+      y = 30;
+      
+      doc.setFillColor(...colors.secondary);
+      doc.rect(15, y - 5, 180, 10, 'F');
+      doc.setFontSize(14);
+      doc.setTextColor(255, 255, 255);
+      doc.text('IDEAS DE CARRUSEL', 18, y + 2);
+      y += 20;
+      
+      currentResults.carousel_slides.forEach((slide, index) => {
+        if (y > 220) {
+          doc.addPage();
+          y = 30;
+        }
+        
+        // Título del slide
+        doc.setFillColor(...colors.accent);
+        doc.circle(20, y - 2, 4, 'F');
+        doc.setFontSize(11);
+        doc.setTextColor(...colors.primary);
+        doc.text(`Slide ${index + 1}`, 28, y);
+        y += 10;
+        
+        // Título
+        doc.setFontSize(9);
+        doc.setTextColor(...colors.text);
+        const titleLines = doc.splitTextToSize(`Titulo: ${cleanTextForPDF(slide.title || '')}`, 165);
+        titleLines.forEach(line => {
+          if (y > 270) {
+            doc.addPage();
+            y = 30;
+          }
+          doc.text(line, 28, y);
+          y += 5;
+        });
+        
+        // Contenido
+        const contentLines = doc.splitTextToSize(`Contenido: ${cleanTextForPDF(slide.content || '')}`, 165);
+        contentLines.forEach(line => {
+          if (y > 270) {
+            doc.addPage();
+            y = 30;
+          }
+          doc.text(line, 28, y);
+          y += 5;
+        });
+        
+        // Texto exacto
+        if (slide.exact_text) {
+          const exactLines = doc.splitTextToSize(`Texto exacto: ${cleanTextForPDF(slide.exact_text)}`, 165);
+          exactLines.forEach(line => {
+            if (y > 270) {
+              doc.addPage();
+              y = 30;
+            }
+            doc.text(line, 28, y);
+            y += 5;
+          });
+        }
+        
+        y += 8;
+      });
+    }
+    
+    // Stories
     if (currentResults.stories && currentResults.stories.length > 0) {
-      addSection('📱 IDEAS PARA STORIES', currentResults.stories, true);
+      addSection('IDEAS PARA STORIES', currentResults.stories, true);
     }
     
     // Análisis SEO
     if (currentResults.seo_analysis) {
-      addSection('📈 ANÁLISIS SEO & TENDENCIAS', currentResults.seo_analysis);
+      addSection('ANALISIS SEO Y TENDENCIAS', currentResults.seo_analysis);
     }
     
-    // ✅ PÁGINA FINAL - GUÍA DE IMPLEMENTACIÓN
+    // ✅ PÁGINA FINAL
     doc.addPage();
     y = 30;
     
@@ -3332,23 +3750,23 @@ async function generatePDF() {
     doc.rect(15, y - 5, 180, 10, 'F');
     doc.setFontSize(14);
     doc.setTextColor(255, 255, 255);
-    doc.text('✨ GUÍA DE IMPLEMENTACIÓN', 18, y + 2);
+    doc.text('GUIA DE IMPLEMENTACION', 18, y + 2);
     y += 20;
     
     doc.setFontSize(9);
     doc.setTextColor(...colors.text);
     
     const guideSteps = [
-      '1. HOOKS: Usa los primeros 3 segundos para captar atención',
+      '1. HOOKS: Usa los primeros 3 segundos para captar atencion',
       '2. CTAS: Incluye al menos un call-to-action por contenido',
-      '3. CAPTIONS: Combina storytelling con valor específico',
+      '3. CAPTIONS: Combina storytelling con valor especifico',
       '4. HASHTAGS: Usa 5-8 hashtags relevantes por post',
       '5. CARRUSEL: Slide 1 = Hook, Slides 2-6 = Valor, Slide 7-8 = CTA',
       '6. STORIES: Crea engagement con preguntas y encuestas',
       '7. MINIATURAS: Usa colores contrastantes y texto legible'
     ];
     
-    guideSteps.forEach((step, i) => {
+    guideSteps.forEach((step) => {
       doc.setFillColor(...colors.accent);
       doc.circle(18, y - 1, 1.5, 'F');
       doc.text(cleanTextForPDF(step), 23, y);
@@ -3360,16 +3778,16 @@ async function generatePDF() {
     doc.rect(15, y - 5, 180, 8, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(10);
-    doc.text('💡 CONSEJOS FINALES', 18, y);
+    doc.text('CONSEJOS FINALES', 18, y);
     y += 10;
     
     doc.setTextColor(...colors.text);
     doc.setFontSize(9);
-    doc.text('• Programa tu contenido con 3-4 días de anticipación', 18, y);
+    doc.text('Programa tu contenido con 3-4 dias de anticipacion', 18, y);
     y += 6;
-    doc.text('• Revisa insights después de 48 horas', 18, y);
+    doc.text('Revisa insights despues de 48 horas', 18, y);
     y += 6;
-    doc.text('• Optimiza: Repite lo que funciona, mejora lo que no', 18, y);
+    doc.text('Optimiza: Repite lo que funciona, mejora lo que no', 18, y);
     
     // ✅ FOOTER EN TODAS LAS PÁGINAS
     const totalPages = doc.internal.getNumberOfPages();
@@ -3377,20 +3795,19 @@ async function generatePDF() {
       doc.setPage(i);
       doc.setFontSize(8);
       doc.setTextColor(...colors.textLight);
-      doc.text(`Conteniza.com - Página ${i} de ${totalPages}`, 105, 285, { align: 'center' });
+      doc.text(`Conteniza.com - Pagina ${i} de ${totalPages}`, 105, 285, { align: 'center' });
     }
     
     const filename = `Conteniza_${Date.now()}.pdf`;
     doc.save(filename);
     
-    showNotification('¡PDF generado exitosamente!', 'success');
+    showNotification('PDF generado exitosamente', 'success');
     
   } catch (error) {
     console.error('Error generando PDF:', error);
     showNotification('Error al generar el PDF', 'error');
   }
 }
-
 // ✅ FUNCIÓN PARA CONVERTIR IMAGEN A BASE64
 async function loadImageAsBase64(imagePath) {
   return new Promise((resolve) => {
