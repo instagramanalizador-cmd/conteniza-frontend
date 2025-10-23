@@ -641,6 +641,9 @@ tbody tr:hover {
     <button class="btn btn-danger" onclick="deleteOldAnalyses()">
       🗑️ Eliminar análisis antiguos
     </button>
+<button class="btn btn-danger" onclick="resetAllAnalyses()" style="background: linear-gradient(135deg, #dc2626, #7f1d1d);">
+      🔥 BORRAR TODOS LOS ANÁLISIS
+    </button>
   </div>
   <p style="margin-top: 12px; color: #718096; font-size: 13px;">
     ⚠️ Los análisis huérfanos son de usuarios eliminados. Los análisis antiguos se eliminan según días que especifiques.
@@ -1869,6 +1872,51 @@ async function deleteOldAnalyses() {
     );
     
     // Recargar datos
+    await loadData();
+    await loadReportData(currentReportPeriod);
+    
+  } catch (error) {
+    console.error('Error:', error);
+    showNotification(`❌ ${error.message}`, 'error');
+  }
+}
+async function resetAllAnalyses() {
+  if (!confirm('🔥 ⚠️ PELIGRO ⚠️ 🔥\n\n¿ELIMINAR TODOS LOS ANÁLISIS?\n\nEsto borrará:\n- Todos los análisis de todos los usuarios\n- Históricos y recientes\n- TODO sin excepción\n\nNO se borran usuarios ni lista de espera.\n\nEsta acción NO se puede deshacer.')) {
+    return;
+  }
+  
+  const confirmation = prompt('Para confirmar, escribe: DELETE_ALL');
+  if (confirmation !== 'DELETE_ALL') {
+    showNotification('❌ Confirmación incorrecta. Operación cancelada.', 'error');
+    return;
+  }
+  
+  const token = localStorage.getItem('token');
+  
+  try {
+    showNotification('🔥 ELIMINANDO TODOS LOS ANÁLISIS...', 'success');
+    
+    const res = await fetch(`${API_URL}/admin/reset-all-analyses`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ confirm: 'DELETE_ALL' })
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.error || 'Error en reset');
+    }
+    
+    showNotification(
+      `🔥 RESET COMPLETO!\n\nAntes: ${data.before} análisis\nDespués: ${data.after} análisis\n\n✅ Base de datos limpia`,
+      'success'
+    );
+    
+    // Recargar TODO
     await loadData();
     await loadReportData(currentReportPeriod);
     
