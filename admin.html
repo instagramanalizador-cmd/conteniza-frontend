@@ -632,6 +632,20 @@ tbody tr:hover {
         </button>
       </div>
     </div>
+<div class="card">
+  <h2 style="color: var(--primary); margin-bottom: 20px;">🗑️ Limpieza de Datos</h2>
+  <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+    <button class="btn btn-danger" onclick="cleanupOrphanAnalyses()">
+      🧹 Limpiar análisis huérfanos
+    </button>
+    <button class="btn btn-danger" onclick="deleteOldAnalyses()">
+      🗑️ Eliminar análisis antiguos
+    </button>
+  </div>
+  <p style="margin-top: 12px; color: #718096; font-size: 13px;">
+    ⚠️ Los análisis huérfanos son de usuarios eliminados. Los análisis antiguos se eliminan según días que especifiques.
+  </p>
+</div>
   </div>
 <!-- TAB 6: Reportes -->
 <div id="tab-reports" class="tab-content">
@@ -784,6 +798,9 @@ async function loadData() {
   try {
     showNotification('📄 Cargando datos...', 'success');
     
+    // ✅ PRIMERO: CARGAR WAITLIST (antes que stats)
+    await loadWaitlist();
+    
     // ✅ CARGAR ESTADÍSTICAS
     const statsRes = await fetch(`${API_URL}/admin/stats`, {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -823,8 +840,7 @@ async function loadData() {
     }
     
     // ✅ CARGAR WAITLIST Y TOKEN STATS
-    await loadWaitlist();
-    await loadTokenStats();
+        await loadTokenStats();
     
     showNotification('✅ Datos cargados correctamente', 'success');
   } catch (error) {
@@ -1768,6 +1784,98 @@ function exportCurrentReport() {
   a.click();
   
   showNotification('✅ Reporte exportado', 'success');
+}
+// ============================================
+// LIMPIEZA DE DATOS
+// ============================================
+
+async function cleanupOrphanAnalyses() {
+  if (!confirm('⚠️ ¿Eliminar TODOS los análisis de usuarios que ya no existen?\n\nEsto NO se puede deshacer.')) {
+    return;
+  }
+  
+  const token = localStorage.getItem('token');
+  
+  try {
+    showNotification('🧹 Limpiando análisis huérfanos...', 'success');
+    
+    const res = await fetch(`${API_URL}/admin/cleanup-analyses`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.error || 'Error en limpieza');
+    }
+    
+    showNotification(
+      `✅ Limpieza completada!\n\nAntes: ${data.before}\nDespués: ${data.after}\nEliminados: ${data.deleted}`,
+      'success'
+    );
+    
+    // Recargar datos
+    await loadData();
+    await loadReportData(currentReportPeriod);
+    
+  } catch (error) {
+    console.error('Error:', error);
+    showNotification(`❌ ${error.message}`, 'error');
+  }
+}
+
+async function deleteOldAnalyses() {
+  const days = prompt('¿Eliminar análisis con más de cuántos días de antigüedad?', '90');
+  
+  if (!days || isNaN(days)) {
+    return;
+  }
+  
+  const numDays = parseInt(days);
+  
+  if (numDays < 1 || numDays > 365) {
+    showNotification('❌ Días debe estar entre 1 y 365', 'error');
+    return;
+  }
+  
+  if (!confirm(`⚠️ ¿ELIMINAR todos los análisis con más de ${numDays} días?\n\nEsto NO se puede deshacer.`)) {
+    return;
+  }
+  
+  const token = localStorage.getItem('token');
+  
+  try {
+    showNotification(`🗑️ Eliminando análisis > ${numDays} días...`, 'success');
+    
+    const res = await fetch(`${API_URL}/admin/delete-old-analyses`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ days: numDays })
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.error || 'Error eliminando');
+    }
+    
+    showNotification(
+      `✅ ${data.deleted} análisis eliminados (> ${numDays} días)`,
+      'success'
+    );
+    
+    // Recargar datos
+    await loadData();
+    await loadReportData(currentReportPeriod);
+    
+  } catch (error) {
+    console.error('Error:', error);
+    showNotification(`❌ ${error.message}`, 'error');
+  }
 }
 </script>
 </body>
