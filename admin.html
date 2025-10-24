@@ -598,7 +598,7 @@ tbody tr:hover {
       <h2 style="color: var(--primary); margin-bottom: 20px;">⚡ Gestión de Créditos</h2>
       <div style="display: flex; gap: 12px; flex-wrap: wrap;">
         <button class="btn btn-success" onclick="resetAllCredits()">
-          🔄 Reset FREE (20 créditos)
+          🔄 Reset FREE (10 créditos)
         </button>
         <button class="btn btn-primary" onclick="giveCreditsToAll()">
           🎁 Dar créditos a todos
@@ -1209,7 +1209,7 @@ function filterWaitlistSearch() {
 }
 
 async function resetUserCredits(userId, email) {
-  const credits = prompt(`¿Cuántos créditos para ${email}?`, '20');
+  const credits = prompt(`¿Cuántos créditos para ${email}?`, '10');
   if (!credits) return;
   
   const token = localStorage.getItem('token');
@@ -1302,7 +1302,7 @@ async function deleteWaitlistItem(id) {
 }
 
 async function resetAllCredits() {
-  if (!confirm('¿Resetear TODOS los usuarios FREE a 20 créditos?')) return;
+  if (!confirm('¿Resetear TODOS los usuarios FREE a 10 créditos?')) return;
   
   const token = localStorage.getItem('token');
   
@@ -1333,7 +1333,7 @@ async function giveCreditsToAll() {
     return;
   }
   
-  const credits = prompt(`¿Cuántos créditos dar a TODOS los usuarios ${plan.toUpperCase()}?`, '20');
+  const credits = prompt(`¿Cuántos créditos dar a TODOS los usuarios ${plan.toUpperCase()}?`, '10');
   if (!credits || isNaN(credits)) return;
   
   if (!confirm(`⚠️ ¿Dar ${credits} créditos a TODOS los usuarios ${plan.toUpperCase()}?`)) return;
