@@ -1584,33 +1584,41 @@ async function loadReportData(period) {
     document.getElementById(`btn-${period}`).style.opacity = '1';
     
     // Obtener datos
-    const [tokenRes, usersRes] = await Promise.all([
-      fetch(`${API_URL}/admin/token-stats`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      }),
-      fetch(`${API_URL}/admin/users`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-    ]);
-    
-    const tokenData = await tokenRes.json();
-    const usersData = await usersRes.json();
+const [tokenRes, usersRes, analysesRes] = await Promise.all([
+  fetch(`${API_URL}/admin/token-stats`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  }),
+  fetch(`${API_URL}/admin/users`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  }),
+  fetch(`${API_URL}/admin/all-analyses`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  })
+]);
+
+const tokenData = await tokenRes.json();
+const usersData = await usersRes.json();
+const analysesData = await analysesRes.json();
     
     // Calcular fechas del período
-    const now = new Date();
-    let startDate;
-    
-    if (period === 'today') {
-      startDate = new Date(now);
-      startDate.setHours(0, 0, 0, 0);
-    } else if (period === 'week') {
-      startDate = new Date(now);
-      startDate.setDate(startDate.getDate() - 7);
-    } else if (period === 'month') {
-      startDate = new Date(now);
-      startDate.setDate(startDate.getDate() - 30);
-    }
-    
+const now = new Date();
+let startDate, endDate;
+
+endDate = new Date(now);
+endDate.setHours(23, 59, 59, 999);
+
+if (period === 'today') {
+  startDate = new Date(now);
+  startDate.setHours(0, 0, 0, 0);
+} else if (period === 'week') {
+  startDate = new Date(now);
+  startDate.setDate(startDate.getDate() - 7);
+  startDate.setHours(0, 0, 0, 0);
+} else if (period === 'month') {
+  startDate = new Date(now);
+  startDate.setDate(startDate.getDate() - 30);
+  startDate.setHours(0, 0, 0, 0);
+}
     // Filtrar datos del período
     const periodData = tokenData.dailyStats.filter(d => {
       const date = new Date(d.date);
@@ -1618,9 +1626,9 @@ async function loadReportData(period) {
     });
     
     // Calcular totales
-    const totalAnalyses = periodData.reduce((sum, d) => sum + (d.analyses || 0), 0);
-    const totalTokens = periodData.reduce((sum, d) => sum + (d.tokens || 0), 0);
-    const totalCost = periodData.reduce((sum, d) => sum + (Number(d.cost) || 0), 0);
+const totalAnalyses = periodData.reduce((sum, d) => sum + Number(d.analyses || 0), 0);
+const totalTokens = periodData.reduce((sum, d) => sum + Number(d.tokens || 0), 0);
+const totalCost = periodData.reduce((sum, d) => sum + Number(d.cost || 0), 0);
     
     // Usuarios nuevos del período
     const newUsers = usersData.users.filter(u => {
@@ -1629,11 +1637,13 @@ async function loadReportData(period) {
     }).length;
     
     // Usuarios activos (con análisis en el período)
-    const activeUsers = usersData.users.filter(u => {
-      if (!u.last_analysis_at) return false;
-      const lastAnalysis = new Date(u.last_analysis_at);
-      return lastAnalysis >= startDate;
-    }).length;
+// Obtener IDs únicos de usuarios que hicieron análisis en el período
+const analysesInPeriod = analysesData.analyses.filter(a => {
+  const date = new Date(a.created_at);
+  return date >= startDate && date <= endDate;
+});
+const activeUserIds = new Set(analysesInPeriod.map(a => a.user_id));
+const activeUsers = activeUserIds.size;
     
     // Promedio diario
     const days = period === 'today' ? 1 : period === 'week' ? 7 : 30;
