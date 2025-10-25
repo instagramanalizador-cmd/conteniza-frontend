@@ -1657,13 +1657,51 @@ const activeUsers = activeUserIds.size;
     document.getElementById('report-avg').textContent = avgDaily;
     document.getElementById('report-active').textContent = activeUsers;
     
-    // Crear gráfico
-    createReportChart(periodData, period);
-    
-    // Top usuarios
-    renderReportTopUsers(tokenData.userStats.slice(0, 10));
-    
-    showNotification('✅ Reporte generado', 'success');
+// Crear gráfico
+createReportChart(periodData, period);
+
+// ✅ CALCULAR TOP 10 USUARIOS DEL PERÍODO (solo completados)
+console.log(`📊 Calculando Top 10 usuarios del período: ${period}`);
+
+const userAnalysisMap = {};
+
+// Agrupar análisis por usuario
+analysesInPeriod.forEach(a => {
+  if (!userAnalysisMap[a.user_id]) {
+    userAnalysisMap[a.user_id] = {
+      total_analyses: 0,
+      total_tokens: 0,
+      total_cost: 0
+    };
+  }
+  userAnalysisMap[a.user_id].total_analyses++;
+  userAnalysisMap[a.user_id].total_tokens += Number(a.total_tokens) || 0;
+  userAnalysisMap[a.user_id].total_cost += Number(a.estimated_cost) || 0;
+});
+
+// Combinar con datos de usuario y ordenar
+const topUsersForPeriod = Object.entries(userAnalysisMap)
+  .map(([userId, stats]) => {
+    const user = usersData.users.find(u => u.id === parseInt(userId));
+    return {
+      user_id: parseInt(userId),
+      email: user?.email || `Usuario #${userId}`,
+      plan_type: user?.plan_type || 'free',
+      total_analyses: stats.total_analyses,
+      total_tokens: stats.total_tokens,
+      total_cost: stats.total_cost
+    };
+  })
+  .sort((a, b) => b.total_analyses - a.total_analyses)
+  .slice(0, 10);
+
+console.log(`✅ Top 10 calculado:`, topUsersForPeriod);
+
+// Renderizar Top 10 DEL PERÍODO
+renderReportTopUsers(topUsersForPeriod);
+
+showNotification('✅ Reporte generado', 'success');
+
   } catch (error) {
     console.error('Error:', error);
     showNotification('❌ Error generando reporte', 'error');
@@ -1758,46 +1796,62 @@ function exportCurrentReport() {
   const period = currentReportPeriod;
   const periodNames = { today: 'Hoy', week: 'Semana', month: 'Mes' };
   
+  // Obtener datos de las tarjetas
   const users = document.getElementById('report-users').textContent;
   const analyses = document.getElementById('report-analyses').textContent;
   const tokens = document.getElementById('report-tokens').textContent;
   const cost = document.getElementById('report-cost').textContent;
+  const avgDaily = document.getElementById('report-avg').textContent;
+  const activeUsers = document.getElementById('report-active').textContent;
   
   const csv = [
     `Reporte: ${periodNames[period]}`,
     `Fecha: ${new Date().toLocaleDateString('es-ES')}`,
+    `Período: ${period === 'today' ? 'Hoy' : period === 'week' ? 'Últimos 7 días' : 'Últimos 30 días'}`,
     '',
+    '=== RESUMEN DEL PERÍODO ===',
     'Métrica,Valor',
     `Nuevos Usuarios,${users}`,
-    `Análisis,${analyses}`,
-    `Tokens,${tokens}`,
-    `Costo,${cost}`,
+    `Análisis Completados,${analyses}`,
+    `Tokens Consumidos,${tokens}`,
+    `Costo Total,${cost}`,
+    `Promedio Diario,${avgDaily}`,
+    `Usuarios Activos,${activeUsers}`,
     '',
-    'Top Usuarios:',
+    '=== TOP 10 USUARIOS DEL PERÍODO ===',
     'Posición,Email,Plan,Análisis,Tokens,Costo'
   ];
   
   // Agregar top usuarios
   const rows = document.querySelectorAll('#report-top-users tr');
-  rows.forEach((row, i) => {
-    const cells = row.querySelectorAll('td');
-    const email = cells[0].textContent.trim().replace(/[🥇🥈🥉\d.]/g, '').trim();
-    const plan = cells[1].textContent.trim();
-    const analyses = cells[2].textContent.trim();
-    const tokens = cells[3].textContent.trim();
-    const cost = cells[4].textContent.trim();
-    csv.push(`${i + 1},${email},${plan},${analyses},${tokens},${cost}`);
-  });
   
+  if (rows.length === 0) {
+    csv.push('(No hay usuarios en este período)');
+  } else {
+    rows.forEach((row, i) => {
+      const cells = row.querySelectorAll('td');
+      if (cells.length >= 5) {
+        const email = cells[0].textContent.trim().replace(/[🥇🥈🥉\d.]/g, '').trim();
+        const plan = cells[1].textContent.trim();
+        const analyses = cells[2].textContent.trim();
+        const tokens = cells[3].textContent.trim();
+        const cost = cells[4].textContent.trim();
+        csv.push(`${i + 1},${email},${plan},${analyses},${tokens},${cost}`);
+      }
+    });
+  }
+  
+  // Crear y descargar CSV
   const blob = new Blob([csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `reporte_${period}_${Date.now()}.csv`;
+  a.download = `reporte_${period}_${new Date().toISOString().split('T')[0]}.csv`;
   a.click();
   
-  showNotification('✅ Reporte exportado', 'success');
+  showNotification('✅ Reporte exportado correctamente', 'success');
 }
+
 // ============================================
 // LIMPIEZA DE DATOS
 // ============================================
