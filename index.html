@@ -1089,6 +1089,65 @@
 .hidden {
   display: none !important;
 }
+/* 📄 Estilos para mostrar texto extraído */
+.extracted-text-panel {
+  margin-top: 20px;
+  border-top: 2px solid #8B5FBF;
+  padding-top: 20px;
+}
+
+.extracted-text-box {
+  margin-bottom: 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px;
+  background: #f9f9f9;
+}
+
+.extracted-text-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.extracted-text-header h4 {
+  margin: 0;
+  color: #333;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.extracted-text-header .copy-btn {
+  background: #2CD4A4;
+  color: white;
+  border: none;
+  padding: 5px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.2s;
+}
+
+.extracted-text-header .copy-btn:hover {
+  background: #1fb89d;
+}
+
+.extracted-text-content {
+  max-height: 150px;
+  overflow-y: auto;
+  padding: 10px;
+  background: white;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #555;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-family: 'Courier New', monospace;
+}
 </style>
 </head>
 <body>
@@ -2128,7 +2187,7 @@ function showMainApp() {
       }
     }
     
-    function renderFilePreview(files) {
+function renderFilePreview(files) {
       const preview = document.getElementById('filePreview');
       preview.innerHTML = '';
       
@@ -2136,7 +2195,13 @@ function showMainApp() {
         const item = document.createElement('div');
         item.className = 'file-preview-item';
         
-        if (file.type.startsWith('image/')) {
+        // 📄 NUEVO: Para PDFs mostrar icono
+        if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+          const div = document.createElement('div');
+          div.style.cssText = 'display:flex;align-items:center;justify-content:center;height:100%;background:var(--bg-light);color:white;font-size:32px;';
+          div.textContent = '📄';
+          item.appendChild(div);
+        } else if (file.type.startsWith('image/')) {
           const img = document.createElement('img');
           img.src = URL.createObjectURL(file);
           item.appendChild(img);
@@ -2159,6 +2224,52 @@ function showMainApp() {
         item.appendChild(removeBtn);
         
         preview.appendChild(item);
+      });
+      
+      // 📄 NUEVO: Mostrar texto extraído de archivos
+      showExtractedTextPanel();
+    }
+    
+    // 📄 NUEVA FUNCIÓN: Mostrar panel con texto extraído
+    function showExtractedTextPanel() {
+      const previewContainer = document.getElementById('filePreview').parentElement;
+      let extractedPanel = document.getElementById('extractedTextPanel');
+      
+      if (!extractedPanel) {
+        extractedPanel = document.createElement('div');
+        extractedPanel.id = 'extractedTextPanel';
+        extractedPanel.className = 'extracted-text-panel';
+        previewContainer.appendChild(extractedPanel);
+      }
+      
+      extractedPanel.innerHTML = '';
+      
+      if (uploadedFiles.length === 0) return;
+      
+      uploadedFiles.forEach((file, index) => {
+        if (!file.extracted_text || file.extracted_text.includes('❌ ERROR')) return;
+        
+        const box = document.createElement('div');
+        box.className = 'extracted-text-box';
+        box.innerHTML = `
+          <div class="extracted-text-header">
+            <h4>📄 ${file.filename}</h4>
+            <button class="copy-btn" onclick="copyTextToClipboard(\`${file.extracted_text.replace(/`/g, '\\`')}\`)">📋 Copiar</button>
+          </div>
+          <div class="extracted-text-content">
+            ${file.extracted_text.substring(0, 300).replace(/</g, '&lt;').replace(/>/g, '&gt;')}...
+          </div>
+        `;
+        extractedPanel.appendChild(box);
+      });
+    }
+    
+    // 📄 NUEVA FUNCIÓN: Copiar texto
+    function copyTextToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        showNotification('✅ Texto copiado', 'success');
+      }).catch(() => {
+        showNotification('❌ Error copiando', 'error');
       });
     }
     
