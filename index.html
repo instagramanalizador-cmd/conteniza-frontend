@@ -2201,6 +2201,10 @@ async function generateContent(event) {
 
     document.getElementById('emptyResults').style.display = 'none';
     document.getElementById('resultsSection').classList.add('visible');
+  // Resetear siempre primero
+  const _cbtn = document.getElementById('carouselBackBtn'); if(_cbtn) _cbtn.style.display='none';
+  document.getElementById('goHomeFab')?.classList.add('hidden');
+  document.querySelector('.app-grid')?.classList.remove('results-mode');
   if (pubType === 'carousel') {
     document.querySelector('.app-grid')?.classList.add('results-mode');
     document.getElementById('goHomeFab')?.classList.remove('hidden');
@@ -3050,11 +3054,11 @@ function navCarousel(dir) {
   selectCarouselSlide(next);
   const container = document.getElementById('carouselSlides');
   if (!container) return;
-  // Usar el primer slide para calcular el ancho real
+  // offsetWidth funciona aunque el slide esté fuera del viewport
   const firstSlide = container.children[0];
   if (!firstSlide) return;
-  const slideW = firstSlide.getBoundingClientRect().width + 16; // ancho + gap
-  container.scrollTo({ left: next * slideW, behavior: 'smooth' });
+  const slideW = firstSlide.offsetWidth + 16;
+  container.scrollLeft = next * slideW;
 }
 
 function updateCarouselCounter(current, total) {
@@ -3077,17 +3081,17 @@ function scrollToForm() { goHome(); }
    GO HOME — volver al formulario desde cualquier parte
    ============================================================ */
 function goHome() {
-  document.querySelector('.app-grid')?.classList.remove('results-mode');
+  // Ocultar botón y fab
+  const _cb = document.getElementById('carouselBackBtn'); if(_cb) _cb.style.display='none';
   document.getElementById('goHomeFab')?.classList.add('hidden');
-  if (!currentUser) {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    return;
-  }
-  // Scroll al formulario
+  // Scroll arriba primero, luego quitar results-mode para evitar salto
   window.scrollTo({ top: 0, behavior: 'smooth' });
   setTimeout(() => {
-    const desc = document.getElementById('description');
-    if (desc) desc.focus();
+    document.querySelector('.app-grid')?.classList.remove('results-mode');
+    if (currentUser) {
+      const desc = document.getElementById('description');
+      if (desc) desc.focus();
+    }
   }, 400);
 }
 
