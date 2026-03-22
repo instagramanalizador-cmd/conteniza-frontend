@@ -1240,7 +1240,7 @@ async function changePlanAdmin(userId, email, currentPlan) {
   if (!plans.includes(planClean)) { alert('Plan inválido. Usa: free, pro o premium'); return; }
   if (planClean === currentPlan) { alert('El usuario ya tiene ese plan'); return; }
 
-  const token = localStorage.getItem('adminToken');
+  const token = localStorage.getItem('token');
   try {
     const res = await fetch(`${API_URL}/admin/users/${userId}/plan`, {
       method: 'PATCH',
