@@ -1502,6 +1502,7 @@
 
         <div class="results-header">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <button onclick="goHome()" class="btn btn-ghost btn-sm" style="font-size:13px;padding:6px 12px;gap:4px;display:flex;align-items:center;" title="Volver al formulario">← Volver</button>
             <div class="results-title">📊 Resultados</div>
             <span id="pubTypeBadge" style="display:none;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--brand-light);color:var(--brand);text-transform:uppercase;letter-spacing:.05em;"></span>
           </div>
@@ -3019,9 +3020,18 @@ function navCarousel(dir) {
   if (!total) return;
   let next = (selectedCarouselIndex + dir + total) % total;
   selectCarouselSlide(next);
-  // Scroll suave al slide activo
-  const el = document.getElementById('cs-' + next);
-  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  // Mover SOLO el scroll interno del carrusel, sin mover la página
+  const container = document.getElementById('carouselSlides');
+  const slide = document.getElementById('cs-' + next);
+  if (container && slide) {
+    const slideLeft = slide.offsetLeft;
+    const slideWidth = slide.offsetWidth;
+    const containerWidth = container.offsetWidth;
+    container.scrollTo({
+      left: slideLeft - (containerWidth / 2) + (slideWidth / 2),
+      behavior: 'smooth'
+    });
+  }
 }
 
 function updateCarouselCounter(current, total) {
