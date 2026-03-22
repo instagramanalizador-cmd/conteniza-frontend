@@ -3027,18 +3027,11 @@ function navCarousel(dir) {
   if (!total) return;
   let next = (selectedCarouselIndex + dir + total) % total;
   selectCarouselSlide(next);
-  // Mover SOLO el scroll interno del carrusel, sin mover la página
+  // Scroll interno del contenedor — NO toca la página
   const container = document.getElementById('carouselSlides');
-  const slide = document.getElementById('cs-' + next);
-  if (container && slide) {
-    const slideLeft = slide.offsetLeft;
-    const slideWidth = slide.offsetWidth;
-    const containerWidth = container.offsetWidth;
-    container.scrollTo({
-      left: slideLeft - (containerWidth / 2) + (slideWidth / 2),
-      behavior: 'smooth'
-    });
-  }
+  if (!container) return;
+  const slideWidth = 252; // 240px min-width + 12px gap
+  container.scrollTo({ left: next * slideWidth, behavior: 'smooth' });
 }
 
 function updateCarouselCounter(current, total) {
@@ -3062,22 +3055,15 @@ function scrollToForm() { goHome(); }
    ============================================================ */
 function goHome() {
   if (!currentUser) {
-    // Sin sesión → scroll a la pantalla de planes
     window.scrollTo({ top: 0, behavior: 'smooth' });
     return;
   }
-  // Con sesión → scroll al formulario y focus en descripción
-  const app = document.getElementById('mainApp');
-  if (app) {
-    app.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    setTimeout(() => {
-      const desc = document.getElementById('description');
-      if (desc) {
-        desc.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        desc.focus();
-      }
-    }, 400);
-  }
+  // Scroll al formulario
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  setTimeout(() => {
+    const desc = document.getElementById('description');
+    if (desc) desc.focus();
+  }, 400);
 }
 
 </script>
