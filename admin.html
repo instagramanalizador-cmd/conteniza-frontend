@@ -399,11 +399,19 @@ tbody tr:hover {
     <div class="stat-grid">
       <div class="stat-card">
         <div class="stat-number" id="stat-total-users">0</div>
-        <div class="stat-label">👥 Usuarios FREE</div>
+        <div class="stat-label">👥 Total Usuarios</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-number" id="stat-waitlist">0</div>
-        <div class="stat-label">📋 En Lista de Espera</div>
+      <div class="stat-card" style="border-left:4px solid #10b981;">
+        <div class="stat-number" id="stat-free-users" style="color:#10b981;">0</div>
+        <div class="stat-label">🆓 Usuarios Free</div>
+      </div>
+      <div class="stat-card" style="border-left:4px solid #8B5FBF;">
+        <div class="stat-number" id="stat-pro-users" style="color:#8B5FBF;">0</div>
+        <div class="stat-label">⭐ Usuarios Pro</div>
+      </div>
+      <div class="stat-card" style="border-left:4px solid #f59e0b;">
+        <div class="stat-number" id="stat-premium-users" style="color:#f59e0b;">0</div>
+        <div class="stat-label">👑 Usuarios Premium</div>
       </div>
       <div class="stat-card">
         <div class="stat-number" id="stat-analyses">0</div>
@@ -412,6 +420,10 @@ tbody tr:hover {
       <div class="stat-card">
         <div class="stat-number" id="stat-today">0</div>
         <div class="stat-label">🆕 Registros Hoy</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="stat-waitlist">0</div>
+        <div class="stat-label">📋 Lista de Espera</div>
       </div>
     </div>
 
@@ -1060,12 +1072,19 @@ function renderStats(stats) {
   document.getElementById('stat-total-users').textContent = stats.totalUsers || 0;
   document.getElementById('stat-analyses').textContent = stats.totalAnalyses || 0;
   
-  const proCount = allWaitlist.filter(w => w.plan === 'pro').length;
-  const premiumCount = allWaitlist.filter(w => w.plan === 'premium').length;
+  // Contar usuarios por plan desde allUsers
+  const freeCount    = allUsers.filter(u => u.plan_type === 'free').length;
+  const proCount     = allUsers.filter(u => u.plan_type === 'pro').length;
+  const premiumCount = allUsers.filter(u => u.plan_type === 'premium').length;
+  document.getElementById('stat-free-users').textContent = freeCount;
+  document.getElementById('stat-pro-users').textContent = proCount;
+  document.getElementById('stat-premium-users').textContent = premiumCount;
   
+  const waitlistPro     = allWaitlist.filter(w => w.plan === 'pro').length;
+  const waitlistPremium = allWaitlist.filter(w => w.plan === 'premium').length;
   document.getElementById('stat-waitlist').textContent = allWaitlist.length;
-  document.getElementById('waitlist-pro').textContent = proCount;
-  document.getElementById('waitlist-premium').textContent = premiumCount;
+  document.getElementById('waitlist-pro').textContent = waitlistPro;
+  document.getElementById('waitlist-premium').textContent = waitlistPremium;
   
   // ✅ MEJORADO: Comparación robusta de fechas
   const today = new Date();
@@ -1109,12 +1128,16 @@ function renderUsers() {
       </td>
       <td style="text-align: center;">
         <div style="display: flex; gap: 6px; justify-content: center;">
+          <button onclick="changePlanAdmin(${user.id}, '${user.email}', '${user.plan_type}')" 
+                  class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;" title="Cambiar plan">
+            📋
+          </button>
           <button onclick="resetUserCredits(${user.id}, '${user.email}')" 
-                  class="btn btn-success" style="padding: 6px 12px; font-size: 12px;">
+                  class="btn btn-success" style="padding: 6px 12px; font-size: 12px;" title="Cambiar créditos">
             🔄
           </button>
           <button onclick="deleteUser(${user.id}, '${user.email}')" 
-                  class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;">
+                  class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;" title="Eliminar">
             🗑️
           </button>
         </div>
@@ -1206,6 +1229,35 @@ function filterWaitlistSearch() {
     const email = row.querySelector('td:first-child').textContent.toLowerCase();
     row.style.display = email.includes(search) ? '' : 'none';
   });
+}
+
+async function changePlanAdmin(userId, email, currentPlan) {
+  const plans = ['free', 'pro', 'premium'];
+  const options = plans.map(p => `${p.toUpperCase()}${p === currentPlan ? ' (actual)' : ''}`).join(', ');
+  const newPlan = prompt(`Plan actual: ${currentPlan.toUpperCase()}\nElige nuevo plan:\n${options}`, currentPlan);
+  if (!newPlan) return;
+  const planClean = newPlan.toLowerCase().trim().replace(' (actual)', '');
+  if (!plans.includes(planClean)) { alert('Plan inválido. Usa: free, pro o premium'); return; }
+  if (planClean === currentPlan) { alert('El usuario ya tiene ese plan'); return; }
+
+  const token = localStorage.getItem('adminToken');
+  try {
+    const res = await fetch(`${API_URL}/admin/users/${userId}/plan`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ plan: planClean })
+    });
+    const d = await res.json();
+    if (d.success) {
+      showNotification(`✅ Plan de ${email} cambiado a ${planClean.toUpperCase()}`, 'success');
+      await loadUsers();
+      renderStats({});
+    } else {
+      showNotification(d.error || 'Error cambiando plan', 'error');
+    }
+  } catch(e) {
+    showNotification('Error de conexión', 'error');
+  }
 }
 
 async function resetUserCredits(userId, email) {
