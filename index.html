@@ -1219,6 +1219,7 @@
       <div class="user-pill">Plan: <span id="userPlan">–</span></div>
     </div>
     <div class="user-bar-right">
+      <button id="carouselBackBtn" class="btn btn-ghost btn-sm hidden" onclick="goHome()" style="font-weight:600;">← Regresar</button>
       <button class="btn btn-ghost btn-sm" onclick="openSidebar()">📜 Historial</button>
       <button class="btn btn-outline btn-sm hidden" id="cancelSubBtn" onclick="cancelSubscription()" style="color:var(--danger);border-color:var(--danger);">Cancelar plan</button>
       <button class="btn btn-danger btn-sm" onclick="logout()">Salir</button>
@@ -1590,10 +1591,6 @@
         </div>
 
         <!-- Carrusel -->
-        <!-- Botón Volver — fuera de la sección colapsable -->
-        <div id="carouselBackBtn" style="display:none;margin-bottom:10px;">
-          <button onclick="goHome()" class="btn btn-ghost btn-sm" style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;">← Volver al formulario</button>
-        </div>
         <div class="result-section" id="sectionCarousel">
           <div class="result-section-head" onclick="toggleSection('carouselBody')">
             <div style="display:flex;align-items:center;gap:8px;">
@@ -2207,7 +2204,7 @@ async function generateContent(event) {
   if (pubType === 'carousel') {
     document.querySelector('.app-grid')?.classList.add('results-mode');
     document.getElementById('goHomeFab')?.classList.remove('hidden');
-    const cbtn = document.getElementById('carouselBackBtn'); if(cbtn) cbtn.style.display='block';
+    const cbtn = document.getElementById('carouselBackBtn'); if(cbtn) cbtn.classList.remove('hidden');
   }
     document.getElementById('pdfBtn').classList.remove('hidden');
     updateUserPanel();
@@ -2424,7 +2421,7 @@ function clearForm() {
   const _banner = document.getElementById('coherenceBanner'); if (_banner) _banner.style.display = 'none';
   document.querySelector('.app-grid')?.classList.remove('results-mode');
   document.getElementById('goHomeFab')?.classList.add('hidden');
-  const _cb = document.getElementById('carouselBackBtn'); if(_cb) _cb.style.display='none';
+  const _cb = document.getElementById('carouselBackBtn'); if(_cb) _cb.classList.add('hidden');
 }
 
 /* ============================================================
