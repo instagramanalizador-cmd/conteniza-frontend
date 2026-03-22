@@ -1204,7 +1204,6 @@
       <div class="user-pill">Plan: <span id="userPlan">–</span></div>
     </div>
     <div class="user-bar-right">
-      <button id="carouselBackBtn" class="btn btn-ghost btn-sm" onclick="goHome()" style="display:none;font-weight:600;">← Regresar</button>
       <button class="btn btn-ghost btn-sm" onclick="openSidebar()">📜 Historial</button>
       <button class="btn btn-outline btn-sm hidden" id="cancelSubBtn" onclick="cancelSubscription()" style="color:var(--danger);border-color:var(--danger);">Cancelar plan</button>
       <button class="btn btn-danger btn-sm" onclick="logout()">Salir</button>
@@ -2187,11 +2186,9 @@ async function generateContent(event) {
     document.getElementById('emptyResults').style.display = 'none';
     document.getElementById('resultsSection').classList.add('visible');
   // Resetear siempre primero
-  const _cbtn = document.getElementById('carouselBackBtn'); if(_cbtn) _cbtn.style.display='none';
   document.getElementById('goHomeFab')?.classList.add('hidden');
   if (pubType === 'carousel') {
     document.getElementById('goHomeFab')?.classList.remove('hidden');
-    const cbtn = document.getElementById('carouselBackBtn'); if(cbtn) cbtn.style.display='inline-flex';
   }
     document.getElementById('pdfBtn').classList.remove('hidden');
     updateUserPanel();
@@ -2407,7 +2404,6 @@ function clearForm() {
   const _badge = document.getElementById('pubTypeBadge'); if (_badge) _badge.style.display = 'none';
   const _banner = document.getElementById('coherenceBanner'); if (_banner) _banner.style.display = 'none';
   document.getElementById('goHomeFab')?.classList.add('hidden');
-  const _cb = document.getElementById('carouselBackBtn'); if(_cb) _cb.style.display='none';
 }
 
 /* ============================================================
@@ -3063,10 +3059,13 @@ function scrollToForm() { goHome(); }
    GO HOME — volver al formulario desde cualquier parte
    ============================================================ */
 function goHome() {
-  const _cb = document.getElementById('carouselBackBtn'); if(_cb) _cb.style.display='none';
   document.getElementById('goHomeFab')?.classList.add('hidden');
-  // Scroll suave arriba — el layout NO cambia
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  setTimeout(() => {
+    const desc = document.getElementById('description');
+    if (desc) desc.focus();
+  }, 400);
+});
   setTimeout(() => {
     const desc = document.getElementById('description');
     if (desc) desc.focus();
