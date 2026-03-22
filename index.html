@@ -1590,6 +1590,10 @@
         </div>
 
         <!-- Carrusel -->
+        <!-- Botón Volver — fuera de la sección colapsable -->
+        <div id="carouselBackBtn" style="display:none;margin-bottom:10px;">
+          <button onclick="goHome()" class="btn btn-ghost btn-sm" style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;">← Volver al formulario</button>
+        </div>
         <div class="result-section" id="sectionCarousel">
           <div class="result-section-head" onclick="toggleSection('carouselBody')">
             <div style="display:flex;align-items:center;gap:8px;">
@@ -1598,10 +1602,6 @@
             </div>
           </div>
           <div id="carouselBody" class="result-section-body">
-            <!-- Botón Volver — solo visible en modo carrusel -->
-            <div id="carouselBackBtn" style="display:none;margin-bottom:14px;">
-              <button onclick="goHome()" class="btn btn-ghost btn-sm" style="font-size:13px;font-weight:600;">← Volver al formulario</button>
-            </div>
             <div id="carouselContent">
               <div class="carousel-scroll" id="carouselSlides"></div>
               <div class="slide-controls" style="display:flex;align-items:center;gap:8px;">
