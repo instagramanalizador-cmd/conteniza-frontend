@@ -1501,13 +1501,12 @@
       <div id="resultsSection" class="results-panel">
 
         <div class="results-header">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <button onclick="goHome()" class="btn btn-ghost btn-sm" style="font-size:13px;padding:6px 12px;gap:4px;display:flex;align-items:center;" title="Volver al formulario">← Volver</button>
+          <div style="display:flex;align-items:center;gap:8px;">
             <div class="results-title">📊 Resultados</div>
             <span id="pubTypeBadge" style="display:none;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--brand-light);color:var(--brand);text-transform:uppercase;letter-spacing:.05em;"></span>
           </div>
           <div style="display:flex;gap:8px;align-items:center;">
-            <button class="btn btn-ghost btn-sm" onclick="scrollToForm()" title="Volver al formulario">✏️ Nuevo</button>
+            <button class="btn btn-ghost btn-sm" onclick="goHome()" style="gap:4px;">← Volver</button>
             <button class="btn btn-outline btn-sm" onclick="generatePDF()">📄 Exportar PDF</button>
           </div>
         </div>
@@ -1579,7 +1578,7 @@
             </div>
           </div>
           <div id="carouselBody" class="result-section-body">
-            <div id="carouselContent">
+            <div id="carouselContent" style="min-width:0;overflow:hidden;">
               <div class="carousel-scroll" id="carouselSlides"></div>
               <div class="slide-controls" style="display:flex;align-items:center;gap:8px;">
                 <button class="slide-ctrl-btn" onclick="navCarousel(-1)" title="Slide anterior">‹</button>
