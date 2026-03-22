@@ -483,14 +483,21 @@
         grid-template-columns: 400px 1fr;
         align-items: start;
       }
+      /* Modo carrusel: oculta formulario, slides ocupan todo */
       .app-grid.results-mode {
         grid-template-columns: 0px 1fr;
       }
       .app-grid.results-mode > div:first-child {
         overflow: hidden;
         visibility: hidden;
+        width: 0;
         padding: 0;
         margin: 0;
+      }
+      /* Slides más anchos cuando el formulario está oculto */
+      .app-grid.results-mode .slide-card {
+        min-width: calc(50% - 8px) !important;
+        max-width: calc(50% - 8px) !important;
       }
     }
 
@@ -816,11 +823,10 @@
     /* Carousel */
     .carousel-scroll {
       display: flex;
-      gap: 12px;
-      overflow-x: auto;
-      padding: 4px 0 12px;
-      scrollbar-width: thin;
-      scrollbar-color: var(--border-mid) transparent;
+      gap: 16px;
+      overflow: hidden;
+      padding: 4px 0 16px;
+      scroll-behavior: smooth;
     }
     .carousel-scroll::-webkit-scrollbar { height: 4px; }
     .carousel-scroll::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 2px; }
@@ -828,6 +834,7 @@
     .slide-card {
       min-width: 220px;
       max-width: 220px;
+      flex-shrink: 0;
       border-radius: var(--radius-lg);
       padding: 20px;
       color: #fff;
@@ -1520,7 +1527,6 @@
             <span id="pubTypeBadge" style="display:none;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--brand-light);color:var(--brand);text-transform:uppercase;letter-spacing:.05em;"></span>
           </div>
           <div style="display:flex;gap:8px;align-items:center;">
-            <button class="btn btn-ghost btn-sm" onclick="goHome()">← Volver</button>
             <button class="btn btn-outline btn-sm" onclick="generatePDF()">📄 Exportar PDF</button>
           </div>
         </div>
@@ -1592,6 +1598,10 @@
             </div>
           </div>
           <div id="carouselBody" class="result-section-body">
+            <!-- Botón Volver — solo visible en modo carrusel -->
+            <div id="carouselBackBtn" style="display:none;margin-bottom:14px;">
+              <button onclick="goHome()" class="btn btn-ghost btn-sm" style="font-size:13px;font-weight:600;">← Volver al formulario</button>
+            </div>
             <div id="carouselContent">
               <div class="carousel-scroll" id="carouselSlides"></div>
               <div class="slide-controls" style="display:flex;align-items:center;gap:8px;">
@@ -2194,8 +2204,11 @@ async function generateContent(event) {
 
     document.getElementById('emptyResults').style.display = 'none';
     document.getElementById('resultsSection').classList.add('visible');
-  document.querySelector('.app-grid')?.classList.add('results-mode');
-  document.getElementById('goHomeFab')?.classList.remove('hidden');
+  if (pubType === 'carousel') {
+    document.querySelector('.app-grid')?.classList.add('results-mode');
+    document.getElementById('goHomeFab')?.classList.remove('hidden');
+    const cbtn = document.getElementById('carouselBackBtn'); if(cbtn) cbtn.style.display='block';
+  }
     document.getElementById('pdfBtn').classList.remove('hidden');
     updateUserPanel();
     showNotification('¡Contenido generado correctamente!', 'success');
@@ -2411,6 +2424,7 @@ function clearForm() {
   const _banner = document.getElementById('coherenceBanner'); if (_banner) _banner.style.display = 'none';
   document.querySelector('.app-grid')?.classList.remove('results-mode');
   document.getElementById('goHomeFab')?.classList.add('hidden');
+  const _cb = document.getElementById('carouselBackBtn'); if(_cb) _cb.style.display='none';
 }
 
 /* ============================================================
@@ -3037,11 +3051,13 @@ function navCarousel(dir) {
   if (!total) return;
   let next = (selectedCarouselIndex + dir + total) % total;
   selectCarouselSlide(next);
-  // Scroll interno del contenedor — NO toca la página
   const container = document.getElementById('carouselSlides');
   if (!container) return;
-  const slideWidth = 252; // 240px min-width + 12px gap
-  container.scrollTo({ left: next * slideWidth, behavior: 'smooth' });
+  // Usar el primer slide para calcular el ancho real
+  const firstSlide = container.children[0];
+  if (!firstSlide) return;
+  const slideW = firstSlide.getBoundingClientRect().width + 16; // ancho + gap
+  container.scrollTo({ left: next * slideW, behavior: 'smooth' });
 }
 
 function updateCarouselCounter(current, total) {
