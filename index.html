@@ -1184,6 +1184,8 @@
 
 <!-- ==================== FAB ==================== -->
 <button class="fab" id="sidebarFab" onclick="openSidebar()" title="Historial">📜</button>
+<button class="fab hidden" id="goHomeFab" onclick="goHome()" title="Nuevo análisis"
+  style="bottom:90px;background:var(--grad-brand);">✏️</button>
 
 <!-- ==================== TOPBAR ==================== -->
 <header class="topbar">
@@ -2193,6 +2195,7 @@ async function generateContent(event) {
     document.getElementById('emptyResults').style.display = 'none';
     document.getElementById('resultsSection').classList.add('visible');
   document.querySelector('.app-grid')?.classList.add('results-mode');
+  document.getElementById('goHomeFab')?.classList.remove('hidden');
     document.getElementById('pdfBtn').classList.remove('hidden');
     updateUserPanel();
     showNotification('¡Contenido generado correctamente!', 'success');
@@ -2407,6 +2410,7 @@ function clearForm() {
   const _badge = document.getElementById('pubTypeBadge'); if (_badge) _badge.style.display = 'none';
   const _banner = document.getElementById('coherenceBanner'); if (_banner) _banner.style.display = 'none';
   document.querySelector('.app-grid')?.classList.remove('results-mode');
+  document.getElementById('goHomeFab')?.classList.add('hidden');
 }
 
 /* ============================================================
@@ -3061,6 +3065,7 @@ function scrollToForm() { goHome(); }
    ============================================================ */
 function goHome() {
   document.querySelector('.app-grid')?.classList.remove('results-mode');
+  document.getElementById('goHomeFab')?.classList.add('hidden');
   if (!currentUser) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     return;
