@@ -126,6 +126,8 @@
       height: 36px;
       border-radius: var(--radius-sm);
       object-fit: cover;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
     }
     .topbar-name {
       font-family: 'Syne', sans-serif;
@@ -472,9 +474,11 @@
       display: grid;
       grid-template-columns: 1fr;
       gap: 24px;
-      padding: 32px 20px;
-      max-width: 1100px;
+      padding: 24px 16px;
+      max-width: 1280px;
       margin: 0 auto;
+      width: 100%;
+      box-sizing: border-box;
     }
     @media(min-width:900px) {
       .app-grid {
@@ -810,6 +814,8 @@
       padding: 4px 0 12px;
       scrollbar-width: thin;
       scrollbar-color: var(--border-mid) transparent;
+      width: 100%;
+      box-sizing: border-box;
     }
     .carousel-scroll::-webkit-scrollbar { height: 4px; }
     .carousel-scroll::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 2px; }
@@ -1506,8 +1512,7 @@
             <span id="pubTypeBadge" style="display:none;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--brand-light);color:var(--brand);text-transform:uppercase;letter-spacing:.05em;"></span>
           </div>
           <div style="display:flex;gap:8px;align-items:center;">
-            <button class="btn btn-ghost btn-sm" onclick="goHome()" style="gap:4px;">← Volver</button>
-            <button class="btn btn-outline btn-sm" onclick="generatePDF()">📄 Exportar PDF</button>
+            <button class="btn btn-outline btn-sm" id="pdfBtn2" onclick="generatePDF()">📄 Exportar PDF</button>
           </div>
         </div>
 
@@ -1578,7 +1583,10 @@
             </div>
           </div>
           <div id="carouselBody" class="result-section-body">
-            <div id="carouselContent" style="min-width:0;">
+            <div style="margin-bottom:12px;">
+              <button onclick="goHome()" class="btn btn-ghost btn-sm" style="font-size:13px;">← Volver al formulario</button>
+            </div>
+            <div id="carouselContent">
               <div class="carousel-scroll" id="carouselSlides"></div>
               <div class="slide-controls" style="display:flex;align-items:center;gap:8px;">
                 <button class="slide-ctrl-btn" onclick="navCarousel(-1)" title="Slide anterior">‹</button>
