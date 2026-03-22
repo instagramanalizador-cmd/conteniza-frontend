@@ -1176,7 +1176,7 @@
 <!-- ==================== TOPBAR ==================== -->
 <header class="topbar">
   <div class="topbar-inner">
-    <div class="topbar-brand">
+    <div class="topbar-brand" onclick="goHome()" style="cursor:pointer;" title="Volver al inicio">
       <img src="logo.jpg" alt="Conteniza" class="topbar-logo">
       <div>
         <div class="topbar-name">Conteniza</div>
@@ -1505,7 +1505,10 @@
             <div class="results-title">📊 Resultados</div>
             <span id="pubTypeBadge" style="display:none;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--brand-light);color:var(--brand);text-transform:uppercase;letter-spacing:.05em;"></span>
           </div>
-          <button class="btn btn-outline btn-sm" onclick="generatePDF()">📄 Exportar PDF</button>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button class="btn btn-ghost btn-sm" onclick="scrollToForm()" title="Volver al formulario">✏️ Nuevo</button>
+            <button class="btn btn-outline btn-sm" onclick="generatePDF()">📄 Exportar PDF</button>
+          </div>
         </div>
 
         <!-- Coherencia -->
@@ -1569,14 +1572,18 @@
         <!-- Carrusel -->
         <div class="result-section" id="sectionCarousel">
           <div class="result-section-head" onclick="toggleSection('carouselBody')">
-            <h3>🎠 Carrusel de slides</h3>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <h3>🎠 Carrusel de slides</h3>
+              <span id="carouselCounter" style="font-size:11px;background:var(--brand-light);color:var(--brand);padding:2px 8px;border-radius:999px;font-weight:700;display:none;"></span>
+            </div>
           </div>
           <div id="carouselBody" class="result-section-body">
             <div id="carouselContent">
               <div class="carousel-scroll" id="carouselSlides"></div>
-              <div class="slide-controls">
-                <button class="slide-ctrl-btn" onclick="scrollSlider('carouselSlides',-1)">‹</button>
-                <button class="slide-ctrl-btn" onclick="scrollSlider('carouselSlides',1)">›</button>
+              <div class="slide-controls" style="display:flex;align-items:center;gap:8px;">
+                <button class="slide-ctrl-btn" onclick="navCarousel(-1)" title="Slide anterior">‹</button>
+                <span id="carouselNavPos" style="font-size:12px;color:var(--text-2);min-width:40px;text-align:center;">1 / 8</span>
+                <button class="slide-ctrl-btn" onclick="navCarousel(1)" title="Slide siguiente">›</button>
               </div>
             </div>
             <div id="carouselSpecsPanel" style="margin-top:16px;"></div>
@@ -2322,12 +2329,14 @@ function renderCarousel(slides) {
       </div>
     </div>
   `).join('');
+  updateCarouselCounter(0, slides.length);
   renderCarouselSpecs(0);
 }
 
 function selectCarouselSlide(i) {
   selectedCarouselIndex = i;
   document.querySelectorAll('.slide-card').forEach((c,idx)=>c.classList.toggle('active',idx===i));
+  updateCarouselCounter(i, currentCarouselSlides.length);
   renderCarouselSpecs(i);
 }
 
@@ -2998,6 +3007,59 @@ function checkStripeReturn() {
   } else if (payment === 'cancelled') {
     window.history.replaceState({}, '', window.location.pathname);
     showNotification('Pago cancelado. Puedes intentarlo de nuevo cuando quieras.', 'error');
+  }
+}
+
+
+/* ============================================================
+   NAVEGACIÓN CARRUSEL — con contador visible
+   ============================================================ */
+function navCarousel(dir) {
+  const total = currentCarouselSlides.length;
+  if (!total) return;
+  let next = (selectedCarouselIndex + dir + total) % total;
+  selectCarouselSlide(next);
+  // Scroll suave al slide activo
+  const el = document.getElementById('cs-' + next);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+}
+
+function updateCarouselCounter(current, total) {
+  const pos = document.getElementById('carouselNavPos');
+  const badge = document.getElementById('carouselCounter');
+  if (pos) pos.textContent = (current + 1) + ' / ' + total;
+  if (badge) {
+    badge.textContent = total + ' slides';
+    badge.style.display = 'inline-block';
+  }
+}
+
+/* ============================================================
+   VOLVER AL FORMULARIO DESDE RESULTADOS
+   ============================================================ */
+function scrollToForm() { goHome(); }
+
+
+/* ============================================================
+   GO HOME — volver al formulario desde cualquier parte
+   ============================================================ */
+function goHome() {
+  if (!currentUser) {
+    // Sin sesión → scroll a la pantalla de planes
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+  // Con sesión → scroll al formulario y focus en descripción
+  const app = document.getElementById('mainApp');
+  if (app) {
+    app.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => {
+      const desc = document.getElementById('description');
+      if (desc) {
+        desc.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        desc.focus();
+      }
+    }, 400);
   }
 }
 
