@@ -483,7 +483,22 @@
         grid-template-columns: 400px 1fr;
         align-items: start;
       }
-
+      /* Modo carrusel: oculta formulario, slides ocupan todo */
+      .app-grid.results-mode {
+        grid-template-columns: 0px 1fr;
+      }
+      .app-grid.results-mode > div:first-child {
+        overflow: hidden;
+        visibility: hidden;
+        width: 0;
+        padding: 0;
+        margin: 0;
+      }
+      /* Slides más anchos cuando el formulario está oculto */
+      .app-grid.results-mode .slide-card {
+        min-width: calc(50% - 8px) !important;
+        max-width: calc(50% - 8px) !important;
+      }
     }
 
     /* =============================================
@@ -2189,8 +2204,10 @@ async function generateContent(event) {
   // Resetear siempre primero
   const _cbtn = document.getElementById('carouselBackBtn'); if(_cbtn) _cbtn.style.display='none';
   document.getElementById('goHomeFab')?.classList.add('hidden');
+  document.querySelector('.app-grid')?.classList.remove('results-mode');
   if (pubType === 'carousel') {
-      document.getElementById('goHomeFab')?.classList.remove('hidden');
+    document.querySelector('.app-grid')?.classList.add('results-mode');
+    document.getElementById('goHomeFab')?.classList.remove('hidden');
     const cbtn = document.getElementById('carouselBackBtn'); if(cbtn) cbtn.style.display='inline-flex';
   }
     document.getElementById('pdfBtn').classList.remove('hidden');
@@ -2406,6 +2423,7 @@ function clearForm() {
   // Ocultar badge de tipo y banner de coherencia
   const _badge = document.getElementById('pubTypeBadge'); if (_badge) _badge.style.display = 'none';
   const _banner = document.getElementById('coherenceBanner'); if (_banner) _banner.style.display = 'none';
+  document.querySelector('.app-grid')?.classList.remove('results-mode');
   document.getElementById('goHomeFab')?.classList.add('hidden');
   const _cb = document.getElementById('carouselBackBtn'); if(_cb) _cb.style.display='none';
 }
@@ -3063,16 +3081,15 @@ function scrollToForm() { goHome(); }
    GO HOME — volver al formulario desde cualquier parte
    ============================================================ */
 function goHome() {
-  // Ocultar botón Regresar y fab
+  // Ocultar botón Regresar y fab — SIN cambiar el layout
   const _cb = document.getElementById('carouselBackBtn'); if(_cb) _cb.style.display='none';
   document.getElementById('goHomeFab')?.classList.add('hidden');
-  // Scroll suave al formulario — sin cambiar el layout ni el ancho
-  const app = document.getElementById('mainApp');
-  if (app) app.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Solo scroll arriba — el ancho NO cambia
+  window.scrollTo({ top: 0, behavior: 'smooth' });
   setTimeout(() => {
     const desc = document.getElementById('description');
     if (desc) desc.focus();
-  }, 500);
+  }, 400);
 }
 
 </script>
