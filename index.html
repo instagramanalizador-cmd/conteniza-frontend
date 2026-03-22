@@ -475,15 +475,22 @@
       grid-template-columns: 1fr;
       gap: 24px;
       padding: 24px 16px;
-      max-width: 1280px;
+      max-width: 1100px;
       margin: 0 auto;
-      width: 100%;
-      box-sizing: border-box;
     }
     @media(min-width:900px) {
       .app-grid {
         grid-template-columns: 400px 1fr;
         align-items: start;
+      }
+      .app-grid.results-mode {
+        grid-template-columns: 0px 1fr;
+      }
+      .app-grid.results-mode > div:first-child {
+        overflow: hidden;
+        visibility: hidden;
+        padding: 0;
+        margin: 0;
       }
     }
 
@@ -814,14 +821,13 @@
       padding: 4px 0 12px;
       scrollbar-width: thin;
       scrollbar-color: var(--border-mid) transparent;
-      width: 100%;
-      box-sizing: border-box;
     }
     .carousel-scroll::-webkit-scrollbar { height: 4px; }
     .carousel-scroll::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 2px; }
 
     .slide-card {
-      min-width: 240px;
+      min-width: 220px;
+      max-width: 220px;
       border-radius: var(--radius-lg);
       padding: 20px;
       color: #fff;
@@ -1512,7 +1518,8 @@
             <span id="pubTypeBadge" style="display:none;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--brand-light);color:var(--brand);text-transform:uppercase;letter-spacing:.05em;"></span>
           </div>
           <div style="display:flex;gap:8px;align-items:center;">
-            <button class="btn btn-outline btn-sm" id="pdfBtn2" onclick="generatePDF()">📄 Exportar PDF</button>
+            <button class="btn btn-ghost btn-sm" onclick="goHome()">← Volver</button>
+            <button class="btn btn-outline btn-sm" onclick="generatePDF()">📄 Exportar PDF</button>
           </div>
         </div>
 
@@ -1583,9 +1590,6 @@
             </div>
           </div>
           <div id="carouselBody" class="result-section-body">
-            <div style="margin-bottom:12px;">
-              <button onclick="goHome()" class="btn btn-ghost btn-sm" style="font-size:13px;">← Volver al formulario</button>
-            </div>
             <div id="carouselContent">
               <div class="carousel-scroll" id="carouselSlides"></div>
               <div class="slide-controls" style="display:flex;align-items:center;gap:8px;">
@@ -2188,6 +2192,7 @@ async function generateContent(event) {
 
     document.getElementById('emptyResults').style.display = 'none';
     document.getElementById('resultsSection').classList.add('visible');
+  document.querySelector('.app-grid')?.classList.add('results-mode');
     document.getElementById('pdfBtn').classList.remove('hidden');
     updateUserPanel();
     showNotification('¡Contenido generado correctamente!', 'success');
@@ -2401,6 +2406,7 @@ function clearForm() {
   // Ocultar badge de tipo y banner de coherencia
   const _badge = document.getElementById('pubTypeBadge'); if (_badge) _badge.style.display = 'none';
   const _banner = document.getElementById('coherenceBanner'); if (_banner) _banner.style.display = 'none';
+  document.querySelector('.app-grid')?.classList.remove('results-mode');
 }
 
 /* ============================================================
@@ -3054,6 +3060,7 @@ function scrollToForm() { goHome(); }
    GO HOME — volver al formulario desde cualquier parte
    ============================================================ */
 function goHome() {
+  document.querySelector('.app-grid')?.classList.remove('results-mode');
   if (!currentUser) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     return;
