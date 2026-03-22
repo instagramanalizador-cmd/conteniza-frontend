@@ -2783,7 +2783,7 @@ function restoreDraft() {
     if (tone)  { const el = document.getElementById('tone');        if(el) el.value = tone; }
     if (ctype) { const el = document.getElementById('contentType'); if(el) el.value = ctype; }
     if (ptype && ptype !== 'post') {
-      const btn = document.querySelector(\`.pub-btn[data-value="${ptype}"]\`);
+      const btn = document.querySelector('.pub-btn[data-value="' + ptype + '"]');
       if (btn) selectPubType(btn);
     }
     if (desc || niche) showNotification('Borrador restaurado ✓', 'success');
