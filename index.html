@@ -1204,6 +1204,7 @@
       <div class="user-pill">Plan: <span id="userPlan">–</span></div>
     </div>
     <div class="user-bar-right">
+      <button id="upgradePlanBtn" class="btn btn-primary btn-sm hidden" onclick="showPlansScreen()" style="font-size:12px;">⬆️ Mejorar plan</button>
       <button class="btn btn-ghost btn-sm" onclick="openSidebar()">📜 Historial</button>
       <button class="btn btn-outline btn-sm hidden" id="cancelSubBtn" onclick="cancelSubscription()" style="color:var(--danger);border-color:var(--danger);">Cancelar plan</button>
       <button class="btn btn-danger btn-sm" onclick="logout()">Salir</button>
@@ -2007,6 +2008,9 @@ function updateUserPanel() {
   document.getElementById('userPlan').textContent    = currentUser.plan_type.toUpperCase();
   const adminBtn = document.getElementById('adminBtn');
   if (adminBtn) adminBtn.classList.toggle('hidden', !currentUser.is_admin);
+  // Mostrar botón Mejorar plan solo para usuarios Free
+  const upgradeBtn = document.getElementById('upgradePlanBtn');
+  if (upgradeBtn) upgradeBtn.classList.toggle('hidden', currentUser.plan_type !== 'free');
   updateCreditIndicator();
 }
 
@@ -3058,6 +3062,25 @@ function scrollToForm() { goHome(); }
 /* ============================================================
    GO HOME — volver al formulario desde cualquier parte
    ============================================================ */
+function backToApp() {
+  document.getElementById('plansScreen').classList.add('hidden');
+  document.getElementById('mainApp').classList.remove('hidden');
+  document.getElementById('userBar').classList.add('visible');
+  document.getElementById('sidebarFab').classList.add('visible');
+}
+
+function showPlansScreen() {
+  // Ir a la pantalla de planes para mejorar el plan
+  document.getElementById('mainApp').classList.add('hidden');
+  document.getElementById('userBar').classList.remove('visible');
+  document.getElementById('sidebarFab').classList.remove('visible');
+  document.getElementById('plansScreen').classList.remove('hidden');
+  // Mostrar botón volver si el usuario ya está logueado
+  const backBtn = document.getElementById('backToAppBtn');
+  if (backBtn && currentUser) backBtn.style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 function goHome() {
   document.getElementById('goHomeFab')?.classList.add('hidden');
   window.scrollTo({ top: 0, behavior: 'smooth' });
