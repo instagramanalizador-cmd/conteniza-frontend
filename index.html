@@ -2145,11 +2145,14 @@ function showExtractedTextPanel() {
       ? `<div class='extracted-head'><span>⏳ ${escapeHtml(file.filename)}</span></div>
          <div class='extracted-content' style='color:var(--text-3);font-style:italic;'>Extrayendo texto… puede tardar unos segundos.</div>`
       : isError
-      ? `<div class='extracted-head'><span>❌ ${escapeHtml(file.filename)}</span></div>
+      ? `<div class='extracted-head'><span>❌ ${escapeHtml(file.filename)}</span><button class='copy-btn btn-sm' style='color:var(--danger);' onclick='deleteUploadedFile(${file.id})' title='Eliminar'>🗑️</button></div>
          <div class='extracted-content' style='color:var(--danger);'>${escapeHtml(file.extracted_text)}</div>`
       : `<div class='extracted-head'>
            <span>📄 ${escapeHtml(file.filename)}</span>
-           <button class='copy-btn btn-sm' onclick="navigator.clipboard.writeText(${JSON.stringify(file.extracted_text)}).then(()=>showNotification('Copiado','success'))">📋</button>
+           <div style='display:flex;gap:6px;'>
+             <button class='copy-btn btn-sm' onclick="navigator.clipboard.writeText(${JSON.stringify(file.extracted_text)}).then(()=>showNotification('Copiado','success'))">📋</button>
+             <button class='copy-btn btn-sm' style='color:var(--danger);' onclick='deleteUploadedFile(${file.id})' title='Eliminar archivo'>🗑️</button>
+           </div>
          </div>
          <div class='extracted-content'>${escapeHtml(file.extracted_text.substring(0,400))}${file.extracted_text.length > 400 ? '…' : ''}</div>`;
     panel.appendChild(box);
@@ -2188,6 +2191,23 @@ async function startExtractionPolling(fileIds) {
       if (allDone) { clearInterval(extractionPollTimer); if (updated) showExtractedTextPanel(); }
     } catch(e) { /* silencioso */ }
   }, 3000);
+}
+
+async function deleteUploadedFile(fileId) {
+  if (!confirm("¿Eliminar este archivo? Se borrará de tu almacenamiento.")) return;
+  try {
+    const r = await apiFetch(`${API_URL}/files/${fileId}`, { method: "DELETE" });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || "Error eliminando");
+    // Quitar de uploadedFiles
+    uploadedFiles = uploadedFiles.filter(f => f.id !== fileId);
+    // Quitar del DOM
+    const box = document.getElementById(`extracted-${fileId}`);
+    if (box) box.remove();
+    showNotification(`✅ Archivo eliminado`, "success");
+  } catch(e) {
+    showNotification(e.message || "Error eliminando archivo", "error");
+  }
 }
 
 function removeFile(i) {
