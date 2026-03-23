@@ -2077,8 +2077,13 @@ async function uploadFiles(files) {
     if (!r.ok) throw new Error(d.error || 'Error subiendo archivos');
     uploadedFiles = d.files;
     renderFilePreview(files);
-    showProgress(true, '¡Archivos procesados!', 100, `${d.processing_summary.successful} procesados`);
-    setTimeout(() => { showProgress(false); showNotification(`${files.length} archivo(s) subidos correctamente`, 'success'); }, 1200);
+    showProgress(true, '¡Archivos subidos!', 100, 'Extrayendo texto en segundo plano…');
+    setTimeout(() => {
+      showProgress(false);
+      showNotification(`${files.length} archivo(s) subidos. Extrayendo texto…`, 'success');
+      // Polling para actualizar el texto extraído
+      startExtractionPolling(uploadedFiles.map(f => f.id));
+    }, 1200);
   } catch (e) { if (e.status !== 401) showNotification(e.message, 'error'); showProgress(false); }
 }
 
@@ -2112,18 +2117,65 @@ function showExtractedTextPanel() {
   const panel = document.getElementById('extractedTextPanel');
   panel.innerHTML = '';
   uploadedFiles.forEach(file => {
-    if (!file.extracted_text || file.extracted_text.includes('❌')) return;
+    if (!file.extracted_text) return;
+    const isPending = file.extracted_text === '⏳ Procesando...';
+    const isError   = file.extracted_text.includes('❌');
     const box = document.createElement('div');
     box.className = 'extracted-box';
-    box.innerHTML = `
-      <div class="extracted-head">
-        <span>📄 ${escapeHtml(file.filename)}</span>
-        <button class="copy-btn btn-sm" onclick="navigator.clipboard.writeText(${JSON.stringify(file.extracted_text)}).then(()=>showNotification('Copiado','success'))">📋</button>
-      </div>
-      <div class="extracted-content">${escapeHtml(file.extracted_text.substring(0,400))}…</div>
-    `;
+    box.id = `extracted-${file.id}`;
+    box.innerHTML = isPending
+      ? `<div class='extracted-head'><span>⏳ ${escapeHtml(file.filename)}</span></div>
+         <div class='extracted-content' style='color:var(--text-3);font-style:italic;'>Extrayendo texto… puede tardar unos segundos.</div>`
+      : isError
+      ? `<div class='extracted-head'><span>❌ ${escapeHtml(file.filename)}</span></div>
+         <div class='extracted-content' style='color:var(--danger);'>${escapeHtml(file.extracted_text)}</div>`
+      : `<div class='extracted-head'>
+           <span>📄 ${escapeHtml(file.filename)}</span>
+           <button class='copy-btn btn-sm' onclick="navigator.clipboard.writeText(${JSON.stringify(file.extracted_text)}).then(()=>showNotification('Copiado','success'))">📋</button>
+         </div>
+         <div class='extracted-content'>${escapeHtml(file.extracted_text.substring(0,400))}${file.extracted_text.length > 400 ? '…' : ''}</div>`;
     panel.appendChild(box);
   });
+}
+
+// Polling para actualizar texto extraído
+let extractionPollTimer = null;
+async function startExtractionPolling(fileIds) {
+  if (extractionPollTimer) clearInterval(extractionPollTimer);
+  let attempts = 0;
+  extractionPollTimer = setInterval(async () => {
+    attempts++;
+    if (attempts > 20) { clearInterval(extractionPollTimer); return; } // máx 60s
+    try {
+      const r = await apiFetch(`${API_URL}/files`);
+      const d = await r.json();
+      if (!d.success || !d.files) return;
+      let allDone = true;
+      for (const serverFile of d.files) {
+        if (!fileIds.includes(serverFile.id)) continue;
+        const localFile = uploadedFiles.find(f => f.id === serverFile.id);
+        if (!localFile) continue;
+        if (serverFile.extracted_text === "⏳ Procesando...") { allDone = false; continue; }
+        // Actualizar el texto
+        localFile.extracted_text = serverFile.extracted_text;
+        // Actualizar el DOM
+        const box = document.getElementById(`extracted-${serverFile.id}`);
+        if (box && serverFile.extracted_text && serverFile.extracted_text !== "⏳ Procesando...") {
+          const isError = serverFile.extracted_text.includes("❌");
+          box.innerHTML = isError
+            ? `<div class="extracted-head"><span>❌ ${escapeHtml(localFile.filename)}</span></div>
+               <div class="extracted-content" style="color:var(--danger);">${escapeHtml(serverFile.extracted_text)}</div>`
+            : `<div class="extracted-head">
+                 <span>📄 ${escapeHtml(localFile.filename)}</span>
+                 <button class="copy-btn btn-sm" onclick="navigator.clipboard.writeText(${JSON.stringify(serverFile.extracted_text)}).then(()=>showNotification('Copiado','success'))">📋</button>
+               </div>
+               <div class="extracted-content">${escapeHtml(serverFile.extracted_text.substring(0,400))}${serverFile.extracted_text.length > 400 ? "…" : ""}</div>`;
+          showNotification(`✅ Texto extraído: ${localFile.filename}`, "success");
+        }
+      }
+      if (allDone) clearInterval(extractionPollTimer);
+    } catch(e) { /* silencioso */ }
+  }, 3000); // cada 3 segundos
 }
 
 function removeFile(i) {
