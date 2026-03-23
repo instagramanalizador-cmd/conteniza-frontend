@@ -2145,13 +2145,13 @@ function showExtractedTextPanel() {
       ? `<div class='extracted-head'><span>⏳ ${escapeHtml(file.filename)}</span></div>
          <div class='extracted-content' style='color:var(--text-3);font-style:italic;'>Extrayendo texto… puede tardar unos segundos.</div>`
       : isError
-      ? `<div class='extracted-head'><span>❌ ${escapeHtml(file.filename)}</span><button class='copy-btn btn-sm' style='color:var(--danger);' onclick="deleteUploadedFile(${file.id})" title='Eliminar'>🗑️</button></div>
+      ? `<div class='extracted-head'><span>❌ ${escapeHtml(file.filename)}</span><button onclick="deleteUploadedFile(${file.id})" title='Eliminar' style='background:none;border:none;cursor:pointer;padding:4px 6px;color:var(--danger);font-size:14px;border-radius:4px;' onmouseover="this.style.background='var(--danger-soft)'" onmouseout="this.style.background='none'">🗑️</button></div>
          <div class='extracted-content' style='color:var(--danger);'>${escapeHtml(file.extracted_text)}</div>`
       : `<div class='extracted-head'>
            <span>📄 ${escapeHtml(file.filename)}</span>
            <div style='display:flex;gap:6px;'>
              <button class='copy-btn btn-sm' onclick="navigator.clipboard.writeText(${JSON.stringify(file.extracted_text)}).then(()=>showNotification('Copiado','success'))">📋</button>
-             <button class='copy-btn btn-sm' style='color:var(--danger);' onclick="deleteUploadedFile(${file.id})" title='Eliminar archivo'>🗑️</button>
+             <button onclick="deleteUploadedFile(${file.id})" title='Eliminar archivo' style='background:none;border:none;cursor:pointer;padding:4px 6px;color:var(--danger);font-size:14px;border-radius:4px;' onmouseover="this.style.background='var(--danger-soft)'" onmouseout="this.style.background='none'">🗑️</button>
            </div>
          </div>
          <div class='extracted-content'>${escapeHtml(file.extracted_text.substring(0,400))}${file.extracted_text.length > 400 ? '…' : ''}</div>`;
