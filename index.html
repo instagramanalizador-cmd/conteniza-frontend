@@ -2957,18 +2957,35 @@ async function startCheckout(plan) {
    CANCELAR SUSCRIPCIÓN
    ============================================================ */
 async function cancelSubscription() {
-  // Confirmar antes de cancelar
+  const plan = currentUser?.plan_type || 'pro';
   const modal = document.createElement('div');
   modal.id = 'cancelModal';
-  modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(30,27,46,.6);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px);';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(30,27,46,.7);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);';
   modal.innerHTML = `
-    <div style="background:var(--surface);border-radius:var(--radius-lg);padding:28px;max-width:400px;width:100%;box-shadow:var(--shadow-lg);">
-      <div style="font-size:32px;margin-bottom:12px;">⚠️</div>
-      <h3 style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:10px;color:var(--text);">¿Cancelar suscripción?</h3>
-      <p style="font-size:13px;color:var(--text-2);margin-bottom:20px;line-height:1.6;">Seguirás teniendo acceso completo al plan actual hasta el final del período de facturación. Después pasarás al plan Free.</p>
-      <div style="display:flex;gap:8px;">
-        <button onclick="document.getElementById('cancelModal').remove()" class="btn btn-outline" style="flex:1;">Mantener plan</button>
-        <button onclick="confirmCancelSubscription()" class="btn btn-danger" style="flex:1;">Sí, cancelar</button>
+    <div style="background:var(--surface);border-radius:var(--radius-xl);padding:0;max-width:460px;width:100%;box-shadow:var(--shadow-lg);overflow:hidden;">
+      <!-- Header -->
+      <div style="background:linear-gradient(135deg,#8B5FBF,#E91E8C);padding:28px 28px 24px;text-align:center;">
+        <div style="font-size:40px;margin-bottom:8px;">😢</div>
+        <h3 style="color:#fff;font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin:0;">¿Seguro que quieres cancelar?</h3>
+        <p style="color:rgba(255,255,255,.8);font-size:13px;margin:6px 0 0;">Perderás acceso a todas estas ventajas:</p>
+      </div>
+      <!-- Beneficios que pierde -->
+      <div style="padding:24px 28px;">
+        <ul style="list-style:none;padding:0;margin:0 0 20px;color:var(--text-2);font-size:13px;line-height:2.2;">
+          <li>✅ ${plan === 'premium' ? '500' : '100'} análisis/mes → pasarás a 10</li>
+          <li>✅ Todos los formatos → solo Post</li>
+          <li>✅ ${plan === 'premium' ? '5GB' : '200MB'} archivos → sin archivos</li>
+          ${plan === 'premium' ? '<li>✅ Soporte VIP WhatsApp → sin soporte prioritario</li>' : ''}
+        </ul>
+        <!-- Oferta de retención -->
+        <div style="background:var(--brand-light);border-radius:var(--radius-md);padding:16px;margin-bottom:20px;text-align:center;">
+          <p style="color:var(--brand);font-weight:700;font-size:13px;margin:0 0 4px;">💡 ¿Sabías que puedes pausar tu cuenta?</p>
+          <p style="color:var(--text-2);font-size:12px;margin:0;">Escríbenos y encontramos una solución antes de cancelar.</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <button onclick="document.getElementById('cancelModal').remove()" class="btn btn-primary btn-full" style="font-weight:700;">✨ Mantener mi plan ${plan.toUpperCase()}</button>
+          <button onclick="confirmCancelSubscription()" class="btn btn-ghost btn-full" style="color:var(--text-3);font-size:12px;">Cancelar de todas formas</button>
+        </div>
       </div>
     </div>`;
   document.body.appendChild(modal);
