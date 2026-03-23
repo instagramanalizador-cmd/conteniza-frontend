@@ -1316,7 +1316,7 @@
                 placeholder="Ej: 5 hábitos de ahorro que nadie te enseña en la universidad..."
                 style="min-height:96px;"
                 data-default-placeholder="Ej: 5 hábitos de ahorro que nadie te enseña en la universidad..."
-                data-file-placeholder="Opcional: indica cómo quieres adaptar el contenido del archivo…"
+                data-file-placeholder="Indica cómo quieres adaptar el contenido del archivo…"
               ></textarea>
               <div class="form-hint">Sé específico para obtener mejores resultados</div>
             </div>
@@ -2100,7 +2100,7 @@ async function uploadFiles(files) {
       startExtractionPolling(uploadedFiles.map(f => f.id));
       // Cambiar placeholder cuando hay archivos
       const desc = document.getElementById('description');
-      if (desc) desc.placeholder = desc.dataset.filePlaceholder || 'Opcional: indica cómo quieres adaptar el contenido del archivo…';
+      if (desc) desc.placeholder = desc.dataset.filePlaceholder || 'Indica cómo quieres adaptar el contenido del archivo…';
     }, 1200);
   } catch (e) { if (e.status !== 401) showNotification(e.message, 'error'); showProgress(false); }
 }
@@ -2145,13 +2145,13 @@ function showExtractedTextPanel() {
       ? `<div class='extracted-head'><span>⏳ ${escapeHtml(file.filename)}</span></div>
          <div class='extracted-content' style='color:var(--text-3);font-style:italic;'>Extrayendo texto… puede tardar unos segundos.</div>`
       : isError
-      ? `<div class='extracted-head'><span>❌ ${escapeHtml(file.filename)}</span><button class='copy-btn btn-sm' style='color:var(--danger);' onclick='deleteUploadedFile(${file.id})' title='Eliminar'>🗑️</button></div>
+      ? `<div class='extracted-head'><span>❌ ${escapeHtml(file.filename)}</span><button class='copy-btn btn-sm' style='color:var(--danger);' onclick="deleteUploadedFile(${file.id})" title='Eliminar'>🗑️</button></div>
          <div class='extracted-content' style='color:var(--danger);'>${escapeHtml(file.extracted_text)}</div>`
       : `<div class='extracted-head'>
            <span>📄 ${escapeHtml(file.filename)}</span>
            <div style='display:flex;gap:6px;'>
              <button class='copy-btn btn-sm' onclick="navigator.clipboard.writeText(${JSON.stringify(file.extracted_text)}).then(()=>showNotification('Copiado','success'))">📋</button>
-             <button class='copy-btn btn-sm' style='color:var(--danger);' onclick='deleteUploadedFile(${file.id})' title='Eliminar archivo'>🗑️</button>
+             <button class='copy-btn btn-sm' style='color:var(--danger);' onclick="deleteUploadedFile(${file.id})" title='Eliminar archivo'>🗑️</button>
            </div>
          </div>
          <div class='extracted-content'>${escapeHtml(file.extracted_text.substring(0,400))}${file.extracted_text.length > 400 ? '…' : ''}</div>`;
