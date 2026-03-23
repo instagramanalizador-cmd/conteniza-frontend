@@ -1317,17 +1317,17 @@
                 </button>
                 <button type="button" class="pub-btn" data-value="carousel" onclick="selectPubType(this)">
                   <div class="pub-btn-icon">🎠</div>
-                  <span class="pub-btn-label">Carrusel</span>
+                  <span class="pub-btn-label">Carrusel <span id="badge-carousel" style="display:none;font-size:9px;background:#8B5FBF;color:#fff;padding:1px 6px;border-radius:99px;vertical-align:middle;">PRO</span></span>
                   <span class="pub-btn-desc">8 slides con texto</span>
                 </button>
                 <button type="button" class="pub-btn" data-value="story" onclick="selectPubType(this)">
                   <div class="pub-btn-icon">📱</div>
-                  <span class="pub-btn-label">Story</span>
+                  <span class="pub-btn-label">Story <span id="badge-story" style="display:none;font-size:9px;background:#8B5FBF;color:#fff;padding:1px 6px;border-radius:99px;vertical-align:middle;">PRO</span></span>
                   <span class="pub-btn-desc">5 ideas interactivas</span>
                 </button>
                 <button type="button" class="pub-btn" data-value="reel" onclick="selectPubType(this)">
                   <div class="pub-btn-icon">🎬</div>
-                  <span class="pub-btn-label">Reel</span>
+                  <span class="pub-btn-label">Reel <span id="badge-reel" style="display:none;font-size:9px;background:#8B5FBF;color:#fff;padding:1px 6px;border-radius:99px;vertical-align:middle;">PRO</span></span>
                   <span class="pub-btn-desc">Guión + hooks</span>
                 </button>
               </div>
@@ -1798,9 +1798,16 @@ function showProgress(show = true, text = 'Procesando...', percent = 0, sub = ''
    PUB TYPE SELECTOR
    ============================================================ */
 function selectPubType(btn) {
+  const type = btn.dataset.value;
+  // Bloquear formatos premium para Free
+  const premiumFormats = ['carousel', 'story', 'reel'];
+  if (currentUser && currentUser.plan_type === 'free' && premiumFormats.includes(type)) {
+    showNotification('⭐ Este formato requiere plan Pro o Premium. Haz clic en "Mejorar plan".', 'error');
+    return;
+  }
   document.querySelectorAll('.pub-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  selectedPubType = btn.dataset.value;
+  selectedPubType = type;
   document.getElementById('publicationType').value = selectedPubType;
   saveDraft();
 }
@@ -2015,6 +2022,12 @@ function updateUserPanel() {
   // Mostrar botón Mejorar plan solo para usuarios Free
   const upgradeBtn = document.getElementById('upgradePlanBtn');
   if (upgradeBtn) upgradeBtn.classList.toggle('hidden', currentUser.plan_type !== 'free');
+  // Mostrar badge PRO en formatos para usuarios Free
+  const isFree = currentUser.plan_type === 'free';
+  ['carousel','story','reel'].forEach(f => {
+    const b = document.getElementById('badge-' + f);
+    if (b) b.style.display = isFree ? 'inline' : 'none';
+  });
   updateCreditIndicator();
 }
 
