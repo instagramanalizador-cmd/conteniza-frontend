@@ -1302,6 +1302,8 @@
                 class="form-textarea"
                 placeholder="Ej: 5 hábitos de ahorro que nadie te enseña en la universidad..."
                 style="min-height:96px;"
+                data-default-placeholder="Ej: 5 hábitos de ahorro que nadie te enseña en la universidad..."
+                data-file-placeholder="Opcional: indica cómo quieres adaptar el contenido del archivo…"
               ></textarea>
               <div class="form-hint">Sé específico para obtener mejores resultados</div>
             </div>
@@ -2083,6 +2085,9 @@ async function uploadFiles(files) {
       showNotification(`${files.length} archivo(s) subidos. Extrayendo texto…`, 'success');
       // Polling para actualizar el texto extraído
       startExtractionPolling(uploadedFiles.map(f => f.id));
+      // Cambiar placeholder cuando hay archivos
+      const desc = document.getElementById('description');
+      if (desc) desc.placeholder = desc.dataset.filePlaceholder || 'Opcional: indica cómo quieres adaptar el contenido del archivo…';
     }, 1200);
   } catch (e) { if (e.status !== 401) showNotification(e.message, 'error'); showProgress(false); }
 }
@@ -2462,6 +2467,9 @@ function copyToClipboard(elId) {
    ============================================================ */
 function clearForm() {
   document.getElementById('contentForm')?.reset();
+  // Restaurar placeholder por defecto
+  const _d = document.getElementById('description');
+  if (_d) _d.placeholder = _d.dataset.defaultPlaceholder || 'Ej: 5 hábitos de ahorro que nadie te enseña en la universidad...';
   document.getElementById('filePreview').innerHTML = '';
   document.getElementById('extractedTextPanel').innerHTML = '';
   uploadedFiles = []; currentResults = null;
