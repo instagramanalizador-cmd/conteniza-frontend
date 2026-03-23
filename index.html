@@ -2145,48 +2145,41 @@ function showExtractedTextPanel() {
 
 // Polling para actualizar texto extraído
 let extractionPollTimer = null;
+// Polling para actualizar texto extraído
+let extractionPollTimer = null;
 async function startExtractionPolling(fileIds) {
   if (extractionPollTimer) clearInterval(extractionPollTimer);
-  // Normalizar IDs a string para comparación segura
-  const fileIdStrings = fileIds.map(id => String(id));
+  const ids = fileIds.map(id => String(id));
   let attempts = 0;
   extractionPollTimer = setInterval(async () => {
     attempts++;
-    if (attempts > 30) { clearInterval(extractionPollTimer); return; } // máx 90s
+    if (attempts > 40) { clearInterval(extractionPollTimer); return; }
     try {
       const r = await apiFetch(`${API_URL}/files`);
       const d = await r.json();
       if (!d.success || !d.files) return;
       let allDone = true;
-      for (const serverFile of d.files) {
-        if (!fileIdStrings.includes(String(serverFile.id))) continue;
-        const localFile = uploadedFiles.find(f => String(f.id) === String(serverFile.id));
-        if (!localFile) continue;
-        const isPending = !serverFile.extracted_text || serverFile.extracted_text === "⏳ Procesando...";
-        if (isPending) { allDone = false; continue; }
-        // Actualizar el texto
-        localFile.extracted_text = serverFile.extracted_text;
-        // Actualizar el DOM
-        const box = document.getElementById(`extracted-${serverFile.id}`);
-        if (box && serverFile.extracted_text && serverFile.extracted_text !== "⏳ Procesando...") {
-          const isError = serverFile.extracted_text.includes("❌");
-          box.innerHTML = isError
-            ? `<div class="extracted-head"><span>❌ ${escapeHtml(localFile.filename)}</span></div>
-               <div class="extracted-content" style="color:var(--danger);">${escapeHtml(serverFile.extracted_text)}</div>`
-            : `<div class="extracted-head">
-                 <span>📄 ${escapeHtml(localFile.filename)}</span>
-                 <button class="copy-btn btn-sm" onclick="navigator.clipboard.writeText(${JSON.stringify(serverFile.extracted_text)}).then(()=>showNotification('Copiado','success'))">📋</button>
-               </div>
-               <div class="extracted-content">${escapeHtml(serverFile.extracted_text.substring(0,400))}${serverFile.extracted_text.length > 400 ? "…" : ""}</div>`;
-          showNotification(`✅ Texto extraído: ${localFile.filename}`, "success");
+      let updated = false;
+      for (const sf of d.files) {
+        if (!ids.includes(String(sf.id))) continue;
+        const lf = uploadedFiles.find(f => String(f.id) === String(sf.id));
+        if (!lf) continue;
+        const pending = !sf.extracted_text || sf.extracted_text === "⏳ Procesando...";
+        if (pending) { allDone = false; continue; }
+        if (lf.extracted_text !== sf.extracted_text) {
+          lf.extracted_text = sf.extracted_text;
+          updated = true;
+          showNotification(`✅ Texto extraído: ${lf.filename}`, "success");
         }
       }
-      if (allDone) clearInterval(extractionPollTimer);
+      // Re-renderizar el panel completo si hubo cambios
+      if (updated) showExtractedTextPanel();
+      if (allDone) { clearInterval(extractionPollTimer); if (updated) showExtractedTextPanel(); }
     } catch(e) { /* silencioso */ }
-  }, 3000); // cada 3 segundos
+  }, 3000);
 }
 
-function removeFile(i) {
+function removeFilefunction removeFile(i) {
   uploadedFiles.splice(i,1);
   const p = document.getElementById('filePreview');
   if (p.children[i]) p.children[i].remove();
