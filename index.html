@@ -2447,8 +2447,12 @@ async function loadSidebarHistory() {
   const body = document.getElementById('sidebarContent');
   body.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⏳</div><p>Cargando…</p></div>';
   try {
-    const r = await apiFetch(`${API_URL}/analyze`);
+    const planLimit = currentUser.plan_type === 'free' ? 5 : currentUser.plan_type === 'pro' ? 50 : 999;
+    const r = await apiFetch(`${API_URL}/user/analyses?limit=${planLimit}`);
     const d = await r.json();
+    // Mostrar límite en el badge
+    const badge = document.getElementById('historyLimitBadge');
+    if (badge) badge.textContent = currentUser.plan_type === 'premium' ? '' : `(máx. ${planLimit})`;
     if (!d.analyses||!d.analyses.length) {
       body.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔭</div><p style="font-weight:600;color:var(--text);">Sin análisis previos</p></div>';
       return;
@@ -2690,9 +2694,9 @@ window.addEventListener('DOMContentLoaded', () => {
    CARGA DINÁMICA DE PLANES DESDE /api/auth/plans
    ============================================================ */
 const PLAN_FEATURES = {
-  free:    ['Solo formato Post', 'Sin subida de archivos', 'Historial de análisis', 'Export PDF'],
-  pro:     ['Todos los formatos (Post, Carrusel, Story, Reel)', '📎 200MB almacenamiento/mes', 'Historial completo', 'Export PDF', 'Soporte 24-48h'],
-  premium: ['Todo lo de Pro', '📎 5GB almacenamiento/mes', 'Subida de imágenes, audio y video', 'Máxima prioridad IA', 'Soporte VIP WhatsApp']
+  free:    ['Solo formato Post', 'Sin subida de archivos', 'Últimos 5 análisis en historial', 'Export PDF'],
+  pro:     ['Todos los formatos (Post, Carrusel, Story, Reel)', '📎 200MB almacenamiento/mes', 'Historial últimos 50 análisis', 'Export PDF', 'Soporte email 24-48h'],
+  premium: ['Todo lo de Pro', '📎 5GB almacenamiento/mes', 'Subida de imágenes, audio y video', 'Historial ilimitado', 'Soporte VIP WhatsApp']
 };
 const PLAN_BADGES = { pro: '🔥 Más popular', premium: '⭐ Mayor valor' };
 
@@ -2737,7 +2741,7 @@ async function loadPlans() {
       </div>
       <div class="plan-card">
         <div class="plan-name">Premium</div><div class="plan-price">59€</div><div class="plan-period">/ mes</div>
-        <ul class="plan-features"><li><strong>500 análisis</strong> por mes</li><li>50 análisis por día</li><li>Todos los formatos</li><li>📎 5GB archivos/mes</li><li>Soporte VIP WhatsApp</li></ul>
+        <ul class="plan-features"><li><strong>500 análisis</strong> por mes</li><li>50 análisis por día</li><li>Todos los formatos</li><li>📎 5GB archivos/mes</li><li>Historial ilimitado</li><li>Soporte VIP WhatsApp</li></ul>
         <button class="btn btn-primary btn-full" onclick="selectPlan('premium')">Contratar ahora</button>
       </div>`;
   }
