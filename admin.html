@@ -834,14 +834,9 @@ async function loadData() {
     }
     
     const statsData = await statsRes.json();
+    const rawStats = (statsData.success && statsData.stats) ? statsData.stats : {};
     
-    if (statsData.success && statsData.stats) {
-      renderStats(statsData.stats);
-    } else {
-      console.warn('⚠️ No hay estadísticas disponibles');
-    }
-    
-    // ✅ CARGAR USUARIOS
+    // ✅ CARGAR USUARIOS PRIMERO para que renderStats tenga allUsers completo
     const usersRes = await fetch(`${API_URL}/admin/users?limit=1000`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
@@ -856,12 +851,13 @@ async function loadData() {
       allUsers = usersData.users;
       console.log(`✅ ${allUsers.length} usuarios cargados`);
       renderUsers();
-      renderStats(pendingStats || {});
     } else {
       console.warn('⚠️ No hay usuarios disponibles');
       allUsers = [];
       renderUsers();
     }
+    // Renderizar stats DESPUÉS de tener allUsers
+    renderStats(rawStats);
     
     // ✅ CARGAR WAITLIST Y TOKEN STATS
         await loadTokenStats();

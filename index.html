@@ -1750,9 +1750,13 @@ async function syncCredits() {
     const r = await apiFetch(`${API_URL}/user/profile`);
     if (!r.ok) return;
     const d = await r.json();
-    if (d.user?.credits_remaining !== undefined) {
-      userCredits = d.user.credits_remaining;
+    if (d.user) {
+      // Actualizar créditos Y plan sin cerrar sesión
+      userCredits = d.user.credits_remaining ?? userCredits;
+      currentUser.plan_type = d.user.plan_type ?? currentUser.plan_type;
+      currentUser.credits_remaining = d.user.credits_remaining ?? currentUser.credits_remaining;
       updateUserPanel();
+      updateSubscriptionUI();
     }
   } catch (_) { /* silencioso */ }
 }
@@ -3014,7 +3018,7 @@ function checkStripeReturn() {
     window.history.replaceState({}, '', window.location.pathname);
     // Esperar un poco para que el webhook procese el plan
     setTimeout(async () => {
-      await syncCredits();
+      await syncCredits(); await syncCredits(); // doble sync por seguridad
       const planName = plan ? plan.toUpperCase() : 'nuevo';
       showNotification(`🎉 ¡Pago completado! Tu plan ${planName} ya está activo.`, 'success');
       updateSubscriptionUI();
