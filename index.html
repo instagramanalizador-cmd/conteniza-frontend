@@ -2147,20 +2147,23 @@ function showExtractedTextPanel() {
 let extractionPollTimer = null;
 async function startExtractionPolling(fileIds) {
   if (extractionPollTimer) clearInterval(extractionPollTimer);
+  // Normalizar IDs a string para comparación segura
+  const fileIdStrings = fileIds.map(id => String(id));
   let attempts = 0;
   extractionPollTimer = setInterval(async () => {
     attempts++;
-    if (attempts > 20) { clearInterval(extractionPollTimer); return; } // máx 60s
+    if (attempts > 30) { clearInterval(extractionPollTimer); return; } // máx 90s
     try {
       const r = await apiFetch(`${API_URL}/files`);
       const d = await r.json();
       if (!d.success || !d.files) return;
       let allDone = true;
       for (const serverFile of d.files) {
-        if (!fileIds.includes(serverFile.id)) continue;
-        const localFile = uploadedFiles.find(f => f.id === serverFile.id);
+        if (!fileIdStrings.includes(String(serverFile.id))) continue;
+        const localFile = uploadedFiles.find(f => String(f.id) === String(serverFile.id));
         if (!localFile) continue;
-        if (serverFile.extracted_text === "⏳ Procesando...") { allDone = false; continue; }
+        const isPending = !serverFile.extracted_text || serverFile.extracted_text === "⏳ Procesando...";
+        if (isPending) { allDone = false; continue; }
         // Actualizar el texto
         localFile.extracted_text = serverFile.extracted_text;
         // Actualizar el DOM
