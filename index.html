@@ -55,6 +55,10 @@
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
     html { scroll-behavior: smooth; }
 
+    html, body {
+      overflow-x: hidden;
+      max-width: 100%;
+    }
     body {
       font-family: 'DM Sans', -apple-system, sans-serif;
       background: var(--bg);
@@ -483,7 +487,11 @@
         grid-template-columns: 400px 1fr;
         align-items: start;
       }
-
+      /* Columna derecha no puede expandirse */
+      .app-grid > div:last-child {
+        overflow: hidden;
+        min-width: 0;
+      }
     }
 
     /* =============================================
@@ -716,7 +724,7 @@
     }
 
     /* Result sections */
-    .result-section { margin-bottom: 20px; }
+    .result-section { margin-bottom: 20px; overflow: hidden; }
     .result-section-head {
       display: flex;
       align-items: center;
@@ -739,6 +747,7 @@
     }
     .result-section-body {
       padding: 18px;
+      overflow: hidden;
       background: var(--surface);
       border: 1.5px solid var(--border);
       border-top: none;
@@ -808,19 +817,20 @@
     /* Carousel */
     .carousel-scroll {
       display: flex;
-      gap: 16px;
+      gap: 0;
       overflow: hidden;
       padding: 4px 0 16px;
       scroll-behavior: smooth;
       width: 100%;
+      max-width: 100%;
       box-sizing: border-box;
     }
     .carousel-scroll::-webkit-scrollbar { height: 4px; }
     .carousel-scroll::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 2px; }
 
     .slide-card {
-      min-width: calc(100% - 0px);
-      max-width: calc(100% - 0px);
+      min-width: 100%;
+      max-width: 100%;
       flex-shrink: 0;
       box-sizing: border-box;
       border-radius: var(--radius-lg);
@@ -1589,7 +1599,7 @@
             </div>
           </div>
           <div id="carouselBody" class="result-section-body">
-            <div id="carouselContent">
+            <div id="carouselContent" style="overflow:hidden;width:100%;">
               <div class="carousel-scroll" id="carouselSlides"></div>
               <div class="slide-controls" style="display:flex;align-items:center;gap:8px;">
                 <button class="slide-ctrl-btn" onclick="navCarousel(-1)" title="Slide anterior">‹</button>
@@ -3131,10 +3141,8 @@ function navCarousel(dir) {
   selectCarouselSlide(next);
   const container = document.getElementById('carouselSlides');
   if (!container) return;
-  // offsetWidth funciona aunque el slide esté fuera del viewport
-  const firstSlide = container.children[0];
-  if (!firstSlide) return;
-  const slideW = firstSlide.offsetWidth + 16;
+  // Ancho del contenedor = 1 slide visible
+  const slideW = container.offsetWidth;
   container.scrollLeft = next * slideW;
 }
 
