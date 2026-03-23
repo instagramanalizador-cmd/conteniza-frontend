@@ -856,6 +856,7 @@ async function loadData() {
       allUsers = usersData.users;
       console.log(`✅ ${allUsers.length} usuarios cargados`);
       renderUsers();
+      renderStats(pendingStats || {});
     } else {
       console.warn('⚠️ No hay usuarios disponibles');
       allUsers = [];
