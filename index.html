@@ -2690,9 +2690,9 @@ window.addEventListener('DOMContentLoaded', () => {
    CARGA DINÁMICA DE PLANES DESDE /api/auth/plans
    ============================================================ */
 const PLAN_FEATURES = {
-  free:    ['Todos los formatos (Post, Reel, Story, Carrusel)', 'OCR de imágenes', 'Historial de análisis', 'Export PDF', 'Soporte por email'],
-  pro:     ['Todo lo de Free', 'OCR de imágenes, audio y video', 'Contenido prioritario optimizado', 'Soporte prioritario 24-48h'],
-  premium: ['Todo lo de Pro', 'Máxima prioridad de generación', 'Descargas de miniaturas y slides', 'Soporte VIP por WhatsApp']
+  free:    ['Solo formato Post', 'Sin subida de archivos', 'Historial de análisis', 'Export PDF'],
+  pro:     ['Todos los formatos (Post, Carrusel, Story, Reel)', '📎 200MB almacenamiento/mes', 'Historial completo', 'Export PDF', 'Soporte 24-48h'],
+  premium: ['Todo lo de Pro', '📎 5GB almacenamiento/mes', 'Subida de imágenes, audio y video', 'Máxima prioridad IA', 'Soporte VIP WhatsApp']
 };
 const PLAN_BADGES = { pro: '🔥 Más popular', premium: '⭐ Mayor valor' };
 
@@ -2712,7 +2712,7 @@ async function loadPlans() {
         <div class="plan-card${isFeatured ? ' featured' : ''}">
           ${badge ? `<div class="plan-featured-badge">${badge}</div>` : ''}
           <div class="plan-name">${plan.label}</div>
-          <div class="plan-price">${plan.price_usd > 0 ? '$' + plan.price_usd : '$0'}</div>
+          <div class="plan-price">${plan.price_usd > 0 ? plan.price_usd + '€' : '0€'}</div>
           <div class="plan-period">${plan.price_usd > 0 ? '/ mes' : 'para siempre'}</div>
           <ul class="plan-features">
             <li><strong>${plan.credits} análisis</strong> por mes</li>
@@ -2726,19 +2726,19 @@ async function loadPlans() {
     grid.innerHTML = `
       <div class="plan-card">
         <div class="plan-name">Free</div><div class="plan-price">$0</div><div class="plan-period">para siempre</div>
-        <ul class="plan-features"><li>10 análisis por mes</li><li>Todos los formatos</li><li>OCR de imágenes</li></ul>
+        <ul class="plan-features"><li>10 análisis por mes</li><li>Solo formato Post</li><li>Sin subida de archivos</li></ul>
         <button class="btn btn-primary btn-full" onclick="selectPlan('free')">Comenzar gratis</button>
       </div>
       <div class="plan-card featured">
         <div class="plan-featured-badge">🔥 Más popular</div>
-        <div class="plan-name">Pro</div><div class="plan-price">$25</div><div class="plan-period">/ mes</div>
-        <ul class="plan-features"><li>150 análisis por mes</li><li>OCR audio y video</li><li>Soporte prioritario</li></ul>
-        <button class="btn btn-primary btn-full" onclick="selectPlan('pro')">Unirse a la lista de espera</button>
+        <div class="plan-name">Pro</div><div class="plan-price">25€</div><div class="plan-period">/ mes</div>
+        <ul class="plan-features"><li><strong>100 análisis</strong> por mes</li><li>20 análisis por día</li><li>Todos los formatos</li><li>📎 200MB archivos/mes</li></ul>
+        <button class="btn btn-primary btn-full" onclick="selectPlan('pro')">Contratar ahora</button>
       </div>
       <div class="plan-card">
-        <div class="plan-name">Premium</div><div class="plan-price">$59</div><div class="plan-period">/ mes</div>
-        <ul class="plan-features"><li>500 análisis por mes</li><li>Todo incluido</li><li>Soporte VIP</li></ul>
-        <button class="btn btn-primary btn-full" onclick="selectPlan('premium')">Unirse a la lista de espera</button>
+        <div class="plan-name">Premium</div><div class="plan-price">59€</div><div class="plan-period">/ mes</div>
+        <ul class="plan-features"><li><strong>500 análisis</strong> por mes</li><li>50 análisis por día</li><li>Todos los formatos</li><li>📎 5GB archivos/mes</li><li>Soporte VIP WhatsApp</li></ul>
+        <button class="btn btn-primary btn-full" onclick="selectPlan('premium')">Contratar ahora</button>
       </div>`;
   }
 }
