@@ -2145,8 +2145,6 @@ function showExtractedTextPanel() {
 
 // Polling para actualizar texto extraído
 let extractionPollTimer = null;
-// Polling para actualizar texto extraído
-let extractionPollTimer = null;
 async function startExtractionPolling(fileIds) {
   if (extractionPollTimer) clearInterval(extractionPollTimer);
   const ids = fileIds.map(id => String(id));
