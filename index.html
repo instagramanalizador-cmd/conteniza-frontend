@@ -812,14 +812,17 @@
       overflow: hidden;
       padding: 4px 0 16px;
       scroll-behavior: smooth;
+      width: 100%;
+      box-sizing: border-box;
     }
     .carousel-scroll::-webkit-scrollbar { height: 4px; }
     .carousel-scroll::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 2px; }
 
     .slide-card {
-      min-width: 100%;
-      max-width: 100%;
+      min-width: calc(100% - 0px);
+      max-width: calc(100% - 0px);
       flex-shrink: 0;
+      box-sizing: border-box;
       border-radius: var(--radius-lg);
       padding: 20px;
       color: #fff;
