@@ -377,7 +377,7 @@ tbody tr:hover {
       📊 Dashboard
     </button>
     <button class="tab" onclick="switchTab('free-users')">
-      👥 Usuarios FREE
+      👥 Usuarios
     </button>
     <button class="tab" onclick="switchTab('tokens')">
       💰 Tokens y Costos
@@ -454,9 +454,16 @@ tbody tr:hover {
   <!-- TAB 2: Usuarios FREE -->
   <div id="tab-free-users" class="tab-content">
     <div class="card">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
-        <h2 style="color: var(--primary); margin: 0;">👥 Usuarios FREE Registrados</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+        <h2 style="color: var(--primary); margin: 0;">👥 Todos los Usuarios</h2>
         <button onclick="loadData()" class="btn btn-primary">🔄 Recargar</button>
+      </div>
+      <!-- Filtros de plan -->
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+        <button onclick="setPlanFilter('all')" id="filter-all" class="btn btn-primary" style="font-size:12px;padding:6px 14px;">Todos</button>
+        <button onclick="setPlanFilter('free')" id="filter-free" class="btn btn-outline" style="font-size:12px;padding:6px 14px;">🆓 Free</button>
+        <button onclick="setPlanFilter('pro')" id="filter-pro" class="btn btn-outline" style="font-size:12px;padding:6px 14px;">⭐ Pro</button>
+        <button onclick="setPlanFilter('premium')" id="filter-premium" class="btn btn-outline" style="font-size:12px;padding:6px 14px;">👑 Premium</button>
       </div>
 
       <input type="text" id="search-users" class="search-box" placeholder="🔍 Buscar por email..." onkeyup="filterUsers()">
@@ -466,6 +473,7 @@ tbody tr:hover {
           <thead>
             <tr>
               <th>Email</th>
+              <th style="text-align: center;">Plan</th>
               <th style="text-align: center;">Créditos</th>
               <th style="text-align: center;">Análisis</th>
               <th style="text-align: center;">Registro</th>
@@ -1103,6 +1111,20 @@ function renderStats(stats) {
   
   console.log(`📊 Usuarios registrados hoy: ${todayUsers}`);
 }
+let currentPlanFilter = 'all';
+
+function setPlanFilter(plan) {
+  currentPlanFilter = plan;
+  // Actualizar botones
+  ['all','free','pro','premium'].forEach(p => {
+    const btn = document.getElementById('filter-' + p);
+    if (btn) btn.className = p === plan ? 'btn btn-primary' : 'btn btn-outline';
+    if (btn) btn.style.fontSize = '12px';
+    if (btn) btn.style.padding = '6px 14px';
+  });
+  renderUsers();
+}
+
 function renderUsers() {
   const tbody = document.getElementById('users-tbody');
   const noUsers = document.getElementById('no-users');
@@ -1115,9 +1137,16 @@ function renderUsers() {
   
   noUsers.classList.add('hidden');
   
-  tbody.innerHTML = allUsers.map(user => `
+  const filtered = currentPlanFilter === 'all'
+    ? allUsers
+    : allUsers.filter(u => u.plan_type === currentPlanFilter);
+
+  tbody.innerHTML = filtered.map(user => `
     <tr>
       <td style="font-weight: 600; color: var(--primary);">${user.email}</td>
+      <td style="text-align: center;">
+        <span class="plan-badge ${user.plan_type}">${user.plan_type.toUpperCase()}</span>
+      </td>
       <td style="text-align: center; font-weight: 700;">${user.credits_remaining || 0}</td>
       <td style="text-align: center;">${user.total_analyses || 0}</td>
       <td style="text-align: center; font-size: 12px; color: #718096;">
