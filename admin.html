@@ -834,7 +834,7 @@ async function loadData() {
     }
     
     // ✅ CARGAR USUARIOS
-    const usersRes = await fetch(`${API_URL}/admin/users`, {
+    const usersRes = await fetch(`${API_URL}/admin/users?limit=1000`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     
