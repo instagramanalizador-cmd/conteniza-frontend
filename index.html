@@ -2177,7 +2177,7 @@ async function startExtractionPolling(fileIds) {
   }, 3000);
 }
 
-function removeFilefunction removeFile(i) {
+function removeFile(i) {
   uploadedFiles.splice(i,1);
   const p = document.getElementById('filePreview');
   if (p.children[i]) p.children[i].remove();
