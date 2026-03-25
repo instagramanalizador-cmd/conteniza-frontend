@@ -2197,7 +2197,12 @@ function showPlansFromTopbar() {
   document.getElementById('plansScreen').classList.remove('hidden');
   document.getElementById('authScreen').classList.add('hidden');
   document.getElementById('mainApp').classList.add('hidden');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Scroll directo al grid de planes
+  setTimeout(() => {
+    const grid = document.getElementById('plansGrid');
+    if (grid) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    else window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, 100);
 }
 
 function showAuthFromPlans() {
