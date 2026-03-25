@@ -2061,6 +2061,11 @@ function logout() {
   document.getElementById('plansScreen').classList.remove('hidden');
   document.getElementById('sidebarFab').classList.remove('visible');
   document.getElementById('adminBtn').classList.add('hidden');
+  // Restaurar botones del topbar
+  document.getElementById('topbarActions').innerHTML = `
+    <button class="btn btn-outline btn-sm" onclick="showPlansFromTopbar()">Ver planes</button>
+    <button class="btn btn-primary btn-sm" onclick="showAuthFromPlans()">Iniciar sesión</button>
+  `;
   closeSidebar();
   clearForm();
   showNotification('Sesión cerrada', 'success');
