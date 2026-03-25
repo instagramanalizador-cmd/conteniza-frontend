@@ -1236,6 +1236,10 @@
       <div class="hero-badge">✨ Generador de contenido para Instagram</div>
       <h1 class="hero-title">Crea contenido que<br><span>convierte</span></h1>
       <p class="hero-sub">Escribe un tema, elige el formato y obtén hooks, captions, carruseles y reels listos para publicar.</p>
+      <div style="display:flex;gap:12px;justify-content:center;margin-top:28px;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="selectPlan('free')" style="padding:14px 32px;font-size:15px;">🚀 Empezar gratis</button>
+        <button class="btn btn-outline" onclick="showAuthFromPlans()" style="padding:14px 32px;font-size:15px;background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.4);color:#fff;">Iniciar sesión</button>
+      </div>
     </div>
   </div>
 
@@ -2191,6 +2195,12 @@ async function startExtractionPolling(fileIds) {
       if (allDone) { clearInterval(extractionPollTimer); if (updated) showExtractedTextPanel(); }
     } catch(e) { /* silencioso */ }
   }, 3000);
+}
+
+function showAuthFromPlans() {
+  document.getElementById('plansScreen').classList.add('hidden');
+  document.getElementById('authScreen').classList.remove('hidden');
+  authMode = 'login';
 }
 
 async function deleteUploadedFile(fileId) {
