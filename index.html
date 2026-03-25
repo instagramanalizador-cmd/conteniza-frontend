@@ -1236,8 +1236,7 @@
       <div class="hero-badge">✨ Generador de contenido para Instagram</div>
       <h1 class="hero-title">Crea contenido que<br><span>convierte</span></h1>
       <p class="hero-sub">Escribe un tema, elige el formato y obtén hooks, captions, carruseles y reels listos para publicar.</p>
-      <div style="display:flex;gap:12px;justify-content:center;margin-top:28px;flex-wrap:wrap;">
-        <button class="btn btn-primary" onclick="selectPlan('free')" style="padding:14px 32px;font-size:15px;">🚀 Empezar gratis</button>
+      <div style="display:flex;gap:12px;justify-content:center;margin-top:28px;">
         <button class="btn btn-outline" onclick="showAuthFromPlans()" style="padding:14px 32px;font-size:15px;background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.4);color:#fff;">Iniciar sesión</button>
       </div>
     </div>
@@ -2783,9 +2782,7 @@ window.addEventListener('DOMContentLoaded', () => {
     // Sin sesión — mostrar plansScreen directamente
     document.getElementById('plansScreen').classList.remove('hidden');
     document.getElementById('authScreen').classList.add('hidden');
-    document.getElementById('topbarActions').innerHTML = `
-      <button class="btn btn-outline btn-sm" onclick="showAuthFromPlans()">Iniciar sesión</button>
-    `;
+    document.getElementById('topbarActions').innerHTML = '';
   }
 });
 
@@ -2826,9 +2823,10 @@ async function loadPlans() {
         </div>`;
     }).join('');
   } catch(e) {
+    // Fallback con planes hardcodeados en caso de error de red
     grid.innerHTML = `
       <div class="plan-card">
-        <div class="plan-name">Free</div><div class="plan-price">$0</div><div class="plan-period">para siempre</div>
+        <div class="plan-name">Free</div><div class="plan-price">0€</div><div class="plan-period">para siempre</div>
         <ul class="plan-features"><li>10 análisis por mes</li><li>Solo formato Post</li><li>Sin subida de archivos</li></ul>
         <button class="btn btn-primary btn-full" onclick="selectPlan('free')">Comenzar gratis</button>
       </div>
