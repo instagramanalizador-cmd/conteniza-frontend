@@ -2780,9 +2780,11 @@ window.addEventListener('DOMContentLoaded', () => {
       localStorage.removeItem('user');
     }
   } else {
-    // Mostrar botones de acceso en topbar
+    // Sin sesión — mostrar plansScreen directamente
+    document.getElementById('plansScreen').classList.remove('hidden');
+    document.getElementById('authScreen').classList.add('hidden');
     document.getElementById('topbarActions').innerHTML = `
-      <button class="btn btn-outline btn-sm" onclick="document.getElementById('plansScreen').classList.remove('hidden');document.getElementById('authScreen').classList.add('hidden');authMode='login';updateAuthUI();document.getElementById('plansScreen').scrollIntoView();">Ver planes</button>
+      <button class="btn btn-outline btn-sm" onclick="showAuthFromPlans()">Iniciar sesión</button>
     `;
   }
 });
