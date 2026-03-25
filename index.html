@@ -3215,6 +3215,17 @@ function showPlansScreen() {
 }
 
 function goHome() {
+  if (!currentUser) {
+    // Sin sesión → ir a pantalla de planes
+    document.getElementById('plansScreen').classList.remove('hidden');
+    document.getElementById('authScreen').classList.add('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+  // Con sesión → ir a la app principal
+  document.getElementById('mainApp').classList.remove('hidden');
+  document.getElementById('plansScreen').classList.add('hidden');
+  document.getElementById('authScreen').classList.add('hidden');
   document.getElementById('goHomeFab')?.classList.add('hidden');
   window.scrollTo({ top: 0, behavior: 'smooth' });
   setTimeout(() => {
