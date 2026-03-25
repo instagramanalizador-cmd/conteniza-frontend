@@ -2782,7 +2782,10 @@ window.addEventListener('DOMContentLoaded', () => {
     // Sin sesión — mostrar plansScreen directamente
     document.getElementById('plansScreen').classList.remove('hidden');
     document.getElementById('authScreen').classList.add('hidden');
-    document.getElementById('topbarActions').innerHTML = '';
+    document.getElementById('topbarActions').innerHTML = `
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('plansScreen').classList.remove('hidden');document.getElementById('authScreen').classList.add('hidden');window.scrollTo({top:0});">Ver planes</button>
+      <button class="btn btn-primary btn-sm" onclick="showAuthFromPlans()">Iniciar sesión</button>
+    `;
   }
 });
 
