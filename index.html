@@ -73,6 +73,8 @@
        UTILITIES
        ============================================= */
     .hidden { display: none !important; }
+    #brandScreen { display: none; }
+    #brandScreen:not(.hidden) { display: block !important; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg); overflow-y: auto; z-index: 9999; padding: 0; }
     .container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
 
     /* =============================================
@@ -189,7 +191,7 @@
       gap: 6px;
       backdrop-filter: blur(8px);
     }
-    .user-bar-right { display: flex; align-items: center; gap: 8px; }
+    .user-bar-right { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; overflow-x: auto; }
 
     /* =============================================
        BUTTONS
@@ -2547,7 +2549,7 @@ function renderCarousel(slides) {
       style="background:${brandBg || SLIDE_GRADIENTS[i%SLIDE_GRADIENTS.length]};${brandFont ? `font-family:'${brandFont}',sans-serif;` : ''}"
       onclick="selectCarouselSlide(${i})"
     >
-      ${isPremium && currentBrand?.logo_url ? `<img src="${currentBrand.logo_url}" style="width:32px;height:32px;border-radius:6px;object-fit:contain;background:rgba(255,255,255,.2);padding:3px;margin-bottom:8px;">` : ''}
+      ${isPremium && currentBrand?.logo_url ? `<img src="${currentBrand.logo_url}" style="width:56px;height:56px;border-radius:6px;object-fit:contain;background:rgba(255,255,255,.2);padding:3px;margin-bottom:8px;">` : ''}
       <div class="slide-num">${i+1}</div>
       <div>
         <div class="slide-title" style="${brandFont ? `font-family:'${brandFont}',sans-serif;` : ''}">${escapeHtml(s.title||'')}</div>
@@ -3361,8 +3363,8 @@ async function showBrandScreen() {
     showNotification('La configuración de marca es exclusiva del plan Premium 👑', 'error');
     return;
   }
-  document.getElementById('mainApp').classList.add('hidden');
   document.getElementById('brandScreen').classList.remove('hidden');
+  window.scrollTo(0, 0);
   await loadBrandConfig();
   renderFontGrid();
   updateBrandPreview();
@@ -3370,7 +3372,6 @@ async function showBrandScreen() {
 
 function hideBrandScreen() {
   document.getElementById('brandScreen').classList.add('hidden');
-  document.getElementById('mainApp').classList.remove('hidden');
 }
 
 async function loadBrandConfig() {
@@ -3694,7 +3695,8 @@ function loadImage(src) {
 <!-- =========================================================
      BRAND SCREEN — Mi Marca (Solo Premium)
      ========================================================= -->
-<div id="brandScreen" class="hidden" style="position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);overflow-y:auto;z-index:200;padding:70px 16px 80px;">
+<div id="brandScreen" class="hidden">
+<div style="max-width:700px;margin:0 auto;padding:24px 16px 80px;">
 
   <!-- Header -->
   <div style="display:flex;align-items:center;gap:12px;margin-bottom:28px;">
@@ -3774,6 +3776,7 @@ function loadImage(src) {
     💾 Guardar configuración de marca
   </button>
 
+</div>
 </div>
 
   <script src="consent.js"></script>
