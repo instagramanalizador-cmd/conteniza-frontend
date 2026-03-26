@@ -1127,7 +1127,10 @@
     /* =============================================
        RESPONSIVE
        ============================================= */
-    @media(max-width: 768px) {
+    /* ═══════════════════════════════════
+   RESPONSIVE — TABLET (768px)
+   ═══════════════════════════════════ */
+@media(max-width: 768px) {
       .sidebar { width: 90%; }
       .plans-grid { grid-template-columns: 1fr; padding: 0 16px; }
       .plan-card.featured { transform: none; }
@@ -1135,10 +1138,79 @@
       .app-grid { padding: 16px; gap: 16px; }
       .gen-card-body { padding: 20px; }
       .auth-card { padding: 32px 24px; }
+      .hero-title { font-size: 36px; }
+      .hero-sub { font-size: 15px; }
+      .topbar-inner { padding: 0 16px; }
+      .user-bar-inner { padding: 8px 16px; flex-wrap: wrap; gap: 8px; }
+      .result-section-head { padding: 12px 16px; }
+      .result-section-body { padding: 14px; }
     }
+
+    /* ═══════════════════════════════════
+       RESPONSIVE — MÓVIL (480px)
+       ═══════════════════════════════════ */
     @media(max-width: 480px) {
-      .pub-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
-      .pub-btn { padding: 12px 10px; }
+      /* Topbar */
+      .topbar-inner { padding: 0 12px; height: 52px; }
+      .topbar-name { font-size: 16px; }
+      .topbar-tagline { display: none; }
+      .topbar-actions { gap: 6px; }
+      .topbar-actions .btn { padding: 7px 12px; font-size: 12px; }
+
+      /* Hero */
+      .hero-title { font-size: 28px; line-height: 1.2; }
+      .hero-sub { font-size: 14px; padding: 0 16px; }
+      .hero-bg { padding: 40px 16px 32px; }
+      .hero-badge { font-size: 11px; }
+
+      /* Planes */
+      .plans-grid { grid-template-columns: 1fr; padding: 0 12px; gap: 16px; }
+      .plan-card { padding: 24px 20px; }
+      .plan-price { font-size: 36px; }
+
+      /* App grid — columna única */
+      .app-grid { padding: 12px; gap: 12px; grid-template-columns: 1fr; }
+      .gen-card-body { padding: 16px; }
+      .gen-card-header { padding: 16px 16px 12px; }
+
+      /* Formulario */
+      .form-textarea { font-size: 15px; }
+      .form-input { font-size: 15px; }
+      .pub-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+      .pub-btn { padding: 10px 8px; font-size: 12px; }
+
+      /* Botón generar */
+      #generateBtn { padding: 16px; font-size: 15px; }
+
+      /* User bar */
+      .user-bar-inner { padding: 8px 12px; gap: 6px; }
+      .user-pill { font-size: 11px; padding: 4px 8px; }
+      .user-bar-right { gap: 6px; }
+      .user-bar-right .btn { padding: 6px 10px; font-size: 11px; }
+
+      /* Resultados */
+      .result-section-head { padding: 10px 14px; font-size: 13px; }
+      .result-section-body { padding: 12px; }
+      .hook-text { font-size: 13px; }
+      .caption-text { font-size: 13px; }
+      .slide-card { padding: 16px; }
+      .slide-controls { gap: 6px; }
+      .slide-ctrl-btn { width: 32px; height: 32px; font-size: 18px; }
+
+      /* Auth */
+      .auth-card { padding: 24px 16px; margin: 12px; }
+      .auth-logo-title { font-size: 20px; }
+
+      /* Thumbnails */
+      .thumb-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .thumb-item { min-height: 80px; }
+
+      /* File preview */
+      .file-preview-item { width: 70px; height: 70px; }
+
+      /* FAB botones */
+      .fab { width: 48px; height: 48px; font-size: 18px; bottom: 16px; right: 16px; }
+      #sidebarFab { bottom: 72px; }
     }
 
     /* ── Onboarding ── */
