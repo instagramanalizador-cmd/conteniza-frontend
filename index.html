@@ -3072,100 +3072,123 @@ async function downloadThumbnailImage(i) {
 async function downloadCarouselSlideImage(i) {
   const s = currentCarouselSlides[i];
   if (!s) return;
-  showNotification('⏳ Generando PNG del slide con tu marca...', 'success');
+  showNotification('⏳ Generando PNG 1080×1350px...', 'success');
   try {
     const W = 1080, H = 1350;
     const cv = document.createElement('canvas');
     cv.width = W; cv.height = H;
     const ctx = cv.getContext('2d');
 
-    // Ajustes del editor + Marca Premium
+    // ── Ajustes del editor y marca ─────────────────────────
     const isPremium = currentUser?.plan_type === 'premium';
     const adj       = (window.slideAdjust && window.slideAdjust[i]) || null;
     const brandCp   = isPremium && currentBrand?.color_primary   ? currentBrand.color_primary   : null;
     const brandCs   = isPremium && currentBrand?.color_secondary ? currentBrand.color_secondary : null;
     const brandFont = isPremium && currentBrand?.font_name       ? currentBrand.font_name        : null;
     const brandLogo = isPremium && currentBrand?.logo_url        ? currentBrand.logo_url         : null;
+    // Cargar fuente antes de dibujar en canvas
+    const fontName = adj?.font || brandFont || 'Arial';
+    try { await document.fonts.load(`800 48px '${fontName}'`); } catch(e) {}
+    const font = fontName;
+    const align     = adj?.align || 'center';
+    const titleSize = Math.max(40, ((adj?.titleSize) || 40)) * 2;    // x2 para 1080px
+    const contentSize = ((adj?.contentSize) || 20) * 2;
+    const titleText   = adj?.titleText   || s.title   || '';
+    const contentText = adj?.contentText || s.content || '';
 
-    // ── FONDO ──────────────────────────────────────────────
-    const {c1, c2} = parseGradient(brandCp ? `linear-gradient(135deg,${brandCp},${brandCs})` : (s.color_scheme || SLIDE_GRADIENTS[i % SLIDE_GRADIENTS.length]));
+    // ── FONDO ─────────────────────────────────────────────
+    const gradStr = brandCp && brandCs
+      ? `linear-gradient(135deg,${brandCp},${brandCs})`
+      : (s.color_scheme || SLIDE_GRADIENTS[i % SLIDE_GRADIENTS.length]);
+    const {c1, c2} = parseGradient(gradStr);
     const gr = ctx.createLinearGradient(0, 0, W, H);
     gr.addColorStop(0, c1); gr.addColorStop(1, c2);
     ctx.fillStyle = gr;
     ctx.fillRect(0, 0, W, H);
 
     // Patrón decorativo
-    ctx.fillStyle = 'rgba(255,255,255,0.035)';
-    for (let px = 0; px < W; px += 70) {
-      for (let py = 0; py < H; py += 70) {
-        ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    for (let px = 60; px < W; px += 80)
+      for (let py = 60; py < H; py += 80) {
+        ctx.beginPath(); ctx.arc(px, py, 4, 0, Math.PI*2); ctx.fill();
       }
+
+    // ── Helper: dibujar texto con wrap ────────────────────
+    function drawWrapped(text, x, y, maxW, size, weight, color, alpha) {
+      if (!text || !text.trim()) return y;
+      ctx.font = `${weight} ${size}px '${font}', Arial, sans-serif`;
+      ctx.fillStyle = color || '#ffffff';
+      ctx.globalAlpha = alpha || 1;
+      ctx.textAlign = align;
+      ctx.textBaseline = 'top';
+      const words = (text || '').split(' ');
+      let line = '', posY = y, lh = size * 1.3;
+      for (const word of words) {
+        const test = line + (line ? ' ' : '') + word;
+        if (ctx.measureText(test).width > maxW && line) {
+          ctx.fillText(line, x, posY);
+          line = word; posY += lh;
+        } else line = test;
+      }
+      if (line) ctx.fillText(line, x, posY);
+      ctx.globalAlpha = 1;
+      return posY + lh; // retorna Y final
     }
 
-    const font = (adj?.font) || brandFont || 'Arial';
+    const tx = align === 'left' ? 80 : align === 'right' ? W - 80 : W / 2;
     let y = 80;
 
-    // ── LOGO ───────────────────────────────────────────────
+    // ── LOGO ─────────────────────────────────────────────
     if (brandLogo) {
       try {
         const img = await loadImage(brandLogo);
-        const ls = 120;
-        const lx = (W - ls) / 2;
+        const ls = 180; // Logo grande
+        const lx = align === 'left' ? 80 : align === 'right' ? W - 80 - ls : (W - ls) / 2;
         ctx.save();
-        roundRect(ctx, lx - 14, y - 14, ls + 28, ls + 28, 22);
-        ctx.fillStyle = 'rgba(255,255,255,0.15)';
+        roundRect(ctx, lx - 16, y - 16, ls + 32, ls + 32, 28);
+        ctx.fillStyle = 'rgba(255,255,255,0.18)';
         ctx.fill();
         ctx.restore();
         ctx.drawImage(img, lx, y, ls, ls);
-        y += ls + 40;
-      } catch(e) {}
+        y += ls + 50;
+      } catch(e) { y = 200; }
     } else {
       y = 160;
     }
 
-    // ── NÚMERO SLIDE ───────────────────────────────────────
-    ctx.font      = `600 32px '${font}', Arial`;
+    // ── NÚMERO SLIDE ──────────────────────────────────────
+    ctx.font = `600 36px '${font}', sans-serif`;
     ctx.fillStyle = 'rgba(255,255,255,0.5)';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur = 0;
     ctx.fillText(`${i+1} / ${currentCarouselSlides.length}`, W/2, y);
-    y += 50;
+    y += 56;
 
     // Línea decorativa
+    const lineW = 100;
+    const lineX = align === 'left' ? 80 : align === 'right' ? W - 80 - lineW : (W - lineW) / 2;
     ctx.fillStyle = 'rgba(255,255,255,0.35)';
-    ctx.fillRect(W/2 - 50, y, 100, 4);
+    ctx.fillRect(lineX, y, lineW, 4);
+    y += 36;
+
+    // ── TÍTULO ───────────────────────────────────────────
+    ctx.shadowColor = 'rgba(0,0,0,0.4)';
+    ctx.shadowBlur  = 20;
+    y = drawWrapped(titleText, tx, y, W - 160, titleSize, '800', '#ffffff', 1);
+    ctx.shadowBlur = 0;
     y += 30;
 
-    // ── TÍTULO ────────────────────────────────────────────
-    ctx.font         = `800 80px '${font}', Arial`;
-    ctx.fillStyle    = '#ffffff';
-    ctx.textAlign    = 'center';
-    ctx.textBaseline = 'top';
-    ctx.shadowColor  = 'rgba(0,0,0,0.35)';
-    ctx.shadowBlur   = 20;
-    const titleText = (adj?.titleText) || s.title || '';
-    const titleSizePx = ((adj?.titleSize) || 40) * 2;
-    ctx.font = `800 ${titleSizePx}px '${font}', Arial`;
-    const titleAlign = adj?.align || 'center';
-    const titleX = titleAlign === 'left' ? 80 : titleAlign === 'right' ? W - 80 : W/2;
-    ctx.textAlign = titleAlign;
-    wrapText(ctx, titleText, titleX, y, W - 160, titleSizePx * 1.25);
-    y += estimateTextHeight(titleText, W - 160, titleSizePx * 1.25) + 40;
+    // ── CONTENIDO ────────────────────────────────────────
+    drawWrapped(contentText, tx, y, W - 160, contentSize, '400', 'rgba(255,255,255,0.88)', 1);
 
-    // ── CONTENIDO ─────────────────────────────────────────
-    const contentText = (adj?.contentText) || s.content || '';
-    const contentSizePx = ((adj?.contentSize) || 20) * 2;
-    ctx.font         = `400 ${contentSizePx}px '${font}', Arial`;
-    ctx.fillStyle    = 'rgba(255,255,255,0.88)';
-    ctx.shadowBlur   = 0;
-    ctx.textAlign    = adj?.align || 'center';
-    const contentX   = (adj?.align || 'center') === 'left' ? 80 : (adj?.align) === 'right' ? W - 80 : W/2;
-    wrapText(ctx, contentText, contentX, y, W - 160, contentSizePx * 1.4);
-
-    // ── PIE ───────────────────────────────────────────────
-    ctx.font         = `500 26px '${font}', Arial`;
-    ctx.fillStyle    = 'rgba(255,255,255,0.3)';
+    // ── PIE ──────────────────────────────────────────────
+    ctx.font = `500 28px '${font}', sans-serif`;
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
+    ctx.globalAlpha = 1;
     ctx.fillText('✨ Conteniza', W/2, H - 50);
 
     const a = document.createElement('a');
@@ -3174,6 +3197,7 @@ async function downloadCarouselSlideImage(i) {
     a.click();
     showNotification('✅ Slide PNG descargado', 'success');
   } catch(e) {
+    console.error('Error descarga slide:', e);
     showNotification('Error: ' + e.message, 'error');
   }
 }
