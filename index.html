@@ -2017,8 +2017,8 @@ async function handleAuth(event) {
       ? (d.email_verification ? '¡Cuenta creada! Revisa tu email para verificar tu cuenta.' : '¡Cuenta creada!')
       : '¡Bienvenido de nuevo!';
     showNotification(successMsg, 'success');
+    await syncCredits();
     showMainApp();
-    syncCredits();
     if (authMode === 'register') {
       setTimeout(showOnboarding, 1000);
       // Si venía de seleccionar un plan de pago, iniciar checkout
@@ -2874,8 +2874,8 @@ window.addEventListener('DOMContentLoaded', () => {
     try {
       currentUser = JSON.parse(saved);
       userCredits = currentUser.credits_remaining ?? 0;
+      await syncCredits();
       showMainApp();
-      syncCredits();
       setTimeout(showOnboarding, 800); // Mostrar onboarding tras cargar la app
     } catch(e) {
       localStorage.removeItem('token');
