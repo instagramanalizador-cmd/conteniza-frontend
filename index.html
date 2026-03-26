@@ -2478,6 +2478,10 @@ function renderResults(r, pubType) {
   const storiesBody = document.getElementById('storiesBody');
   if (storiesBody) storiesBody.style.display = 'block';
   if (storiesEl) {
+    console.log('📱 Stories recibidas:', r.stories);
+    if (!r.stories || r.stories.length === 0) {
+      storiesEl.innerHTML = '<p style="color:var(--text-3);font-size:13px;padding:12px;">⚠️ La IA no generó stories. Intenta de nuevo.</p>';
+    } else {
     storiesEl.innerHTML = (r.stories||[]).map((s,i)=>{
       const parts = s.split('|').map(p => p.trim());
       const formatted = parts.map(p => `<div style="padding:5px 0;border-bottom:1px solid var(--border);font-size:12px;line-height:1.5;color:var(--text-2);">${escapeHtml(p)}</div>`).join('');
@@ -2486,6 +2490,7 @@ function renderResults(r, pubType) {
         ${formatted}
       </div>`;
     }).join('');
+    } // end else stories
   }
   // SEO
   document.getElementById('seoContent').textContent = r.seo_analysis || 'No disponible';
