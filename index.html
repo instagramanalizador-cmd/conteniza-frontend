@@ -2514,13 +2514,19 @@ function renderThumbnails(thumbs) {
     const card = document.createElement('div');
     card.className = 'thumb-card' + (i===0?' selected':'');
     card.id = `thumb-${i}`;
-    card.style.background = t.background_gradient || SLIDE_GRADIENTS[i%SLIDE_GRADIENTS.length];
+    const isPrem = currentUser?.plan_type === 'premium';
+    const useBrandBg = isPrem && currentBrand?.color_primary && currentBrand?.color_secondary
+      ? `linear-gradient(135deg,${currentBrand.color_primary},${currentBrand.color_secondary})`
+      : null;
+    card.style.background = useBrandBg || t.background_gradient || SLIDE_GRADIENTS[i%SLIDE_GRADIENTS.length];
     card.onclick = () => selectThumbnail(i);
+    const brandF = (currentUser?.plan_type==='premium' && currentBrand?.font_name) ? currentBrand.font_name : null;
     card.innerHTML = `
       <div class="thumb-num">${i+1}</div>
       <button class="thumb-dl-btn" onclick="event.stopPropagation();downloadThumbnailImage(${i})">📥 PNG</button>
-      <div class="thumb-main-text">${escapeHtml(t.text||'TEXTO')}</div>
-      ${t.secondary_text?`<div class="thumb-secondary">${escapeHtml(t.secondary_text)}</div>`:''}
+      ${brandF && currentBrand?.logo_url ? `<img src="${currentBrand.logo_url}" style="width:36px;height:36px;border-radius:6px;object-fit:contain;margin-bottom:6px;background:rgba(255,255,255,.2);padding:3px;">` : ''}
+      <div class="thumb-main-text" style="${brandF ? `font-family:'${brandF}',sans-serif;` : ''}">${escapeHtml(t.text||'TEXTO')}</div>
+      ${t.secondary_text?`<div class="thumb-secondary" style="${brandF ? `font-family:'${brandF}',sans-serif;` : ''}">${escapeHtml(t.secondary_text)}</div>`:''}
     `;
     grid.appendChild(card);
   });
@@ -2744,33 +2750,97 @@ function wrapText(ctx, text, maxW) {
 async function downloadThumbnailImage(i) {
   const t = currentThumbnails[i];
   if (!t) return;
-  showNotification('⏳ Generando PNG…', 'success');
-  const cv=document.createElement('canvas'); cv.width=1080; cv.height=1350;
-  const ctx=cv.getContext('2d');
-  const {c1,c2}=parseGradient(t.background_gradient);
-  const gr=ctx.createLinearGradient(0,0,1080,1350);
-  gr.addColorStop(0,c1); gr.addColorStop(1,c2);
-  ctx.fillStyle=gr; ctx.fillRect(0,0,1080,1350);
-  ctx.fillStyle=t.text_color||'#fff';
-  ctx.font=`900 ${parseInt(t.font_size||'42')*2}px ${t.font_family||'Arial'}, Arial`;
-  ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.shadowColor='rgba(0,0,0,.3)'; ctx.shadowBlur=12;
-  const lines=wrapText(ctx,t.text||'',900);
-  const lh=parseInt(t.font_size||'42')*2.2;
-  const sy=t.secondary_text?520:675;
-  lines.forEach((l,idx)=>ctx.fillText(l,540,sy+idx*lh));
-  if (t.secondary_text) {
-    ctx.font=`600 ${parseInt(t.secondary_size||'20')*2}px Arial`;
-    ctx.globalAlpha=.9;
-    wrapText(ctx,t.secondary_text,900).forEach((l,idx)=>ctx.fillText(l,540,sy+lines.length*lh+50+idx*50));
+  showNotification('⏳ Generando PNG 1080x1350px…', 'success');
+  try {
+    // Instagram Post: 1080x1350px (4:5)
+    const W = 1080, H = 1350;
+    const cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d');
+
+    // Marca del usuario Premium
+    const isPremium = currentUser?.plan_type === 'premium';
+    const brandCp   = isPremium && currentBrand?.color_primary   ? currentBrand.color_primary   : null;
+    const brandCs   = isPremium && currentBrand?.color_secondary ? currentBrand.color_secondary : null;
+    const brandFont = isPremium && currentBrand?.font_name       ? currentBrand.font_name        : null;
+    const brandLogo = isPremium && currentBrand?.logo_url        ? currentBrand.logo_url         : null;
+
+    // Fondo — usa colores de marca si Premium, si no usa el de la IA
+    const {c1, c2} = parseGradient(t.background_gradient);
+    const gc1 = brandCp || c1;
+    const gc2 = brandCs || c2;
+    const gr = ctx.createLinearGradient(0, 0, W, H);
+    gr.addColorStop(0, gc1); gr.addColorStop(1, gc2);
+    ctx.fillStyle = gr;
+    ctx.fillRect(0, 0, W, H);
+
+    // Patrón decorativo sutil
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    for (let x = 0; x < W; x += 80) {
+      for (let y = 0; y < H; y += 80) {
+        ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI*2); ctx.fill();
+      }
+    }
+
+    // Logo (Premium)
+    let contentY = 180;
+    if (brandLogo) {
+      try {
+        const img = await loadImage(brandLogo);
+        const logoSize = 140;
+        const logoX = (W - logoSize) / 2;
+        ctx.save();
+        roundRect(ctx, logoX - 16, contentY - 16, logoSize + 32, logoSize + 32, 28);
+        ctx.fillStyle = 'rgba(255,255,255,0.15)';
+        ctx.fill();
+        ctx.restore();
+        ctx.drawImage(img, logoX, contentY, logoSize, logoSize);
+        contentY += logoSize + 60;
+      } catch(e) { contentY = 180; }
+    }
+
+    // Título principal
+    const mainFont = brandFont || (t.font_family || 'Arial').replace(/["']/g,'');
+    const mainSize = parseInt(t.font_size || '42') * 2;
+    ctx.font = `900 ${mainSize}px '${mainFont}', Arial`;
+    ctx.fillStyle = t.text_color || '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.shadowColor = 'rgba(0,0,0,0.4)';
+    ctx.shadowBlur = 20;
+    wrapText(ctx, t.text || 'TÍTULO', W/2, contentY, W - 120, mainSize * 1.3);
+    contentY += estimateTextHeight(t.text || '', W - 120, mainSize * 1.3) + 60;
+
+    // Línea decorativa
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.fillRect(W/2 - 60, contentY, 120, 4);
+    contentY += 40;
+
+    // Subtítulo
+    if (t.secondary_text) {
+      const secSize = parseInt(t.secondary_size || '20') * 2;
+      ctx.font = `500 ${secSize}px '${mainFont}', Arial`;
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      wrapText(ctx, t.secondary_text, W/2, contentY, W - 160, secSize * 1.4);
+    }
+
+    // Pie con marca
+    ctx.shadowBlur = 0;
+    ctx.font = `500 28px '${mainFont}', Arial`;
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('✨ Conteniza', W/2, H - 50);
+
+    const a = document.createElement('a');
+    a.download = `Conteniza_Post_${i+1}_1080x1350.png`;
+    a.href = cv.toDataURL('image/png');
+    a.click();
+    showNotification('✅ PNG 1080x1350px descargado', 'success');
+  } catch(e) {
+    console.error('Error generando miniatura:', e);
+    showNotification('Error generando imagen', 'error');
   }
-  ctx.globalAlpha=1; ctx.shadowBlur=0;
-  ctx.fillStyle='rgba(255,255,255,.12)'; ctx.font='600 22px Arial';
-  ctx.fillText('Conteniza.com',540,1320);
-  const a=document.createElement('a');
-  a.download=`Conteniza_Miniatura_${i+1}.png`;
-  a.href=cv.toDataURL('image/png'); a.click();
-  showNotification('✅ PNG descargado', 'success');
 }
 
 async function downloadCarouselSlideImage(i) {
