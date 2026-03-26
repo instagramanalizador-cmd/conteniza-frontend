@@ -3219,7 +3219,7 @@ async function confirmCancelSubscription() {
    ============================================================ */
 let _subStatus = null;
 
-async async function updateSubscriptionUI() {
+async function updateSubscriptionUI() {
   // Mostrar brandBtn para Premium siempre (independiente del status de Stripe)
   const brandBtn = document.getElementById('brandBtn');
   if (brandBtn) {
