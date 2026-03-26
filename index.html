@@ -2650,7 +2650,16 @@ function thumbAdjustText(i, prop, val) {
 
 function thumbAdjustFn(i, prop, val) {
   if (!window.thumbAdjust) window.thumbAdjust = {};
-  if (!window.thumbAdjust[i]) window.thumbAdjust[i] = { fontSize: 42, align: 'center', logoSize: 120 };
+  if (!window.thumbAdjust[i]) {
+    const _t = currentThumbnails && currentThumbnails[i];
+    window.thumbAdjust[i] = {
+      fontSize: _t ? parseInt(_t.font_size||'42') : 42,
+      align: 'center',
+      logoSize: 80,
+      titleText: _t ? (_t.text || '') : '',
+      subText: _t ? (_t.secondary_text || '') : ''
+    };
+  }
   if (prop === 'align') {
     window.thumbAdjust[i].align = val;
   } else {
@@ -4153,7 +4162,9 @@ async function detectNicheFromText(extractedText) {
 async function captureHtmlToCanvas(buildFn, width, height) {
   // Contenedor invisible pero en el DOM
   const wrapper = document.createElement('div');
-  wrapper.style.cssText = `position:fixed;top:0;left:0;width:${width}px;height:${height}px;overflow:hidden;z-index:-9999;opacity:0;pointer-events:none;`;
+  // IMPORTANTE: NO usar opacity:0 — html2canvas no captura elementos invisibles
+  // Usar transform para mover fuera del viewport pero manteniendo visibility
+  wrapper.style.cssText = `position:fixed;top:0;left:0;width:${width}px;height:${height}px;overflow:hidden;pointer-events:none;transform:translateX(-${width+100}px);`;
   document.body.appendChild(wrapper);
   
   const el = document.createElement('div');
@@ -4162,7 +4173,9 @@ async function captureHtmlToCanvas(buildFn, width, height) {
   wrapper.appendChild(el);
   
   // Esperar render
-  await new Promise(r => setTimeout(r, 300));
+  // Esperar dos frames de render para que el navegador pinte el elemento
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  await new Promise(r => setTimeout(r, 200));
   
   const canvas = await html2canvas(el, {
     scale: 2,
