@@ -1291,6 +1291,7 @@
     <div class="user-bar-right">
       <button id="upgradePlanBtn" class="btn btn-primary btn-sm hidden" onclick="showPlansScreen()" style="font-size:12px;">⬆️ Mejorar plan</button>
       <button class="btn btn-ghost btn-sm" onclick="openSidebar()">📜 Historial</button>
+      <button id="brandBtn" class="btn btn-ghost btn-sm hidden" onclick="showBrandScreen()" title="Configurar mi marca">🎨 Mi marca</button>
       <button class="btn btn-outline btn-sm hidden" id="cancelSubBtn" onclick="cancelSubscription()" style="color:var(--danger);border-color:var(--danger);">Cancelar plan</button>
       <button class="btn btn-danger btn-sm" onclick="logout()">Salir</button>
       <button class="btn btn-ghost btn-sm hidden" id="adminBtn" onclick="openAdmin()">⚙️ Admin</button>
@@ -2100,6 +2101,12 @@ function updateTopbarActions() {
 }
 
 function updateUserPanel() {
+  // Mostrar botón Mi Marca solo para Premium
+  const brandBtn = document.getElementById('brandBtn');
+  if (brandBtn) {
+    if (currentUser?.plan_type === 'premium') brandBtn.classList.remove('hidden');
+    else brandBtn.classList.add('hidden');
+  }
   if (!currentUser) return;
   document.getElementById('userEmail').textContent   = currentUser.email;
   document.getElementById('userCredits').textContent = userCredits;
@@ -3323,6 +3330,155 @@ function goHome() {
   }, 400);
 }
 
+
+
+/* ============================================================
+   MI MARCA — Configuración de identidad visual (Premium)
+   ============================================================ */
+const BRAND_FONTS = ['DM Sans','Montserrat','Poppins','Playfair Display','Raleway','Oswald','Lato','Roboto','Inter','Nunito'];
+let currentBrand = { logo_url: null, color_primary: '#8B5FBF', color_secondary: '#E91E8C', font_name: 'DM Sans' };
+let selectedFont = 'DM Sans';
+
+async function showBrandScreen() {
+  if (!currentUser) return;
+  if (currentUser.plan_type !== 'premium') {
+    showNotification('La configuración de marca es exclusiva del plan Premium 👑', 'error');
+    return;
+  }
+  document.getElementById('mainApp').classList.add('hidden');
+  document.getElementById('brandScreen').classList.remove('hidden');
+  await loadBrandConfig();
+  renderFontGrid();
+  updateBrandPreview();
+}
+
+function hideBrandScreen() {
+  document.getElementById('brandScreen').classList.add('hidden');
+  document.getElementById('mainApp').classList.remove('hidden');
+}
+
+async function loadBrandConfig() {
+  try {
+    const r = await apiFetch(`${API_URL}/brand`);
+    const d = await r.json();
+    if (d.success && d.brand) {
+      currentBrand = d.brand;
+      selectedFont  = d.brand.font_name || 'DM Sans';
+      // Actualizar colores
+      document.getElementById('colorPrimary').value    = currentBrand.color_primary || '#8B5FBF';
+      document.getElementById('colorPrimaryHex').value  = currentBrand.color_primary || '#8B5FBF';
+      document.getElementById('colorSecondary').value   = currentBrand.color_secondary || '#E91E8C';
+      document.getElementById('colorSecondaryHex').value = currentBrand.color_secondary || '#E91E8C';
+      // Logo
+      if (currentBrand.logo_url) {
+        document.getElementById('logoPreview').innerHTML = `<img src="${currentBrand.logo_url}" style="width:100%;height:100%;object-fit:contain;border-radius:10px;">`;
+        document.getElementById('removeLogoBtn').classList.remove('hidden');
+        document.getElementById('previewLogo').style.display = 'block';
+        document.getElementById('previewLogoImg').src = currentBrand.logo_url;
+      }
+    }
+  } catch(e) { console.error('Error cargando marca:', e); }
+}
+
+function renderFontGrid() {
+  const grid = document.getElementById('fontGrid');
+  if (!grid) return;
+  grid.innerHTML = BRAND_FONTS.map(font => `
+    <div onclick="selectFont('${font}')" id="font-btn-${font.replace(/ /g,'-')}"
+      style="padding:12px;border-radius:8px;border:2px solid ${selectedFont===font ? 'var(--brand)' : 'var(--border)'};
+             cursor:pointer;text-align:center;background:${selectedFont===font ? 'var(--brand-light)' : 'var(--surface)'};">
+      <div style="font-family:'${font}',sans-serif;font-size:15px;font-weight:600;color:var(--text);">${font}</div>
+      <div style="font-family:'${font}',sans-serif;font-size:11px;color:var(--text-3);">Aa Bb 123</div>
+    </div>
+  `).join('');
+}
+
+function selectFont(font) {
+  selectedFont = font;
+  renderFontGrid();
+  updateBrandPreview();
+}
+
+function syncColor(type) {
+  const hex = document.getElementById(`color${type==='primary'?'Primary':'Secondary'}Hex`).value;
+  if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+    document.getElementById(`color${type==='primary'?'Primary':'Secondary'}`).value = hex;
+    updateBrandPreview();
+  }
+}
+
+function updateBrandPreview() {
+  const cp  = document.getElementById('colorPrimary').value;
+  const cs  = document.getElementById('colorSecondary').value;
+  document.getElementById('colorPrimaryHex').value   = cp;
+  document.getElementById('colorSecondaryHex').value = cs;
+  const card = document.getElementById('brandPreviewCard');
+  if (card) card.style.background = `linear-gradient(135deg,${cp},${cs})`;
+  const title = document.getElementById('previewTitle');
+  const sub   = document.getElementById('previewSub');
+  if (title) title.style.fontFamily = `'${selectedFont}',sans-serif`;
+  if (sub)   sub.style.fontFamily   = `'${selectedFont}',sans-serif`;
+}
+
+async function handleLogoUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { showNotification('El logo no puede superar 5MB', 'error'); return; }
+  // Preview local
+  const url = URL.createObjectURL(file);
+  document.getElementById('logoPreview').innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:contain;border-radius:10px;">`;
+  document.getElementById('previewLogo').style.display = 'block';
+  document.getElementById('previewLogoImg').src = url;
+  // Subir al servidor
+  try {
+    const fd = new FormData();
+    fd.append('logo', file);
+    const r = await apiFetch(`${API_URL}/brand/logo`, { method: 'POST', body: fd });
+    const d = await r.json();
+    if (d.success) {
+      currentBrand.logo_url = d.logo_url;
+      document.getElementById('removeLogoBtn').classList.remove('hidden');
+      showNotification('✅ Logo subido correctamente', 'success');
+    } else throw new Error(d.error);
+  } catch(e) { showNotification('Error subiendo logo: ' + e.message, 'error'); }
+}
+
+async function removeLogo() {
+  if (!confirm('¿Eliminar el logo?')) return;
+  try {
+    const r = await apiFetch(`${API_URL}/brand/logo`, { method: 'DELETE' });
+    const d = await r.json();
+    if (d.success) {
+      currentBrand.logo_url = null;
+      document.getElementById('logoPreview').innerHTML = '🏢';
+      document.getElementById('previewLogo').style.display = 'none';
+      document.getElementById('removeLogoBtn').classList.add('hidden');
+      showNotification('Logo eliminado', 'success');
+    }
+  } catch(e) { showNotification('Error eliminando logo', 'error'); }
+}
+
+async function saveBrand() {
+  try {
+    const r = await apiFetch(`${API_URL}/brand`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        color_primary:   document.getElementById('colorPrimary').value,
+        color_secondary: document.getElementById('colorSecondary').value,
+        font_name:       selectedFont
+      })
+    });
+    const d = await r.json();
+    if (d.success) {
+      currentBrand.color_primary   = document.getElementById('colorPrimary').value;
+      currentBrand.color_secondary = document.getElementById('colorSecondary').value;
+      currentBrand.font_name       = selectedFont;
+      showNotification('✅ Configuración de marca guardada', 'success');
+    } else throw new Error(d.error);
+  } catch(e) { showNotification('Error guardando marca: ' + e.message, 'error'); }
+}
+
 </script>
 
 <!-- =========================================================
@@ -3344,6 +3500,92 @@ function goHome() {
       <button id="obNext" onclick="nextOnboarding()" class="btn btn-primary">Siguiente →</button>
     </div>
   </div>
+</div>
+
+
+<!-- =========================================================
+     BRAND SCREEN — Mi Marca (Solo Premium)
+     ========================================================= -->
+<div id="brandScreen" class="hidden" style="max-width:700px;margin:0 auto;padding:24px 16px 80px;">
+
+  <!-- Header -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:28px;">
+    <button onclick="hideBrandScreen()" style="background:none;border:none;cursor:pointer;color:var(--text-2);font-size:22px;">←</button>
+    <div>
+      <h2 style="font-family:'Syne',sans-serif;font-size:22px;font-weight:700;margin:0;">🎨 Mi Marca</h2>
+      <p style="font-size:13px;color:var(--text-3);margin:2px 0 0;">Personaliza tus publicaciones con tu identidad visual</p>
+    </div>
+  </div>
+
+  <!-- Logo -->
+  <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:24px;margin-bottom:16px;">
+    <h3 style="font-size:15px;font-weight:700;margin:0 0 16px;">📷 Logo de tu marca</h3>
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+      <div id="logoPreview" style="width:80px;height:80px;border-radius:12px;background:var(--surface-2);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden;flex-shrink:0;">
+        🏢
+      </div>
+      <div style="flex:1;min-width:180px;">
+        <label style="display:inline-block;background:var(--brand-light);color:var(--brand);padding:10px 20px;border-radius:var(--radius-md);cursor:pointer;font-weight:600;font-size:13px;">
+          📁 Subir logo
+          <input type="file" id="logoInput" accept="image/*" style="display:none;" onchange="handleLogoUpload(event)">
+        </label>
+        <p style="font-size:11px;color:var(--text-3);margin:6px 0 0;">JPG, PNG, WebP o SVG. Máx 5MB.</p>
+        <button id="removeLogoBtn" onclick="removeLogo()" class="hidden" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:12px;margin-top:4px;">🗑️ Eliminar logo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Colores -->
+  <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:24px;margin-bottom:16px;">
+    <h3 style="font-size:15px;font-weight:700;margin:0 0 16px;">🎨 Colores de marca</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div>
+        <label style="font-size:13px;color:var(--text-2);font-weight:600;display:block;margin-bottom:8px;">Color primario</label>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <input type="color" id="colorPrimary" value="#8B5FBF" oninput="updateBrandPreview()"
+            style="width:44px;height:44px;border:none;border-radius:8px;cursor:pointer;padding:2px;">
+          <input type="text" id="colorPrimaryHex" value="#8B5FBF" maxlength="7"
+            style="flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:13px;background:var(--surface);color:var(--text);"
+            oninput="syncColor('primary')">
+        </div>
+      </div>
+      <div>
+        <label style="font-size:13px;color:var(--text-2);font-weight:600;display:block;margin-bottom:8px;">Color secundario</label>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <input type="color" id="colorSecondary" value="#E91E8C" oninput="updateBrandPreview()"
+            style="width:44px;height:44px;border:none;border-radius:8px;cursor:pointer;padding:2px;">
+          <input type="text" id="colorSecondaryHex" value="#E91E8C" maxlength="7"
+            style="flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:13px;background:var(--surface);color:var(--text);"
+            oninput="syncColor('secondary')">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fuente -->
+  <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:24px;margin-bottom:16px;">
+    <h3 style="font-size:15px;font-weight:700;margin:0 0 16px;">✍️ Tipografía</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;" id="fontGrid">
+    </div>
+  </div>
+
+  <!-- Preview -->
+  <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:24px;margin-bottom:24px;">
+    <h3 style="font-size:15px;font-weight:700;margin:0 0 16px;">👁️ Vista previa</h3>
+    <div id="brandPreviewCard" style="border-radius:12px;padding:24px;text-align:center;background:linear-gradient(135deg,#8B5FBF,#E91E8C);">
+      <div id="previewLogo" style="display:none;margin-bottom:12px;">
+        <img id="previewLogoImg" style="width:48px;height:48px;border-radius:8px;object-fit:contain;background:#fff;padding:4px;">
+      </div>
+      <div id="previewTitle" style="font-family:'DM Sans',sans-serif;font-size:20px;font-weight:700;color:#fff;margin-bottom:6px;">Tu título aquí</div>
+      <div id="previewSub" style="font-family:'DM Sans',sans-serif;font-size:13px;color:rgba(255,255,255,.8);">Contenido de ejemplo para ver la tipografía</div>
+    </div>
+  </div>
+
+  <!-- Guardar -->
+  <button onclick="saveBrand()" class="btn btn-primary btn-full" style="padding:16px;font-size:16px;font-weight:700;">
+    💾 Guardar configuración de marca
+  </button>
+
 </div>
 
 </body>
