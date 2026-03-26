@@ -165,13 +165,12 @@
     .user-bar-inner {
       max-width: 1100px;
       margin: 0 auto;
-      padding: 8px 20px;
+      padding: 6px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
+      gap: 6px;
       flex-wrap: nowrap;
-      overflow-x: auto;
     }
     .user-bar-left {
       display: flex;
@@ -183,7 +182,7 @@
       background: rgba(255,255,255,.15);
       border: 1px solid rgba(255,255,255,.2);
       color: #fff;
-      padding: 5px 14px;
+      padding: 4px 14px;
       border-radius: var(--radius-full);
       font-size: 13px;
       font-weight: 500;
@@ -192,7 +191,7 @@
       gap: 6px;
       backdrop-filter: blur(8px);
     }
-    .user-bar-right { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; overflow-x: auto; }
+    .user-bar-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 
     /* =============================================
        BUTTONS
@@ -2448,24 +2447,37 @@ function renderResults(r, pubType) {
   // Captions
   const cDiv = document.getElementById('captionsContent');
   const isReel = (selectedPubType === 'reel');
-  cDiv.innerHTML = (r.captions||[]).map((c,i)=>`
-    <div class="caption-item">
-      <div class="caption-num">${isReel ? '🎬 Guión Reel' : 'Caption'} ${i+1}</div>
+  cDiv.innerHTML = (r.captions||[]).map((c,i)=>{
+    if (isReel) {
+      // Formatear guión de reel con secciones visuales
+      const parts = c.split('|').map(p => p.trim());
+      const formatted = parts.map(p => `<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;line-height:1.5;">${escapeHtml(p)}</div>`).join('');
+      return `<div class="caption-item" style="padding:16px;">
+        <div class="caption-num" style="color:var(--brand);margin-bottom:10px;">🎬 Guión Reel ${i+1}</div>
+        ${formatted}
+      </div>`;
+    }
+    return `<div class="caption-item">
+      <div class="caption-num">Caption ${i+1}</div>
       ${escapeHtml(c)}
-    </div>`).join('');
+    </div>`;
+  }).join('');
   // Thumbnails
   renderThumbnails(r.thumbnails);
   // Carousel
   renderCarousel(r.carousel_slides);
   // Stories
-  // Stories con formato mejorado
+  // Stories con formato de secciones
   const storiesEl = document.getElementById('storiesContent');
   if (storiesEl) {
-    storiesEl.innerHTML = (r.stories||[]).map((s,i)=>`
-      <div style="background:var(--surface-2);border-radius:var(--radius-md);padding:12px 16px;margin-bottom:8px;border-left:3px solid var(--brand);">
-        <div style="font-size:11px;color:var(--brand);font-weight:700;margin-bottom:4px;">📱 STORY ${i+1}</div>
-        <div style="font-size:13px;color:var(--text);line-height:1.5;">${escapeHtml(s)}</div>
-      </div>`).join('');
+    storiesEl.innerHTML = (r.stories||[]).map((s,i)=>{
+      const parts = s.split('|').map(p => p.trim());
+      const formatted = parts.map(p => `<div style="padding:5px 0;border-bottom:1px solid var(--border);font-size:12px;line-height:1.5;color:var(--text-2);">${escapeHtml(p)}</div>`).join('');
+      return `<div style="background:var(--surface-2);border-radius:var(--radius-md);padding:14px 16px;margin-bottom:10px;border-left:3px solid var(--brand);">
+        <div style="font-size:11px;color:var(--brand);font-weight:700;margin-bottom:8px;">📱 STORY ${i+1}</div>
+        ${formatted}
+      </div>`;
+    }).join('');
   }
   // SEO
   document.getElementById('seoContent').textContent = r.seo_analysis || 'No disponible';
