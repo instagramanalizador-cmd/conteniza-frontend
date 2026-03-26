@@ -2851,7 +2851,7 @@ async function generatePDF() {
 /* ============================================================
    DOMContentLoaded — RESTORE SESSION
    ============================================================ */
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
   checkEmailVerification();
   checkStripeReturn();
   loadPlans();
