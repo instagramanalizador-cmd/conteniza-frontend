@@ -2560,56 +2560,92 @@ function renderThumbnailSpecs(i) {
   const panel = document.getElementById('thumbSpecs');
   if (!panel || !currentThumbnails[i]) return;
   const t = currentThumbnails[i];
-  // Guardar ajustes del usuario por miniatura
   if (!window.thumbAdjust) window.thumbAdjust = {};
   if (!window.thumbAdjust[i]) window.thumbAdjust[i] = {
     fontSize: parseInt(t.font_size || '42'),
     align: 'center',
-    logoSize: 120
+    logoSize: 80,
+    titleText: t.text || '',
+    subText: t.secondary_text || '',
   };
   const adj = window.thumbAdjust[i];
+  const isPremium = currentUser?.plan_type === 'premium';
+  const hasLogo = isPremium && currentBrand?.logo_url;
+  const cp = (isPremium && currentBrand?.color_primary) || null;
+  const cs = (isPremium && currentBrand?.color_secondary) || null;
+  const font = (isPremium && currentBrand?.font_name) || (t.font_family||'DM Sans').replace(/['"]/g,'');
+  const {c1,c2} = parseGradient(t.background_gradient);
+  const gc1 = cp || c1; const gc2 = cs || c2;
+
   panel.innerHTML = `
-    <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;margin-top:12px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
-        <strong style="font-size:14px;color:var(--text);">⚙️ Ajustes — Miniatura ${i+1}</strong>
-        <button class="btn btn-success btn-sm" onclick="downloadThumbnailImage(${i})">📥 Descargar PNG 1080×1350</button>
+    <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-top:12px;">
+      <div style="background:var(--brand);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="color:#fff;font-weight:700;font-size:14px;">✏️ Editor — Miniatura ${i+1}</span>
+        <button class="btn btn-sm" onclick="downloadThumbnailImage(${i})" style="background:#fff;color:var(--brand);font-weight:700;font-size:12px;">📥 PNG 1080×1350</button>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;">
-        <!-- Tamaño de fuente -->
+      <div style="padding:16px;display:flex;flex-direction:column;gap:14px;">
+
+        <!-- Preview -->
+        <div style="border-radius:10px;min-height:120px;padding:20px;display:flex;flex-direction:column;justify-content:center;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};background:linear-gradient(135deg,${gc1},${gc2});text-align:${adj.align};">
+          ${hasLogo ? `<img src="${currentBrand.logo_url}" style="width:${Math.round(adj.logoSize*0.5)}px;height:${Math.round(adj.logoSize*0.5)}px;object-fit:contain;border-radius:8px;margin-bottom:8px;background:rgba(255,255,255,.2);padding:4px;">` : ''}
+          <div style="font-family:'${font}',sans-serif;font-size:${Math.round(adj.fontSize*0.55)}px;font-weight:900;color:${t.text_color||'#fff'};line-height:1.2;">${escapeHtml(adj.titleText)}</div>
+          ${adj.subText ? `<div style="font-family:'${font}',sans-serif;font-size:${Math.round(adj.fontSize*0.3)}px;color:rgba(255,255,255,.85);margin-top:6px;">${escapeHtml(adj.subText)}</div>` : ''}
+        </div>
+
+        <!-- Textos editables -->
         <div>
-          <label style="font-size:12px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Tamaño título</label>
-          <div style="display:flex;align-items:center;gap:6px;">
-            <button onclick="thumbAdjustFn(${i},'fontSize',-4)" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:14px;">−</button>
-            <span id="fs-val-${i}" style="font-size:13px;font-weight:700;min-width:36px;text-align:center;">${adj.fontSize}px</span>
-            <button onclick="thumbAdjustFn(${i},'fontSize',4)" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:14px;">+</button>
+          <label style="font-size:12px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Título</label>
+          <input type="text" value="${escapeHtml(adj.titleText)}" oninput="thumbAdjustText(${i},'titleText',this.value)"
+            style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:13px;background:var(--surface);color:var(--text);box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Subtítulo</label>
+          <input type="text" value="${escapeHtml(adj.subText)}" oninput="thumbAdjustText(${i},'subText',this.value)"
+            style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:13px;background:var(--surface);color:var(--text);box-sizing:border-box;">
+        </div>
+
+        <!-- Controles -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+          <div>
+            <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Título (px)</label>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <button onclick="thumbAdjustFn(${i},'fontSize',-4)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;">−</button>
+              <span style="font-size:12px;font-weight:700;min-width:36px;text-align:center;">${adj.fontSize}</span>
+              <button onclick="thumbAdjustFn(${i},'fontSize',4)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;">+</button>
+            </div>
+          </div>
+          ${hasLogo ? `
+          <div>
+            <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Logo (px)</label>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <button onclick="thumbAdjustFn(${i},'logoSize',-20)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;">−</button>
+              <span style="font-size:12px;font-weight:700;min-width:36px;text-align:center;">${adj.logoSize}</span>
+              <button onclick="thumbAdjustFn(${i},'logoSize',20)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;">+</button>
+            </div>
+          </div>` : '<div></div>'}
+          <div>
+            <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Alineación</label>
+            <div style="display:flex;gap:3px;">
+              ${['left','center','right'].map(a=>`<button onclick="thumbAdjustFn(${i},'align','${a}')" style="padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:${adj.align===a?'var(--brand)':'var(--surface-2)'};color:${adj.align===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:12px;">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
+            </div>
           </div>
         </div>
-        <!-- Alineación -->
-        <div>
-          <label style="font-size:12px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Alineación</label>
-          <div style="display:flex;gap:4px;">
-            ${['left','center','right'].map(a => `<button onclick="thumbAdjustFn(${i},'align','${a}')" style="padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:${adj.align===a?'var(--brand)':'var(--surface)'};color:${adj.align===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:13px;">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
-          </div>
+
+        <!-- Info marca -->
+        <div style="padding:8px 12px;background:var(--brand-light);border-radius:8px;font-size:11px;color:var(--brand);">
+          ${cp ? `🎨 ${gc1} → ${gc2} &nbsp;` : '⚠️ Sin marca &nbsp;'}
+          ${font !== 'DM Sans' ? `✍️ ${font} &nbsp;` : ''}
+          ${hasLogo ? '🖼️ Logo activo' : ''}
         </div>
-        <!-- Tamaño logo -->
-        <div>
-          <label style="font-size:12px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Tamaño logo</label>
-          <div style="display:flex;align-items:center;gap:6px;">
-            <button onclick="thumbAdjustFn(${i},'logoSize',-20)" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:14px;">−</button>
-            <span id="ls-val-${i}" style="font-size:13px;font-weight:700;min-width:36px;text-align:center;">${adj.logoSize}px</span>
-            <button onclick="thumbAdjustFn(${i},'logoSize',20)" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:14px;">+</button>
-          </div>
-        </div>
-      </div>
-      <!-- Info marca activa -->
-      <div style="margin-top:12px;padding:8px 12px;background:var(--brand-light);border-radius:8px;font-size:11px;color:var(--brand);">
-        ${currentBrand?.color_primary ? `🎨 Colores marca: ${currentBrand.color_primary} → ${currentBrand.color_secondary} &nbsp;` : ''}
-        ${currentBrand?.font_name ? `✍️ Fuente: ${currentBrand.font_name} &nbsp;` : ''}
-        ${currentBrand?.logo_url ? '🖼️ Logo: activo' : ''}
-        ${!currentBrand?.color_primary && !currentBrand?.font_name ? '⚠️ Sin marca configurada — usando colores de la IA' : ''}
       </div>
     </div>
   `;
+}
+
+function thumbAdjustText(i, prop, val) {
+  if (!window.thumbAdjust || !window.thumbAdjust[i]) return;
+  window.thumbAdjust[i][prop] = val;
+  renderThumbnailSpecs(i);
 }
 
 function thumbAdjustFn(i, prop, val) {
@@ -2679,6 +2715,7 @@ function renderCarouselSpecs(i) {
       titleText: s.title || '',
       contentText: s.content || '',
       font: (isPremium && currentBrand?.font_name) ? currentBrand.font_name : 'DM Sans',
+      logoSize: 80,
       colorPrimary:   (isPremium && currentBrand?.color_primary)   ? currentBrand.color_primary   : null,
       colorSecondary: (isPremium && currentBrand?.color_secondary) ? currentBrand.color_secondary : null,
     };
@@ -2732,6 +2769,17 @@ function renderCarouselSpecs(i) {
               <button onclick="slideAdjustFn(${i},'titleSize',2)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:26px;height:26px;cursor:pointer;">+</button>
             </div>
           </div>
+
+          <!-- Tamaño logo -->
+          ${isPremium && currentBrand?.logo_url ? `
+          <div>
+            <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Logo (px)</label>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <button onclick="slideAdjustFn(${i},'logoSize',-10)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:26px;height:26px;cursor:pointer;">−</button>
+              <span style="font-size:12px;font-weight:700;min-width:32px;text-align:center;">${adj.logoSize||80}</span>
+              <button onclick="slideAdjustFn(${i},'logoSize',10)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:26px;height:26px;cursor:pointer;">+</button>
+            </div>
+          </div>` : ''}
 
           <!-- Tamaño contenido -->
           <div>
@@ -2798,8 +2846,8 @@ function slideAdjustFn(i, prop, val) {
   if (prop === 'align' || prop === 'font') {
     window.slideAdjust[i][prop] = val;
   } else {
-    const min = prop === 'titleSize' ? 12 : 10;
-    const max = prop === 'titleSize' ? 80 : 50;
+    const min = prop === 'titleSize' ? 12 : prop === 'logoSize' ? 40 : 10;
+    const max = prop === 'titleSize' ? 80 : prop === 'logoSize' ? 200 : 50;
     window.slideAdjust[i][prop] = Math.max(min, Math.min(max, window.slideAdjust[i][prop] + val));
   }
   renderCarouselSpecs(i);
@@ -3050,7 +3098,7 @@ async function downloadThumbnailImage(i) {
     // Título
     const title = document.createElement('div');
     title.style.cssText = `font-size:${fs}px;font-weight:900;color:${t.text_color||'#fff'};line-height:1.2;text-shadow:0 2px 16px rgba(0,0,0,0.35);font-family:'${font}',sans-serif;`;
-    title.textContent = t.text || '';
+    title.textContent = adj.titleText || t.text || '';
     inner.appendChild(title);
 
     // Línea
@@ -3059,11 +3107,12 @@ async function downloadThumbnailImage(i) {
     inner.appendChild(line);
 
     // Subtítulo
-    if (t.secondary_text) {
+    const subTextFinal = adj.subText !== undefined ? adj.subText : (t.secondary_text || '');
+    if (subTextFinal) {
       const sub = document.createElement('div');
       const secFs = adj.fontSize ? Math.round(adj.fontSize * 0.55) : parseInt(t.secondary_size||'20');
       sub.style.cssText = `font-size:${secFs}px;font-weight:500;color:rgba(255,255,255,0.88);line-height:1.5;font-family:'${font}',sans-serif;`;
-      sub.textContent = t.secondary_text;
+      sub.textContent = subTextFinal;
       inner.appendChild(sub);
     }
 
@@ -3148,13 +3197,7 @@ async function downloadCarouselSlideImage(i) {
       await new Promise(r => { logo.onload = r; logo.onerror = r; });
     }
 
-    // Número slide
-    const num = document.createElement('div');
-    num.style.cssText = `font-size:14px;font-weight:600;color:rgba(255,255,255,0.5);letter-spacing:2px;`;
-    num.textContent = `${i+1} / ${total}`;
-    content.appendChild(num);
-
-    // Línea decorativa
+    // Línea decorativa (sin número de slide)
     const line = document.createElement('div');
     line.style.cssText = `width:60px;height:3px;background:rgba(255,255,255,0.4);border-radius:2px;`;
     content.appendChild(line);
