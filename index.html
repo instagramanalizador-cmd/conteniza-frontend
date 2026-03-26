@@ -8,6 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&family=Montserrat:wght@400;600;700&family=Poppins:wght@400;600;700&family=Playfair+Display:wght@400;700&family=Raleway:wght@400;600;700&family=Oswald:wght@400;600&family=Lato:wght@400;700&family=Roboto:wght@400;700&family=Inter:wght@400;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="consent.js"></script>
 
   <style>
@@ -1674,7 +1676,8 @@
           <div id="carouselBody" class="result-section-body">
             <div id="carouselContent" style="overflow:hidden;width:100%;">
               <div class="carousel-scroll" id="carouselSlides"></div>
-              <div class="slide-controls" style="display:flex;align-items:center;gap:8px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;flex-wrap:wrap;gap:8px;">
+        <div class="slide-controls" style="display:flex;align-items:center;gap:8px;">
                 <button class="slide-ctrl-btn" onclick="navCarousel(-1)" title="Slide anterior">‹</button>
                 <span id="carouselNavPos" style="font-size:12px;color:var(--text-2);min-width:40px;text-align:center;">1 / 8</span>
                 <button class="slide-ctrl-btn" onclick="navCarousel(1)" title="Slide siguiente">›</button>
@@ -3484,6 +3487,196 @@ async function saveBrand() {
       showNotification('✅ Configuración de marca guardada', 'success');
     } else throw new Error(d.error);
   } catch(e) { showNotification('Error guardando marca: ' + e.message, 'error'); }
+}
+
+
+
+/* ============================================================
+   EXPORTAR CARRUSEL PARA INSTAGRAM
+   Medidas: Carrusel/Post = 1080x1350px (4:5), Story/Reel = 1080x1920px
+   ============================================================ */
+async function exportCarouselImages() {
+  if (!currentCarouselSlides || !currentCarouselSlides.length) {
+    showNotification('Genera contenido primero', 'error');
+    return;
+  }
+
+  // Detectar tipo de publicación para medidas correctas
+  const pubType = document.getElementById('publicationType')?.value || 'carousel';
+  const isStoryReel = pubType === 'story' || pubType === 'reel';
+  const W = 1080;
+  const H = isStoryReel ? 1920 : 1350; // 1080x1920 stories/reels, 1080x1350 carrusel/post
+
+  const btn = document.getElementById('exportCarouselBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Generando imágenes...'; }
+  showNotification('Generando imágenes para Instagram...', 'success');
+
+  try {
+    const isPremium = currentUser?.plan_type === 'premium';
+    const cp  = (isPremium && currentBrand?.color_primary)   ? currentBrand.color_primary   : '#8B5FBF';
+    const cs  = (isPremium && currentBrand?.color_secondary) ? currentBrand.color_secondary : '#E91E8C';
+    const font = (isPremium && currentBrand?.font_name)      ? currentBrand.font_name        : 'DM Sans';
+    const logo = (isPremium && currentBrand?.logo_url)       ? currentBrand.logo_url         : null;
+
+    const zip = new JSZip();
+    const folder = zip.folder('conteniza_instagram');
+
+    for (let i = 0; i < currentCarouselSlides.length; i++) {
+      const slide = currentCarouselSlides[i];
+
+      // Crear canvas de alta resolución
+      const canvas  = document.createElement('canvas');
+      canvas.width  = W;
+      canvas.height = H;
+      const ctx = canvas.getContext('2d');
+
+      // Fondo degradado con colores de marca
+      const grad = ctx.createLinearGradient(0, 0, W, H);
+      grad.addColorStop(0, cp);
+      grad.addColorStop(1, cs);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+
+      // Patrón de puntos decorativo (sutil)
+      ctx.fillStyle = 'rgba(255,255,255,0.04)';
+      for (let x = 0; x < W; x += 60) {
+        for (let y = 0; y < H; y += 60) {
+          ctx.beginPath();
+          ctx.arc(x, y, 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Logo (si existe)
+      let logoY = 80;
+      if (logo) {
+        try {
+          const img = await loadImage(logo);
+          const logoSize = 120;
+          const logoX = (W - logoSize) / 2;
+          // Fondo blanco redondeado para el logo
+          ctx.save();
+          roundRect(ctx, logoX - 12, logoY - 12, logoSize + 24, logoSize + 24, 24);
+          ctx.fillStyle = 'rgba(255,255,255,0.15)';
+          ctx.fill();
+          ctx.restore();
+          ctx.drawImage(img, logoX, logoY, logoSize, logoSize);
+          logoY += logoSize + 40;
+        } catch(e) { logoY = 80; }
+      }
+
+      // Número de slide
+      ctx.font = `600 32px '${font}', sans-serif`;
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${i+1} / ${currentCarouselSlides.length}`, W/2, logoY + 20);
+
+      // Línea decorativa
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.fillRect(W/2 - 40, logoY + 40, 80, 3);
+
+      // Título
+      const titleY = logoY + 80;
+      ctx.font = `700 ${isStoryReel ? 72 : 64}px '${font}', sans-serif`;
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.shadowColor = 'rgba(0,0,0,0.3)';
+      ctx.shadowBlur = 20;
+      wrapText(ctx, slide.title || '', W/2, titleY, W - 120, isStoryReel ? 88 : 78);
+      ctx.shadowBlur = 0;
+
+      // Contenido
+      const contentY = titleY + estimateTextHeight(slide.title || '', W - 120, isStoryReel ? 88 : 78) + 50;
+      ctx.font = `400 ${isStoryReel ? 44 : 40}px '${font}', sans-serif`;
+      ctx.fillStyle = 'rgba(255,255,255,0.88)';
+      wrapText(ctx, slide.content || '', W/2, contentY, W - 140, isStoryReel ? 56 : 52);
+
+      // Marca de agua / nombre de marca en la parte inferior
+      ctx.font = `500 28px '${font}', sans-serif`;
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.textAlign = 'center';
+      ctx.fillText('✨ Conteniza', W/2, H - 60);
+
+      // Convertir canvas a blob y añadir al ZIP
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+      folder.file(`slide_${String(i+1).padStart(2,'0')}.png`, blob);
+    }
+
+    // Generar y descargar ZIP
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const url  = URL.createObjectURL(zipBlob);
+    const link = document.createElement('a');
+    link.href     = url;
+    link.download = `conteniza_${pubType}_${Date.now()}.zip`;
+    link.click();
+    URL.revokeObjectURL(url);
+
+    showNotification(`✅ ${currentCarouselSlides.length} imágenes descargadas (${W}x${H}px)`, 'success');
+
+  } catch(e) {
+    console.error('Error exportando:', e);
+    showNotification('Error generando imágenes: ' + e.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '📥 Exportar para Instagram'; }
+  }
+}
+
+// Helpers para dibujar texto en canvas
+function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+  if (!text) return;
+  const words = text.split(' ');
+  let line  = '';
+  let posY  = y;
+  for (const word of words) {
+    const testLine  = line + word + ' ';
+    const metrics   = ctx.measureText(testLine);
+    if (metrics.width > maxWidth && line !== '') {
+      ctx.fillText(line.trim(), x, posY);
+      line = word + ' ';
+      posY += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+  ctx.fillText(line.trim(), x, posY);
+}
+
+function estimateTextHeight(text, maxWidth, lineHeight) {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.font = `700 64px sans-serif`;
+  const words = (text || '').split(' ');
+  let line = '', lines = 1;
+  for (const word of words) {
+    const test = line + word + ' ';
+    if (ctx.measureText(test).width > maxWidth && line !== '') { lines++; line = word + ' '; }
+    else line = test;
+  }
+  return lines * lineHeight;
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload  = () => resolve(img);
+    img.onerror = () => reject(new Error('No se pudo cargar la imagen'));
+    img.src = src;
+  });
 }
 
 </script>
