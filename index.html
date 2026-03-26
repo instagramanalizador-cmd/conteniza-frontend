@@ -165,18 +165,19 @@
     .user-bar-inner {
       max-width: 1100px;
       margin: 0 auto;
-      padding: 10px 20px;
+      padding: 8px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
+      gap: 8px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
     }
     .user-bar-left {
       display: flex;
       align-items: center;
-      gap: 14px;
-      flex-wrap: wrap;
+      gap: 8px;
+      flex-shrink: 0;
     }
     .user-pill {
       background: rgba(255,255,255,.15);
@@ -2446,9 +2447,10 @@ function renderResults(r, pubType) {
   hDiv.innerHTML = (r.hashtags||[]).map(h=>`<span class="chip hashtag">${escapeHtml(h)}</span>`).join('');
   // Captions
   const cDiv = document.getElementById('captionsContent');
+  const isReel = (selectedPubType === 'reel');
   cDiv.innerHTML = (r.captions||[]).map((c,i)=>`
     <div class="caption-item">
-      <div class="caption-num">Caption ${i+1}</div>
+      <div class="caption-num">${isReel ? '🎬 Guión Reel' : 'Caption'} ${i+1}</div>
       ${escapeHtml(c)}
     </div>`).join('');
   // Thumbnails
@@ -2456,7 +2458,15 @@ function renderResults(r, pubType) {
   // Carousel
   renderCarousel(r.carousel_slides);
   // Stories
-  renderChips('storiesContent', r.stories);
+  // Stories con formato mejorado
+  const storiesEl = document.getElementById('storiesContent');
+  if (storiesEl) {
+    storiesEl.innerHTML = (r.stories||[]).map((s,i)=>`
+      <div style="background:var(--surface-2);border-radius:var(--radius-md);padding:12px 16px;margin-bottom:8px;border-left:3px solid var(--brand);">
+        <div style="font-size:11px;color:var(--brand);font-weight:700;margin-bottom:4px;">📱 STORY ${i+1}</div>
+        <div style="font-size:13px;color:var(--text);line-height:1.5;">${escapeHtml(s)}</div>
+      </div>`).join('');
+  }
   // SEO
   document.getElementById('seoContent').textContent = r.seo_analysis || 'No disponible';
 }
