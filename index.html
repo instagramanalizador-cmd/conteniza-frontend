@@ -2475,11 +2475,12 @@ function renderResults(r, pubType) {
   // Stories
   // Stories con formato de secciones
   const storiesEl = document.getElementById('storiesContent');
-  // Forzar visibilidad de la sección y el body de stories
+  // Mostrar stories SOLO cuando pubType es story
   const storiesSection = document.getElementById('sectionStories');
   const storiesBody = document.getElementById('storiesBody');
-  if (storiesSection) storiesSection.style.display = 'block';
-  if (storiesBody) storiesBody.style.display = 'block';
+  const isStoryType = (pt === 'story');
+  if (storiesSection) storiesSection.style.display = isStoryType ? 'block' : 'none';
+  if (storiesBody && isStoryType) storiesBody.style.display = 'block';
   if (storiesEl) {
     console.log('📱 Stories recibidas:', r.stories);
     if (!r.stories || r.stories.length === 0) {
@@ -2557,22 +2558,72 @@ function selectThumbnail(i) {
 
 function renderThumbnailSpecs(i) {
   const panel = document.getElementById('thumbSpecs');
-  if (!panel||!currentThumbnails[i]) return;
+  if (!panel || !currentThumbnails[i]) return;
   const t = currentThumbnails[i];
+  // Guardar ajustes del usuario por miniatura
+  if (!window.thumbAdjust) window.thumbAdjust = {};
+  if (!window.thumbAdjust[i]) window.thumbAdjust[i] = {
+    fontSize: parseInt(t.font_size || '42'),
+    align: 'center',
+    logoSize: 120
+  };
+  const adj = window.thumbAdjust[i];
   panel.innerHTML = `
-    <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;">
+    <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;margin-top:12px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
-        <strong style="font-size:14px;color:var(--text);">📐 Especificaciones — Miniatura ${i+1}</strong>
-        <button class="btn btn-success btn-sm" onclick="downloadThumbnailImage(${i})">📥 Descargar PNG</button>
+        <strong style="font-size:14px;color:var(--text);">⚙️ Ajustes — Miniatura ${i+1}</strong>
+        <button class="btn btn-success btn-sm" onclick="downloadThumbnailImage(${i})">📥 Descargar PNG 1080×1350</button>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;font-size:13px;color:var(--text-2);">
-        <div><div style="font-weight:600;color:var(--text);margin-bottom:4px;">Texto principal</div><em>"${escapeHtml(t.text||'')}"</em></div>
-        <div><div style="font-weight:600;color:var(--text);margin-bottom:4px;">Fuente</div>${escapeHtml(t.font_family||'–')} · ${escapeHtml(t.font_size||'–')}</div>
-        <div><div style="font-weight:600;color:var(--text);margin-bottom:4px;">Fondo</div><div style="height:28px;border-radius:6px;background:${t.background_gradient||'var(--brand)'};margin-top:4px;"></div></div>
-        ${t.image_suggestion?`<div><div style="font-weight:600;color:var(--text);margin-bottom:4px;">Imagen sugerida</div>${escapeHtml(t.image_suggestion)}</div>`:''}
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;">
+        <!-- Tamaño de fuente -->
+        <div>
+          <label style="font-size:12px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Tamaño título</label>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <button onclick="thumbAdjustFn(${i},'fontSize',-4)" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:14px;">−</button>
+            <span id="fs-val-${i}" style="font-size:13px;font-weight:700;min-width:36px;text-align:center;">${adj.fontSize}px</span>
+            <button onclick="thumbAdjustFn(${i},'fontSize',4)" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:14px;">+</button>
+          </div>
+        </div>
+        <!-- Alineación -->
+        <div>
+          <label style="font-size:12px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Alineación</label>
+          <div style="display:flex;gap:4px;">
+            ${['left','center','right'].map(a => `<button onclick="thumbAdjustFn(${i},'align','${a}')" style="padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:${adj.align===a?'var(--brand)':'var(--surface)'};color:${adj.align===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:13px;">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
+          </div>
+        </div>
+        <!-- Tamaño logo -->
+        <div>
+          <label style="font-size:12px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Tamaño logo</label>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <button onclick="thumbAdjustFn(${i},'logoSize',-20)" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:14px;">−</button>
+            <span id="ls-val-${i}" style="font-size:13px;font-weight:700;min-width:36px;text-align:center;">${adj.logoSize}px</span>
+            <button onclick="thumbAdjustFn(${i},'logoSize',20)" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:14px;">+</button>
+          </div>
+        </div>
+      </div>
+      <!-- Info marca activa -->
+      <div style="margin-top:12px;padding:8px 12px;background:var(--brand-light);border-radius:8px;font-size:11px;color:var(--brand);">
+        ${currentBrand?.color_primary ? `🎨 Colores marca: ${currentBrand.color_primary} → ${currentBrand.color_secondary} &nbsp;` : ''}
+        ${currentBrand?.font_name ? `✍️ Fuente: ${currentBrand.font_name} &nbsp;` : ''}
+        ${currentBrand?.logo_url ? '🖼️ Logo: activo' : ''}
+        ${!currentBrand?.color_primary && !currentBrand?.font_name ? '⚠️ Sin marca configurada — usando colores de la IA' : ''}
       </div>
     </div>
   `;
+}
+
+function thumbAdjustFn(i, prop, val) {
+  if (!window.thumbAdjust) window.thumbAdjust = {};
+  if (!window.thumbAdjust[i]) window.thumbAdjust[i] = { fontSize: 42, align: 'center', logoSize: 120 };
+  if (prop === 'align') {
+    window.thumbAdjust[i].align = val;
+  } else {
+    window.thumbAdjust[i][prop] = Math.max(
+      prop === 'fontSize' ? 20 : 40,
+      Math.min(prop === 'fontSize' ? 120 : 300, window.thumbAdjust[i][prop] + val)
+    );
+  }
+  renderThumbnailSpecs(i);
 }
 
 /* ============================================================
@@ -2614,20 +2665,161 @@ function selectCarouselSlide(i) {
 
 function renderCarouselSpecs(i) {
   const panel = document.getElementById('carouselSpecsPanel');
-  if (!panel||!currentCarouselSlides[i]) return;
+  if (!panel || !currentCarouselSlides[i]) return;
   const s = currentCarouselSlides[i];
+
+  // Inicializar ajustes por slide
+  if (!window.slideAdjust) window.slideAdjust = {};
+  if (!window.slideAdjust[i]) {
+    const isPremium = currentUser?.plan_type === 'premium';
+    window.slideAdjust[i] = {
+      titleSize: 40,
+      contentSize: 20,
+      align: 'center',
+      titleText: s.title || '',
+      contentText: s.content || '',
+      font: (isPremium && currentBrand?.font_name) ? currentBrand.font_name : 'DM Sans',
+    };
+  }
+  const adj = window.slideAdjust[i];
+  const isPremium = currentUser?.plan_type === 'premium';
+  const fonts = ['DM Sans','Montserrat','Poppins','Playfair Display','Raleway','Oswald','Lato','Roboto','Inter','Nunito'];
+  const cp = (isPremium && currentBrand?.color_primary) ? currentBrand.color_primary : null;
+  const cs = (isPremium && currentBrand?.color_secondary) ? currentBrand.color_secondary : null;
+
   panel.innerHTML = `
-    <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;font-size:13px;color:var(--text-2);">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-        <strong style="color:var(--text);">📐 Slide ${i+1} de ${currentCarouselSlides.length}</strong>
-        <button class="btn btn-success btn-sm" onclick="downloadCarouselSlideImage(${i})">📥 PNG</button>
+    <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-top:12px;">
+
+      <!-- Header -->
+      <div style="background:var(--brand);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="color:#fff;font-weight:700;font-size:14px;">✏️ Editor — Slide ${i+1} / ${currentCarouselSlides.length}</span>
+        <button class="btn btn-sm" onclick="downloadCarouselSlideImage(${i})" style="background:#fff;color:var(--brand);font-weight:700;font-size:12px;">📥 Descargar PNG</button>
       </div>
-      <div style="margin-bottom:10px;"><span style="font-weight:600;color:var(--text);">Título:</span> ${escapeHtml(s.title||'')}</div>
-      <div style="margin-bottom:10px;"><span style="font-weight:600;color:var(--text);">Contenido:</span> ${escapeHtml(s.content||'')}</div>
-      ${s.exact_text?`<div style="background:var(--success-soft);border-radius:6px;padding:10px;margin-bottom:10px;"><span style="font-weight:600;color:var(--success);">✏️ Texto exacto:</span><br><em>"${escapeHtml(s.exact_text)}"</em></div>`:''}
-      ${s.image_suggestion?`<div><span style="font-weight:600;color:var(--text);">📷 Imagen sugerida:</span> ${escapeHtml(s.image_suggestion)}</div>`:''}
+
+      <div style="padding:16px;display:flex;flex-direction:column;gap:14px;">
+
+        <!-- Preview mini del slide -->
+        <div id="slidePreview-${i}" style="border-radius:10px;padding:20px;min-height:100px;display:flex;flex-direction:column;justify-content:center;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};background:${cp&&cs?`linear-gradient(135deg,${cp},${cs})`:s.color_scheme||'linear-gradient(135deg,#7C3AED,#F43F5E)'};text-align:${adj.align};">
+          ${isPremium && currentBrand?.logo_url ? `<img src="${currentBrand.logo_url}" style="width:36px;height:36px;border-radius:6px;object-fit:contain;margin-bottom:8px;background:rgba(255,255,255,.2);padding:3px;">` : ''}
+          <div style="font-family:'${adj.font}',sans-serif;font-size:${adj.titleSize}px;font-weight:800;color:#fff;line-height:1.2;text-shadow:0 2px 8px rgba(0,0,0,.3);">${escapeHtml(adj.titleText)}</div>
+          <div style="font-family:'${adj.font}',sans-serif;font-size:${adj.contentSize}px;color:rgba(255,255,255,.85);margin-top:6px;line-height:1.4;">${escapeHtml(adj.contentText)}</div>
+        </div>
+
+        <!-- Editar textos -->
+        <div>
+          <label style="font-size:12px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Título</label>
+          <input type="text" value="${escapeHtml(adj.titleText)}"
+            oninput="slideAdjustText(${i},'titleText',this.value)"
+            style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:13px;background:var(--surface);color:var(--text);box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Contenido</label>
+          <textarea rows="2" oninput="slideAdjustText(${i},'contentText',this.value)"
+            style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:13px;background:var(--surface);color:var(--text);resize:vertical;box-sizing:border-box;">${escapeHtml(adj.contentText)}</textarea>
+        </div>
+
+        <!-- Controles en fila -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+
+          <!-- Tamaño título -->
+          <div>
+            <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Título</label>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <button onclick="slideAdjustFn(${i},'titleSize',-2)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:26px;height:26px;cursor:pointer;">−</button>
+              <span style="font-size:12px;font-weight:700;min-width:32px;text-align:center;">${adj.titleSize}px</span>
+              <button onclick="slideAdjustFn(${i},'titleSize',2)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:26px;height:26px;cursor:pointer;">+</button>
+            </div>
+          </div>
+
+          <!-- Tamaño contenido -->
+          <div>
+            <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Contenido</label>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <button onclick="slideAdjustFn(${i},'contentSize',-2)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:26px;height:26px;cursor:pointer;">−</button>
+              <span style="font-size:12px;font-weight:700;min-width:32px;text-align:center;">${adj.contentSize}px</span>
+              <button onclick="slideAdjustFn(${i},'contentSize',2)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:26px;height:26px;cursor:pointer;">+</button>
+            </div>
+          </div>
+
+          <!-- Alineación -->
+          <div>
+            <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Alineación</label>
+            <div style="display:flex;gap:3px;">
+              ${['left','center','right'].map(a=>`<button onclick="slideAdjustFn(${i},'align','${a}')" style="padding:3px 7px;border-radius:6px;border:1px solid var(--border);background:${adj.align===a?'var(--brand)':'var(--surface-2)'};color:${adj.align===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:12px;">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
+            </div>
+          </div>
+        </div>
+
+        <!-- Fuente -->
+        <div>
+          <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:6px;">Fuente</label>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;">
+            ${fonts.map(f=>`<button onclick="slideAdjustFn(${i},'font','${f}')" style="padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:${adj.font===f?'var(--brand)':'var(--surface-2)'};color:${adj.font===f?'#fff':'var(--text-2)'};cursor:pointer;font-size:11px;font-family:'${f}',sans-serif;">${f}</button>`).join('')}
+          </div>
+        </div>
+
+        <!-- Marca activa -->
+        <div style="padding:8px 12px;background:var(--brand-light);border-radius:8px;font-size:11px;color:var(--brand);">
+          ${cp ? `🎨 ${cp} → ${cs} &nbsp;` : '⚠️ Sin colores de marca &nbsp;'}
+          ${isPremium && currentBrand?.font_name ? `✍️ ${currentBrand.font_name} &nbsp;` : ''}
+          ${isPremium && currentBrand?.logo_url ? '🖼️ Logo activo' : ''}
+        </div>
+
+      </div>
     </div>
   `;
+}
+
+function slideAdjustFn(i, prop, val) {
+  if (!window.slideAdjust) window.slideAdjust = {};
+  if (!window.slideAdjust[i]) return;
+  if (prop === 'align' || prop === 'font') {
+    window.slideAdjust[i][prop] = val;
+  } else {
+    const min = prop === 'titleSize' ? 12 : 10;
+    const max = prop === 'titleSize' ? 80 : 50;
+    window.slideAdjust[i][prop] = Math.max(min, Math.min(max, window.slideAdjust[i][prop] + val));
+  }
+  renderCarouselSpecs(i);
+  // Actualizar también el slide visual en el carrusel
+  updateSlideCardPreview(i);
+}
+
+function slideAdjustText(i, prop, val) {
+  if (!window.slideAdjust || !window.slideAdjust[i]) return;
+  window.slideAdjust[i][prop] = val;
+  // Actualizar preview en tiempo real
+  const preview = document.getElementById('slidePreview-' + i);
+  if (preview) {
+    const adj = window.slideAdjust[i];
+    preview.style.textAlign = adj.align;
+    preview.style.alignItems = adj.align === 'left' ? 'flex-start' : adj.align === 'right' ? 'flex-end' : 'center';
+    const titleEl = preview.querySelector('.slide-edit-title');
+    const contentEl = preview.querySelector('.slide-edit-content');
+    if (titleEl) titleEl.textContent = val && prop === 'titleText' ? val : adj.titleText;
+    if (contentEl) contentEl.textContent = val && prop === 'contentText' ? val : adj.contentText;
+  }
+}
+
+function updateSlideCardPreview(i) {
+  const card = document.getElementById('cs-' + i);
+  if (!card || !window.slideAdjust || !window.slideAdjust[i]) return;
+  const adj = window.slideAdjust[i];
+  const isPremium = currentUser?.plan_type === 'premium';
+  const brandFont = isPremium && currentBrand?.font_name ? currentBrand.font_name : null;
+  const font = adj.font || brandFont || 'DM Sans';
+  card.style.fontFamily = `'${font}',sans-serif`;
+  card.style.textAlign = adj.align;
+  const titleEl = card.querySelector('.slide-title');
+  const contentEl = card.querySelector('.slide-content');
+  if (titleEl) {
+    titleEl.style.fontSize = adj.titleSize + 'px';
+    titleEl.textContent = adj.titleText;
+  }
+  if (contentEl) {
+    contentEl.style.fontSize = adj.contentSize + 'px';
+    contentEl.textContent = adj.contentText;
+  }
 }
 
 function scrollSlider(id, dir) {
@@ -2766,121 +2958,225 @@ function wrapText(ctx, text, maxW) {
 async function downloadThumbnailImage(i) {
   const t = currentThumbnails[i];
   if (!t) return;
-  showNotification('⏳ Generando PNG 1080x1350px…', 'success');
+  showNotification('⏳ Generando PNG 1080×1350px con tu marca...', 'success');
   try {
-    // Instagram Post: 1080x1350px (4:5)
     const W = 1080, H = 1350;
     const cv = document.createElement('canvas');
     cv.width = W; cv.height = H;
     const ctx = cv.getContext('2d');
 
-    // Marca del usuario Premium
+    // Ajustes del usuario
+    const adj = (window.thumbAdjust && window.thumbAdjust[i]) || { fontSize: parseInt(t.font_size||'42'), align: 'center', logoSize: 120 };
+
+    // Ajustes del editor + Marca Premium
     const isPremium = currentUser?.plan_type === 'premium';
+    const adj       = (window.slideAdjust && window.slideAdjust[i]) || null;
     const brandCp   = isPremium && currentBrand?.color_primary   ? currentBrand.color_primary   : null;
     const brandCs   = isPremium && currentBrand?.color_secondary ? currentBrand.color_secondary : null;
     const brandFont = isPremium && currentBrand?.font_name       ? currentBrand.font_name        : null;
     const brandLogo = isPremium && currentBrand?.logo_url        ? currentBrand.logo_url         : null;
 
-    // Fondo — usa colores de marca si Premium, si no usa el de la IA
+    // ── FONDO ──────────────────────────────────────────────
     const {c1, c2} = parseGradient(t.background_gradient);
     const gc1 = brandCp || c1;
     const gc2 = brandCs || c2;
     const gr = ctx.createLinearGradient(0, 0, W, H);
-    gr.addColorStop(0, gc1); gr.addColorStop(1, gc2);
+    gr.addColorStop(0, gc1);
+    gr.addColorStop(1, gc2);
     ctx.fillStyle = gr;
     ctx.fillRect(0, 0, W, H);
 
     // Patrón decorativo sutil
-    ctx.fillStyle = 'rgba(255,255,255,0.04)';
-    for (let x = 0; x < W; x += 80) {
-      for (let y = 0; y < H; y += 80) {
-        ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.035)';
+    for (let px = 0; px < W; px += 70) {
+      for (let py = 0; py < H; py += 70) {
+        ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI*2); ctx.fill();
       }
     }
 
-    // Logo (Premium)
-    let contentY = 180;
+    // ── LOGO ───────────────────────────────────────────────
+    let contentStartY = 100;
     if (brandLogo) {
       try {
         const img = await loadImage(brandLogo);
-        const logoSize = 140;
-        const logoX = (W - logoSize) / 2;
+        const ls = adj.logoSize;
+        const logoX = (W - ls) / 2;
+        // Fondo blanco redondeado para logo
         ctx.save();
-        roundRect(ctx, logoX - 16, contentY - 16, logoSize + 32, logoSize + 32, 28);
-        ctx.fillStyle = 'rgba(255,255,255,0.15)';
+        roundRect(ctx, logoX - 16, contentStartY - 16, ls + 32, ls + 32, 24);
+        ctx.fillStyle = 'rgba(255,255,255,0.18)';
         ctx.fill();
         ctx.restore();
-        ctx.drawImage(img, logoX, contentY, logoSize, logoSize);
-        contentY += logoSize + 60;
-      } catch(e) { contentY = 180; }
+        ctx.drawImage(img, logoX, contentStartY, ls, ls);
+        contentStartY += ls + 50;
+      } catch(e) { contentStartY = 100; }
+    } else {
+      contentStartY = 200;
     }
 
-    // Título principal
-    const mainFont = brandFont || (t.font_family || 'Arial').replace(/["']/g,'');
-    const mainSize = parseInt(t.font_size || '42') * 2;
-    ctx.font = `900 ${mainSize}px '${mainFont}', Arial`;
-    ctx.fillStyle = t.text_color || '#ffffff';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    ctx.shadowColor = 'rgba(0,0,0,0.4)';
-    ctx.shadowBlur = 20;
-    wrapText(ctx, t.text || 'TÍTULO', W/2, contentY, W - 120, mainSize * 1.3);
-    contentY += estimateTextHeight(t.text || '', W - 120, mainSize * 1.3) + 60;
+    // ── TÍTULO PRINCIPAL ───────────────────────────────────
+    const mainFont  = brandFont || (t.font_family || 'Arial').replace(/['"]/g,'');
+    const mainSize  = adj.fontSize * 2; // x2 para 1080px
+    const textAlign = adj.align || 'center';
+    const textX     = textAlign === 'left' ? 80 : textAlign === 'right' ? W - 80 : W / 2;
 
-    // Línea decorativa
+    ctx.font          = `900 ${mainSize}px '${mainFont}', Arial, sans-serif`;
+    ctx.fillStyle     = t.text_color || '#ffffff';
+    ctx.textAlign     = textAlign;
+    ctx.textBaseline  = 'top';
+    ctx.shadowColor   = 'rgba(0,0,0,0.4)';
+    ctx.shadowBlur    = 24;
+
+    const maxTitleW = W - 160;
+    const titleLineH = mainSize * 1.25;
+    wrapText(ctx, t.text || 'TÍTULO', textX, contentStartY, maxTitleW, titleLineH);
+    const titleH = estimateTextHeight(t.text || '', maxTitleW, titleLineH);
+    contentStartY += titleH + 40;
+
+    // ── LÍNEA DECORATIVA ───────────────────────────────────
     ctx.shadowBlur = 0;
-    ctx.fillStyle = 'rgba(255,255,255,0.4)';
-    ctx.fillRect(W/2 - 60, contentY, 120, 4);
-    contentY += 40;
+    ctx.fillStyle  = 'rgba(255,255,255,0.4)';
+    const lineW    = 100;
+    const lineX    = textAlign === 'left' ? 80 : textAlign === 'right' ? W - 80 - lineW : (W - lineW) / 2;
+    ctx.fillRect(lineX, contentStartY, lineW, 5);
+    contentStartY += 40;
 
-    // Subtítulo
+    // ── SUBTÍTULO ─────────────────────────────────────────
     if (t.secondary_text) {
-      const secSize = parseInt(t.secondary_size || '20') * 2;
-      ctx.font = `500 ${secSize}px '${mainFont}', Arial`;
-      ctx.fillStyle = 'rgba(255,255,255,0.85)';
-      wrapText(ctx, t.secondary_text, W/2, contentY, W - 160, secSize * 1.4);
+      const secSize  = Math.round(adj.fontSize * 1.1) * 2;
+      ctx.font       = `500 ${secSize}px '${mainFont}', Arial, sans-serif`;
+      ctx.fillStyle  = 'rgba(255,255,255,0.88)';
+      ctx.textAlign  = textAlign;
+      ctx.textBaseline = 'top';
+      wrapText(ctx, t.secondary_text, textX, contentStartY, W - 160, secSize * 1.4);
     }
 
-    // Pie con marca
-    ctx.shadowBlur = 0;
-    ctx.font = `500 28px '${mainFont}', Arial`;
-    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    // ── PIE ────────────────────────────────────────────────
+    ctx.shadowBlur   = 0;
+    ctx.font         = `500 26px '${mainFont}', Arial`;
+    ctx.fillStyle    = 'rgba(255,255,255,0.3)';
+    ctx.textAlign    = 'center';
     ctx.textBaseline = 'bottom';
-    ctx.fillText('✨ Conteniza', W/2, H - 50);
+    ctx.fillText('✨ Conteniza', W / 2, H - 50);
 
-    const a = document.createElement('a');
-    a.download = `Conteniza_Post_${i+1}_1080x1350.png`;
-    a.href = cv.toDataURL('image/png');
+    const a   = document.createElement('a');
+    a.download = `miniatura_${i+1}_1080x1350.png`;
+    a.href     = cv.toDataURL('image/png');
     a.click();
-    showNotification('✅ PNG 1080x1350px descargado', 'success');
+    showNotification('✅ PNG 1080×1350px descargado', 'success');
   } catch(e) {
-    console.error('Error generando miniatura:', e);
-    showNotification('Error generando imagen', 'error');
+    console.error('Error descargando miniatura:', e);
+    showNotification('Error generando imagen: ' + e.message, 'error');
   }
 }
 
 async function downloadCarouselSlideImage(i) {
   const s = currentCarouselSlides[i];
   if (!s) return;
-  showNotification('⏳ Generando PNG del slide…', 'success');
-  const cv=document.createElement('canvas'); cv.width=1080; cv.height=1350;
-  const ctx=cv.getContext('2d');
-  const {c1,c2}=parseGradient(SLIDE_GRADIENTS[i%SLIDE_GRADIENTS.length]);
-  const gr=ctx.createLinearGradient(0,0,1080,1350);
-  gr.addColorStop(0,c1); gr.addColorStop(1,c2);
-  ctx.fillStyle=gr; ctx.fillRect(0,0,1080,1350);
-  ctx.fillStyle='#fff'; ctx.font='900 64px Arial'; ctx.textAlign='center'; ctx.textBaseline='top';
-  ctx.shadowColor='rgba(0,0,0,.3)'; ctx.shadowBlur=10;
-  const tlines=wrapText(ctx,s.title||'',950); let y=280;
-  tlines.forEach(l=>{ ctx.fillText(l,540,y); y+=80; });
-  ctx.font='400 40px Arial'; ctx.shadowBlur=6; y+=40;
-  wrapText(ctx,s.content||'',900).forEach(l=>{ if(y<1250){ctx.fillText(l,540,y); y+=56;} });
-  ctx.shadowBlur=0; ctx.font='600 22px Arial'; ctx.fillStyle='rgba(255,255,255,.12)';
-  ctx.fillText('Conteniza.com',540,1310);
-  const a=document.createElement('a');
-  a.download=`Conteniza_Slide_${i+1}.png`;
-  a.href=cv.toDataURL('image/png'); a.click();
-  showNotification(`✅ Slide ${i+1} descargado`, 'success');
+  showNotification('⏳ Generando PNG del slide con tu marca...', 'success');
+  try {
+    const W = 1080, H = 1350;
+    const cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d');
+
+    // Ajustes del editor + Marca Premium
+    const isPremium = currentUser?.plan_type === 'premium';
+    const adj       = (window.slideAdjust && window.slideAdjust[i]) || null;
+    const brandCp   = isPremium && currentBrand?.color_primary   ? currentBrand.color_primary   : null;
+    const brandCs   = isPremium && currentBrand?.color_secondary ? currentBrand.color_secondary : null;
+    const brandFont = isPremium && currentBrand?.font_name       ? currentBrand.font_name        : null;
+    const brandLogo = isPremium && currentBrand?.logo_url        ? currentBrand.logo_url         : null;
+
+    // ── FONDO ──────────────────────────────────────────────
+    const {c1, c2} = parseGradient(brandCp ? `linear-gradient(135deg,${brandCp},${brandCs})` : (s.color_scheme || SLIDE_GRADIENTS[i % SLIDE_GRADIENTS.length]));
+    const gr = ctx.createLinearGradient(0, 0, W, H);
+    gr.addColorStop(0, c1); gr.addColorStop(1, c2);
+    ctx.fillStyle = gr;
+    ctx.fillRect(0, 0, W, H);
+
+    // Patrón decorativo
+    ctx.fillStyle = 'rgba(255,255,255,0.035)';
+    for (let px = 0; px < W; px += 70) {
+      for (let py = 0; py < H; py += 70) {
+        ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI*2); ctx.fill();
+      }
+    }
+
+    const font = (adj?.font) || brandFont || 'Arial';
+    let y = 80;
+
+    // ── LOGO ───────────────────────────────────────────────
+    if (brandLogo) {
+      try {
+        const img = await loadImage(brandLogo);
+        const ls = 120;
+        const lx = (W - ls) / 2;
+        ctx.save();
+        roundRect(ctx, lx - 14, y - 14, ls + 28, ls + 28, 22);
+        ctx.fillStyle = 'rgba(255,255,255,0.15)';
+        ctx.fill();
+        ctx.restore();
+        ctx.drawImage(img, lx, y, ls, ls);
+        y += ls + 40;
+      } catch(e) {}
+    } else {
+      y = 160;
+    }
+
+    // ── NÚMERO SLIDE ───────────────────────────────────────
+    ctx.font      = `600 32px '${font}', Arial`;
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(`${i+1} / ${currentCarouselSlides.length}`, W/2, y);
+    y += 50;
+
+    // Línea decorativa
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.fillRect(W/2 - 50, y, 100, 4);
+    y += 30;
+
+    // ── TÍTULO ────────────────────────────────────────────
+    ctx.font         = `800 80px '${font}', Arial`;
+    ctx.fillStyle    = '#ffffff';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'top';
+    ctx.shadowColor  = 'rgba(0,0,0,0.35)';
+    ctx.shadowBlur   = 20;
+    const titleText = (adj?.titleText) || s.title || '';
+    const titleSizePx = ((adj?.titleSize) || 40) * 2;
+    ctx.font = `800 ${titleSizePx}px '${font}', Arial`;
+    const titleAlign = adj?.align || 'center';
+    const titleX = titleAlign === 'left' ? 80 : titleAlign === 'right' ? W - 80 : W/2;
+    ctx.textAlign = titleAlign;
+    wrapText(ctx, titleText, titleX, y, W - 160, titleSizePx * 1.25);
+    y += estimateTextHeight(titleText, W - 160, titleSizePx * 1.25) + 40;
+
+    // ── CONTENIDO ─────────────────────────────────────────
+    const contentText = (adj?.contentText) || s.content || '';
+    const contentSizePx = ((adj?.contentSize) || 20) * 2;
+    ctx.font         = `400 ${contentSizePx}px '${font}', Arial`;
+    ctx.fillStyle    = 'rgba(255,255,255,0.88)';
+    ctx.shadowBlur   = 0;
+    ctx.textAlign    = adj?.align || 'center';
+    const contentX   = (adj?.align || 'center') === 'left' ? 80 : (adj?.align) === 'right' ? W - 80 : W/2;
+    wrapText(ctx, contentText, contentX, y, W - 160, contentSizePx * 1.4);
+
+    // ── PIE ───────────────────────────────────────────────
+    ctx.font         = `500 26px '${font}', Arial`;
+    ctx.fillStyle    = 'rgba(255,255,255,0.3)';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('✨ Conteniza', W/2, H - 50);
+
+    const a = document.createElement('a');
+    a.download = `slide_${String(i+1).padStart(2,'0')}_1080x1350.png`;
+    a.href = cv.toDataURL('image/png');
+    a.click();
+    showNotification('✅ Slide PNG descargado', 'success');
+  } catch(e) {
+    showNotification('Error: ' + e.message, 'error');
+  }
 }
 
 /* ============================================================
@@ -3628,10 +3924,11 @@ async function exportCarouselImages() {
 
   try {
     const isPremium = currentUser?.plan_type === 'premium';
-    const cp  = (isPremium && currentBrand?.color_primary)   ? currentBrand.color_primary   : '#8B5FBF';
-    const cs  = (isPremium && currentBrand?.color_secondary) ? currentBrand.color_secondary : '#E91E8C';
-    const font = (isPremium && currentBrand?.font_name)      ? currentBrand.font_name        : 'DM Sans';
-    const logo = (isPremium && currentBrand?.logo_url)       ? currentBrand.logo_url         : null;
+    const cp   = (isPremium && currentBrand?.color_primary)   ? currentBrand.color_primary   : '#8B5FBF';
+    const cs   = (isPremium && currentBrand?.color_secondary) ? currentBrand.color_secondary : '#E91E8C';
+    const font = (isPremium && currentBrand?.font_name)       ? currentBrand.font_name       : 'DM Sans';
+    const logo = (isPremium && currentBrand?.logo_url)        ? currentBrand.logo_url        : null;
+    console.log('📦 Exportando con marca:', {cp, cs, font, logo: !!logo});
 
     const zip = new JSZip();
     const folder = zip.folder('conteniza_instagram');
