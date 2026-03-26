@@ -2968,9 +2968,8 @@ async function downloadThumbnailImage(i) {
     // Ajustes del usuario
     const adj = (window.thumbAdjust && window.thumbAdjust[i]) || { fontSize: parseInt(t.font_size||'42'), align: 'center', logoSize: 120 };
 
-    // Ajustes del editor + Marca Premium
+    // Marca Premium
     const isPremium = currentUser?.plan_type === 'premium';
-    const adj       = (window.slideAdjust && window.slideAdjust[i]) || null;
     const brandCp   = isPremium && currentBrand?.color_primary   ? currentBrand.color_primary   : null;
     const brandCs   = isPremium && currentBrand?.color_secondary ? currentBrand.color_secondary : null;
     const brandFont = isPremium && currentBrand?.font_name       ? currentBrand.font_name        : null;
