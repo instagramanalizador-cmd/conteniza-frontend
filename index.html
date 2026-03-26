@@ -1687,6 +1687,7 @@
             <div id="carouselSpecsPanel" style="margin-top:16px;"></div>
           </div>
         </div>
+        </div>
 
         <!-- Stories -->
         <div class="result-section" id="sectionStories">
@@ -2474,8 +2475,10 @@ function renderResults(r, pubType) {
   // Stories
   // Stories con formato de secciones
   const storiesEl = document.getElementById('storiesContent');
-  // Asegurar que el body de stories esté visible
+  // Forzar visibilidad de la sección y el body de stories
+  const storiesSection = document.getElementById('sectionStories');
   const storiesBody = document.getElementById('storiesBody');
+  if (storiesSection) storiesSection.style.display = 'block';
   if (storiesBody) storiesBody.style.display = 'block';
   if (storiesEl) {
     console.log('📱 Stories recibidas:', r.stories);
