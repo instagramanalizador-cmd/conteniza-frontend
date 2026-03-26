@@ -2272,6 +2272,8 @@ async function startExtractionPolling(fileIds) {
           lf.extracted_text = sf.extracted_text;
           updated = true;
           showNotification(`✅ Texto extraído: ${lf.filename}`, "success");
+          // Detectar nicho automáticamente si el campo está vacío
+          detectNicheFromText(sf.extracted_text);
         }
       }
       // Re-renderizar el panel completo si hubo cambios
@@ -3760,6 +3762,38 @@ function loadImage(src) {
   });
 }
 
+
+/* ============================================================
+   DETECCIÓN AUTOMÁTICA DE NICHO DESDE TEXTO EXTRAÍDO
+   ============================================================ */
+async function detectNicheFromText(extractedText) {
+  if (!extractedText || extractedText.includes('❌') || extractedText === '⏳ Procesando...') return;
+  const nicheEl = document.getElementById('niche');
+  const toneEl  = document.getElementById('tone');
+  if (!nicheEl) return;
+  if (nicheEl.value && nicheEl.value.trim()) return; // No sobreescribir
+
+  try {
+    const r = await apiFetch(`${API_URL}/analyze/detect-niche`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: extractedText.substring(0, 500) })
+    });
+    const d = await r.json();
+    if (!d.success) return;
+    if (d.nicho) {
+      nicheEl.value = d.nicho;
+      showNotification(`🎯 Nicho detectado: ${d.nicho}`, 'success');
+    }
+    if (d.tono && toneEl) {
+      const opts = Array.from(toneEl.options).map(o => o.value);
+      if (opts.includes(d.tono)) {
+        toneEl.value = d.tono;
+        showNotification(`🎨 Tono sugerido: ${d.tono}`, 'success');
+      }
+    }
+  } catch(e) { /* silencioso */ }
+}
 </script>
 
 <!-- =========================================================
