@@ -2679,6 +2679,8 @@ function renderCarouselSpecs(i) {
       titleText: s.title || '',
       contentText: s.content || '',
       font: (isPremium && currentBrand?.font_name) ? currentBrand.font_name : 'DM Sans',
+      colorPrimary:   (isPremium && currentBrand?.color_primary)   ? currentBrand.color_primary   : null,
+      colorSecondary: (isPremium && currentBrand?.color_secondary) ? currentBrand.color_secondary : null,
     };
   }
   const adj = window.slideAdjust[i];
@@ -2758,6 +2760,26 @@ function renderCarouselSpecs(i) {
           </div>
         </div>
 
+        <!-- Colores editables -->
+        <div>
+          <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:6px;">🎨 Colores del slide</label>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <input type="color" value="${adj.colorPrimary || cp || '#8B5FBF'}" 
+                onchange="slideAdjustColor(${i},'colorPrimary',this.value)"
+                style="width:36px;height:36px;border:none;border-radius:8px;cursor:pointer;padding:2px;">
+              <span style="font-size:11px;color:var(--text-3);">Primario</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <input type="color" value="${adj.colorSecondary || cs || '#E91E8C'}" 
+                onchange="slideAdjustColor(${i},'colorSecondary',this.value)"
+                style="width:36px;height:36px;border:none;border-radius:8px;cursor:pointer;padding:2px;">
+              <span style="font-size:11px;color:var(--text-3);">Secundario</span>
+            </div>
+            <button onclick="slideResetColors(${i})" style="font-size:11px;color:var(--text-3);background:none;border:none;cursor:pointer;text-decoration:underline;">↺ Restablecer</button>
+          </div>
+        </div>
+
         <!-- Marca activa -->
         <div style="padding:8px 12px;background:var(--brand-light);border-radius:8px;font-size:11px;color:var(--brand);">
           ${cp ? `🎨 ${cp} → ${cs} &nbsp;` : '⚠️ Sin colores de marca &nbsp;'}
@@ -2801,10 +2823,30 @@ function slideAdjustText(i, prop, val) {
   }
 }
 
+function slideAdjustColor(i, prop, val) {
+  if (!window.slideAdjust || !window.slideAdjust[i]) return;
+  window.slideAdjust[i][prop] = val;
+  renderCarouselSpecs(i);
+  updateSlideCardPreview(i);
+}
+
+function slideResetColors(i) {
+  if (!window.slideAdjust || !window.slideAdjust[i]) return;
+  const isPremium = currentUser?.plan_type === 'premium';
+  window.slideAdjust[i].colorPrimary   = (isPremium && currentBrand?.color_primary)   ? currentBrand.color_primary   : null;
+  window.slideAdjust[i].colorSecondary = (isPremium && currentBrand?.color_secondary) ? currentBrand.color_secondary : null;
+  renderCarouselSpecs(i);
+  updateSlideCardPreview(i);
+}
+
 function updateSlideCardPreview(i) {
   const card = document.getElementById('cs-' + i);
   if (!card || !window.slideAdjust || !window.slideAdjust[i]) return;
   const adj = window.slideAdjust[i];
+  // Actualizar colores de fondo
+  if (adj.colorPrimary && adj.colorSecondary) {
+    card.style.background = `linear-gradient(135deg,${adj.colorPrimary},${adj.colorSecondary})`;
+  }
   const isPremium = currentUser?.plan_type === 'premium';
   const brandFont = isPremium && currentBrand?.font_name ? currentBrand.font_name : null;
   const font = adj.font || brandFont || 'DM Sans';
@@ -2958,247 +3000,210 @@ function wrapText(ctx, text, maxW) {
 async function downloadThumbnailImage(i) {
   const t = currentThumbnails[i];
   if (!t) return;
-  showNotification('⏳ Generando PNG 1080×1350px con tu marca...', 'success');
+  showNotification('⏳ Generando miniatura...', 'success');
   try {
-    const W = 1080, H = 1350;
-    const cv = document.createElement('canvas');
-    cv.width = W; cv.height = H;
-    const ctx = cv.getContext('2d');
-
-    // Ajustes del usuario
-    const adj = (window.thumbAdjust && window.thumbAdjust[i]) || { fontSize: parseInt(t.font_size||'42'), align: 'center', logoSize: 120 };
-
-    // Marca Premium
     const isPremium = currentUser?.plan_type === 'premium';
-    const brandCp   = isPremium && currentBrand?.color_primary   ? currentBrand.color_primary   : null;
-    const brandCs   = isPremium && currentBrand?.color_secondary ? currentBrand.color_secondary : null;
-    const brandFont = isPremium && currentBrand?.font_name       ? currentBrand.font_name        : null;
-    const brandLogo = isPremium && currentBrand?.logo_url        ? currentBrand.logo_url         : null;
+    const adj     = (window.thumbAdjust && window.thumbAdjust[i]) || {};
+    const cp      = (isPremium && currentBrand?.color_primary)   || null;
+    const cs      = (isPremium && currentBrand?.color_secondary) || null;
+    const {c1,c2} = parseGradient(t.background_gradient);
+    const gc1     = cp || c1;
+    const gc2     = cs || c2;
+    const font    = (isPremium && currentBrand?.font_name) || (t.font_family||'DM Sans').replace(/['"]/g,'');
+    const align   = adj.align   || 'center';
+    const fs      = adj.fontSize || parseInt(t.font_size||'42');
+    const logoUrl = isPremium && currentBrand?.logo_url ? currentBrand.logo_url : null;
+    const ls      = adj.logoSize || 80;
 
-    // ── FONDO ──────────────────────────────────────────────
-    const {c1, c2} = parseGradient(t.background_gradient);
-    const gc1 = brandCp || c1;
-    const gc2 = brandCs || c2;
-    const gr = ctx.createLinearGradient(0, 0, W, H);
-    gr.addColorStop(0, gc1);
-    gr.addColorStop(1, gc2);
-    ctx.fillStyle = gr;
-    ctx.fillRect(0, 0, W, H);
+    const el = document.createElement('div');
+    el.style.cssText = `
+      position:fixed; left:-9999px; top:0;
+      width:540px; height:675px;
+      background:linear-gradient(135deg,${gc1},${gc2});
+      display:flex; flex-direction:column;
+      justify-content:center; align-items:${align==='left'?'flex-start':align==='right'?'flex-end':'center'};
+      padding:44px; box-sizing:border-box;
+      font-family:'${font}',sans-serif;
+      text-align:${align}; overflow:hidden;
+    `;
 
-    // Patrón decorativo sutil
-    ctx.fillStyle = 'rgba(255,255,255,0.035)';
-    for (let px = 0; px < W; px += 70) {
-      for (let py = 0; py < H; py += 70) {
-        ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI*2); ctx.fill();
-      }
+    // Patrón
+    const pat = document.createElement('div');
+    pat.style.cssText = `position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 2px,transparent 2px);background-size:40px 40px;`;
+    el.appendChild(pat);
+
+    const inner = document.createElement('div');
+    inner.style.cssText = `position:relative;z-index:1;display:flex;flex-direction:column;align-items:${align==='left'?'flex-start':align==='right'?'flex-end':'center'};gap:16px;width:100%;`;
+
+    // Logo
+    if (logoUrl) {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = `background:rgba(255,255,255,0.18);border-radius:16px;padding:10px;`;
+      const img = document.createElement('img');
+      img.src = logoUrl; img.crossOrigin = 'anonymous';
+      img.style.cssText = `width:${ls}px;height:${ls}px;object-fit:contain;display:block;border-radius:10px;`;
+      wrap.appendChild(img);
+      inner.appendChild(wrap);
+      await new Promise(r => { img.onload = r; img.onerror = r; });
     }
 
-    // ── LOGO ───────────────────────────────────────────────
-    let contentStartY = 100;
-    if (brandLogo) {
-      try {
-        const img = await loadImage(brandLogo);
-        const ls = adj.logoSize;
-        const logoX = (W - ls) / 2;
-        // Fondo blanco redondeado para logo
-        ctx.save();
-        roundRect(ctx, logoX - 16, contentStartY - 16, ls + 32, ls + 32, 24);
-        ctx.fillStyle = 'rgba(255,255,255,0.18)';
-        ctx.fill();
-        ctx.restore();
-        ctx.drawImage(img, logoX, contentStartY, ls, ls);
-        contentStartY += ls + 50;
-      } catch(e) { contentStartY = 100; }
-    } else {
-      contentStartY = 200;
-    }
+    // Título
+    const title = document.createElement('div');
+    title.style.cssText = `font-size:${fs}px;font-weight:900;color:${t.text_color||'#fff'};line-height:1.2;text-shadow:0 2px 16px rgba(0,0,0,0.35);font-family:'${font}',sans-serif;`;
+    title.textContent = t.text || '';
+    inner.appendChild(title);
 
-    // ── TÍTULO PRINCIPAL ───────────────────────────────────
-    const mainFont  = brandFont || (t.font_family || 'Arial').replace(/['"]/g,'');
-    const mainSize  = adj.fontSize * 2; // x2 para 1080px
-    const textAlign = adj.align || 'center';
-    const textX     = textAlign === 'left' ? 80 : textAlign === 'right' ? W - 80 : W / 2;
+    // Línea
+    const line = document.createElement('div');
+    line.style.cssText = `width:60px;height:3px;background:rgba(255,255,255,0.4);border-radius:2px;`;
+    inner.appendChild(line);
 
-    ctx.font          = `900 ${mainSize}px '${mainFont}', Arial, sans-serif`;
-    ctx.fillStyle     = t.text_color || '#ffffff';
-    ctx.textAlign     = textAlign;
-    ctx.textBaseline  = 'top';
-    ctx.shadowColor   = 'rgba(0,0,0,0.4)';
-    ctx.shadowBlur    = 24;
-
-    const maxTitleW = W - 160;
-    const titleLineH = mainSize * 1.25;
-    wrapText(ctx, t.text || 'TÍTULO', textX, contentStartY, maxTitleW, titleLineH);
-    const titleH = estimateTextHeight(t.text || '', maxTitleW, titleLineH);
-    contentStartY += titleH + 40;
-
-    // ── LÍNEA DECORATIVA ───────────────────────────────────
-    ctx.shadowBlur = 0;
-    ctx.fillStyle  = 'rgba(255,255,255,0.4)';
-    const lineW    = 100;
-    const lineX    = textAlign === 'left' ? 80 : textAlign === 'right' ? W - 80 - lineW : (W - lineW) / 2;
-    ctx.fillRect(lineX, contentStartY, lineW, 5);
-    contentStartY += 40;
-
-    // ── SUBTÍTULO ─────────────────────────────────────────
+    // Subtítulo
     if (t.secondary_text) {
-      const secSize  = Math.round(adj.fontSize * 1.1) * 2;
-      ctx.font       = `500 ${secSize}px '${mainFont}', Arial, sans-serif`;
-      ctx.fillStyle  = 'rgba(255,255,255,0.88)';
-      ctx.textAlign  = textAlign;
-      ctx.textBaseline = 'top';
-      wrapText(ctx, t.secondary_text, textX, contentStartY, W - 160, secSize * 1.4);
+      const sub = document.createElement('div');
+      const secFs = adj.fontSize ? Math.round(adj.fontSize * 0.55) : parseInt(t.secondary_size||'20');
+      sub.style.cssText = `font-size:${secFs}px;font-weight:500;color:rgba(255,255,255,0.88);line-height:1.5;font-family:'${font}',sans-serif;`;
+      sub.textContent = t.secondary_text;
+      inner.appendChild(sub);
     }
 
-    // ── PIE ────────────────────────────────────────────────
-    ctx.shadowBlur   = 0;
-    ctx.font         = `500 26px '${mainFont}', Arial`;
-    ctx.fillStyle    = 'rgba(255,255,255,0.3)';
-    ctx.textAlign    = 'center';
-    ctx.textBaseline = 'bottom';
-    ctx.fillText('✨ Conteniza', W / 2, H - 50);
+    el.appendChild(inner);
 
-    const a   = document.createElement('a');
+    const foot = document.createElement('div');
+    foot.style.cssText = `position:absolute;bottom:16px;left:0;right:0;text-align:center;font-size:11px;color:rgba(255,255,255,0.3);font-family:'${font}',sans-serif;`;
+    foot.textContent = '✨ Conteniza';
+    el.appendChild(foot);
+
+    document.body.appendChild(el);
+
+    const canvas = await html2canvas(el, {
+      scale: 2, useCORS: true, allowTaint: false,
+      backgroundColor: null, width: 540, height: 675, logging: false
+    });
+
+    document.body.removeChild(el);
+
+    const a = document.createElement('a');
     a.download = `miniatura_${i+1}_1080x1350.png`;
-    a.href     = cv.toDataURL('image/png');
+    a.href = canvas.toDataURL('image/png');
     a.click();
-    showNotification('✅ PNG 1080×1350px descargado', 'success');
+    showNotification('✅ Miniatura PNG 1080×1350px descargada', 'success');
   } catch(e) {
-    console.error('Error descargando miniatura:', e);
-    showNotification('Error generando imagen: ' + e.message, 'error');
+    console.error('Error miniatura:', e);
+    showNotification('Error: ' + e.message, 'error');
   }
 }
 
 async function downloadCarouselSlideImage(i) {
   const s = currentCarouselSlides[i];
   if (!s) return;
-  showNotification('⏳ Generando PNG 1080×1350px...', 'success');
+  showNotification('⏳ Generando imagen...', 'success');
   try {
-    const W = 1080, H = 1350;
-    const cv = document.createElement('canvas');
-    cv.width = W; cv.height = H;
-    const ctx = cv.getContext('2d');
-
-    // ── Ajustes del editor y marca ─────────────────────────
     const isPremium = currentUser?.plan_type === 'premium';
-    const adj       = (window.slideAdjust && window.slideAdjust[i]) || null;
-    const brandCp   = isPremium && currentBrand?.color_primary   ? currentBrand.color_primary   : null;
-    const brandCs   = isPremium && currentBrand?.color_secondary ? currentBrand.color_secondary : null;
-    const brandFont = isPremium && currentBrand?.font_name       ? currentBrand.font_name        : null;
-    const brandLogo = isPremium && currentBrand?.logo_url        ? currentBrand.logo_url         : null;
-    // Cargar fuente antes de dibujar en canvas
-    const fontName = adj?.font || brandFont || 'Arial';
-    try { await document.fonts.load(`800 48px '${fontName}'`); } catch(e) {}
-    const font = fontName;
-    const align     = adj?.align || 'center';
-    const titleSize = Math.max(40, ((adj?.titleSize) || 40)) * 2;    // x2 para 1080px
-    const contentSize = ((adj?.contentSize) || 20) * 2;
-    const titleText   = adj?.titleText   || s.title   || '';
-    const contentText = adj?.contentText || s.content || '';
+    const adj       = (window.slideAdjust && window.slideAdjust[i]) || {};
+    const cp        = adj.colorPrimary   || (isPremium && currentBrand?.color_primary)   || '#8B5FBF';
+    const cs        = adj.colorSecondary || (isPremium && currentBrand?.color_secondary) || '#E91E8C';
+    const font      = adj.font           || (isPremium && currentBrand?.font_name)       || 'DM Sans';
+    const align     = adj.align          || 'center';
+    const titleSize = (adj.titleSize     || 40) + 'px';
+    const contSize  = (adj.contentSize   || 20) + 'px';
+    const titleText = adj.titleText      || s.title   || '';
+    const contText  = adj.contentText    || s.content || '';
+    const logoUrl   = isPremium && currentBrand?.logo_url ? currentBrand.logo_url : null;
+    const total     = currentCarouselSlides.length;
 
-    // ── FONDO ─────────────────────────────────────────────
-    const gradStr = brandCp && brandCs
-      ? `linear-gradient(135deg,${brandCp},${brandCs})`
-      : (s.color_scheme || SLIDE_GRADIENTS[i % SLIDE_GRADIENTS.length]);
-    const {c1, c2} = parseGradient(gradStr);
-    const gr = ctx.createLinearGradient(0, 0, W, H);
-    gr.addColorStop(0, c1); gr.addColorStop(1, c2);
-    ctx.fillStyle = gr;
-    ctx.fillRect(0, 0, W, H);
+    // Crear div HTML con el diseño exacto — 540x675 visible, se escala x2
+    const el = document.createElement('div');
+    el.style.cssText = `
+      position:fixed; left:-9999px; top:0;
+      width:540px; height:675px;
+      background:linear-gradient(135deg,${cp},${cs});
+      display:flex; flex-direction:column;
+      justify-content:center; align-items:${align==='left'?'flex-start':align==='right'?'flex-end':'center'};
+      padding:40px; box-sizing:border-box;
+      font-family:'${font}',sans-serif;
+      text-align:${align};
+      overflow:hidden;
+    `;
 
     // Patrón decorativo
-    ctx.fillStyle = 'rgba(255,255,255,0.04)';
-    for (let px = 60; px < W; px += 80)
-      for (let py = 60; py < H; py += 80) {
-        ctx.beginPath(); ctx.arc(px, py, 4, 0, Math.PI*2); ctx.fill();
-      }
+    const pattern = document.createElement('div');
+    pattern.style.cssText = `position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 2px,transparent 2px);background-size:40px 40px;`;
+    el.appendChild(pattern);
 
-    // ── Helper: dibujar texto con wrap ────────────────────
-    function drawWrapped(text, x, y, maxW, size, weight, color, alpha) {
-      if (!text || !text.trim()) return y;
-      ctx.font = `${weight} ${size}px '${font}', Arial, sans-serif`;
-      ctx.fillStyle = color || '#ffffff';
-      ctx.globalAlpha = alpha || 1;
-      ctx.textAlign = align;
-      ctx.textBaseline = 'top';
-      const words = (text || '').split(' ');
-      let line = '', posY = y, lh = size * 1.3;
-      for (const word of words) {
-        const test = line + (line ? ' ' : '') + word;
-        if (ctx.measureText(test).width > maxW && line) {
-          ctx.fillText(line, x, posY);
-          line = word; posY += lh;
-        } else line = test;
-      }
-      if (line) ctx.fillText(line, x, posY);
-      ctx.globalAlpha = 1;
-      return posY + lh; // retorna Y final
+    const content = document.createElement('div');
+    content.style.cssText = `position:relative;z-index:1;width:100%;display:flex;flex-direction:column;align-items:${align==='left'?'flex-start':align==='right'?'flex-end':'center'};gap:12px;`;
+
+    // Logo
+    if (logoUrl) {
+      const logoWrap = document.createElement('div');
+      logoWrap.style.cssText = `background:rgba(255,255,255,0.18);border-radius:14px;padding:8px;margin-bottom:8px;`;
+      const logo = document.createElement('img');
+      logo.src = logoUrl;
+      logo.crossOrigin = 'anonymous';
+      logo.style.cssText = `width:72px;height:72px;object-fit:contain;display:block;border-radius:8px;`;
+      logoWrap.appendChild(logo);
+      content.appendChild(logoWrap);
+      // Esperar a que cargue
+      await new Promise(r => { logo.onload = r; logo.onerror = r; });
     }
 
-    const tx = align === 'left' ? 80 : align === 'right' ? W - 80 : W / 2;
-    let y = 80;
-
-    // ── LOGO ─────────────────────────────────────────────
-    if (brandLogo) {
-      try {
-        const img = await loadImage(brandLogo);
-        const ls = 180; // Logo grande
-        const lx = align === 'left' ? 80 : align === 'right' ? W - 80 - ls : (W - ls) / 2;
-        ctx.save();
-        roundRect(ctx, lx - 16, y - 16, ls + 32, ls + 32, 28);
-        ctx.fillStyle = 'rgba(255,255,255,0.18)';
-        ctx.fill();
-        ctx.restore();
-        ctx.drawImage(img, lx, y, ls, ls);
-        y += ls + 50;
-      } catch(e) { y = 200; }
-    } else {
-      y = 160;
-    }
-
-    // ── NÚMERO SLIDE ──────────────────────────────────────
-    ctx.font = `600 36px '${font}', sans-serif`;
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    ctx.globalAlpha = 1;
-    ctx.shadowBlur = 0;
-    ctx.fillText(`${i+1} / ${currentCarouselSlides.length}`, W/2, y);
-    y += 56;
+    // Número slide
+    const num = document.createElement('div');
+    num.style.cssText = `font-size:14px;font-weight:600;color:rgba(255,255,255,0.5);letter-spacing:2px;`;
+    num.textContent = `${i+1} / ${total}`;
+    content.appendChild(num);
 
     // Línea decorativa
-    const lineW = 100;
-    const lineX = align === 'left' ? 80 : align === 'right' ? W - 80 - lineW : (W - lineW) / 2;
-    ctx.fillStyle = 'rgba(255,255,255,0.35)';
-    ctx.fillRect(lineX, y, lineW, 4);
-    y += 36;
+    const line = document.createElement('div');
+    line.style.cssText = `width:60px;height:3px;background:rgba(255,255,255,0.4);border-radius:2px;`;
+    content.appendChild(line);
 
-    // ── TÍTULO ───────────────────────────────────────────
-    ctx.shadowColor = 'rgba(0,0,0,0.4)';
-    ctx.shadowBlur  = 20;
-    y = drawWrapped(titleText, tx, y, W - 160, titleSize, '800', '#ffffff', 1);
-    ctx.shadowBlur = 0;
-    y += 30;
+    // Título
+    const title = document.createElement('div');
+    title.style.cssText = `font-size:${titleSize};font-weight:800;color:#ffffff;line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${font}',sans-serif;`;
+    title.textContent = titleText;
+    content.appendChild(title);
 
-    // ── CONTENIDO ────────────────────────────────────────
-    drawWrapped(contentText, tx, y, W - 160, contentSize, '400', 'rgba(255,255,255,0.88)', 1);
+    // Contenido
+    if (contText) {
+      const cont = document.createElement('div');
+      cont.style.cssText = `font-size:${contSize};font-weight:400;color:rgba(255,255,255,0.88);line-height:1.5;font-family:'${font}',sans-serif;`;
+      cont.textContent = contText;
+      content.appendChild(cont);
+    }
 
-    // ── PIE ──────────────────────────────────────────────
-    ctx.font = `500 28px '${font}', sans-serif`;
-    ctx.fillStyle = 'rgba(255,255,255,0.3)';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
-    ctx.globalAlpha = 1;
-    ctx.fillText('✨ Conteniza', W/2, H - 50);
+    el.appendChild(content);
+
+    // Pie
+    const footer = document.createElement('div');
+    footer.style.cssText = `position:absolute;bottom:16px;left:0;right:0;text-align:center;font-size:11px;color:rgba(255,255,255,0.3);font-family:'${font}',sans-serif;`;
+    footer.textContent = '✨ Conteniza';
+    el.appendChild(footer);
+
+    document.body.appendChild(el);
+
+    // Capturar con html2canvas a escala x2 → 1080x1350
+    const canvas = await html2canvas(el, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: null,
+      width: 540,
+      height: 675,
+      logging: false
+    });
+
+    document.body.removeChild(el);
 
     const a = document.createElement('a');
     a.download = `slide_${String(i+1).padStart(2,'0')}_1080x1350.png`;
-    a.href = cv.toDataURL('image/png');
+    a.href = canvas.toDataURL('image/png');
     a.click();
-    showNotification('✅ Slide PNG descargado', 'success');
+    showNotification('✅ PNG 1080×1350px descargado', 'success');
   } catch(e) {
-    console.error('Error descarga slide:', e);
-    showNotification('Error: ' + e.message, 'error');
+    console.error('Error:', e);
+    showNotification('Error generando imagen: ' + e.message, 'error');
   }
 }
 
