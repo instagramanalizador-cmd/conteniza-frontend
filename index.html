@@ -3629,24 +3629,6 @@ async function exportCarouselImages() {
 }
 
 // Helpers para dibujar texto en canvas
-function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-  if (!text) return;
-  const words = text.split(' ');
-  let line  = '';
-  let posY  = y;
-  for (const word of words) {
-    const testLine  = line + word + ' ';
-    const metrics   = ctx.measureText(testLine);
-    if (metrics.width > maxWidth && line !== '') {
-      ctx.fillText(line.trim(), x, posY);
-      line = word + ' ';
-      posY += lineHeight;
-    } else {
-      line = testLine;
-    }
-  }
-  ctx.fillText(line.trim(), x, posY);
-}
 
 function estimateTextHeight(text, maxWidth, lineHeight) {
   const canvas = document.createElement('canvas');
