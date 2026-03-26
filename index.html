@@ -6,7 +6,7 @@
   <title>Conteniza — Crea contenido para Instagram con IA</title>
   <link rel="icon" type="image/jpeg" href="logo.jpg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&family=Montserrat:wght@400;600;700&family=Poppins:wght@400;600;700&family=Playfair+Display:wght@400;700&family=Raleway:wght@400;600;700&family=Oswald:wght@400;600&family=Lato:wght@400;700&family=Roboto:wght@400;700&family=Inter:wght@400;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="consent.js"></script>
 
@@ -2534,15 +2534,22 @@ function renderCarousel(slides) {
   const container = document.getElementById('carouselSlides');
   if (!container||!slides||!slides.length) return;
   currentCarouselSlides = slides;
+  // Aplicar marca si es Premium y tiene configuración
+  const isPremium = currentUser?.plan_type === 'premium';
+  const brandBg = (isPremium && currentBrand?.color_primary && currentBrand?.color_secondary)
+    ? `linear-gradient(135deg,${currentBrand.color_primary},${currentBrand.color_secondary})`
+    : null;
+  const brandFont = (isPremium && currentBrand?.font_name) ? currentBrand.font_name : null;
   container.innerHTML = slides.map((s,i)=>`
     <div class="slide-card${i===0?' active':''}" id="cs-${i}"
-      style="background:${SLIDE_GRADIENTS[i%SLIDE_GRADIENTS.length]}"
+      style="background:${brandBg || SLIDE_GRADIENTS[i%SLIDE_GRADIENTS.length]};${brandFont ? `font-family:'${brandFont}',sans-serif;` : ''}"
       onclick="selectCarouselSlide(${i})"
     >
+      ${isPremium && currentBrand?.logo_url ? `<img src="${currentBrand.logo_url}" style="width:32px;height:32px;border-radius:6px;object-fit:contain;background:rgba(255,255,255,.2);padding:3px;margin-bottom:8px;">` : ''}
       <div class="slide-num">${i+1}</div>
       <div>
-        <div class="slide-title">${escapeHtml(s.title||'')}</div>
-        <div class="slide-content">${escapeHtml(s.content||'')}</div>
+        <div class="slide-title" style="${brandFont ? `font-family:'${brandFont}',sans-serif;` : ''}">${escapeHtml(s.title||'')}</div>
+        <div class="slide-content" style="${brandFont ? `font-family:'${brandFont}',sans-serif;` : ''}">${escapeHtml(s.content||'')}</div>
       </div>
     </div>
   `).join('');
