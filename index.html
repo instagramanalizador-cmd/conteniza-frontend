@@ -3048,95 +3048,85 @@ function wrapText(ctx, text, maxW) {
 async function downloadThumbnailImage(i) {
   const t = currentThumbnails[i];
   if (!t) return;
-  showNotification('⏳ Generando miniatura...', 'success');
+  showNotification('⏳ Generando miniatura 1080×1350px...', 'success');
   try {
     const isPremium = currentUser?.plan_type === 'premium';
-    const adj     = (window.thumbAdjust && window.thumbAdjust[i]) || {};
-    const cp      = (isPremium && currentBrand?.color_primary)   || null;
-    const cs      = (isPremium && currentBrand?.color_secondary) || null;
+    // Inicializar adj si no existe
+    if (!window.thumbAdjust) window.thumbAdjust = {};
+    if (!window.thumbAdjust[i]) window.thumbAdjust[i] = {
+      fontSize: parseInt(t.font_size || '42'), align: 'center',
+      logoSize: 80, titleText: t.text || '', subText: t.secondary_text || ''
+    };
+    const adj   = window.thumbAdjust[i];
+    const cp    = (isPremium && currentBrand?.color_primary)   || null;
+    const cs    = (isPremium && currentBrand?.color_secondary) || null;
     const {c1,c2} = parseGradient(t.background_gradient);
-    const gc1     = cp || c1;
-    const gc2     = cs || c2;
-    const font    = (isPremium && currentBrand?.font_name) || (t.font_family||'DM Sans').replace(/['"]/g,'');
-    const align   = adj.align   || 'center';
-    const fs      = adj.fontSize || parseInt(t.font_size||'42');
+    const gc1   = cp || c1;
+    const gc2   = cs || c2;
+    const font  = (isPremium && currentBrand?.font_name) || (t.font_family||'DM Sans').replace(/['"]/g,'');
+    const align = adj.align || 'center';
+    const fs    = adj.fontSize || 42;
+    const ls    = adj.logoSize || 80;
     const logoUrl = isPremium && currentBrand?.logo_url ? currentBrand.logo_url : null;
-    const ls      = adj.logoSize || 80;
+    const titleText = adj.titleText || t.text || '';
+    const subText   = (adj.subText !== undefined ? adj.subText : t.secondary_text) || '';
+    const alignItems = align==='left'?'flex-start':align==='right'?'flex-end':'center';
 
-    const el = document.createElement('div');
-    el.style.cssText = `
-      position:fixed; left:-9999px; top:0;
-      width:540px; height:675px;
-      background:linear-gradient(135deg,${gc1},${gc2});
-      display:flex; flex-direction:column;
-      justify-content:center; align-items:${align==='left'?'flex-start':align==='right'?'flex-end':'center'};
-      padding:44px; box-sizing:border-box;
-      font-family:'${font}',sans-serif;
-      text-align:${align}; overflow:hidden;
-    `;
+    const canvas = await captureHtmlToCanvas(el => {
+      el.style.cssText = `width:540px;height:675px;background:linear-gradient(135deg,${gc1},${gc2});display:flex;flex-direction:column;justify-content:center;align-items:${alignItems};padding:44px;box-sizing:border-box;font-family:'${font}',sans-serif;text-align:${align};overflow:hidden;position:relative;`;
 
-    // Patrón
-    const pat = document.createElement('div');
-    pat.style.cssText = `position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 2px,transparent 2px);background-size:40px 40px;`;
-    el.appendChild(pat);
+      // Patrón
+      const pat = document.createElement('div');
+      pat.style.cssText = `position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 2px,transparent 2px);background-size:40px 40px;pointer-events:none;`;
+      el.appendChild(pat);
 
-    const inner = document.createElement('div');
-    inner.style.cssText = `position:relative;z-index:1;display:flex;flex-direction:column;align-items:${align==='left'?'flex-start':align==='right'?'flex-end':'center'};gap:16px;width:100%;`;
+      const inner = document.createElement('div');
+      inner.style.cssText = `position:relative;z-index:1;display:flex;flex-direction:column;align-items:${alignItems};gap:14px;width:100%;`;
 
-    // Logo
-    if (logoUrl) {
-      const wrap = document.createElement('div');
-      wrap.style.cssText = `background:rgba(255,255,255,0.18);border-radius:16px;padding:10px;`;
-      const img = document.createElement('img');
-      img.src = logoUrl; img.crossOrigin = 'anonymous';
-      img.style.cssText = `width:${ls}px;height:${ls}px;object-fit:contain;display:block;border-radius:10px;`;
-      wrap.appendChild(img);
-      inner.appendChild(wrap);
-      await new Promise(r => { img.onload = r; img.onerror = r; });
-    }
+      // Logo
+      if (logoUrl) {
+        const wrap = document.createElement('div');
+        wrap.style.cssText = `background:rgba(255,255,255,0.18);border-radius:14px;padding:10px;display:inline-flex;`;
+        const img = document.createElement('img');
+        img.src = logoUrl; img.crossOrigin = 'anonymous';
+        img.style.cssText = `width:${ls}px;height:${ls}px;object-fit:contain;display:block;border-radius:8px;`;
+        wrap.appendChild(img); inner.appendChild(wrap);
+      }
 
-    // Título
-    const title = document.createElement('div');
-    title.style.cssText = `font-size:${fs}px;font-weight:900;color:${t.text_color||'#fff'};line-height:1.2;text-shadow:0 2px 16px rgba(0,0,0,0.35);font-family:'${font}',sans-serif;`;
-    title.textContent = adj.titleText || t.text || '';
-    inner.appendChild(title);
+      // Título
+      const titleEl = document.createElement('div');
+      titleEl.style.cssText = `font-size:${fs}px;font-weight:900;color:${t.text_color||'#fff'};line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${font}',sans-serif;word-break:break-word;`;
+      titleEl.textContent = titleText;
+      inner.appendChild(titleEl);
 
-    // Línea
-    const line = document.createElement('div');
-    line.style.cssText = `width:60px;height:3px;background:rgba(255,255,255,0.4);border-radius:2px;`;
-    inner.appendChild(line);
+      // Línea
+      const line = document.createElement('div');
+      line.style.cssText = `width:50px;height:3px;background:rgba(255,255,255,0.4);border-radius:2px;flex-shrink:0;`;
+      inner.appendChild(line);
 
-    // Subtítulo
-    const subTextFinal = adj.subText !== undefined ? adj.subText : (t.secondary_text || '');
-    if (subTextFinal) {
-      const sub = document.createElement('div');
-      const secFs = adj.fontSize ? Math.round(adj.fontSize * 0.55) : parseInt(t.secondary_size||'20');
-      sub.style.cssText = `font-size:${secFs}px;font-weight:500;color:rgba(255,255,255,0.88);line-height:1.5;font-family:'${font}',sans-serif;`;
-      sub.textContent = subTextFinal;
-      inner.appendChild(sub);
-    }
+      // Subtítulo
+      if (subText) {
+        const subEl = document.createElement('div');
+        const secFs = Math.round(fs * 0.5);
+        subEl.style.cssText = `font-size:${secFs}px;font-weight:500;color:rgba(255,255,255,0.88);line-height:1.5;font-family:'${font}',sans-serif;word-break:break-word;`;
+        subEl.textContent = subText;
+        inner.appendChild(subEl);
+      }
 
-    el.appendChild(inner);
+      el.appendChild(inner);
 
-    const foot = document.createElement('div');
-    foot.style.cssText = `position:absolute;bottom:16px;left:0;right:0;text-align:center;font-size:11px;color:rgba(255,255,255,0.3);font-family:'${font}',sans-serif;`;
-    foot.textContent = '✨ Conteniza';
-    el.appendChild(foot);
-
-    document.body.appendChild(el);
-
-    const canvas = await html2canvas(el, {
-      scale: 2, useCORS: true, allowTaint: false,
-      backgroundColor: null, width: 540, height: 675, logging: false
-    });
-
-    document.body.removeChild(el);
+      // Pie
+      const foot = document.createElement('div');
+      foot.style.cssText = `position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:10px;color:rgba(255,255,255,0.25);font-family:'${font}',sans-serif;`;
+      foot.textContent = '✨ Conteniza';
+      el.appendChild(foot);
+    }, 540, 675);
 
     const a = document.createElement('a');
     a.download = `miniatura_${i+1}_1080x1350.png`;
     a.href = canvas.toDataURL('image/png');
     a.click();
-    showNotification('✅ Miniatura PNG 1080×1350px descargada', 'success');
+    showNotification('✅ Miniatura 1080×1350px descargada', 'success');
   } catch(e) {
     console.error('Error miniatura:', e);
     showNotification('Error: ' + e.message, 'error');
@@ -3146,107 +3136,87 @@ async function downloadThumbnailImage(i) {
 async function downloadCarouselSlideImage(i) {
   const s = currentCarouselSlides[i];
   if (!s) return;
-  showNotification('⏳ Generando imagen...', 'success');
+  showNotification('⏳ Generando slide 1080×1350px...', 'success');
   try {
     const isPremium = currentUser?.plan_type === 'premium';
-    const adj       = (window.slideAdjust && window.slideAdjust[i]) || {};
-    const cp        = adj.colorPrimary   || (isPremium && currentBrand?.color_primary)   || '#8B5FBF';
-    const cs        = adj.colorSecondary || (isPremium && currentBrand?.color_secondary) || '#E91E8C';
-    const font      = adj.font           || (isPremium && currentBrand?.font_name)       || 'DM Sans';
-    const align     = adj.align          || 'center';
-    const titleSize = (adj.titleSize     || 40) + 'px';
-    const contSize  = (adj.contentSize   || 20) + 'px';
-    const titleText = adj.titleText      || s.title   || '';
-    const contText  = adj.contentText    || s.content || '';
-    const logoUrl   = isPremium && currentBrand?.logo_url ? currentBrand.logo_url : null;
-    const total     = currentCarouselSlides.length;
+    if (!window.slideAdjust) window.slideAdjust = {};
+    if (!window.slideAdjust[i]) window.slideAdjust[i] = {
+      titleSize: 40, contentSize: 20, align: 'center', logoSize: 80,
+      titleText: s.title || '', contentText: s.content || '',
+      font: (isPremium && currentBrand?.font_name) || 'DM Sans',
+      colorPrimary: null, colorSecondary: null
+    };
+    const adj   = window.slideAdjust[i];
+    const cp    = adj.colorPrimary   || (isPremium && currentBrand?.color_primary)   || null;
+    const cs    = adj.colorSecondary || (isPremium && currentBrand?.color_secondary) || null;
+    const gradStr = cp && cs ? `linear-gradient(135deg,${cp},${cs})` : (s.color_scheme || SLIDE_GRADIENTS[i%SLIDE_GRADIENTS.length]);
+    const font  = adj.font || (isPremium && currentBrand?.font_name) || 'DM Sans';
+    const align = adj.align || 'center';
+    const ts    = adj.titleSize || 40;
+    const cs2   = adj.contentSize || 20;
+    const ls    = adj.logoSize || 80;
+    const logoUrl = isPremium && currentBrand?.logo_url ? currentBrand.logo_url : null;
+    const titleText = adj.titleText || s.title || '';
+    const contText  = adj.contentText || s.content || '';
+    const alignItems = align==='left'?'flex-start':align==='right'?'flex-end':'center';
 
-    // Crear div HTML con el diseño exacto — 540x675 visible, se escala x2
-    const el = document.createElement('div');
-    el.style.cssText = `
-      position:fixed; left:-9999px; top:0;
-      width:540px; height:675px;
-      background:linear-gradient(135deg,${cp},${cs});
-      display:flex; flex-direction:column;
-      justify-content:center; align-items:${align==='left'?'flex-start':align==='right'?'flex-end':'center'};
-      padding:40px; box-sizing:border-box;
-      font-family:'${font}',sans-serif;
-      text-align:${align};
-      overflow:hidden;
-    `;
+    const canvas = await captureHtmlToCanvas(el => {
+      el.style.cssText = `width:540px;height:675px;background:${gradStr};display:flex;flex-direction:column;justify-content:center;align-items:${alignItems};padding:44px;box-sizing:border-box;font-family:'${font}',sans-serif;text-align:${align};overflow:hidden;position:relative;`;
 
-    // Patrón decorativo
-    const pattern = document.createElement('div');
-    pattern.style.cssText = `position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 2px,transparent 2px);background-size:40px 40px;`;
-    el.appendChild(pattern);
+      // Patrón
+      const pat = document.createElement('div');
+      pat.style.cssText = `position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 2px,transparent 2px);background-size:40px 40px;pointer-events:none;`;
+      el.appendChild(pat);
 
-    const content = document.createElement('div');
-    content.style.cssText = `position:relative;z-index:1;width:100%;display:flex;flex-direction:column;align-items:${align==='left'?'flex-start':align==='right'?'flex-end':'center'};gap:12px;`;
+      const inner = document.createElement('div');
+      inner.style.cssText = `position:relative;z-index:1;display:flex;flex-direction:column;align-items:${alignItems};gap:14px;width:100%;`;
 
-    // Logo
-    if (logoUrl) {
-      const logoWrap = document.createElement('div');
-      logoWrap.style.cssText = `background:rgba(255,255,255,0.18);border-radius:14px;padding:8px;margin-bottom:8px;`;
-      const logo = document.createElement('img');
-      logo.src = logoUrl;
-      logo.crossOrigin = 'anonymous';
-      logo.style.cssText = `width:72px;height:72px;object-fit:contain;display:block;border-radius:8px;`;
-      logoWrap.appendChild(logo);
-      content.appendChild(logoWrap);
-      // Esperar a que cargue
-      await new Promise(r => { logo.onload = r; logo.onerror = r; });
-    }
+      // Logo
+      if (logoUrl) {
+        const wrap = document.createElement('div');
+        wrap.style.cssText = `background:rgba(255,255,255,0.18);border-radius:14px;padding:10px;display:inline-flex;`;
+        const img = document.createElement('img');
+        img.src = logoUrl; img.crossOrigin = 'anonymous';
+        img.style.cssText = `width:${ls}px;height:${ls}px;object-fit:contain;display:block;border-radius:8px;`;
+        wrap.appendChild(img); inner.appendChild(wrap);
+      }
 
-    // Línea decorativa (sin número de slide)
-    const line = document.createElement('div');
-    line.style.cssText = `width:60px;height:3px;background:rgba(255,255,255,0.4);border-radius:2px;`;
-    content.appendChild(line);
+      // Línea decorativa
+      const line = document.createElement('div');
+      line.style.cssText = `width:50px;height:3px;background:rgba(255,255,255,0.4);border-radius:2px;flex-shrink:0;`;
+      inner.appendChild(line);
 
-    // Título
-    const title = document.createElement('div');
-    title.style.cssText = `font-size:${titleSize};font-weight:800;color:#ffffff;line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${font}',sans-serif;`;
-    title.textContent = titleText;
-    content.appendChild(title);
+      // Título
+      const titleEl = document.createElement('div');
+      titleEl.style.cssText = `font-size:${ts}px;font-weight:800;color:#fff;line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${font}',sans-serif;word-break:break-word;`;
+      titleEl.textContent = titleText;
+      inner.appendChild(titleEl);
 
-    // Contenido
-    if (contText) {
-      const cont = document.createElement('div');
-      cont.style.cssText = `font-size:${contSize};font-weight:400;color:rgba(255,255,255,0.88);line-height:1.5;font-family:'${font}',sans-serif;`;
-      cont.textContent = contText;
-      content.appendChild(cont);
-    }
+      // Contenido
+      if (contText) {
+        const contEl = document.createElement('div');
+        contEl.style.cssText = `font-size:${cs2}px;font-weight:400;color:rgba(255,255,255,0.88);line-height:1.5;font-family:'${font}',sans-serif;word-break:break-word;`;
+        contEl.textContent = contText;
+        inner.appendChild(contEl);
+      }
 
-    el.appendChild(content);
+      el.appendChild(inner);
 
-    // Pie
-    const footer = document.createElement('div');
-    footer.style.cssText = `position:absolute;bottom:16px;left:0;right:0;text-align:center;font-size:11px;color:rgba(255,255,255,0.3);font-family:'${font}',sans-serif;`;
-    footer.textContent = '✨ Conteniza';
-    el.appendChild(footer);
-
-    document.body.appendChild(el);
-
-    // Capturar con html2canvas a escala x2 → 1080x1350
-    const canvas = await html2canvas(el, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: false,
-      backgroundColor: null,
-      width: 540,
-      height: 675,
-      logging: false
-    });
-
-    document.body.removeChild(el);
+      // Pie
+      const foot = document.createElement('div');
+      foot.style.cssText = `position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:10px;color:rgba(255,255,255,0.25);font-family:'${font}',sans-serif;`;
+      foot.textContent = '✨ Conteniza';
+      el.appendChild(foot);
+    }, 540, 675);
 
     const a = document.createElement('a');
     a.download = `slide_${String(i+1).padStart(2,'0')}_1080x1350.png`;
     a.href = canvas.toDataURL('image/png');
     a.click();
-    showNotification('✅ PNG 1080×1350px descargado', 'success');
+    showNotification('✅ Slide PNG 1080×1350px descargado', 'success');
   } catch(e) {
-    console.error('Error:', e);
-    showNotification('Error generando imagen: ' + e.message, 'error');
+    console.error('Error slide:', e);
+    showNotification('Error: ' + e.message, 'error');
   }
 }
 
@@ -4176,6 +4146,39 @@ async function detectNicheFromText(extractedText) {
     }
   } catch(e) { /* silencioso */ }
 }
+
+/* ============================================================
+   HELPER: Generar imagen desde HTML con html2canvas
+   ============================================================ */
+async function captureHtmlToCanvas(buildFn, width, height) {
+  // Contenedor invisible pero en el DOM
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = `position:fixed;top:0;left:0;width:${width}px;height:${height}px;overflow:hidden;z-index:-9999;opacity:0;pointer-events:none;`;
+  document.body.appendChild(wrapper);
+  
+  const el = document.createElement('div');
+  el.style.cssText = `width:${width}px;height:${height}px;overflow:hidden;`;
+  buildFn(el);
+  wrapper.appendChild(el);
+  
+  // Esperar render
+  await new Promise(r => setTimeout(r, 300));
+  
+  const canvas = await html2canvas(el, {
+    scale: 2,
+    useCORS: true,
+    allowTaint: true,
+    backgroundColor: null,
+    width: width,
+    height: height,
+    logging: false,
+    imageTimeout: 10000,
+  });
+  
+  document.body.removeChild(wrapper);
+  return canvas;
+}
+
 </script>
 
 <!-- =========================================================
