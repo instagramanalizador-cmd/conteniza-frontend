@@ -2449,6 +2449,9 @@ function renderResults(r, pubType) {
   // Captions
   const cDiv = document.getElementById('captionsContent');
   const isReel = (selectedPubType === 'reel');
+  // Asegurar que captions esté visible
+  const captionsBody = document.getElementById('captionsBody');
+  if (captionsBody) captionsBody.style.display = 'block';
   cDiv.innerHTML = (r.captions||[]).map((c,i)=>{
     if (isReel) {
       // Formatear guión de reel con secciones visuales
@@ -2471,6 +2474,9 @@ function renderResults(r, pubType) {
   // Stories
   // Stories con formato de secciones
   const storiesEl = document.getElementById('storiesContent');
+  // Asegurar que el body de stories esté visible
+  const storiesBody = document.getElementById('storiesBody');
+  if (storiesBody) storiesBody.style.display = 'block';
   if (storiesEl) {
     storiesEl.innerHTML = (r.stories||[]).map((s,i)=>{
       const parts = s.split('|').map(p => p.trim());
