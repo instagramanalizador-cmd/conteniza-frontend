@@ -3219,28 +3219,35 @@ async function confirmCancelSubscription() {
    ============================================================ */
 let _subStatus = null;
 
-async function updateSubscriptionUI() {
+async async function updateSubscriptionUI() {
+  // Mostrar brandBtn para Premium siempre (independiente del status de Stripe)
+  const brandBtn = document.getElementById('brandBtn');
+  if (brandBtn) {
+    if (currentUser?.plan_type === 'premium') brandBtn.classList.remove('hidden');
+    else brandBtn.classList.add('hidden');
+  }
   if (!currentUser || currentUser.plan_type === 'free') {
     document.getElementById('cancelSubBtn')?.classList.add('hidden');
     return;
   }
+  // Para Pro y Premium mostrar botón cancelar por defecto
+  const cancelBtn = document.getElementById('cancelSubBtn');
+  if (cancelBtn) cancelBtn.classList.remove('hidden');
   try {
     const r = await apiFetch(`${API_URL}/payments/status`);
+    if (!r.ok) return; // Si falla, dejamos los botones como están
     const d = await r.json();
     if (!d.success) return;
     _subStatus = d;
-
-    const cancelBtn = document.getElementById('cancelSubBtn');
     if (!cancelBtn) return;
-
-    if (d.plan !== 'free' && !d.cancel_at_period_end) {
-      cancelBtn.classList.remove('hidden');
-      cancelBtn.title = `Activo hasta ${d.current_period_end}`;
-    } else if (d.cancel_at_period_end) {
+    if (d.cancel_at_period_end) {
       cancelBtn.classList.add('hidden');
       showNotification(`Tu plan se cancelará el ${d.current_period_end}. Hasta entonces tienes acceso completo.`, 'success');
+    } else {
+      cancelBtn.classList.remove('hidden');
+      if (d.current_period_end) cancelBtn.title = `Activo hasta ${d.current_period_end}`;
     }
-  } catch(_) {}
+  } catch(_) { /* silencioso — no afecta la UI */ }
 }
 
 /* ============================================================
