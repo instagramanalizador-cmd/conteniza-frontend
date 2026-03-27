@@ -3862,45 +3862,39 @@ function hideBrandScreen() {
 async function imageToDataURL(url) {
   if (!url) return null;
 
-  // ESTRATEGIA 1: Buscar el logo ya cargado en el DOM (evita CORS totalmente)
-  const domImgs = document.querySelectorAll('img');
-  for (const img of domImgs) {
-    if (img.src === url || img.src.includes(url.split('/').pop())) {
+  // Cargar imagen con crossOrigin ANTES de dibujar en canvas
+  // Ahora que R2 tiene CORS configurado, esto funcionará
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+
+    img.onload = () => {
       try {
         const cv = document.createElement('canvas');
-        cv.width = img.naturalWidth || img.width || 200;
-        cv.height = img.naturalHeight || img.height || 200;
+        cv.width  = img.naturalWidth  || 200;
+        cv.height = img.naturalHeight || 200;
         cv.getContext('2d').drawImage(img, 0, 0);
         const dataUrl = cv.toDataURL('image/png');
-        if (dataUrl && dataUrl.length > 100) return dataUrl;
-      } catch(e) {}
-    }
-  }
+        resolve(dataUrl);
+      } catch(e) {
+        console.warn('Canvas error con logo:', e.message);
+        // Intentar sin crossOrigin como fallback
+        const img2 = new Image();
+        img2.onload = () => resolve(url); // usar URL directa
+        img2.onerror = () => resolve(null);
+        img2.src = url;
+      }
+    };
 
-  // ESTRATEGIA 2: fetch sin CORS restriction usando blob URL
-  try {
-    const response = await fetch(url);
-    const blob = await response.blob();
-    const blobUrl = URL.createObjectURL(blob);
-    // Cargar desde blobUrl (no tiene restricción CORS)
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        const cv = document.createElement('canvas');
-        cv.width = img.naturalWidth; cv.height = img.naturalHeight;
-        cv.getContext('2d').drawImage(img, 0, 0);
-        URL.revokeObjectURL(blobUrl);
-        try { resolve(cv.toDataURL('image/png')); } catch(e) { resolve(url); }
-      };
-      img.onerror = () => { URL.revokeObjectURL(blobUrl); resolve(url); };
-      img.src = blobUrl;
-    });
-  } catch(e) {
-    // ESTRATEGIA 3: devolver URL directa (html2canvas intentará cargarla)
-    return url;
-  }
+    img.onerror = () => {
+      console.warn('Error cargando logo:', url);
+      resolve(null); // null = no mostrar logo en lugar de recuadro blanco
+    };
+
+    // Añadir timestamp para evitar caché del navegador
+    img.src = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
+  });
 }
-
 async function loadBrandSilent() {
   try {
     const r = await apiFetch(`${API_URL}/brand`);
