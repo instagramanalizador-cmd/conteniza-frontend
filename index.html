@@ -1,4 +1,58 @@
-<!DOCTYPE html>
+async function cdndExport() {
+  showNotification('⏳ Generando PNG...','success');
+  try {
+    const s=cdndState.style,c=cdndState.content,b=cdndState.blocks;
+    const W=1080,H=cdndState.format==='story'?1920:1350,SX=W/270,SY=H/338;
+    await document.fonts.ready;
+    let logoImg=null;
+    if(c.logoUrl&&b.logo.visible){
+      const du=await imageToDataURL(c.logoUrl);
+      if(du&&du.length>100) logoImg=await new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=du;});
+    }
+    const cv=document.createElement('canvas');cv.width=W;cv.height=H;
+    const ctx=cv.getContext('2d');
+    const gr=ctx.createLinearGradient(0,0,W,H);
+    gr.addColorStop(0,s.bg1);gr.addColorStop(1,s.bg2);
+    ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);
+    if(logoImg&&b.logo.visible){
+      // MISMA fórmula que cdndRender para consistencia pixel-perfect
+      const logoTot = s.logoSize + 20; // size + padding (igual que render)
+      const leftPct = b.logo.x - (logoTot / CDND_CANVAS_W * 100 / 2);
+      const topPct  = b.logo.y - (logoTot / CDND_CANVAS_H * 100 / 2);
+      const wx = leftPct / 100 * W;
+      const wy = topPct  / 100 * H;
+      const sz = s.logoSize * SX, pad = 8 * SX, tot = logoTot * SX;
+      ctx.save();ctx.fillStyle='rgba(255,255,255,0.18)';
+      ctx.beginPath();ctx.roundRect(wx,wy,tot,tot,12*SX);ctx.fill();ctx.restore();
+      ctx.drawImage(logoImg,wx+pad,wy+pad,sz,sz);
+    }
+    function drawText(txt,cx,cy,bw,fs,ff,color,fw,lh,align){
+      ctx.save();ctx.font=fw+' '+fs+'px ''+ff+'',sans-serif';
+      ctx.fillStyle=color;ctx.textAlign=align||'center';ctx.textBaseline='top';
+      if(fw==='800'){ctx.shadowColor='rgba(0,0,0,0.35)';ctx.shadowBlur=10;ctx.shadowOffsetY=3;}
+      const words=txt.split(' ');let line='',ly=cy;
+      const lx=align==='left'?cx-bw/2:align==='right'?cx+bw/2:cx;
+      for(let i=0;i<words.length;i++){
+        const t=line+words[i]+' ';
+        if(ctx.measureText(t).width>bw&&i>0){ctx.fillText(line.trim(),lx,ly);line=words[i]+' ';ly+=lh;}
+        else line=t;
+      }
+      ctx.fillText(line.trim(),lx,ly);ctx.restore();
+    }
+    if(b.title.visible&&c.title){
+      const bw=b.title.w/100*W,fs=Math.round(s.titleSize*SX);
+      drawText(c.title,b.title.x/100*W,b.title.y/100*H,bw,fs,s.titleFont||s.font,s.titleColor,'800',fs*1.25,s.titleAlign||'center');
+    }
+    if(b.sub.visible&&c.sub){
+      const bw=b.sub.w/100*W,fs=Math.round(s.subSize*SX);
+      drawText(c.sub,b.sub.x/100*W,b.sub.y/100*H,bw,fs,s.subFont||s.font,s.subColor,'400',fs*1.4,s.subAlign||'center');
+    }
+    const a=document.createElement('a');
+    a.download='studio_'+(cdndState.index+1)+'_'+W+'x'+H+'.png';
+    a.href=cv.toDataURL('image/png');a.click();
+    showNotification('✅ PNG '+W+'×'+H+'px exportado','success');
+  }catch(e){showNotification('Error: '+e.message,'error');}
+}<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -4745,54 +4799,114 @@ async function captureHtmlToCanvas(buildFn, width, height) {
    PUBLICAR EN INSTAGRAM — Descarga + abre Instagram
    ============================================================ */
 async function openInInstagram() {
-  if (!currentCarouselSlides || !currentCarouselSlides.length) {
-    showNotification('Genera contenido primero', 'error');
-    return;
-  }
-
   const btn = document.getElementById('openInstagramBtn');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Preparando...'; }
+  if (btn) { btn.disabled=true; btn.textContent='⏳ Preparando...'; }
 
   try {
-    // 1. Copiar el caption al portapapeles
-    const caption = currentResults?.captions?.[0] || '';
-    const hashtags = (currentResults?.hashtags || []).join(' ');
-    const fullCaption = caption + (hashtags ? '\n\n' + hashtags : '');
+    // Detectar qué sección está activa
+    const pubType = selectedPubType || 'post';
+    const hasThumbs   = currentThumbnails?.length > 0;
+    const hasCarousel = currentCarouselSlides?.length > 0;
 
-    if (fullCaption && navigator.clipboard) {
-      await navigator.clipboard.writeText(fullCaption);
-      showNotification('✅ Caption copiado al portapapeles', 'success');
+    if (!hasThumbs && !hasCarousel) {
+      showNotification('Genera contenido primero','error'); return;
     }
 
-    // 2. Descargar el primer slide automáticamente
-    await downloadCarouselSlideImage(0);
+    // Mostrar modal de selección
+    await showInstagramModal(pubType, hasThumbs, hasCarousel);
 
-    // 3. Mostrar instrucciones y abrir Instagram
-    setTimeout(() => {
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-      if (isMobile) {
-        // En móvil: abrir Instagram app directamente
-        window.location.href = 'instagram://camera';
-        setTimeout(() => {
-          // Si no abre la app, abrir web
-          window.open('https://www.instagram.com', '_blank');
-        }, 1500);
-      } else {
-        // En desktop: abrir Instagram web
-        window.open('https://www.instagram.com', '_blank');
-      }
-
-      showNotification('📱 1. Abre Instagram → Nuevo post\n2. Selecciona la imagen descargada\n3. Pega el caption (ya está copiado)', 'success');
-    }, 1000);
-
-  } catch(e) {
-    showNotification('Error: ' + e.message, 'error');
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '📱 Publicar en Instagram'; }
+    if (btn) { btn.disabled=false; btn.textContent='📱 Instagram'; }
   }
 }
 
+async function showInstagramModal(pubType, hasThumbs, hasCarousel) {
+  return new Promise((resolve) => {
+    // Construir opciones según lo que hay disponible
+    let opts = '';
+    if (hasThumbs) {
+      const n = currentThumbnails.length;
+      opts += `<label style="display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;margin-bottom:8px;">
+        <input type="radio" name="igExport" value="thumb_all" checked>
+        <span>📸 Exportar ${n > 1 ? 'todas las '+n+' miniaturas' : 'la miniatura'} (Post)</span>
+      </label>`;
+      if (n > 1) {
+        for (let i=0;i<n;i++) {
+          opts += `<label style="display:flex;align-items:center;gap:8px;padding:8px 10px 8px 24px;border:1px solid var(--border);border-radius:8px;cursor:pointer;margin-bottom:6px;">
+            <input type="radio" name="igExport" value="thumb_${i}">
+            <span>📸 Solo miniatura ${i+1}</span>
+          </label>`;
+        }
+      }
+    }
+    if (hasCarousel) {
+      const n = currentCarouselSlides.length;
+      opts += `<label style="display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;margin-bottom:8px;">
+        <input type="radio" name="igExport" value="carousel_all" ${!hasThumbs?'checked':''}>
+        <span>🎠 Exportar los ${n} slides del carrusel (ZIP)</span>
+      </label>`;
+      for (let i=0;i<n;i++) {
+        opts += `<label style="display:flex;align-items:center;gap:8px;padding:8px 10px 8px 24px;border:1px solid var(--border);border-radius:8px;cursor:pointer;margin-bottom:6px;">
+          <input type="radio" name="igExport" value="carousel_${i}">
+          <span>🎠 Solo slide ${i+1}</span>
+        </label>`;
+      }
+    }
+
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:20px;';
+    modal.innerHTML = `
+      <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:16px;padding:24px;width:100%;max-width:420px;max-height:80vh;overflow-y:auto;">
+        <div style="font-size:16px;font-weight:700;margin-bottom:4px;">📱 Publicar en Instagram</div>
+        <div style="font-size:12px;color:var(--text-3);margin-bottom:16px;">Selecciona qué exportar. El caption se copiará al portapapeles.</div>
+        <div id="igModalOpts">${opts}</div>
+        <div style="display:flex;gap:8px;margin-top:16px;">
+          <button onclick="igModalExport()" class="btn btn-primary" style="flex:1;">📥 Exportar y abrir Instagram</button>
+          <button onclick="this.closest('[style*=fixed]').remove();resolve();" class="btn btn-ghost">Cancelar</button>
+        </div>
+      </div>`;
+
+    window._igModalResolve = resolve;
+    document.body.appendChild(modal);
+  });
+}
+
+async function igModalExport() {
+  const modal = document.querySelector('[style*="z-index:99999"]');
+  const sel = modal?.querySelector('input[name="igExport"]:checked')?.value;
+  if (!sel) return;
+  modal?.remove();
+
+  // Copiar caption
+  const caption = (currentResults?.captions?.[0]||'') + ((currentResults?.hashtags||[]).length ? '\n\n'+(currentResults.hashtags.join(' ')) : '');
+  if (caption && navigator.clipboard) {
+    await navigator.clipboard.writeText(caption);
+    showNotification('✅ Caption copiado','success');
+  }
+
+  // Exportar según selección
+  if (sel === 'thumb_all') {
+    for (let i=0;i<currentThumbnails.length;i++) await downloadThumbnailImage(i);
+  } else if (sel.startsWith('thumb_')) {
+    await downloadThumbnailImage(parseInt(sel.split('_')[1]));
+  } else if (sel === 'carousel_all') {
+    await exportCarouselImages();
+  } else if (sel.startsWith('carousel_')) {
+    await downloadCarouselSlideImage(parseInt(sel.split('_')[1]));
+  }
+
+  // Abrir Instagram
+  setTimeout(() => {
+    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+      window.location.href = 'instagram://camera';
+      setTimeout(() => window.open('https://www.instagram.com','_blank'), 1500);
+    } else {
+      window.open('https://www.instagram.com','_blank');
+    }
+  }, 500);
+
+  if (window._igModalResolve) window._igModalResolve();
+}
 
 /* ═══════════════════════════════════════════════════════════
    CONTENIZA STUDIO — Editor Drag & Drop v31
