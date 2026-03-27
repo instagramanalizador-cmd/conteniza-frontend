@@ -2108,11 +2108,22 @@ function updateTopbarActions() {
 }
 
 function updateUserPanel() {
-  // Mostrar botón Mi Marca solo para Premium
+  // Mostrar botones solo para Premium
   const brandBtn = document.getElementById('brandBtn');
   if (brandBtn) {
     if (currentUser?.plan_type === 'premium') brandBtn.classList.remove('hidden');
     else brandBtn.classList.add('hidden');
+  }
+  // Instagram btn también en updateSubscriptionUI
+  const igBtnS = document.getElementById('openInstagramBtn');
+  if (igBtnS) {
+    if (['pro','premium'].includes(currentUser?.plan_type)) igBtnS.classList.remove('hidden');
+    else igBtnS.classList.add('hidden');
+  }
+  const igBtn = document.getElementById('openInstagramBtn');
+  if (igBtn) {
+    if (['pro','premium'].includes(currentUser?.plan_type)) igBtn.classList.remove('hidden');
+    else igBtn.classList.add('hidden');
   }
   if (!currentUser) return;
   document.getElementById('userEmail').textContent   = currentUser.email;
@@ -2571,6 +2582,7 @@ function renderThumbnailSpecs(i) {
     subText: t.secondary_text || '',
   };
   const adj = window.thumbAdjust[i];
+  if (adj.subFontSize === undefined) adj.subFontSize = Math.round((adj.fontSize||42) * 0.5);
   const isPremium = currentUser?.plan_type === 'premium';
   const hasLogo = isPremium && currentBrand?.logo_url;
   const cp = (isPremium && currentBrand?.color_primary) || null;
@@ -2588,7 +2600,7 @@ function renderThumbnailSpecs(i) {
       <div style="padding:16px;display:flex;flex-direction:column;gap:14px;">
 
         <!-- Preview -->
-        <div style="border-radius:10px;min-height:120px;padding:20px;display:flex;flex-direction:column;justify-content:center;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};background:linear-gradient(135deg,${gc1},${gc2});text-align:${adj.align};">
+        <div style="border-radius:10px;height:300px;overflow:hidden;padding:20px;display:flex;flex-direction:column;justify-content:flex-start;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};background:linear-gradient(135deg,${gc1},${gc2});text-align:${adj.align};">
           ${hasLogo ? `<div style="width:100%;text-align:${adj.logoAlign||'center'};margin-bottom:8px;"><img src="${currentBrand.logo_url}" style="width:${Math.round(adj.logoSize*0.5)}px;height:${Math.round(adj.logoSize*0.5)}px;object-fit:contain;border-radius:8px;background:rgba(255,255,255,.2);padding:4px;display:inline-block;"></div>` : ''}
           <div style="font-family:'${font}',sans-serif;font-size:${Math.round(adj.fontSize*0.55)}px;font-weight:900;color:${t.text_color||'#fff'};line-height:1.2;">${escapeHtml(adj.titleText)}</div>
           ${adj.subText ? `<div style="font-family:'${font}',sans-serif;font-size:${Math.round(adj.fontSize*0.3)}px;color:rgba(255,255,255,.85);margin-top:6px;">${escapeHtml(adj.subText)}</div>` : ''}
@@ -2763,7 +2775,7 @@ function renderCarouselSpecs(i) {
       <div style="padding:16px;display:flex;flex-direction:column;gap:14px;">
 
         <!-- Preview mini del slide -->
-        <div id="slidePreview-${i}" style="border-radius:10px;padding:20px;height:200px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-start;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};background:${cp&&cs?`linear-gradient(135deg,${cp},${cs})`:s.color_scheme||'linear-gradient(135deg,#7C3AED,#F43F5E)'};text-align:${adj.align};">
+        <div id="slidePreview-${i}" style="border-radius:10px;padding:20px;height:300px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-start;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};background:${cp&&cs?`linear-gradient(135deg,${cp},${cs})`:s.color_scheme||'linear-gradient(135deg,#7C3AED,#F43F5E)'};text-align:${adj.align};">
           ${isPremium && currentBrand?.logo_url ? `<div style="width:100%;text-align:${adj.logoAlign||'center'};margin-bottom:8px;"><img src="${currentBrand.logo_url}" style="width:${Math.round((adj.logoSize||80)*0.45)}px;height:${Math.round((adj.logoSize||80)*0.45)}px;border-radius:6px;object-fit:contain;background:rgba(255,255,255,.2);padding:3px;display:inline-block;"></div>` : ''}
           <div style="font-family:'${adj.font}',sans-serif;font-size:${adj.titleSize}px;font-weight:800;color:#fff;line-height:1.2;text-shadow:0 2px 8px rgba(0,0,0,.3);">${escapeHtml(adj.titleText)}</div>
           <div style="font-family:'${adj.font}',sans-serif;font-size:${adj.contentSize}px;color:rgba(255,255,255,.85);margin-top:6px;line-height:1.4;">${escapeHtml(adj.contentText)}</div>
@@ -3718,6 +3730,12 @@ async function updateSubscriptionUI() {
   if (brandBtn) {
     if (currentUser?.plan_type === 'premium') brandBtn.classList.remove('hidden');
     else brandBtn.classList.add('hidden');
+  }
+  // Instagram btn también en updateSubscriptionUI
+  const igBtnS = document.getElementById('openInstagramBtn');
+  if (igBtnS) {
+    if (['pro','premium'].includes(currentUser?.plan_type)) igBtnS.classList.remove('hidden');
+    else igBtnS.classList.add('hidden');
   }
   if (!currentUser || currentUser.plan_type === 'free') {
     document.getElementById('cancelSubBtn')?.classList.add('hidden');
