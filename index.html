@@ -2589,7 +2589,7 @@ function renderThumbnailSpecs(i) {
 
         <!-- Preview -->
         <div style="border-radius:10px;min-height:120px;padding:20px;display:flex;flex-direction:column;justify-content:center;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};background:linear-gradient(135deg,${gc1},${gc2});text-align:${adj.align};">
-          ${hasLogo ? `<img src="${currentBrand.logo_url}" style="width:${Math.round(adj.logoSize*0.5)}px;height:${Math.round(adj.logoSize*0.5)}px;object-fit:contain;border-radius:8px;margin-bottom:8px;background:rgba(255,255,255,.2);padding:4px;">` : ''}
+          ${hasLogo ? `<div style="width:100%;text-align:${adj.logoAlign||'center'};margin-bottom:8px;"><img src="${currentBrand.logo_url}" style="width:${Math.round(adj.logoSize*0.5)}px;height:${Math.round(adj.logoSize*0.5)}px;object-fit:contain;border-radius:8px;background:rgba(255,255,255,.2);padding:4px;display:inline-block;"></div>` : ''}
           <div style="font-family:'${font}',sans-serif;font-size:${Math.round(adj.fontSize*0.55)}px;font-weight:900;color:${t.text_color||'#fff'};line-height:1.2;">${escapeHtml(adj.titleText)}</div>
           ${adj.subText ? `<div style="font-family:'${font}',sans-serif;font-size:${Math.round(adj.fontSize*0.3)}px;color:rgba(255,255,255,.85);margin-top:6px;">${escapeHtml(adj.subText)}</div>` : ''}
         </div>
@@ -2618,11 +2618,15 @@ function renderThumbnailSpecs(i) {
           </div>
           ${hasLogo ? `
           <div>
-            <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Logo (px)</label>
-            <div style="display:flex;align-items:center;gap:4px;">
+            <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Tamaño logo</label>
+            <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
               <button onclick="thumbAdjustFn(${i},'logoSize',-20)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;">−</button>
               <span style="font-size:12px;font-weight:700;min-width:36px;text-align:center;">${adj.logoSize}</span>
               <button onclick="thumbAdjustFn(${i},'logoSize',20)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;">+</button>
+            </div>
+            <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Posición logo</label>
+            <div style="display:flex;gap:3px;">
+              ${['left','center','right'].map(a=>`<button onclick="thumbAdjustFn(${i},'logoAlign','${a}')" style="padding:3px 7px;border-radius:6px;border:1px solid var(--border);background:${(adj.logoAlign||'center')===a?'var(--brand)':'var(--surface-2)'};color:${(adj.logoAlign||'center')===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:12px;">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
             </div>
           </div>` : '<div></div>'}
           <div>
@@ -2657,13 +2661,14 @@ function thumbAdjustFn(i, prop, val) {
     window.thumbAdjust[i] = {
       fontSize: _t ? parseInt(_t.font_size||'42') : 42,
       align: 'center',
+      logoAlign: 'center',
       logoSize: 80,
       titleText: _t ? (_t.text || '') : '',
       subText: _t ? (_t.secondary_text || '') : ''
     };
   }
-  if (prop === 'align') {
-    window.thumbAdjust[i].align = val;
+  if (prop === 'align' || prop === 'logoAlign') {
+    window.thumbAdjust[i][prop] = val;
   } else {
     window.thumbAdjust[i][prop] = Math.max(
       prop === 'fontSize' ? 20 : 40,
@@ -2750,7 +2755,7 @@ function renderCarouselSpecs(i) {
 
         <!-- Preview mini del slide -->
         <div id="slidePreview-${i}" style="border-radius:10px;padding:20px;min-height:100px;display:flex;flex-direction:column;justify-content:center;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};background:${cp&&cs?`linear-gradient(135deg,${cp},${cs})`:s.color_scheme||'linear-gradient(135deg,#7C3AED,#F43F5E)'};text-align:${adj.align};">
-          ${isPremium && currentBrand?.logo_url ? `<img src="${currentBrand.logo_url}" style="width:${Math.round((adj.logoSize||80)*0.45)}px;height:${Math.round((adj.logoSize||80)*0.45)}px;border-radius:6px;object-fit:contain;margin-bottom:8px;background:rgba(255,255,255,.2);padding:3px;">` : ''}
+          ${isPremium && currentBrand?.logo_url ? `<div style="width:100%;text-align:${adj.logoAlign||'center'};margin-bottom:8px;"><img src="${currentBrand.logo_url}" style="width:${Math.round((adj.logoSize||80)*0.45)}px;height:${Math.round((adj.logoSize||80)*0.45)}px;border-radius:6px;object-fit:contain;background:rgba(255,255,255,.2);padding:3px;display:inline-block;"></div>` : ''}
           <div style="font-family:'${adj.font}',sans-serif;font-size:${adj.titleSize}px;font-weight:800;color:#fff;line-height:1.2;text-shadow:0 2px 8px rgba(0,0,0,.3);">${escapeHtml(adj.titleText)}</div>
           <div style="font-family:'${adj.font}',sans-serif;font-size:${adj.contentSize}px;color:rgba(255,255,255,.85);margin-top:6px;line-height:1.4;">${escapeHtml(adj.contentText)}</div>
         </div>
@@ -2781,14 +2786,20 @@ function renderCarouselSpecs(i) {
             </div>
           </div>
 
-          <!-- Tamaño logo -->
+          <!-- Tamaño y posición logo -->
           ${isPremium && currentBrand?.logo_url ? `
           <div>
-            <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Logo (px)</label>
+            <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Tamaño logo</label>
             <div style="display:flex;align-items:center;gap:4px;">
               <button onclick="slideAdjustFn(${i},'logoSize',-10)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:26px;height:26px;cursor:pointer;">−</button>
               <span style="font-size:12px;font-weight:700;min-width:32px;text-align:center;">${adj.logoSize||80}</span>
               <button onclick="slideAdjustFn(${i},'logoSize',10)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:26px;height:26px;cursor:pointer;">+</button>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Posición logo</label>
+            <div style="display:flex;gap:3px;">
+              ${['left','center','right'].map(a=>`<button onclick="slideAdjustFn(${i},'logoAlign','${a}')" style="padding:3px 7px;border-radius:6px;border:1px solid var(--border);background:${(adj.logoAlign||'center')===a?'var(--brand)':'var(--surface-2)'};color:${(adj.logoAlign||'center')===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:12px;">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
             </div>
           </div>` : ''}
 
@@ -2854,7 +2865,7 @@ function renderCarouselSpecs(i) {
 function slideAdjustFn(i, prop, val) {
   if (!window.slideAdjust) window.slideAdjust = {};
   if (!window.slideAdjust[i]) return;
-  if (prop === 'align' || prop === 'font') {
+  if (prop === 'align' || prop === 'font' || prop === 'logoAlign') {
     window.slideAdjust[i][prop] = val;
   } else {
     const min = prop === 'titleSize' ? 12 : prop === 'logoSize' ? 40 : 10;
@@ -3849,30 +3860,44 @@ function hideBrandScreen() {
 
 /* Convertir URL de imagen a dataURL para evitar problemas CORS en html2canvas */
 async function imageToDataURL(url) {
-  // Intentar fetch con cors primero, luego no-cors, luego Image fallback
+  if (!url) return null;
+
+  // ESTRATEGIA 1: Buscar el logo ya cargado en el DOM (evita CORS totalmente)
+  const domImgs = document.querySelectorAll('img');
+  for (const img of domImgs) {
+    if (img.src === url || img.src.includes(url.split('/').pop())) {
+      try {
+        const cv = document.createElement('canvas');
+        cv.width = img.naturalWidth || img.width || 200;
+        cv.height = img.naturalHeight || img.height || 200;
+        cv.getContext('2d').drawImage(img, 0, 0);
+        const dataUrl = cv.toDataURL('image/png');
+        if (dataUrl && dataUrl.length > 100) return dataUrl;
+      } catch(e) {}
+    }
+  }
+
+  // ESTRATEGIA 2: fetch sin CORS restriction usando blob URL
   try {
-    const response = await fetch(url, { mode: 'cors' });
+    const response = await fetch(url);
     const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = () => resolve(url);
-      reader.readAsDataURL(blob);
-    });
-  } catch(e) {
-    // Si falla fetch, intentar con Image
+    const blobUrl = URL.createObjectURL(blob);
+    // Cargar desde blobUrl (no tiene restricción CORS)
     return new Promise((resolve) => {
       const img = new Image();
-      img.crossOrigin = 'anonymous';
       img.onload = () => {
         const cv = document.createElement('canvas');
-        cv.width = img.width; cv.height = img.height;
+        cv.width = img.naturalWidth; cv.height = img.naturalHeight;
         cv.getContext('2d').drawImage(img, 0, 0);
-        try { resolve(cv.toDataURL()); } catch(e) { resolve(url); }
+        URL.revokeObjectURL(blobUrl);
+        try { resolve(cv.toDataURL('image/png')); } catch(e) { resolve(url); }
       };
-      img.onerror = () => resolve(url); // fallback: usar URL directa
-      img.src = url + '?t=' + Date.now(); // evitar caché
+      img.onerror = () => { URL.revokeObjectURL(blobUrl); resolve(url); };
+      img.src = blobUrl;
     });
+  } catch(e) {
+    // ESTRATEGIA 3: devolver URL directa (html2canvas intentará cargarla)
+    return url;
   }
 }
 
