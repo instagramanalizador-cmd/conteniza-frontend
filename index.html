@@ -27,7 +27,7 @@ async function cdndExport() {
       ctx.drawImage(logoImg,wx+pad,wy+pad,sz,sz);
     }
     function drawText(txt,cx,cy,bw,fs,ff,color,fw,lh,align){
-      ctx.save();ctx.font=fw+' '+fs+'px ''+ff+'',sans-serif';
+      ctx.save();ctx.font=fw+' '+fs+'px \''+ff+'\',sans-serif';
       ctx.fillStyle=color;ctx.textAlign=align||'center';ctx.textBaseline='top';
       if(fw==='800'){ctx.shadowColor='rgba(0,0,0,0.35)';ctx.shadowBlur=10;ctx.shadowOffsetY=3;}
       const words=txt.split(' ');let line='',ly=cy;
