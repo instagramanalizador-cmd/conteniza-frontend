@@ -158,27 +158,26 @@
        USER PANEL BAR
        ============================================= */
     .user-bar {
-      background: linear-gradient(135deg, rgba(139,95,191,0.95), rgba(233,30,140,0.95));
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid rgba(255,255,255,0.1);
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      border-bottom: 1px solid rgba(139,95,191,0.4);
       display: none;
     }
     .user-bar.visible { display: block; }
     .user-bar-inner {
-      max-width: 1200px;
+      max-width: 1400px;
       margin: 0 auto;
-      padding: 0 20px;
+      padding: 0 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
-      height: 50px;
+      gap: 16px;
+      height: 48px;
+      min-width: 0;
     }
     .user-bar-left {
       display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 1px;
+      align-items: center;
+      min-width: 0;
     }
     .user-pill {
       display: inline-flex;
@@ -188,7 +187,7 @@
       font-size: 11px;
       font-weight: 500;
     }
-    .user-bar-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; justify-content: flex-end; }
+    .user-bar-right { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
 
     /* =============================================
        BUTTONS
@@ -1141,7 +1140,7 @@
       .hero-title { font-size: 36px; }
       .hero-sub { font-size: 15px; }
       .topbar-inner { padding: 0 16px; }
-      .user-bar-inner { padding: 8px 16px; flex-wrap: wrap; gap: 8px; }
+      
       .result-section-head { padding: 12px 16px; }
       .result-section-body { padding: 14px; }
     }
@@ -1183,7 +1182,7 @@
       #generateBtn { padding: 16px; font-size: 15px; }
 
       /* User bar */
-      .user-bar-inner { padding: 8px 12px; gap: 6px; }
+      
       .user-pill { font-size: 11px; padding: 4px 8px; }
       .user-bar-right { gap: 6px; }
       .user-bar-right .btn { padding: 6px 10px; font-size: 11px; }
@@ -1553,24 +1552,27 @@
 <!-- ==================== USER BAR ==================== -->
 <div class="user-bar" id="userBar">
   <div class="user-bar-inner">
-    <!-- Izquierda: avatar + email + plan -->
-    <div class="user-bar-left" style="display:flex;align-items:center;gap:10px;">
-      <div style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.2);border:2px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">👤</div>
-      <div style="display:flex;flex-direction:column;gap:1px;">
-        <span style="font-size:11px;font-weight:700;color:#fff;line-height:1.2;" id="userEmail">–</span>
-        <div style="display:flex;align-items:center;gap:4px;">
-          <span style="font-size:9px;background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.9);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.5px;" id="userPlan">–</span>
-          <span style="font-size:9px;color:rgba(255,255,255,0.5);">⚡ <span id="userCredits" style="color:rgba(255,255,255,0.8);font-weight:600;">–</span> análisis</span>
-        </div>
+    <!-- Izquierda: info usuario -->
+    <div style="display:flex;align-items:center;gap:12px;min-width:0;flex-shrink:1;">
+      <!-- Avatar -->
+      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#8B5FBF,#E91E8C);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;box-shadow:0 2px 8px rgba(139,95,191,0.4);">👤</div>
+      <!-- Email truncado -->
+      <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+        <span id="userEmail" style="font-size:12px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;">–</span>
+        <span id="userPlan" style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.6);letter-spacing:.5px;text-transform:uppercase;">–</span>
+      </div>
+      <!-- Créditos -->
+      <div style="display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:4px 12px;flex-shrink:0;">
+        <span style="font-size:13px;">⚡</span>
+        <span id="userCredits" style="font-size:12px;font-weight:700;color:#fff;">–</span>
+        <span style="font-size:10px;color:rgba(255,255,255,0.5);">análisis</span>
       </div>
     </div>
-    <!-- Centro vacío -->
-    <div></div>
     <div class="user-bar-right">
-      <button id="upgradePlanBtn" class="btn btn-primary btn-sm hidden" onclick="showPlansScreen()" style="font-size:12px;">⬆️ Mejorar plan</button>
-      <button class="btn btn-ghost btn-sm" onclick="openSidebar()">📜 Historial</button>
-      <button id="brandBtn" class="btn btn-ghost btn-sm hidden" onclick="showBrandScreen()" title="Configurar mi marca">🎨 Mi marca</button>
-      <button id="openInstagramBtn" class="btn btn-sm hidden" onclick="openInInstagram()" title="Publicar en Instagram" style="background:linear-gradient(135deg,#833AB4,#FD1D1D,#FCB045);color:#fff;border:none;font-size:11px;">📱 Instagram</button>
+      <button id="upgradePlanBtn" class="btn btn-primary btn-sm hidden" onclick="showPlansScreen()" style="font-size:11px;padding:5px 10px;">⬆️ Mejorar plan</button>
+      <button class="btn btn-ghost btn-sm" onclick="openSidebar()" style="font-size:11px;padding:5px 10px;">📜 Historial</button>
+      <button id="brandBtn" class="btn btn-ghost btn-sm hidden" onclick="showBrandScreen()" style="font-size:11px;padding:5px 10px;">🎨 Mi marca</button>
+      <button id="openInstagramBtn" class="btn btn-sm hidden" onclick="openInInstagram()" style="background:linear-gradient(135deg,#833AB4,#FD1D1D,#FCB045);color:#fff;border:none;font-size:11px;padding:5px 10px;">📱 Instagram</button>
       <button class="btn btn-outline btn-sm hidden" id="cancelSubBtn" onclick="cancelSubscription()" style="color:var(--danger);border-color:var(--danger);">Cancelar plan</button>
       <button class="btn btn-danger btn-sm" onclick="logout()">Salir</button>
       <button class="btn btn-ghost btn-sm hidden" id="adminBtn" onclick="openAdmin()">⚙️ Admin</button>
@@ -4985,10 +4987,13 @@ function cdndRender() {
   const logoImg = document.getElementById('cdndLogoImg');
   if (c.logoUrl) {
     logoEl.style.display = b.logo.visible ? 'block' : 'none';
-    logoEl.style.top     = b.logo.y + '%';
-    // Centrar el logo: b.logo.x es el centro en %
-    const logoWpct = s.logoSize / CDND_CANVAS_W * 100;
+    // b.logo.x/y = posición del CENTRO del logo en %
+    const logoWpx  = s.logoSize + 20; // logo + padding del wrap
+    const logoWpct = logoWpx / CDND_CANVAS_W * 100;
+    const logoHpx  = s.logoSize + 20;
+    const logoHpct = logoHpx / CDND_CANVAS_H * 100;
     logoEl.style.left = (b.logo.x - logoWpct/2) + '%';
+    logoEl.style.top  = (b.logo.y - logoHpct/2) + '%';
     logoImg.src          = c.logoUrl;
     logoImg.style.width  = s.logoSize + 'px';
     logoImg.style.height = s.logoSize + 'px';
@@ -5348,80 +5353,63 @@ function cdndSetFont(font) {
 async function cdndExport() {
   showNotification('⏳ Exportando en alta calidad...', 'success');
   try {
-    const s = cdndState.style;
-    const c = cdndState.content;
-    const b = cdndState.blocks;
     const fmt = cdndState.format;
     const W = 1080;
     const H = fmt === 'story' ? 1920 : 1350;
 
-    // Usar tamaño 2x para calidad (540x675 o 540x960) con scale:2 = 1080x1350/1920
-    const RW = 540;
-    const RH = fmt === 'story' ? 960 : 675;
-    const SCALE_F = RW / 270; // factor de escala respecto al preview
+    // Escalar el canvas visual de Studio a 2x para exportar en alta calidad
+    const studioCanvas = document.getElementById('cdndCanvas');
+    if (!studioCanvas) throw new Error('Canvas no encontrado');
 
-    const logoUrl = c.logoUrl ? await imageToDataURL(c.logoUrl) : null;
+    // Temporalmente escalar el canvas a 2x
+    const origW = studioCanvas.offsetWidth;
+    const origH = studioCanvas.offsetHeight;
+    const scale = 2;
 
-    const canvas = await captureHtmlToCanvas(el => {
-      el.style.cssText = `width:${RW}px;height:${RH}px;background:linear-gradient(135deg,${s.bg1},${s.bg2});position:relative;overflow:hidden;font-family:'${s.font}',sans-serif;`;
+    studioCanvas.style.transform = `scale(${scale})`;
+    studioCanvas.style.transformOrigin = 'top left';
+    studioCanvas.style.width = origW + 'px';
+    studioCanvas.style.height = origH + 'px';
 
-      // Patrón decorativo
-      const pat = document.createElement('div');
-      pat.style.cssText = `position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 1px,transparent 1px);background-size:30px 30px;pointer-events:none;`;
-      el.appendChild(pat);
+    await new Promise(r => setTimeout(r, 100)); // esperar reflow
 
-      // Logo
-      if (logoUrl && b.logo.visible) {
-        const logoSzScaled = s.logoSize * SCALE_F;
-        // Mismo cálculo que render: centro en % → px - ancho/2
-        const px = (b.logo.x / 100 * RW) - logoSzScaled / 2;
-        const py = (b.logo.y / 100 * RH);
-        // top desde borde superior, igual que en render
-        const wrap = document.createElement('div');
-        wrap.style.cssText = `position:absolute;left:${px}px;top:${py}px;background:rgba(255,255,255,0.18);border-radius:${10*SCALE_F}px;padding:${6*SCALE_F}px;`;
-        const img = document.createElement('img');
-        img.src = logoUrl;
-        img.style.cssText = `width:${logoSzScaled}px;height:${logoSzScaled}px;object-fit:contain;display:block;border-radius:${6*SCALE_F}px;`;
-        wrap.appendChild(img); el.appendChild(wrap);
-      }
+    const html2canvas = window.html2canvas;
+    if (!html2canvas) throw new Error('html2canvas no disponible');
 
-      // Título
-      if (b.title.visible && c.title) {
-        const blockW = b.title.w / 100 * RW;
-        const px = (b.title.x / 100 * RW) - blockW / 2;
-        const py = b.title.y / 100 * RH;
-        const titleDiv = document.createElement('div');
-        titleDiv.style.cssText = `position:absolute;left:${px}px;top:${py}px;width:${blockW}px;font-size:${s.titleSize * SCALE_F * 0.45}px;font-weight:800;color:${s.titleColor};line-height:1.2;text-align:${s.titleAlign||'center'};font-family:'${s.titleFont||s.font}',sans-serif;text-shadow:0 ${2*SCALE_F}px ${8*SCALE_F}px rgba(0,0,0,0.4);word-break:break-word;`;
-        titleDiv.textContent = c.title;
-        el.appendChild(titleDiv);
-      }
+    const capturedCanvas = await html2canvas(studioCanvas, {
+      scale: scale,
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: null,
+      width: origW,
+      height: origH,
+      logging: false,
+    });
 
-      // Subtítulo
-      if (b.sub.visible && c.sub) {
-        const blockW = b.sub.w / 100 * RW;
-        const px = (b.sub.x / 100 * RW) - blockW / 2;
-        const py = b.sub.y / 100 * RH;
-        const subDiv = document.createElement('div');
-        subDiv.style.cssText = `position:absolute;left:${px}px;top:${py}px;width:${blockW}px;font-size:${s.subSize * SCALE_F * 0.45}px;color:${s.subColor};line-height:1.4;text-align:${s.subAlign||'center'};font-family:'${s.subFont||s.font}',sans-serif;word-break:break-word;`;
-        subDiv.textContent = c.sub;
-        el.appendChild(subDiv);
-      }
+    // Restaurar tamaño original
+    studioCanvas.style.transform = '';
+    studioCanvas.style.transformOrigin = '';
 
-    }, RW, RH);
+    // Escalar al tamaño final de Instagram
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width  = W;
+    finalCanvas.height = H;
+    const ctx = finalCanvas.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(capturedCanvas, 0, 0, W, H);
 
-    // canvas ya es 1080x1350 con scale:2 desde captureHtmlToCanvas
     const a = document.createElement('a');
     a.download = `studio_${cdndState.type}_${cdndState.index+1}_${W}x${H}.png`;
-    a.href = canvas.toDataURL('image/png');
+    a.href = finalCanvas.toDataURL('image/png');
     a.click();
 
-    showNotification(`✅ PNG ${W}×${H}px exportado en alta calidad`, 'success');
+    showNotification(`✅ PNG ${W}×${H}px exportado — fiel al diseño en pantalla`, 'success');
   } catch(e) {
     console.error('Export error:', e);
-    showNotification('Error: ' + e.message, 'error');
+    showNotification('Error exportando: ' + e.message, 'error');
   }
-}
-/* ── Abrir Studio desde los botones existentes ── */
+}/* ── Abrir Studio desde los botones existentes ── */
 // Añadir botón "✏️ Studio" en renderCarouselSpecs y renderThumbnailSpecs
 // Se llama desde los botones de descarga ya existentes
 
