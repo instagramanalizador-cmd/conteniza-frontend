@@ -3207,7 +3207,6 @@ async function downloadCarouselSlideImage(i) {
         img.src = logoUrl;
         img.style.cssText = `width:${ls}px;height:${ls}px;object-fit:contain;display:block;border-radius:8px;`;
         wrap.appendChild(img); inner.appendChild(wrap);
-        await new Promise(r => { img.onload = r; img.onerror = r; setTimeout(r, 3000); });
       }
 
       // Línea decorativa
