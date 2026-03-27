@@ -2852,7 +2852,7 @@ function renderThumbnailSpecs(i) {
             <!-- Patrón sutil -->
             <div style="position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 1px,transparent 1px);background-size:20px 20px;pointer-events:none;"></div>
             <div style="position:relative;z-index:1;width:100%;display:flex;flex-direction:column;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};gap:8px;">
-              ${hasLogo ? `<div style="text-align:${adj.logoAlign||'center'};width:100%;"><img src="${currentBrand.logo_url}" style="width:${logoSzPx}px;height:${logoSzPx}px;object-fit:contain;border-radius:6px;background:rgba(255,255,255,.2);padding:3px;"></div>` : ''}
+              ${hasLogo ? `<div style="width:100%;display:flex;justify-content:${(adj.logoAlign||'center')==='left'?'flex-start':(adj.logoAlign||'center')==='right'?'flex-end':'center'};"><div style="background:rgba(255,255,255,.18);border-radius:6px;padding:3px;display:inline-flex;"><img src="${currentBrand.logo_url}" style="width:${logoSzPx}px;height:${logoSzPx}px;object-fit:contain;border-radius:4px;display:block;"></div></div>` : ''}
               <div style="font-family:'${font}',sans-serif;font-size:${Math.round(adj.fontSize*0.45)}px;font-weight:900;color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;">${escapeHtml(adj.titleText)}</div>
               <div style="width:30px;height:2px;background:rgba(255,255,255,0.4);border-radius:2px;flex-shrink:0;"></div>
               ${adj.subText ? `<div style="font-family:'${font}',sans-serif;font-size:${Math.round((adj.subFontSize||20)*0.45)}px;color:${adj.subColor||'rgba(255,255,255,.85)'};line-height:1.4;">${escapeHtml(adj.subText)}</div>` : ''}
@@ -3087,7 +3087,7 @@ function renderCarouselSpecs(i) {
           <div style="width:100%;aspect-ratio:1080/1350;border-radius:10px;overflow:hidden;padding:16px;display:flex;flex-direction:column;justify-content:flex-start;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};background:${bgStyle};text-align:${adj.align};box-sizing:border-box;position:relative;">
             <div style="position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 1px,transparent 1px);background-size:20px 20px;pointer-events:none;"></div>
             <div style="position:relative;z-index:1;width:100%;display:flex;flex-direction:column;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};gap:8px;">
-              ${isPremium && currentBrand?.logo_url ? `<div style="text-align:${adj.logoAlign||'center'};width:100%;"><img src="${currentBrand.logo_url}" style="width:${logoSzPx}px;height:${logoSzPx}px;object-fit:contain;border-radius:6px;background:rgba(255,255,255,.2);padding:3px;"></div>` : ''}
+              ${isPremium && currentBrand?.logo_url ? `<div style="width:100%;display:flex;justify-content:${(adj.logoAlign||'center')==='left'?'flex-start':(adj.logoAlign||'center')==='right'?'flex-end':'center'};"><div style="background:rgba(255,255,255,.18);border-radius:6px;padding:3px;display:inline-flex;"><img src="${currentBrand.logo_url}" style="width:${logoSzPx}px;height:${logoSzPx}px;object-fit:contain;border-radius:4px;display:block;"></div></div>` : ''}
               <div style="font-family:'${adj.font}',sans-serif;font-size:${Math.round(adj.titleSize*0.45)}px;font-weight:800;color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;">${escapeHtml(adj.titleText)}</div>
               <div style="width:30px;height:2px;background:rgba(255,255,255,0.4);border-radius:2px;flex-shrink:0;"></div>
               <div style="font-family:'${adj.font}',sans-serif;font-size:${Math.round(adj.contentSize*0.45)}px;color:${adj.contentColor||'rgba(255,255,255,.85)'};line-height:1.4;word-break:break-word;">${escapeHtml(adj.contentText)}</div>
@@ -3443,7 +3443,6 @@ async function downloadThumbnailImage(i) {
   showNotification('⏳ Generando miniatura 1080×1350px...', 'success');
   try {
     const isPremium = currentUser?.plan_type === 'premium';
-    // Inicializar adj si no existe
     if (!window.thumbAdjust) window.thumbAdjust = {};
     if (!window.thumbAdjust[i]) window.thumbAdjust[i] = {
       fontSize: parseInt(t.font_size || '42'), align: 'center',
@@ -3458,12 +3457,21 @@ async function downloadThumbnailImage(i) {
     const font  = (isPremium && currentBrand?.font_name) || (t.font_family||'DM Sans').replace(/['"]/g,'');
     const align = adj.align || 'center';
     const fs    = adj.fontSize || 42;
+    // Subtítulo: tamaño independiente si fue ajustado, si no, 50% del título
+    const subFs = adj.subFontSize || Math.round(fs * 0.5);
     const ls    = adj.logoSize || 80;
+    // logoAlign: puede ser 'left', 'center', 'right' — ajuste del editor
+    const logoAlign = adj.logoAlign || 'center';
     const logoRaw = isPremium && currentBrand?.logo_url ? currentBrand.logo_url : null;
     const logoUrl = logoRaw ? await imageToDataURL(logoRaw) : null;
     const titleText = adj.titleText || t.text || '';
     const subText   = (adj.subText !== undefined ? adj.subText : t.secondary_text) || '';
     const alignItems = align==='left'?'flex-start':align==='right'?'flex-end':'center';
+    // Colores independientes para título y subtítulo
+    const fcTh  = adj.titleColor || (isPremium && currentBrand?.font_color) || t.text_color || '#ffffff';
+    const fcSub = adj.subColor   || (isPremium && currentBrand?.sub_font_color) || 'rgba(255,255,255,0.88)';
+    // Posición logo: 'left' => flex-start, 'center' => center, 'right' => flex-end
+    const logoAlignItems = logoAlign==='left'?'flex-start':logoAlign==='right'?'flex-end':'center';
 
     const canvas = await captureHtmlToCanvas(el => {
       el.style.cssText = `width:540px;height:675px;background:linear-gradient(135deg,${gc1},${gc2});display:flex;flex-direction:column;justify-content:center;align-items:${alignItems};padding:44px;box-sizing:border-box;font-family:'${font}',sans-serif;text-align:${align};overflow:hidden;position:relative;`;
@@ -3476,44 +3484,38 @@ async function downloadThumbnailImage(i) {
       const inner = document.createElement('div');
       inner.style.cssText = `position:relative;z-index:1;display:flex;flex-direction:column;align-items:${alignItems};gap:14px;width:100%;`;
 
-      // Logo
+      // Logo — con posición independiente según logoAlign
       if (logoUrl) {
         const wrap = document.createElement('div');
-        wrap.style.cssText = `background:rgba(255,255,255,0.18);border-radius:14px;padding:10px;display:inline-flex;`;
+        wrap.style.cssText = `width:100%;display:flex;justify-content:${logoAlignItems};`;
+        const logoBox = document.createElement('div');
+        logoBox.style.cssText = `background:rgba(255,255,255,0.18);border-radius:14px;padding:10px;display:inline-flex;`;
         const img = document.createElement('img');
         img.src = logoUrl;
         img.style.cssText = `width:${ls}px;height:${ls}px;object-fit:contain;display:block;border-radius:8px;`;
-        wrap.appendChild(img); inner.appendChild(wrap);
+        logoBox.appendChild(img); wrap.appendChild(logoBox); inner.appendChild(wrap);
       }
 
       // Título
       const titleEl = document.createElement('div');
-      const fcTh = adj.titleColor || (isPremium && currentBrand?.font_color) || t.text_color || '#ffffff';
-      const fcSub = adj.subColor  || (isPremium && currentBrand?.font_color) || 'rgba(255,255,255,0.88)';
       titleEl.style.cssText = `font-size:${fs}px;font-weight:900;color:${fcTh};line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${font}',sans-serif;word-break:break-word;`;
       titleEl.textContent = titleText;
       inner.appendChild(titleEl);
 
       // Línea
-      const line = document.createElement('div');
-      line.style.cssText = `width:50px;height:3px;background:rgba(255,255,255,0.4);border-radius:2px;flex-shrink:0;`;
-      inner.appendChild(line);
+      const lineDeco = document.createElement('div');
+      lineDeco.style.cssText = `width:50px;height:3px;background:rgba(255,255,255,0.4);border-radius:2px;flex-shrink:0;`;
+      inner.appendChild(lineDeco);
 
       // Subtítulo
       if (subText) {
         const subEl = document.createElement('div');
-        const secFs = Math.round(fs * 0.5);
-        subEl.style.cssText = `font-size:${secFs}px;font-weight:500;color:${fcSub};line-height:1.5;font-family:'${font}',sans-serif;word-break:break-word;`;
+        subEl.style.cssText = `font-size:${subFs}px;font-weight:500;color:${fcSub};line-height:1.5;font-family:'${font}',sans-serif;word-break:break-word;`;
         subEl.textContent = subText;
         inner.appendChild(subEl);
       }
 
       el.appendChild(inner);
-
-      // Pie
-      const foot = document.createElement('div');
-      foot.style.cssText = `position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:10px;color:rgba(255,255,255,0.25);font-family:'${font}',sans-serif;`;
-      // Sin pie de página
     }, 540, 675);
 
     const a = document.createElement('a');
@@ -3535,25 +3537,30 @@ async function downloadCarouselSlideImage(i) {
     const isPremium = currentUser?.plan_type === 'premium';
     if (!window.slideAdjust) window.slideAdjust = {};
     if (!window.slideAdjust[i]) window.slideAdjust[i] = {
-      titleSize: 40, contentSize: 20, align: 'center', logoSize: 80,
+      titleSize: 40, contentSize: 20, align: 'center', logoAlign: 'center', logoSize: 80,
       titleText: s.title || '', contentText: s.content || '',
       font: (isPremium && currentBrand?.font_name) || 'DM Sans',
       colorPrimary: null, colorSecondary: null
     };
     const adj   = window.slideAdjust[i];
     const cp    = adj.colorPrimary   || (isPremium && currentBrand?.color_primary)   || null;
-    const cs    = adj.colorSecondary || (isPremium && currentBrand?.color_secondary) || null;
-    const gradStr = cp && cs ? `linear-gradient(135deg,${cp},${cs})` : (s.color_scheme || SLIDE_GRADIENTS[i%SLIDE_GRADIENTS.length]);
+    const cs2   = adj.colorSecondary || (isPremium && currentBrand?.color_secondary) || null;
+    const gradStr = cp && cs2 ? `linear-gradient(135deg,${cp},${cs2})` : (s.color_scheme || SLIDE_GRADIENTS[i%SLIDE_GRADIENTS.length]);
     const font  = adj.font || (isPremium && currentBrand?.font_name) || 'DM Sans';
     const align = adj.align || 'center';
     const ts    = adj.titleSize || 40;
-    const cs2   = adj.contentSize || 20;
+    const contSize = adj.contentSize || 20;
     const ls    = adj.logoSize || 80;
+    const logoAlign = adj.logoAlign || 'center';
     const logoRaw = isPremium && currentBrand?.logo_url ? currentBrand.logo_url : null;
     const logoUrl = logoRaw ? await imageToDataURL(logoRaw) : null;
     const titleText = adj.titleText || s.title || '';
     const contText  = adj.contentText || s.content || '';
     const alignItems = align==='left'?'flex-start':align==='right'?'flex-end':'center';
+    const logoAlignItems = logoAlign==='left'?'flex-start':logoAlign==='right'?'flex-end':'center';
+    // Colores independientes para título y contenido
+    const fcTitle   = adj.titleColor   || (isPremium && currentBrand?.font_color)     || '#ffffff';
+    const fcContent = adj.contentColor || (isPremium && currentBrand?.sub_font_color) || 'rgba(255,255,255,0.88)';
 
     const canvas = await captureHtmlToCanvas(el => {
       el.style.cssText = `width:540px;height:675px;background:${gradStr};display:flex;flex-direction:column;justify-content:center;align-items:${alignItems};padding:44px;box-sizing:border-box;font-family:'${font}',sans-serif;text-align:${align};overflow:hidden;position:relative;`;
@@ -3566,43 +3573,38 @@ async function downloadCarouselSlideImage(i) {
       const inner = document.createElement('div');
       inner.style.cssText = `position:relative;z-index:1;display:flex;flex-direction:column;align-items:${alignItems};gap:14px;width:100%;`;
 
-      // Logo
+      // Logo — con posición independiente (logoAlign)
       if (logoUrl) {
         const wrap = document.createElement('div');
-        wrap.style.cssText = `background:rgba(255,255,255,0.18);border-radius:14px;padding:10px;display:inline-flex;`;
+        wrap.style.cssText = `width:100%;display:flex;justify-content:${logoAlignItems};`;
+        const logoBox = document.createElement('div');
+        logoBox.style.cssText = `background:rgba(255,255,255,0.18);border-radius:14px;padding:10px;display:inline-flex;`;
         const img = document.createElement('img');
         img.src = logoUrl;
         img.style.cssText = `width:${ls}px;height:${ls}px;object-fit:contain;display:block;border-radius:8px;`;
-        wrap.appendChild(img); inner.appendChild(wrap);
+        logoBox.appendChild(img); wrap.appendChild(logoBox); inner.appendChild(wrap);
       }
 
       // Línea decorativa
-      const line = document.createElement('div');
-      line.style.cssText = `width:50px;height:3px;background:rgba(255,255,255,0.4);border-radius:2px;flex-shrink:0;`;
-      inner.appendChild(line);
+      const lineDeco = document.createElement('div');
+      lineDeco.style.cssText = `width:50px;height:3px;background:rgba(255,255,255,0.4);border-radius:2px;flex-shrink:0;`;
+      inner.appendChild(lineDeco);
 
       // Título
       const titleEl = document.createElement('div');
-      const fc = adj?.titleColor || (isPremium && currentBrand?.font_color) || '#ffffff';
-      const fcContent = adj?.contentColor || (isPremium && currentBrand?.font_color) || '#ffffff';
-      titleEl.style.cssText = `font-size:${ts}px;font-weight:800;color:${fc};line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${font}',sans-serif;word-break:break-word;`;
+      titleEl.style.cssText = `font-size:${ts}px;font-weight:800;color:${fcTitle};line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${font}',sans-serif;word-break:break-word;`;
       titleEl.textContent = titleText;
       inner.appendChild(titleEl);
 
       // Contenido
       if (contText) {
         const contEl = document.createElement('div');
-        contEl.style.cssText = `font-size:${cs2}px;font-weight:400;color:${fcContent};opacity:0.9;line-height:1.5;font-family:'${font}',sans-serif;word-break:break-word;`;
+        contEl.style.cssText = `font-size:${contSize}px;font-weight:400;color:${fcContent};line-height:1.5;font-family:'${font}',sans-serif;word-break:break-word;`;
         contEl.textContent = contText;
         inner.appendChild(contEl);
       }
 
       el.appendChild(inner);
-
-      // Pie
-      const foot = document.createElement('div');
-      foot.style.cssText = `position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:10px;color:rgba(255,255,255,0.25);font-family:'${font}',sans-serif;`;
-      // Sin pie de página
     }, 540, 675);
 
     const a = document.createElement('a');
@@ -5201,108 +5203,51 @@ function cdndSetFont(font) {
   cdndBuildFonts(); cdndRenderAll(); cdndSaveBack();
 }
 
-// ── Export pixel-perfect con canvas 2D ──
+// ── Export pixel-perfect: captura el canvas HTML del Studio con html2canvas ──
 async function cdndExport() {
-  showNotification('⏳ Generando PNG...','success');
+  showNotification('⏳ Generando PNG...', 'success');
   try {
-    const s=cdnd.style, c=cdnd.content, b=cdnd.blocks;
-    const W=1080, H=cdnd.format==='story'?1920:1350;
-    const SX=W/CDND_W, SY=H/CDND_H;
+    const W = 1080, H = cdnd.format === 'story' ? 1920 : 1350;
+    const canvasEl = document.getElementById('cdndCanvas');
 
-    // Esperar que las fuentes estén completamente listas en el navegador
+    // Escala: el canvas preview mide CDND_W x CDND_H, el export mide W x H
+    const scaleX = W / CDND_W;   // 1080 / 270 = 4
+    const scaleY = H / CDND_H;   // 1350 / 338 ≈ 3.994
+
+    // Precargar logo en dataURL para evitar CORS en html2canvas
+    const logoImg = document.getElementById('cdndLogoImg');
+    if (logoImg && logoImg.src && !logoImg.src.startsWith('data:')) {
+      try {
+        const du = await imageToDataURL(logoImg.src);
+        if (du && du.length > 100) logoImg.src = du;
+      } catch(e) { /* continuar sin dataURL */ }
+    }
+
+    // Esperar que las fuentes y la imagen estén listas
     await document.fonts.ready;
-    // Warmup extra: forzar que las fuentes del canvas estén cargadas
-    const _warmupCv=document.createElement('canvas');
-    const _warmupCtx=_warmupCv.getContext('2d');
-    _warmupCtx.font=`800 40px '${s.titleFont}',sans-serif`;
-    _warmupCtx.measureText('A');
-    _warmupCtx.font=`400 20px '${s.subFont}',sans-serif`;
-    _warmupCtx.measureText('A');
-    // Pequeña pausa para garantizar que el render de fuentes esté listo
-    await new Promise(r=>setTimeout(r,120));
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await new Promise(r => setTimeout(r, 150));
 
-    // Cargar logo
-    let logoImg=null;
-    if(c.logoUrl&&b.logo.visible){
-      const du=await imageToDataURL(c.logoUrl);
-      if(du&&du.length>100) logoImg=await new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=du;});
-    }
-    const cv=document.createElement('canvas');cv.width=W;cv.height=H;
-    const ctx=cv.getContext('2d');
+    // Capturar el elemento canvas con html2canvas escalado al tamaño final
+    // Usamos scale = scaleX (ambas escalas son iguales en ratio 4:5)
+    const resultCanvas = await html2canvas(canvasEl, {
+      scale: scaleX,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: null,
+      width: CDND_W,
+      height: CDND_H,
+      logging: false,
+      imageTimeout: 10000,
+    });
 
-    // Fondo
-    const gr=ctx.createLinearGradient(0,0,W,H);
-    gr.addColorStop(0,s.bg1);gr.addColorStop(1,s.bg2);
-    ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);
+    const a = document.createElement('a');
+    a.download = 'studio_' + (cdnd.index + 1) + '_' + W + 'x' + H + '.png';
+    a.href = resultCanvas.toDataURL('image/png');
+    a.click();
+    showNotification('✅ PNG ' + W + '×' + H + 'px exportado — alta calidad', 'success');
 
-    // Logo — misma fórmula que cdndRenderAll
-    if(logoImg&&b.logo.visible){
-      const sz=s.logoSize*SX, pad=8*SX, tot=sz+pad*2;
-      const totPct_x=tot/W*100, totPct_y=tot/H*100;
-      const wx=(b.logo.x-totPct_x/2)/100*W;
-      const wy=(b.logo.y-totPct_y/2)/100*H;
-      ctx.save();ctx.fillStyle='rgba(255,255,255,0.18)';
-      if(ctx.roundRect) ctx.roundRect(wx,wy,tot,tot,12*SX);
-      else ctx.rect(wx,wy,tot,tot);
-      ctx.fill();ctx.restore();
-      ctx.drawImage(logoImg,wx+pad,wy+pad,sz,sz);
-    }
-
-    // Helper: medir cuántas líneas ocupa un texto y devolver el alto total
-    function measureTextHeight(ctx2, txt, bw, lh) {
-      const words=(txt||'').split(' ');
-      let line='', lines=1;
-      for(let i=0;i<words.length;i++){
-        const t=line+words[i]+' ';
-        if(ctx2.measureText(t).width>bw&&i>0){lines++;line=words[i]+' ';}
-        else line=t;
-      }
-      return lines*lh;
-    }
-
-    // Helper: dibujar texto con word-wrap y devolver el alto real ocupado
-    function drawText(txt,bx,by,bw,fs,ff,color,fw,lh,align){
-      ctx.save();
-      ctx.font=fw+' '+fs+"px '"+ff+"',sans-serif";
-      ctx.fillStyle=color;
-      ctx.textAlign=align||'center';
-      ctx.textBaseline='top';
-      if(fw==='800'){ctx.shadowColor='rgba(0,0,0,.35)';ctx.shadowBlur=Math.round(10*SX);ctx.shadowOffsetY=Math.round(3*SX);}
-      const words=(txt||'').split(' ');let line='',ly=by,lineCount=0;
-      const lx=align==='left'?bx-bw/2:align==='right'?bx+bw/2:bx;
-      for(let i=0;i<words.length;i++){
-        const t=line+words[i]+' ';
-        if(ctx.measureText(t).width>bw&&i>0){ctx.fillText(line.trim(),lx,ly);line=words[i]+' ';ly+=lh;lineCount++;}
-        else line=t;
-      }
-      ctx.fillText(line.trim(),lx,ly);ctx.restore();
-      return ly+lh-by; // alto total ocupado
-    }
-
-    // Título
-    if(b.title.visible&&c.title){
-      const bw=90/100*W;
-      const cx=(b.title.x-90/2)/100*W+bw/2;
-      const cy=b.title.y/100*H;
-      const fs=Math.round(s.titleSize*SX);
-      const lh=Math.round(fs*1.25);
-      drawText(c.title,cx,cy,bw,fs,s.titleFont,s.titleColor,'800',lh,s.titleAlign||'center');
-    }
-    // Subtítulo — posición independiente del título (los bloques son libres en el Studio)
-    if(b.sub.visible&&c.sub){
-      const bw=90/100*W;
-      const cx=(b.sub.x-90/2)/100*W+bw/2;
-      const cy=b.sub.y/100*H;
-      const fs=Math.round(s.subSize*SX);
-      const lh=Math.round(fs*1.4);
-      drawText(c.sub,cx,cy,bw,fs,s.subFont,s.subColor,'400',lh,s.subAlign||'center');
-    }
-    const a=document.createElement('a');
-    a.download='studio_'+(cdnd.index+1)+'_'+W+'x'+H+'.png';
-    a.href=cv.toDataURL('image/png');a.click();
-    showNotification('✅ PNG '+W+'×'+H+'px exportado — alta calidad','success');
-
-  }catch(e){showNotification('Error: '+e.message,'error');}
+  } catch(e) { showNotification('Error: ' + e.message, 'error'); }
 }
 
 </script>
