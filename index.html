@@ -1295,6 +1295,7 @@
       <button id="upgradePlanBtn" class="btn btn-primary btn-sm hidden" onclick="showPlansScreen()" style="font-size:12px;">⬆️ Mejorar plan</button>
       <button class="btn btn-ghost btn-sm" onclick="openSidebar()">📜 Historial</button>
       <button id="brandBtn" class="btn btn-ghost btn-sm hidden" onclick="showBrandScreen()" title="Configurar mi marca">🎨 Mi marca</button>
+      <button id="openInstagramBtn" class="btn btn-sm hidden" onclick="openInInstagram()" title="Publicar en Instagram" style="background:linear-gradient(135deg,#833AB4,#FD1D1D,#FCB045);color:#fff;border:none;font-size:11px;">📱 Instagram</button>
       <button class="btn btn-outline btn-sm hidden" id="cancelSubBtn" onclick="cancelSubscription()" style="color:var(--danger);border-color:var(--danger);">Cancelar plan</button>
       <button class="btn btn-danger btn-sm" onclick="logout()">Salir</button>
       <button class="btn btn-ghost btn-sm hidden" id="adminBtn" onclick="openAdmin()">⚙️ Admin</button>
@@ -2603,7 +2604,7 @@ function renderThumbnailSpecs(i) {
         <div style="border-radius:10px;height:300px;overflow:hidden;padding:20px;display:flex;flex-direction:column;justify-content:flex-start;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};background:linear-gradient(135deg,${gc1},${gc2});text-align:${adj.align};">
           ${hasLogo ? `<div style="width:100%;text-align:${adj.logoAlign||'center'};margin-bottom:8px;"><img src="${currentBrand.logo_url}" style="width:${Math.round(adj.logoSize*0.5)}px;height:${Math.round(adj.logoSize*0.5)}px;object-fit:contain;border-radius:8px;background:rgba(255,255,255,.2);padding:4px;display:inline-block;"></div>` : ''}
           <div style="font-family:'${font}',sans-serif;font-size:${Math.round(adj.fontSize*0.55)}px;font-weight:900;color:${t.text_color||'#fff'};line-height:1.2;">${escapeHtml(adj.titleText)}</div>
-          ${adj.subText ? `<div style="font-family:'${font}',sans-serif;font-size:${Math.round(adj.fontSize*0.3)}px;color:rgba(255,255,255,.85);margin-top:6px;">${escapeHtml(adj.subText)}</div>` : ''}
+          ${adj.subText ? `<div style="font-family:'${font}',sans-serif;font-size:${adj.subFontSize||Math.round(adj.fontSize*0.3)}px;color:rgba(255,255,255,.85);margin-top:6px;">${escapeHtml(adj.subText)}</div>` : ''}
         </div>
 
         <!-- Textos editables -->
@@ -2720,8 +2721,8 @@ function renderCarousel(slides) {
       ${isPremium && currentBrand?.logo_url ? `<img src="${currentBrand.logo_url}" style="width:56px;height:56px;border-radius:6px;object-fit:contain;background:rgba(255,255,255,.2);padding:3px;margin-bottom:8px;">` : ''}
       <div class="slide-num">${i+1}</div>
       <div>
-        <div class="slide-title" style="${brandFont ? `font-family:'${brandFont}',sans-serif;` : ''}">${escapeHtml(s.title||'')}</div>
-        <div class="slide-content" style="${brandFont ? `font-family:'${brandFont}',sans-serif;` : ''}">${escapeHtml(s.content||'')}</div>
+        <div class="slide-title" style="${brandFont ? `font-family:'${brandFont}',sans-serif;` : ''}${brandFont && currentBrand?.font_color ? `color:${currentBrand.font_color};` : ''}">${escapeHtml(s.title||'')}</div>
+        <div class="slide-content" style="${brandFont ? `font-family:'${brandFont}',sans-serif;` : ''}${brandFont && currentBrand?.font_color ? `color:${currentBrand.font_color};opacity:0.9;` : ''}">${escapeHtml(s.content||'')}</div>
       </div>
     </div>
   `).join('');
@@ -3155,7 +3156,8 @@ async function downloadThumbnailImage(i) {
 
       // Título
       const titleEl = document.createElement('div');
-      titleEl.style.cssText = `font-size:${fs}px;font-weight:900;color:${t.text_color||'#fff'};line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${font}',sans-serif;word-break:break-word;`;
+      const fcTh = (isPremium && currentBrand?.font_color) ? currentBrand.font_color : (t.text_color||'#ffffff');
+      titleEl.style.cssText = `font-size:${fs}px;font-weight:900;color:${fcTh};line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${font}',sans-serif;word-break:break-word;`;
       titleEl.textContent = titleText;
       inner.appendChild(titleEl);
 
@@ -3248,7 +3250,8 @@ async function downloadCarouselSlideImage(i) {
 
       // Título
       const titleEl = document.createElement('div');
-      titleEl.style.cssText = `font-size:${ts}px;font-weight:800;color:#fff;line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${font}',sans-serif;word-break:break-word;`;
+      const fc = (isPremium && currentBrand?.font_color) ? currentBrand.font_color : '#ffffff';
+      titleEl.style.cssText = `font-size:${ts}px;font-weight:800;color:${fc};line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${font}',sans-serif;word-break:break-word;`;
       titleEl.textContent = titleText;
       inner.appendChild(titleEl);
 
@@ -3974,6 +3977,21 @@ function selectFont(font) {
   updateBrandPreview();
 }
 
+
+function syncFontColor() {
+  const hex = document.getElementById('fontColorHex')?.value;
+  if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+    document.getElementById('fontColor').value = hex;
+    updateBrandPreview();
+  }
+}
+
+function setFontColor(color) {
+  document.getElementById('fontColor').value = color;
+  document.getElementById('fontColorHex').value = color;
+  updateBrandPreview();
+}
+
 function syncColor(type) {
   const hex = document.getElementById(`color${type==='primary'?'Primary':'Secondary'}Hex`).value;
   if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
@@ -3985,14 +4003,16 @@ function syncColor(type) {
 function updateBrandPreview() {
   const cp  = document.getElementById('colorPrimary').value;
   const cs  = document.getElementById('colorSecondary').value;
+  const fc  = document.getElementById('fontColor')?.value || '#ffffff';
   document.getElementById('colorPrimaryHex').value   = cp;
   document.getElementById('colorSecondaryHex').value = cs;
+  if (document.getElementById('fontColorHex')) document.getElementById('fontColorHex').value = fc;
   const card = document.getElementById('brandPreviewCard');
   if (card) card.style.background = `linear-gradient(135deg,${cp},${cs})`;
   const title = document.getElementById('previewTitle');
   const sub   = document.getElementById('previewSub');
-  if (title) title.style.fontFamily = `'${selectedFont}',sans-serif`;
-  if (sub)   sub.style.fontFamily   = `'${selectedFont}',sans-serif`;
+  if (title) { title.style.fontFamily = `'${selectedFont}',sans-serif`; title.style.color = fc; }
+  if (sub)   { sub.style.fontFamily   = `'${selectedFont}',sans-serif`; sub.style.color = fc; }
 }
 
 async function handleLogoUpload(event) {
@@ -4041,7 +4061,8 @@ async function saveBrand() {
       body: JSON.stringify({
         color_primary:   document.getElementById('colorPrimary').value,
         color_secondary: document.getElementById('colorSecondary').value,
-        font_name:       selectedFont
+        font_name:       selectedFont,
+        font_color:      document.getElementById('fontColor')?.value || '#ffffff'
       })
     });
     const d = await r.json();
@@ -4049,6 +4070,7 @@ async function saveBrand() {
       currentBrand.color_primary   = document.getElementById('colorPrimary').value;
       currentBrand.color_secondary = document.getElementById('colorSecondary').value;
       currentBrand.font_name       = selectedFont;
+      currentBrand.font_color      = document.getElementById('fontColor')?.value || '#ffffff';
       showNotification('✅ Configuración de marca guardada', 'success');
     } else throw new Error(d.error);
   } catch(e) { showNotification('Error guardando marca: ' + e.message, 'error'); }
@@ -4431,6 +4453,19 @@ async function openInInstagram() {
   <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:24px;margin-bottom:16px;">
     <h3 style="font-size:15px;font-weight:700;margin:0 0 16px;">✍️ Tipografía</h3>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;" id="fontGrid">
+    </div>
+    <div style="margin-top:16px;display:flex;align-items:center;gap:12px;">
+      <label style="font-size:13px;color:var(--text-2);font-weight:600;">🎨 Color del texto</label>
+      <input type="color" id="fontColor" value="#ffffff" oninput="updateBrandPreview()"
+        style="width:44px;height:44px;border:none;border-radius:8px;cursor:pointer;padding:2px;">
+      <input type="text" id="fontColorHex" value="#ffffff" maxlength="7"
+        style="width:80px;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:13px;background:var(--surface);color:var(--text);"
+        oninput="syncFontColor()">
+      <div style="display:flex;gap:6px;">
+        <button onclick="setFontColor('#ffffff')" style="background:#fff;border:1px solid #ddd;border-radius:6px;width:28px;height:28px;cursor:pointer;" title="Blanco"></button>
+        <button onclick="setFontColor('#000000')" style="background:#000;border:1px solid #ddd;border-radius:6px;width:28px;height:28px;cursor:pointer;" title="Negro"></button>
+        <button onclick="setFontColor('#FFD700')" style="background:#FFD700;border:1px solid #ddd;border-radius:6px;width:28px;height:28px;cursor:pointer;" title="Dorado"></button>
+      </div>
     </div>
   </div>
 
