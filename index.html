@@ -2607,13 +2607,21 @@ function renderThumbnailSpecs(i) {
         </div>
 
         <!-- Controles -->
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;">
           <div>
             <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Título (px)</label>
             <div style="display:flex;align-items:center;gap:4px;">
               <button onclick="thumbAdjustFn(${i},'fontSize',-4)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;">−</button>
               <span style="font-size:12px;font-weight:700;min-width:36px;text-align:center;">${adj.fontSize}</span>
               <button onclick="thumbAdjustFn(${i},'fontSize',4)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;">+</button>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Subtítulo (px)</label>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <button onclick="thumbAdjustFn(${i},'subFontSize',-2)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:14px;">−</button>
+              <span style="font-size:12px;font-weight:700;min-width:36px;text-align:center;">${adj.subFontSize||20}</span>
+              <button onclick="thumbAdjustFn(${i},'subFontSize',2)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:14px;">+</button>
             </div>
           </div>
           ${hasLogo ? `
@@ -2660,6 +2668,7 @@ function thumbAdjustFn(i, prop, val) {
     const _t = currentThumbnails && currentThumbnails[i];
     window.thumbAdjust[i] = {
       fontSize: _t ? parseInt(_t.font_size||'42') : 42,
+      subFontSize: _t ? Math.round(parseInt(_t.font_size||'42') * 0.5) : 20,
       align: 'center',
       logoAlign: 'center',
       logoSize: 80,
@@ -2671,8 +2680,8 @@ function thumbAdjustFn(i, prop, val) {
     window.thumbAdjust[i][prop] = val;
   } else {
     window.thumbAdjust[i][prop] = Math.max(
-      prop === 'fontSize' ? 20 : 40,
-      Math.min(prop === 'fontSize' ? 120 : 300, window.thumbAdjust[i][prop] + val)
+      prop === 'fontSize' ? 16 : prop === 'subFontSize' ? 8 : 40,
+      Math.min(prop === 'fontSize' ? 120 : prop === 'subFontSize' ? 60 : 300, window.thumbAdjust[i][prop] + val)
     );
   }
   renderThumbnailSpecs(i);
@@ -2754,7 +2763,7 @@ function renderCarouselSpecs(i) {
       <div style="padding:16px;display:flex;flex-direction:column;gap:14px;">
 
         <!-- Preview mini del slide -->
-        <div id="slidePreview-${i}" style="border-radius:10px;padding:20px;min-height:100px;display:flex;flex-direction:column;justify-content:center;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};background:${cp&&cs?`linear-gradient(135deg,${cp},${cs})`:s.color_scheme||'linear-gradient(135deg,#7C3AED,#F43F5E)'};text-align:${adj.align};">
+        <div id="slidePreview-${i}" style="border-radius:10px;padding:20px;height:200px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-start;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};background:${cp&&cs?`linear-gradient(135deg,${cp},${cs})`:s.color_scheme||'linear-gradient(135deg,#7C3AED,#F43F5E)'};text-align:${adj.align};">
           ${isPremium && currentBrand?.logo_url ? `<div style="width:100%;text-align:${adj.logoAlign||'center'};margin-bottom:8px;"><img src="${currentBrand.logo_url}" style="width:${Math.round((adj.logoSize||80)*0.45)}px;height:${Math.round((adj.logoSize||80)*0.45)}px;border-radius:6px;object-fit:contain;background:rgba(255,255,255,.2);padding:3px;display:inline-block;"></div>` : ''}
           <div style="font-family:'${adj.font}',sans-serif;font-size:${adj.titleSize}px;font-weight:800;color:#fff;line-height:1.2;text-shadow:0 2px 8px rgba(0,0,0,.3);">${escapeHtml(adj.titleText)}</div>
           <div style="font-family:'${adj.font}',sans-serif;font-size:${adj.contentSize}px;color:rgba(255,255,255,.85);margin-top:6px;line-height:1.4;">${escapeHtml(adj.contentText)}</div>
@@ -4261,6 +4270,59 @@ async function captureHtmlToCanvas(buildFn, width, height) {
   
   document.body.removeChild(wrapper);
   return canvas;
+}
+
+
+/* ============================================================
+   PUBLICAR EN INSTAGRAM — Descarga + abre Instagram
+   ============================================================ */
+async function openInInstagram() {
+  if (!currentCarouselSlides || !currentCarouselSlides.length) {
+    showNotification('Genera contenido primero', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('openInstagramBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Preparando...'; }
+
+  try {
+    // 1. Copiar el caption al portapapeles
+    const caption = currentResults?.captions?.[0] || '';
+    const hashtags = (currentResults?.hashtags || []).join(' ');
+    const fullCaption = caption + (hashtags ? '\n\n' + hashtags : '');
+
+    if (fullCaption && navigator.clipboard) {
+      await navigator.clipboard.writeText(fullCaption);
+      showNotification('✅ Caption copiado al portapapeles', 'success');
+    }
+
+    // 2. Descargar el primer slide automáticamente
+    await downloadCarouselSlideImage(0);
+
+    // 3. Mostrar instrucciones y abrir Instagram
+    setTimeout(() => {
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+      if (isMobile) {
+        // En móvil: abrir Instagram app directamente
+        window.location.href = 'instagram://camera';
+        setTimeout(() => {
+          // Si no abre la app, abrir web
+          window.open('https://www.instagram.com', '_blank');
+        }, 1500);
+      } else {
+        // En desktop: abrir Instagram web
+        window.open('https://www.instagram.com', '_blank');
+      }
+
+      showNotification('📱 1. Abre Instagram → Nuevo post\n2. Selecciona la imagen descargada\n3. Pega el caption (ya está copiado)', 'success');
+    }, 1000);
+
+  } catch(e) {
+    showNotification('Error: ' + e.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '📱 Publicar en Instagram'; }
+  }
 }
 
 </script>
