@@ -2575,109 +2575,154 @@ function renderThumbnailSpecs(i) {
   if (!panel || !currentThumbnails[i]) return;
   const t = currentThumbnails[i];
   if (!window.thumbAdjust) window.thumbAdjust = {};
-  if (!window.thumbAdjust[i]) window.thumbAdjust[i] = {
-    fontSize: parseInt(t.font_size || '42'),
-    align: 'center',
-    logoSize: 80,
-    titleText: t.text || '',
-    subText: t.secondary_text || '',
-  };
+  if (!window.thumbAdjust[i]) {
+    const _t = currentThumbnails && currentThumbnails[i];
+    const _tfc = (currentUser?.plan_type === 'premium' && currentBrand?.font_color) ? currentBrand.font_color : (_t?.text_color || '#ffffff');
+    const _sfc = (currentUser?.plan_type === 'premium' && currentBrand?.sub_font_color) ? currentBrand.sub_font_color : '#cccccc';
+    window.thumbAdjust[i] = {
+      fontSize: _t ? parseInt(_t.font_size||'42') : 42,
+      subFontSize: _t ? Math.round(parseInt(_t.font_size||'42') * 0.5) : 20,
+      align: 'center', logoAlign: 'center', logoSize: 80,
+      titleText: _t ? (_t.text || '') : '',
+      subText: _t ? (_t.secondary_text || '') : '',
+      titleColor: _tfc, subColor: _sfc,
+    };
+  }
   const adj = window.thumbAdjust[i];
   if (adj.subFontSize === undefined) adj.subFontSize = Math.round((adj.fontSize||42) * 0.5);
+  if (adj.titleColor === undefined) adj.titleColor = t.text_color || '#ffffff';
+  if (adj.subColor   === undefined) adj.subColor   = '#cccccc';
   const isPremium = currentUser?.plan_type === 'premium';
   const hasLogo = isPremium && currentBrand?.logo_url;
-  const cp = (isPremium && currentBrand?.color_primary) || null;
+  const cp = (isPremium && currentBrand?.color_primary)   || null;
   const cs = (isPremium && currentBrand?.color_secondary) || null;
   const font = (isPremium && currentBrand?.font_name) || (t.font_family||'DM Sans').replace(/['"]/g,'');
   const {c1,c2} = parseGradient(t.background_gradient);
   const gc1 = cp || c1; const gc2 = cs || c2;
+  const logoSzPx = Math.round(adj.logoSize * 0.4);
 
   panel.innerHTML = `
     <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-top:12px;">
-      <div style="background:var(--brand);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">
-        <span style="color:#fff;font-weight:700;font-size:14px;">✏️ Editor — Miniatura ${i+1}</span>
-        <button class="btn btn-sm" onclick="downloadThumbnailImage(${i})" style="background:#fff;color:var(--brand);font-weight:700;font-size:12px;">📥 PNG 1080×1350</button>
+
+      <!-- Header -->
+      <div style="background:var(--brand);padding:10px 16px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="color:#fff;font-weight:700;font-size:13px;">✏️ Miniatura ${i+1} — 1080×1350px</span>
+        <button onclick="downloadThumbnailImage(${i})" style="background:#fff;color:var(--brand);font-weight:700;font-size:11px;padding:5px 10px;border:none;border-radius:6px;cursor:pointer;">📥 Descargar PNG</button>
       </div>
-      <div style="padding:16px;display:flex;flex-direction:column;gap:14px;">
 
-        <!-- Preview -->
-        <div style="border-radius:10px;height:300px;overflow:hidden;padding:20px;display:flex;flex-direction:column;justify-content:flex-start;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};background:linear-gradient(135deg,${gc1},${gc2});text-align:${adj.align};">
-          ${hasLogo ? `<div style="width:100%;text-align:${adj.logoAlign||'center'};margin-bottom:8px;"><img src="${currentBrand.logo_url}" style="width:${Math.round(adj.logoSize*0.5)}px;height:${Math.round(adj.logoSize*0.5)}px;object-fit:contain;border-radius:8px;background:rgba(255,255,255,.2);padding:4px;display:inline-block;"></div>` : ''}
-          <div style="font-family:'${font}',sans-serif;font-size:${Math.round(adj.fontSize*0.55)}px;font-weight:900;color:${adj.titleColor||t.text_color||'#fff'};line-height:1.2;">${escapeHtml(adj.titleText)}</div>
-          ${adj.subText ? `<div style="font-family:'${font}',sans-serif;font-size:${adj.subFontSize||Math.round(adj.fontSize*0.3)}px;color:${adj.subColor||'rgba(255,255,255,.85)'};margin-top:6px;">${escapeHtml(adj.subText)}</div>` : ''}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
+
+        <!-- Preview vertical izquierda -->
+        <div style="padding:16px;border-right:1px solid var(--border);">
+          <div style="font-size:11px;color:var(--text-3);font-weight:600;margin-bottom:8px;text-align:center;">Vista previa (formato Instagram)</div>
+          <div style="width:100%;aspect-ratio:1080/1350;border-radius:10px;overflow:hidden;padding:16px;display:flex;flex-direction:column;justify-content:flex-start;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};background:linear-gradient(135deg,${gc1},${gc2});text-align:${adj.align};box-sizing:border-box;position:relative;">
+            <!-- Patrón sutil -->
+            <div style="position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 1px,transparent 1px);background-size:20px 20px;pointer-events:none;"></div>
+            <div style="position:relative;z-index:1;width:100%;display:flex;flex-direction:column;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};gap:8px;">
+              ${hasLogo ? `<div style="text-align:${adj.logoAlign||'center'};width:100%;"><img src="${currentBrand.logo_url}" style="width:${logoSzPx}px;height:${logoSzPx}px;object-fit:contain;border-radius:6px;background:rgba(255,255,255,.2);padding:3px;"></div>` : ''}
+              <div style="font-family:'${font}',sans-serif;font-size:${Math.round(adj.fontSize*0.45)}px;font-weight:900;color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;">${escapeHtml(adj.titleText)}</div>
+              <div style="width:30px;height:2px;background:rgba(255,255,255,0.4);border-radius:2px;flex-shrink:0;"></div>
+              ${adj.subText ? `<div style="font-family:'${font}',sans-serif;font-size:${Math.round((adj.subFontSize||20)*0.45)}px;color:${adj.subColor||'rgba(255,255,255,.85)'};line-height:1.4;">${escapeHtml(adj.subText)}</div>` : ''}
+            </div>
+          </div>
         </div>
 
-        <!-- Textos editables -->
-        <div>
-          <label style="font-size:12px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Título</label>
-          <input type="text" value="${escapeHtml(adj.titleText)}" oninput="thumbAdjustText(${i},'titleText',this.value)"
-            style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:13px;background:var(--surface);color:var(--text);box-sizing:border-box;">
-        </div>
-        <div>
-          <label style="font-size:12px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Subtítulo</label>
-          <input type="text" value="${escapeHtml(adj.subText)}" oninput="thumbAdjustText(${i},'subText',this.value)"
-            style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:13px;background:var(--surface);color:var(--text);box-sizing:border-box;">
-        </div>
+        <!-- Controles derecha -->
+        <div style="padding:16px;display:flex;flex-direction:column;gap:12px;">
 
-        <!-- Controles -->
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;">
+          <!-- Textos -->
           <div>
-            <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Título (px)</label>
-            <div style="display:flex;align-items:center;gap:4px;">
-              <button onclick="thumbAdjustFn(${i},'fontSize',-4)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;">−</button>
-              <span style="font-size:12px;font-weight:700;min-width:36px;text-align:center;">${adj.fontSize}</span>
-              <button onclick="thumbAdjustFn(${i},'fontSize',4)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;">+</button>
+            <div style="font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">📝 Texto</div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <input type="text" value="${escapeHtml(adj.titleText)}" placeholder="Título"
+                oninput="thumbAdjustText(${i},'titleText',this.value)"
+                style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text);box-sizing:border-box;">
+              <input type="text" value="${escapeHtml(adj.subText)}" placeholder="Subtítulo"
+                oninput="thumbAdjustText(${i},'subText',this.value)"
+                style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text);box-sizing:border-box;">
             </div>
           </div>
+
+          <!-- Tamaños -->
           <div>
-            <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Subtítulo (px)</label>
-            <div style="display:flex;align-items:center;gap:4px;">
-              <button onclick="thumbAdjustFn(${i},'subFontSize',-2)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:14px;">−</button>
-              <span style="font-size:12px;font-weight:700;min-width:36px;text-align:center;">${adj.subFontSize||20}</span>
-              <button onclick="thumbAdjustFn(${i},'subFontSize',2)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:14px;">+</button>
+            <div style="font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">📏 Tamaño fuente</div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+                <span style="font-size:11px;color:var(--text-2);min-width:50px;">Título</span>
+                <div style="display:flex;align-items:center;gap:4px;">
+                  <button onclick="thumbAdjustFn(${i},'fontSize',-4)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:5px;width:24px;height:24px;cursor:pointer;font-size:13px;">−</button>
+                  <span style="font-size:12px;font-weight:700;min-width:28px;text-align:center;">${adj.fontSize}</span>
+                  <button onclick="thumbAdjustFn(${i},'fontSize',4)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:5px;width:24px;height:24px;cursor:pointer;font-size:13px;">+</button>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+                <span style="font-size:11px;color:var(--text-2);min-width:50px;">Subtítulo</span>
+                <div style="display:flex;align-items:center;gap:4px;">
+                  <button onclick="thumbAdjustFn(${i},'subFontSize',-2)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:5px;width:24px;height:24px;cursor:pointer;font-size:13px;">−</button>
+                  <span style="font-size:12px;font-weight:700;min-width:28px;text-align:center;">${adj.subFontSize||20}</span>
+                  <button onclick="thumbAdjustFn(${i},'subFontSize',2)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:5px;width:24px;height:24px;cursor:pointer;font-size:13px;">+</button>
+                </div>
+              </div>
             </div>
           </div>
-          <!-- Colores de fuente miniatura -->
-          <div style="grid-column:1/-1;display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:4px;">
-            <div style="display:flex;align-items:center;gap:6px;">
-              <span style="font-size:11px;color:var(--text-3);font-weight:600;">Color título:</span>
-              <input type="color" value="${adj.titleColor||'#ffffff'}" onchange="thumbAdjustColor(${i},'titleColor',this.value)" style="width:32px;height:32px;border:none;border-radius:6px;cursor:pointer;padding:2px;">
-            </div>
-            <div style="display:flex;align-items:center;gap:6px;">
-              <span style="font-size:11px;color:var(--text-3);font-weight:600;">Color subtítulo:</span>
-              <input type="color" value="${adj.subColor||'#ffffff'}" onchange="thumbAdjustColor(${i},'subColor',this.value)" style="width:32px;height:32px;border:none;border-radius:6px;cursor:pointer;padding:2px;">
+
+          <!-- Colores de fuente -->
+          <div>
+            <div style="font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">🎨 Color fuente</div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:11px;color:var(--text-2);">Título</span>
+                <input type="color" value="${adj.titleColor||'#ffffff'}" onchange="thumbAdjustColor(${i},'titleColor',this.value)"
+                  style="width:32px;height:28px;border:none;border-radius:6px;cursor:pointer;padding:1px;">
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:11px;color:var(--text-2);">Subtítulo</span>
+                <input type="color" value="${adj.subColor||'#cccccc'}" onchange="thumbAdjustColor(${i},'subColor',this.value)"
+                  style="width:32px;height:28px;border:none;border-radius:6px;cursor:pointer;padding:1px;">
+              </div>
             </div>
           </div>
+
+          <!-- Alineación -->
+          <div>
+            <div style="font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">↔️ Alineación</div>
+            <div style="display:flex;gap:5px;">
+              ${['left','center','right'].map(a=>`<button onclick="thumbAdjustFn(${i},'align','${a}')" style="flex:1;padding:5px;border-radius:6px;border:1px solid var(--border);background:${adj.align===a?'var(--brand)':'var(--surface-2)'};color:${adj.align===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:13px;">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
+            </div>
+          </div>
+
+          <!-- Logo -->
           ${hasLogo ? `
           <div>
-            <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Tamaño logo</label>
-            <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
-              <button onclick="thumbAdjustFn(${i},'logoSize',-20)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;">−</button>
-              <span style="font-size:12px;font-weight:700;min-width:36px;text-align:center;">${adj.logoSize}</span>
-              <button onclick="thumbAdjustFn(${i},'logoSize',20)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;">+</button>
+            <div style="font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">🖼️ Logo</div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:11px;color:var(--text-2);">Tamaño</span>
+                <div style="display:flex;align-items:center;gap:4px;">
+                  <button onclick="thumbAdjustFn(${i},'logoSize',-20)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:5px;width:24px;height:24px;cursor:pointer;">−</button>
+                  <span style="font-size:12px;font-weight:700;min-width:28px;text-align:center;">${adj.logoSize}</span>
+                  <button onclick="thumbAdjustFn(${i},'logoSize',20)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:5px;width:24px;height:24px;cursor:pointer;">+</button>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:11px;color:var(--text-2);">Posición</span>
+                <div style="display:flex;gap:4px;">
+                  ${['left','center','right'].map(a=>`<button onclick="thumbAdjustFn(${i},'logoAlign','${a}')" style="padding:3px 7px;border-radius:5px;border:1px solid var(--border);background:${(adj.logoAlign||'center')===a?'var(--brand)':'var(--surface-2)'};color:${(adj.logoAlign||'center')===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:11px;">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
+                </div>
+              </div>
             </div>
-            <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Posición logo</label>
-            <div style="display:flex;gap:3px;">
-              ${['left','center','right'].map(a=>`<button onclick="thumbAdjustFn(${i},'logoAlign','${a}')" style="padding:3px 7px;border-radius:6px;border:1px solid var(--border);background:${(adj.logoAlign||'center')===a?'var(--brand)':'var(--surface-2)'};color:${(adj.logoAlign||'center')===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:12px;">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
-            </div>
-          </div>` : '<div></div>'}
-          <div>
-            <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Alineación</label>
-            <div style="display:flex;gap:3px;">
-              ${['left','center','right'].map(a=>`<button onclick="thumbAdjustFn(${i},'align','${a}')" style="padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:${adj.align===a?'var(--brand)':'var(--surface-2)'};color:${adj.align===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:12px;">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
-            </div>
-          </div>
-        </div>
+          </div>` : ''}
 
-        <!-- Info marca -->
-        <div style="padding:8px 12px;background:var(--brand-light);border-radius:8px;font-size:11px;color:var(--brand);">
-          ${cp ? `🎨 ${gc1} → ${gc2} &nbsp;` : '⚠️ Sin marca &nbsp;'}
-          ${font !== 'DM Sans' ? `✍️ ${font} &nbsp;` : ''}
-          ${hasLogo ? '🖼️ Logo activo' : ''}
         </div>
       </div>
     </div>
   `;
+}
+
+function thumbAdjustText(i, prop, val) {
+  if (!window.thumbAdjust || !window.thumbAdjust[i]) return;
+  window.thumbAdjust[i][prop] = val;
+  renderThumbnailSpecs(i);
 }
 
 function thumbAdjustText(i, prop, val) {
@@ -2761,155 +2806,170 @@ function renderCarouselSpecs(i) {
   const panel = document.getElementById('carouselSpecsPanel');
   if (!panel || !currentCarouselSlides[i]) return;
   const s = currentCarouselSlides[i];
-
-  // Inicializar ajustes por slide
   if (!window.slideAdjust) window.slideAdjust = {};
   if (!window.slideAdjust[i]) {
     const isPremium = currentUser?.plan_type === 'premium';
+    const _fcS = (isPremium && currentBrand?.font_color) ? currentBrand.font_color : '#ffffff';
+    const _sfcS = (isPremium && currentBrand?.sub_font_color) ? currentBrand.sub_font_color : '#cccccc';
     window.slideAdjust[i] = {
-      titleSize: 40,
-      contentSize: 20,
-      align: 'center',
-      titleText: s.title || '',
-      contentText: s.content || '',
+      titleSize: 40, contentSize: 20, align: 'center', logoAlign: 'center', logoSize: 80,
+      titleText: s.title || '', contentText: s.content || '',
       font: (isPremium && currentBrand?.font_name) ? currentBrand.font_name : 'DM Sans',
-      logoSize: 80,
-      colorPrimary:   (isPremium && currentBrand?.color_primary)   ? currentBrand.color_primary   : null,
-      colorSecondary: (isPremium && currentBrand?.color_secondary) ? currentBrand.color_secondary : null,
+      titleColor: _fcS, contentColor: _sfcS,
+      colorPrimary: (isPremium && currentBrand?.color_primary) || null,
+      colorSecondary: (isPremium && currentBrand?.color_secondary) || null,
     };
+  } else {
+    const _adjS = window.slideAdjust[i];
+    if (!_adjS.titleColor) { const _f = (currentUser?.plan_type==='premium'&&currentBrand?.font_color)||'#ffffff'; _adjS.titleColor=_f; }
+    if (!_adjS.contentColor) { _adjS.contentColor = (currentUser?.plan_type==='premium'&&currentBrand?.sub_font_color)||'#cccccc'; }
   }
   const adj = window.slideAdjust[i];
   const isPremium = currentUser?.plan_type === 'premium';
+  const cp = adj.colorPrimary  || (isPremium && currentBrand?.color_primary)  || null;
+  const cs = adj.colorSecondary|| (isPremium && currentBrand?.color_secondary)|| null;
+  const hasBg = cp && cs;
+  const bgStyle = hasBg ? `linear-gradient(135deg,${cp},${cs})` : (s.color_scheme || 'linear-gradient(135deg,#7C3AED,#F43F5E)');
   const fonts = ['DM Sans','Montserrat','Poppins','Playfair Display','Raleway','Oswald','Lato','Roboto','Inter','Nunito'];
-  const cp = (isPremium && currentBrand?.color_primary) ? currentBrand.color_primary : null;
-  const cs = (isPremium && currentBrand?.color_secondary) ? currentBrand.color_secondary : null;
+  const logoSzPx = Math.round((adj.logoSize||80) * 0.4);
 
   panel.innerHTML = `
     <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-top:12px;">
 
       <!-- Header -->
-      <div style="background:var(--brand);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">
-        <span style="color:#fff;font-weight:700;font-size:14px;">✏️ Editor — Slide ${i+1} / ${currentCarouselSlides.length}</span>
-        <button class="btn btn-sm" onclick="downloadCarouselSlideImage(${i})" style="background:#fff;color:var(--brand);font-weight:700;font-size:12px;">📥 Descargar PNG</button>
+      <div style="background:var(--brand);padding:10px 16px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="color:#fff;font-weight:700;font-size:13px;">✏️ Slide ${i+1} / ${currentCarouselSlides.length} — 1080×1350px</span>
+        <button onclick="downloadCarouselSlideImage(${i})" style="background:#fff;color:var(--brand);font-weight:700;font-size:11px;padding:5px 10px;border:none;border-radius:6px;cursor:pointer;">📥 Descargar PNG</button>
       </div>
 
-      <div style="padding:16px;display:flex;flex-direction:column;gap:14px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
 
-        <!-- Preview mini del slide -->
-        <div id="slidePreview-${i}" style="border-radius:10px;padding:20px;height:300px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-start;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};background:${cp&&cs?`linear-gradient(135deg,${cp},${cs})`:s.color_scheme||'linear-gradient(135deg,#7C3AED,#F43F5E)'};text-align:${adj.align};">
-          ${isPremium && currentBrand?.logo_url ? `<div style="width:100%;text-align:${adj.logoAlign||'center'};margin-bottom:8px;"><img src="${currentBrand.logo_url}" style="width:${Math.round((adj.logoSize||80)*0.45)}px;height:${Math.round((adj.logoSize||80)*0.45)}px;border-radius:6px;object-fit:contain;background:rgba(255,255,255,.2);padding:3px;display:inline-block;"></div>` : ''}
-          <div style="font-family:'${adj.font}',sans-serif;font-size:${adj.titleSize}px;font-weight:800;color:${adj.titleColor||'#ffffff'};line-height:1.2;text-shadow:0 2px 8px rgba(0,0,0,.3);">${escapeHtml(adj.titleText)}</div>
-          <div style="font-family:'${adj.font}',sans-serif;font-size:${adj.contentSize}px;color:${adj.contentColor||'rgba(255,255,255,.85)'};margin-top:6px;line-height:1.4;">${escapeHtml(adj.contentText)}</div>
+        <!-- Preview vertical izquierda -->
+        <div style="padding:16px;border-right:1px solid var(--border);">
+          <div style="font-size:11px;color:var(--text-3);font-weight:600;margin-bottom:8px;text-align:center;">Vista previa (formato Instagram)</div>
+          <div style="width:100%;aspect-ratio:1080/1350;border-radius:10px;overflow:hidden;padding:16px;display:flex;flex-direction:column;justify-content:flex-start;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};background:${bgStyle};text-align:${adj.align};box-sizing:border-box;position:relative;">
+            <div style="position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 1px,transparent 1px);background-size:20px 20px;pointer-events:none;"></div>
+            <div style="position:relative;z-index:1;width:100%;display:flex;flex-direction:column;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};gap:8px;">
+              ${isPremium && currentBrand?.logo_url ? `<div style="text-align:${adj.logoAlign||'center'};width:100%;"><img src="${currentBrand.logo_url}" style="width:${logoSzPx}px;height:${logoSzPx}px;object-fit:contain;border-radius:6px;background:rgba(255,255,255,.2);padding:3px;"></div>` : ''}
+              <div style="font-family:'${adj.font}',sans-serif;font-size:${Math.round(adj.titleSize*0.45)}px;font-weight:800;color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;">${escapeHtml(adj.titleText)}</div>
+              <div style="width:30px;height:2px;background:rgba(255,255,255,0.4);border-radius:2px;flex-shrink:0;"></div>
+              <div style="font-family:'${adj.font}',sans-serif;font-size:${Math.round(adj.contentSize*0.45)}px;color:${adj.contentColor||'rgba(255,255,255,.85)'};line-height:1.4;word-break:break-word;">${escapeHtml(adj.contentText)}</div>
+            </div>
+          </div>
         </div>
 
-        <!-- Editar textos -->
-        <div>
-          <label style="font-size:12px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Título</label>
-          <input type="text" value="${escapeHtml(adj.titleText)}"
-            oninput="slideAdjustText(${i},'titleText',this.value)"
-            style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:13px;background:var(--surface);color:var(--text);box-sizing:border-box;">
-        </div>
-        <div>
-          <label style="font-size:12px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Contenido</label>
-          <textarea rows="2" oninput="slideAdjustText(${i},'contentText',this.value)"
-            style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:13px;background:var(--surface);color:var(--text);resize:vertical;box-sizing:border-box;">${escapeHtml(adj.contentText)}</textarea>
-        </div>
+        <!-- Controles derecha -->
+        <div style="padding:16px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;max-height:600px;">
 
-        <!-- Controles en fila -->
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
-
-          <!-- Tamaño título -->
+          <!-- Textos -->
           <div>
-            <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Título</label>
-            <div style="display:flex;align-items:center;gap:4px;">
-              <button onclick="slideAdjustFn(${i},'titleSize',-2)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:26px;height:26px;cursor:pointer;">−</button>
-              <span style="font-size:12px;font-weight:700;min-width:32px;text-align:center;">${adj.titleSize}px</span>
-              <button onclick="slideAdjustFn(${i},'titleSize',2)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:26px;height:26px;cursor:pointer;">+</button>
+            <div style="font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">📝 Texto</div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <input type="text" value="${escapeHtml(adj.titleText)}" placeholder="Título"
+                oninput="slideAdjustText(${i},'titleText',this.value)"
+                style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text);box-sizing:border-box;">
+              <textarea rows="2" placeholder="Contenido" oninput="slideAdjustText(${i},'contentText',this.value)"
+                style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text);resize:none;box-sizing:border-box;">${escapeHtml(adj.contentText)}</textarea>
             </div>
           </div>
 
-          <!-- Tamaño y posición logo -->
-          ${isPremium && currentBrand?.logo_url ? `
+          <!-- Tamaños -->
           <div>
-            <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Tamaño logo</label>
-            <div style="display:flex;align-items:center;gap:4px;">
-              <button onclick="slideAdjustFn(${i},'logoSize',-10)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:26px;height:26px;cursor:pointer;">−</button>
-              <span style="font-size:12px;font-weight:700;min-width:32px;text-align:center;">${adj.logoSize||80}</span>
-              <button onclick="slideAdjustFn(${i},'logoSize',10)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:26px;height:26px;cursor:pointer;">+</button>
+            <div style="font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">📏 Tamaño fuente</div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:11px;color:var(--text-2);">Título</span>
+                <div style="display:flex;align-items:center;gap:4px;">
+                  <button onclick="slideAdjustFn(${i},'titleSize',-2)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:5px;width:24px;height:24px;cursor:pointer;">−</button>
+                  <span style="font-size:12px;font-weight:700;min-width:28px;text-align:center;">${adj.titleSize}</span>
+                  <button onclick="slideAdjustFn(${i},'titleSize',2)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:5px;width:24px;height:24px;cursor:pointer;">+</button>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:11px;color:var(--text-2);">Contenido</span>
+                <div style="display:flex;align-items:center;gap:4px;">
+                  <button onclick="slideAdjustFn(${i},'contentSize',-2)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:5px;width:24px;height:24px;cursor:pointer;">−</button>
+                  <span style="font-size:12px;font-weight:700;min-width:28px;text-align:center;">${adj.contentSize}</span>
+                  <button onclick="slideAdjustFn(${i},'contentSize',2)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:5px;width:24px;height:24px;cursor:pointer;">+</button>
+                </div>
+              </div>
             </div>
           </div>
-          <div>
-            <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Posición logo</label>
-            <div style="display:flex;gap:3px;">
-              ${['left','center','right'].map(a=>`<button onclick="slideAdjustFn(${i},'logoAlign','${a}')" style="padding:3px 7px;border-radius:6px;border:1px solid var(--border);background:${(adj.logoAlign||'center')===a?'var(--brand)':'var(--surface-2)'};color:${(adj.logoAlign||'center')===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:12px;">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
-            </div>
-          </div>` : ''}
 
-          <!-- Tamaño contenido -->
+          <!-- Colores fondo -->
           <div>
-            <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Contenido</label>
-            <div style="display:flex;align-items:center;gap:4px;">
-              <button onclick="slideAdjustFn(${i},'contentSize',-2)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:26px;height:26px;cursor:pointer;">−</button>
-              <span style="font-size:12px;font-weight:700;min-width:32px;text-align:center;">${adj.contentSize}px</span>
-              <button onclick="slideAdjustFn(${i},'contentSize',2)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:26px;height:26px;cursor:pointer;">+</button>
+            <div style="font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">🎨 Fondo</div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:11px;color:var(--text-2);">Color 1</span>
+                <input type="color" value="${adj.colorPrimary||cp||'#7C3AED'}" onchange="slideAdjustColor(${i},'colorPrimary',this.value)"
+                  style="width:36px;height:28px;border:none;border-radius:6px;cursor:pointer;padding:1px;">
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:11px;color:var(--text-2);">Color 2</span>
+                <input type="color" value="${adj.colorSecondary||cs||'#F43F5E'}" onchange="slideAdjustColor(${i},'colorSecondary',this.value)"
+                  style="width:36px;height:28px;border:none;border-radius:6px;cursor:pointer;padding:1px;">
+              </div>
+              <button onclick="slideResetColors(${i})" style="font-size:10px;color:var(--text-3);background:none;border:none;cursor:pointer;text-align:left;padding:0;">↺ Usar colores de marca</button>
+            </div>
+          </div>
+
+          <!-- Colores fuente -->
+          <div>
+            <div style="font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">🖊️ Color fuente</div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:11px;color:var(--text-2);">Título</span>
+                <input type="color" value="${adj.titleColor||'#ffffff'}" onchange="slideAdjustFn(${i},'titleColor',this.value)"
+                  style="width:36px;height:28px;border:none;border-radius:6px;cursor:pointer;padding:1px;">
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:11px;color:var(--text-2);">Contenido</span>
+                <input type="color" value="${adj.contentColor||'#cccccc'}" onchange="slideAdjustFn(${i},'contentColor',this.value)"
+                  style="width:36px;height:28px;border:none;border-radius:6px;cursor:pointer;padding:1px;">
+              </div>
+            </div>
+          </div>
+
+          <!-- Fuente -->
+          <div>
+            <div style="font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">✍️ Fuente</div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;">
+              ${fonts.map(f=>`<button onclick="slideAdjustFn(${i},'font','${f}')" style="padding:3px 7px;border-radius:5px;border:1px solid var(--border);background:${adj.font===f?'var(--brand)':'var(--surface-2)'};color:${adj.font===f?'#fff':'var(--text-2)'};cursor:pointer;font-size:10px;font-family:'${f}',sans-serif;">${f}</button>`).join('')}
             </div>
           </div>
 
           <!-- Alineación -->
           <div>
-            <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Alineación</label>
-            <div style="display:flex;gap:3px;">
-              ${['left','center','right'].map(a=>`<button onclick="slideAdjustFn(${i},'align','${a}')" style="padding:3px 7px;border-radius:6px;border:1px solid var(--border);background:${adj.align===a?'var(--brand)':'var(--surface-2)'};color:${adj.align===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:12px;">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
+            <div style="font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">↔️ Alineación texto</div>
+            <div style="display:flex;gap:5px;">
+              ${['left','center','right'].map(a=>`<button onclick="slideAdjustFn(${i},'align','${a}')" style="flex:1;padding:5px;border-radius:6px;border:1px solid var(--border);background:${adj.align===a?'var(--brand)':'var(--surface-2)'};color:${adj.align===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:13px;">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
             </div>
           </div>
-        </div>
 
-        <!-- Fuente -->
-        <div>
-          <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:6px;">Fuente</label>
-          <div style="display:flex;flex-wrap:wrap;gap:5px;">
-            ${fonts.map(f=>`<button onclick="slideAdjustFn(${i},'font','${f}')" style="padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:${adj.font===f?'var(--brand)':'var(--surface-2)'};color:${adj.font===f?'#fff':'var(--text-2)'};cursor:pointer;font-size:11px;font-family:'${f}',sans-serif;">${f}</button>`).join('')}
-          </div>
-        </div>
+          <!-- Logo -->
+          ${isPremium && currentBrand?.logo_url ? `
+          <div>
+            <div style="font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">🖼️ Logo</div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:11px;color:var(--text-2);">Tamaño</span>
+                <div style="display:flex;align-items:center;gap:4px;">
+                  <button onclick="slideAdjustFn(${i},'logoSize',-10)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:5px;width:24px;height:24px;cursor:pointer;">−</button>
+                  <span style="font-size:12px;font-weight:700;min-width:28px;text-align:center;">${adj.logoSize||80}</span>
+                  <button onclick="slideAdjustFn(${i},'logoSize',10)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:5px;width:24px;height:24px;cursor:pointer;">+</button>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:11px;color:var(--text-2);">Posición</span>
+                <div style="display:flex;gap:4px;">
+                  ${['left','center','right'].map(a=>`<button onclick="slideAdjustFn(${i},'logoAlign','${a}')" style="padding:3px 7px;border-radius:5px;border:1px solid var(--border);background:${(adj.logoAlign||'center')===a?'var(--brand)':'var(--surface-2)'};color:${(adj.logoAlign||'center')===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:11px;">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
+                </div>
+              </div>
+            </div>
+          </div>` : ''}
 
-        <!-- Colores editables -->
-        <div>
-          <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:6px;">🎨 Colores del slide</label>
-          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-            <div style="display:flex;align-items:center;gap:6px;">
-              <input type="color" value="${adj.colorPrimary || cp || '#8B5FBF'}" 
-                onchange="slideAdjustColor(${i},'colorPrimary',this.value)"
-                style="width:36px;height:36px;border:none;border-radius:8px;cursor:pointer;padding:2px;">
-              <span style="font-size:11px;color:var(--text-3);">Primario</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:6px;">
-              <input type="color" value="${adj.colorSecondary || cs || '#E91E8C'}" 
-                onchange="slideAdjustColor(${i},'colorSecondary',this.value)"
-                style="width:36px;height:36px;border:none;border-radius:8px;cursor:pointer;padding:2px;">
-              <span style="font-size:11px;color:var(--text-3);">Secundario</span>
-            </div>
-            <button onclick="slideResetColors(${i})" style="font-size:11px;color:var(--text-3);background:none;border:none;cursor:pointer;text-decoration:underline;">↺ Restablecer</button>
-          </div>
-          <!-- Colores de fuente -->
-          <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
-            <div style="display:flex;align-items:center;gap:6px;">
-              <span style="font-size:11px;color:var(--text-3);font-weight:600;">Color título:</span>
-              <input type="color" value="${adj.titleColor||'#ffffff'}" onchange="slideAdjustFn(${i},'titleColor',this.value)" style="width:32px;height:32px;border:none;border-radius:6px;cursor:pointer;padding:2px;">
-            </div>
-            <div style="display:flex;align-items:center;gap:6px;">
-              <span style="font-size:11px;color:var(--text-3);font-weight:600;">Color contenido:</span>
-              <input type="color" value="${adj.contentColor||'#ffffff'}" onchange="slideAdjustFn(${i},'contentColor',this.value)" style="width:32px;height:32px;border:none;border-radius:6px;cursor:pointer;padding:2px;">
-            </div>
-          </div>
         </div>
-
-        <!-- Marca activa -->
-        <div style="padding:8px 12px;background:var(--brand-light);border-radius:8px;font-size:11px;color:var(--brand);">
-          ${cp ? `🎨 ${cp} → ${cs} &nbsp;` : '⚠️ Sin colores de marca &nbsp;'}
-          ${isPremium && currentBrand?.font_name ? `✍️ ${currentBrand.font_name} &nbsp;` : ''}
-          ${isPremium && currentBrand?.logo_url ? '🖼️ Logo activo' : ''}
-        </div>
-
       </div>
     </div>
   `;
@@ -4011,6 +4071,20 @@ function selectFont(font) {
 }
 
 
+function syncSubFontColor() {
+  const hex = document.getElementById('subFontColorHex')?.value;
+  if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+    document.getElementById('subFontColor').value = hex;
+    updateBrandPreview();
+  }
+}
+
+function setSubFontColor(color) {
+  document.getElementById('subFontColor').value = color;
+  document.getElementById('subFontColorHex').value = color;
+  updateBrandPreview();
+}
+
 function syncFontColor() {
   const hex = document.getElementById('fontColorHex')?.value;
   if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
@@ -4037,15 +4111,17 @@ function updateBrandPreview() {
   const cp  = document.getElementById('colorPrimary').value;
   const cs  = document.getElementById('colorSecondary').value;
   const fc  = document.getElementById('fontColor')?.value || '#ffffff';
+  const sfc = document.getElementById('subFontColor')?.value || '#cccccc';
   document.getElementById('colorPrimaryHex').value   = cp;
   document.getElementById('colorSecondaryHex').value = cs;
   if (document.getElementById('fontColorHex')) document.getElementById('fontColorHex').value = fc;
+  if (document.getElementById('subFontColorHex')) document.getElementById('subFontColorHex').value = sfc;
   const card = document.getElementById('brandPreviewCard');
   if (card) card.style.background = `linear-gradient(135deg,${cp},${cs})`;
   const title = document.getElementById('previewTitle');
   const sub   = document.getElementById('previewSub');
   if (title) { title.style.fontFamily = `'${selectedFont}',sans-serif`; title.style.color = fc; }
-  if (sub)   { sub.style.fontFamily   = `'${selectedFont}',sans-serif`; sub.style.color = fc; }
+  if (sub)   { sub.style.fontFamily   = `'${selectedFont}',sans-serif`; sub.style.color = sfc; }
 }
 
 async function handleLogoUpload(event) {
@@ -4095,7 +4171,8 @@ async function saveBrand() {
         color_primary:   document.getElementById('colorPrimary').value,
         color_secondary: document.getElementById('colorSecondary').value,
         font_name:       selectedFont,
-        font_color:      document.getElementById('fontColor')?.value || '#ffffff'
+        font_color:      document.getElementById('fontColor')?.value || '#ffffff',
+        sub_font_color:  document.getElementById('subFontColor')?.value || '#cccccc'
       })
     });
     const d = await r.json();
@@ -4487,17 +4564,40 @@ async function openInInstagram() {
     <h3 style="font-size:15px;font-weight:700;margin:0 0 16px;">✍️ Tipografía</h3>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;" id="fontGrid">
     </div>
-    <div style="margin-top:16px;display:flex;align-items:center;gap:12px;">
-      <label style="font-size:13px;color:var(--text-2);font-weight:600;">🎨 Color del texto</label>
-      <input type="color" id="fontColor" value="#ffffff" oninput="updateBrandPreview()"
-        style="width:44px;height:44px;border:none;border-radius:8px;cursor:pointer;padding:2px;">
-      <input type="text" id="fontColorHex" value="#ffffff" maxlength="7"
-        style="width:80px;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:13px;background:var(--surface);color:var(--text);"
-        oninput="syncFontColor()">
-      <div style="display:flex;gap:6px;">
-        <button onclick="setFontColor('#ffffff')" style="background:#fff;border:1px solid #ddd;border-radius:6px;width:28px;height:28px;cursor:pointer;" title="Blanco"></button>
-        <button onclick="setFontColor('#000000')" style="background:#000;border:1px solid #ddd;border-radius:6px;width:28px;height:28px;cursor:pointer;" title="Negro"></button>
-        <button onclick="setFontColor('#FFD700')" style="background:#FFD700;border:1px solid #ddd;border-radius:6px;width:28px;height:28px;cursor:pointer;" title="Dorado"></button>
+    <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+      <!-- Color título -->
+      <div>
+        <label style="font-size:12px;color:var(--text-3);font-weight:600;display:block;margin-bottom:6px;">Color título</label>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="color" id="fontColor" value="#ffffff" oninput="updateBrandPreview()"
+            style="width:40px;height:40px;border:none;border-radius:8px;cursor:pointer;padding:2px;">
+          <input type="text" id="fontColorHex" value="#ffffff" maxlength="7"
+            style="flex:1;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:12px;background:var(--surface);color:var(--text);"
+            oninput="syncFontColor()">
+        </div>
+        <div style="display:flex;gap:5px;margin-top:6px;">
+          <button onclick="setFontColor('#ffffff')" style="background:#fff;border:1px solid #ddd;border-radius:5px;width:24px;height:24px;cursor:pointer;" title="Blanco"></button>
+          <button onclick="setFontColor('#000000')" style="background:#000;border:1px solid #ddd;border-radius:5px;width:24px;height:24px;cursor:pointer;" title="Negro"></button>
+          <button onclick="setFontColor('#FFD700')" style="background:#FFD700;border:1px solid #ddd;border-radius:5px;width:24px;height:24px;cursor:pointer;" title="Dorado"></button>
+          <button onclick="setFontColor('#FF6B6B')" style="background:#FF6B6B;border:1px solid #ddd;border-radius:5px;width:24px;height:24px;cursor:pointer;" title="Coral"></button>
+        </div>
+      </div>
+      <!-- Color subtítulo -->
+      <div>
+        <label style="font-size:12px;color:var(--text-3);font-weight:600;display:block;margin-bottom:6px;">Color subtítulo</label>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="color" id="subFontColor" value="#cccccc" oninput="updateBrandPreview()"
+            style="width:40px;height:40px;border:none;border-radius:8px;cursor:pointer;padding:2px;">
+          <input type="text" id="subFontColorHex" value="#cccccc" maxlength="7"
+            style="flex:1;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:12px;background:var(--surface);color:var(--text);"
+            oninput="syncSubFontColor()">
+        </div>
+        <div style="display:flex;gap:5px;margin-top:6px;">
+          <button onclick="setSubFontColor('#ffffff')" style="background:#fff;border:1px solid #ddd;border-radius:5px;width:24px;height:24px;cursor:pointer;" title="Blanco"></button>
+          <button onclick="setSubFontColor('#cccccc')" style="background:#ccc;border:1px solid #ddd;border-radius:5px;width:24px;height:24px;cursor:pointer;" title="Gris"></button>
+          <button onclick="setSubFontColor('#000000')" style="background:#000;border:1px solid #ddd;border-radius:5px;width:24px;height:24px;cursor:pointer;" title="Negro"></button>
+          <button onclick="setSubFontColor('#FFD700')" style="background:#FFD700;border:1px solid #ddd;border-radius:5px;width:24px;height:24px;cursor:pointer;" title="Dorado"></button>
+        </div>
       </div>
     </div>
   </div>
@@ -4505,7 +4605,7 @@ async function openInInstagram() {
   <!-- Preview -->
   <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:24px;margin-bottom:24px;">
     <h3 style="font-size:15px;font-weight:700;margin:0 0 16px;">👁️ Vista previa</h3>
-    <div id="brandPreviewCard" style="border-radius:12px;padding:24px;text-align:center;background:linear-gradient(135deg,#8B5FBF,#E91E8C);">
+    <div id="brandPreviewCard" style="border-radius:12px;padding:24px;width:100%;aspect-ratio:1080/1350;overflow:hidden;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;background:linear-gradient(135deg,#8B5FBF,#E91E8C);box-sizing:border-box;">
       <div id="previewLogo" style="display:none;margin-bottom:12px;">
         <img id="previewLogoImg" style="width:48px;height:48px;border-radius:8px;object-fit:contain;background:#fff;padding:4px;">
       </div>
