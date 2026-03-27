@@ -168,11 +168,11 @@
       max-width: 1200px;
       margin: 0 auto;
       padding: 0 20px;
-      display: grid;
-      grid-template-columns: auto 1fr auto;
+      display: flex;
       align-items: center;
-      gap: 16px;
-      height: 52px;
+      justify-content: space-between;
+      gap: 12px;
+      height: 50px;
     }
     .user-bar-left {
       display: flex;
@@ -1553,24 +1553,19 @@
 <!-- ==================== USER BAR ==================== -->
 <div class="user-bar" id="userBar">
   <div class="user-bar-inner">
-    <!-- Izquierda: info del usuario -->
-    <div class="user-bar-left">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">👤</div>
-        <div>
-          <div style="font-size:12px;font-weight:700;color:#fff;line-height:1;" id="userEmail">–</div>
-          <div style="font-size:10px;color:rgba(255,255,255,0.6);margin-top:2px;">Plan: <span id="userPlan" style="font-weight:700;color:rgba(255,255,255,0.9);">–</span></div>
+    <!-- Izquierda: avatar + email + plan -->
+    <div class="user-bar-left" style="display:flex;align-items:center;gap:10px;">
+      <div style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.2);border:2px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">👤</div>
+      <div style="display:flex;flex-direction:column;gap:1px;">
+        <span style="font-size:11px;font-weight:700;color:#fff;line-height:1.2;" id="userEmail">–</span>
+        <div style="display:flex;align-items:center;gap:4px;">
+          <span style="font-size:9px;background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.9);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.5px;" id="userPlan">–</span>
+          <span style="font-size:9px;color:rgba(255,255,255,0.5);">⚡ <span id="userCredits" style="color:rgba(255,255,255,0.8);font-weight:600;">–</span> análisis</span>
         </div>
       </div>
     </div>
-    <!-- Centro: créditos -->
-    <div style="display:flex;align-items:center;justify-content:center;gap:6px;">
-      <div style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:20px;padding:4px 14px;display:flex;align-items:center;gap:6px;">
-        <span style="font-size:12px;">⚡</span>
-        <span style="font-size:12px;font-weight:700;color:#fff;" id="userCredits">–</span>
-        <span style="font-size:10px;color:rgba(255,255,255,0.6);">análisis</span>
-      </div>
-    </div>
+    <!-- Centro vacío -->
+    <div></div>
     <div class="user-bar-right">
       <button id="upgradePlanBtn" class="btn btn-primary btn-sm hidden" onclick="showPlansScreen()" style="font-size:12px;">⬆️ Mejorar plan</button>
       <button class="btn btn-ghost btn-sm" onclick="openSidebar()">📜 Historial</button>
@@ -3014,11 +3009,6 @@ function thumbAdjustText(i, prop, val) {
   renderThumbnailSpecs(i);
 }
 
-function thumbAdjustText(i, prop, val) {
-  if (!window.thumbAdjust || !window.thumbAdjust[i]) return;
-  window.thumbAdjust[i][prop] = val;
-  renderThumbnailSpecs(i);
-}
 function thumbAdjustColor(i, prop, val) {
   if (!window.thumbAdjust || !window.thumbAdjust[i]) return;
   window.thumbAdjust[i][prop] = val;
@@ -4489,7 +4479,25 @@ async function saveBrand() {
       currentBrand.color_secondary = document.getElementById('colorSecondary').value;
       currentBrand.font_name       = selectedFont;
       currentBrand.font_color      = document.getElementById('fontColor')?.value || '#ffffff';
-      showNotification('✅ Configuración de marca guardada', 'success');
+      currentBrand.sub_font_color  = document.getElementById('subFontColor')?.value || '#cccccc';
+      // Resetear adjusts para que usen los nuevos colores
+      window.slideAdjust = {};
+      window.thumbAdjust = {};
+      // Regenerar previews si hay contenido
+      if (currentCarouselSlides?.length) renderCarousel(currentCarouselSlides);
+      if (currentThumbnails?.length)     renderThumbnails(currentThumbnails);
+      // Si Studio está abierto, actualizar también
+      const studioOpen = document.getElementById('cdndOverlay')?.classList.contains('open');
+      if (studioOpen) {
+        cdndState.style.bg1        = currentBrand.color_primary   || cdndState.style.bg1;
+        cdndState.style.bg2        = currentBrand.color_secondary || cdndState.style.bg2;
+        cdndState.style.titleFont  = currentBrand.font_name       || cdndState.style.titleFont;
+        cdndState.style.subFont    = currentBrand.font_name       || cdndState.style.subFont;
+        cdndState.style.titleColor = currentBrand.font_color      || cdndState.style.titleColor;
+        cdndState.style.subColor   = currentBrand.sub_font_color  || cdndState.style.subColor;
+        cdndRender();
+      }
+      showNotification('✅ Marca guardada y aplicada a todos los previews', 'success');
     } else throw new Error(d.error);
   } catch(e) { showNotification('Error guardando marca: ' + e.message, 'error'); }
 }
@@ -4809,6 +4817,7 @@ let cdndState = {
   style: {
     bg1: '#7C3AED', bg2: '#F43F5E',
     font: 'DM Sans',
+    titleFont: 'DM Sans', subFont: 'DM Sans',
     titleSize: 40, titleColor: '#ffffff', titleAlign: 'center',
     subSize: 20,   subColor: '#cccccc',   subAlign: 'center',
     logoSize: 60,
@@ -4839,7 +4848,10 @@ function openCdndEditor(type, index) {
 
     cdndState.style.bg1        = adj.colorPrimary   || (isPremium && currentBrand?.color_primary)   || '#7C3AED';
     cdndState.style.bg2        = adj.colorSecondary || (isPremium && currentBrand?.color_secondary) || '#F43F5E';
-    cdndState.style.font       = adj.font       || (isPremium && currentBrand?.font_name)  || 'DM Sans';
+    const _brandFont = (isPremium && currentBrand?.font_name) || 'DM Sans';
+    cdndState.style.font       = adj.font       || _brandFont;
+    cdndState.style.titleFont  = adj.titleFont  || _brandFont;
+    cdndState.style.subFont    = adj.subFont    || _brandFont;
     cdndState.style.titleSize  = adj.titleSize  || 40;
     cdndState.style.titleColor = adj.titleColor || (isPremium && currentBrand?.font_color) || '#ffffff';
     cdndState.style.subSize    = adj.contentSize   || 20;
@@ -4864,7 +4876,10 @@ function openCdndEditor(type, index) {
     const {c1,c2} = parseGradient(t?.background_gradient || 'linear-gradient(135deg,#7C3AED,#F43F5E)');
     cdndState.style.bg1        = (isPremium && currentBrand?.color_primary)   || c1 || '#7C3AED';
     cdndState.style.bg2        = (isPremium && currentBrand?.color_secondary) || c2 || '#F43F5E';
-    cdndState.style.font       = (isPremium && currentBrand?.font_name)  || 'DM Sans';
+    const _brandFontTh = (isPremium && currentBrand?.font_name) || 'DM Sans';
+    cdndState.style.font       = _brandFontTh;
+    cdndState.style.titleFont  = _brandFontTh;
+    cdndState.style.subFont    = _brandFontTh;
     cdndState.style.titleSize  = adj.fontSize  || 42;
     cdndState.style.titleColor = adj.titleColor || (isPremium && currentBrand?.font_color) || '#ffffff';
     cdndState.style.subSize    = adj.subFontSize || 20;
@@ -4899,6 +4914,8 @@ function cdndSaveState() {
     adj.colorPrimary  = cdndState.style.bg1;
     adj.colorSecondary= cdndState.style.bg2;
     adj.font          = cdndState.style.font;
+    adj.titleFont     = cdndState.style.titleFont || cdndState.style.font;
+    adj.subFont       = cdndState.style.subFont   || cdndState.style.font;
     adj.titleSize     = cdndState.style.titleSize;
     adj.titleColor    = cdndState.style.titleColor;
     adj.contentSize   = cdndState.style.subSize;
@@ -4942,7 +4959,7 @@ function cdndRender() {
   titleEl.style.left = (b.title.x - b.title.w/2) + '%';
   titleEl.style.width= b.title.w + '%';
   titleEl.style.display = b.title.visible ? 'block' : 'none';
-  titleTxt.style.fontFamily = `'${s.font}',sans-serif`;
+  titleTxt.style.fontFamily = `'${s.titleFont||s.font}',sans-serif`;
   titleTxt.style.fontSize   = Math.round(s.titleSize * 0.45) + 'px';
   titleTxt.style.color      = s.titleColor;
   titleTxt.style.textAlign  = s.titleAlign || 'center';
@@ -4956,7 +4973,7 @@ function cdndRender() {
   subEl.style.left  = (b.sub.x - b.sub.w/2) + '%';
   subEl.style.width = b.sub.w + '%';
   subEl.style.display = b.sub.visible ? 'block' : 'none';
-  subTxt.style.fontFamily = `'${s.font}',sans-serif`;
+  subTxt.style.fontFamily = `'${s.subFont||s.font}',sans-serif`;
   subTxt.style.fontSize   = Math.round(s.subSize * 0.45) + 'px';
   subTxt.style.color      = s.subColor;
   subTxt.style.textAlign  = s.subAlign || 'center';
@@ -4969,7 +4986,9 @@ function cdndRender() {
   if (c.logoUrl) {
     logoEl.style.display = b.logo.visible ? 'block' : 'none';
     logoEl.style.top     = b.logo.y + '%';
-    logoEl.style.left    = (b.logo.x - s.logoSize/2/CDND_CANVAS_W*100) + '%';
+    // Centrar el logo: b.logo.x es el centro en %
+    const logoWpct = s.logoSize / CDND_CANVAS_W * 100;
+    logoEl.style.left = (b.logo.x - logoWpct/2) + '%';
     logoImg.src          = c.logoUrl;
     logoImg.style.width  = s.logoSize + 'px';
     logoImg.style.height = s.logoSize + 'px';
@@ -5298,14 +5317,29 @@ function cdndSetFormat(format) {
 function cdndBuildFontGrid() {
   const grid = document.getElementById('cdndFontGrid');
   if (!grid) return;
+  const activeFont = cdndFontTarget === 'sub' ? cdndState.style.subFont :
+                     cdndFontTarget === 'title' ? cdndState.style.titleFont :
+                     cdndState.style.font;
   grid.innerHTML = CDND_FONTS.map(f => `
-    <button class="cdnd-font-btn ${cdndState.style.font === f ? 'active' : ''}"
+    <button class="cdnd-font-btn ${activeFont === f ? 'active' : ''}"
       onclick="cdndSetFont('${f}')" style="font-family:'${f}',sans-serif;">${f}</button>
   `).join('');
 }
 
+let cdndFontTarget = 'both'; // 'title' | 'sub' | 'both'
+
+function cdndSetFontTarget(target) {
+  cdndFontTarget = target;
+  ['Title','Sub','Both'].forEach(t => {
+    const btn = document.getElementById('cdndFontTarget' + t);
+    if (btn) btn.className = 'cdnd-btn ' + (t.toLowerCase() === target ? 'cdnd-btn-primary' : 'cdnd-btn-ghost');
+  });
+}
+
 function cdndSetFont(font) {
-  cdndState.style.font = font;
+  if (cdndFontTarget === 'title' || cdndFontTarget === 'both') cdndState.style.titleFont = font;
+  if (cdndFontTarget === 'sub'   || cdndFontTarget === 'both') cdndState.style.subFont   = font;
+  if (cdndFontTarget === 'both') cdndState.style.font = font;
   cdndBuildFontGrid();
   cdndRender(); cdndSaveState();
 }
@@ -5339,8 +5373,10 @@ async function cdndExport() {
       // Logo
       if (logoUrl && b.logo.visible) {
         const logoSzScaled = s.logoSize * SCALE_F;
+        // Mismo cálculo que render: centro en % → px - ancho/2
         const px = (b.logo.x / 100 * RW) - logoSzScaled / 2;
         const py = (b.logo.y / 100 * RH);
+        // top desde borde superior, igual que en render
         const wrap = document.createElement('div');
         wrap.style.cssText = `position:absolute;left:${px}px;top:${py}px;background:rgba(255,255,255,0.18);border-radius:${10*SCALE_F}px;padding:${6*SCALE_F}px;`;
         const img = document.createElement('img');
@@ -5355,7 +5391,7 @@ async function cdndExport() {
         const px = (b.title.x / 100 * RW) - blockW / 2;
         const py = b.title.y / 100 * RH;
         const titleDiv = document.createElement('div');
-        titleDiv.style.cssText = `position:absolute;left:${px}px;top:${py}px;width:${blockW}px;font-size:${s.titleSize * SCALE_F * 0.45}px;font-weight:800;color:${s.titleColor};line-height:1.2;text-align:${s.titleAlign||'center'};font-family:'${s.font}',sans-serif;text-shadow:0 ${2*SCALE_F}px ${8*SCALE_F}px rgba(0,0,0,0.4);word-break:break-word;`;
+        titleDiv.style.cssText = `position:absolute;left:${px}px;top:${py}px;width:${blockW}px;font-size:${s.titleSize * SCALE_F * 0.45}px;font-weight:800;color:${s.titleColor};line-height:1.2;text-align:${s.titleAlign||'center'};font-family:'${s.titleFont||s.font}',sans-serif;text-shadow:0 ${2*SCALE_F}px ${8*SCALE_F}px rgba(0,0,0,0.4);word-break:break-word;`;
         titleDiv.textContent = c.title;
         el.appendChild(titleDiv);
       }
@@ -5366,7 +5402,7 @@ async function cdndExport() {
         const px = (b.sub.x / 100 * RW) - blockW / 2;
         const py = b.sub.y / 100 * RH;
         const subDiv = document.createElement('div');
-        subDiv.style.cssText = `position:absolute;left:${px}px;top:${py}px;width:${blockW}px;font-size:${s.subSize * SCALE_F * 0.45}px;color:${s.subColor};line-height:1.4;text-align:${s.subAlign||'center'};font-family:'${s.font}',sans-serif;word-break:break-word;`;
+        subDiv.style.cssText = `position:absolute;left:${px}px;top:${py}px;width:${blockW}px;font-size:${s.subSize * SCALE_F * 0.45}px;color:${s.subColor};line-height:1.4;text-align:${s.subAlign||'center'};font-family:'${s.subFont||s.font}',sans-serif;word-break:break-word;`;
         subDiv.textContent = c.sub;
         el.appendChild(subDiv);
       }
@@ -5758,6 +5794,11 @@ async function cdndExport() {
         <!-- Fuente -->
         <div>
           <div class="cdnd-section-title">Fuente</div>
+          <div style="display:flex;gap:4px;margin-bottom:8px;">
+            <button id="cdndFontTargetTitle" onclick="cdndSetFontTarget('title')" class="cdnd-btn cdnd-btn-primary" style="flex:1;font-size:10px;padding:4px;">✏️ Título</button>
+            <button id="cdndFontTargetSub" onclick="cdndSetFontTarget('sub')" class="cdnd-btn cdnd-btn-ghost" style="flex:1;font-size:10px;padding:4px;">💬 Subtítulo</button>
+            <button id="cdndFontTargetBoth" onclick="cdndSetFontTarget('both')" class="cdnd-btn cdnd-btn-ghost" style="flex:1;font-size:10px;padding:4px;">⊕ Ambos</button>
+          </div>
           <div class="cdnd-font-grid" id="cdndFontGrid"></div>
         </div>
 
