@@ -2845,17 +2845,19 @@ function renderThumbnailSpecs(i) {
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
 
-        <!-- Preview vertical izquierda -->
+        <!-- Preview vertical izquierda — renderizado idéntico al export, escalado 0.5 -->
         <div style="padding:16px;border-right:1px solid var(--border);">
           <div style="font-size:11px;color:var(--text-3);font-weight:600;margin-bottom:8px;text-align:center;">Vista previa (formato Instagram)</div>
-          <div style="width:100%;aspect-ratio:1080/1350;border-radius:10px;overflow:hidden;padding:16px;display:flex;flex-direction:column;justify-content:flex-start;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};background:linear-gradient(135deg,${gc1},${gc2});text-align:${adj.align};box-sizing:border-box;position:relative;">
-            <!-- Patrón sutil -->
-            <div style="position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 1px,transparent 1px);background-size:20px 20px;pointer-events:none;"></div>
-            <div style="position:relative;z-index:1;width:100%;display:flex;flex-direction:column;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};gap:8px;">
-              ${hasLogo ? `<div style="width:100%;display:flex;justify-content:${(adj.logoAlign||'center')==='left'?'flex-start':(adj.logoAlign||'center')==='right'?'flex-end':'center'};"><div style="background:rgba(255,255,255,.18);border-radius:6px;padding:3px;display:inline-flex;"><img src="${currentBrand.logo_url}" style="width:${logoSzPx}px;height:${logoSzPx}px;object-fit:contain;border-radius:4px;display:block;"></div></div>` : ''}
-              <div style="font-family:'${font}',sans-serif;font-size:${Math.round(adj.fontSize*0.45)}px;font-weight:900;color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;">${escapeHtml(adj.titleText)}</div>
-              <div style="width:30px;height:2px;background:rgba(255,255,255,0.4);border-radius:2px;flex-shrink:0;"></div>
-              ${adj.subText ? `<div style="font-family:'${font}',sans-serif;font-size:${Math.round((adj.subFontSize||20)*0.45)}px;color:${adj.subColor||'rgba(255,255,255,.85)'};line-height:1.4;">${escapeHtml(adj.subText)}</div>` : ''}
+          <!-- Wrapper: 270x337px visible, div de 540x675 escalado al 50% -->
+          <div style="width:270px;height:337px;overflow:hidden;border-radius:10px;margin:0 auto;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+            <div style="width:540px;height:675px;transform:scale(0.5);transform-origin:top left;background:linear-gradient(135deg,${gc1},${gc2});display:flex;flex-direction:column;justify-content:center;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};padding:44px;box-sizing:border-box;font-family:'${font}',sans-serif;text-align:${adj.align};overflow:hidden;position:relative;">
+              <div style="position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 2px,transparent 2px);background-size:40px 40px;pointer-events:none;"></div>
+              <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};gap:14px;width:100%;">
+                ${hasLogo ? `<div style="width:100%;display:flex;justify-content:${(adj.logoAlign||'center')==='left'?'flex-start':(adj.logoAlign||'center')==='right'?'flex-end':'center'};"><div style="background:rgba(255,255,255,.18);border-radius:14px;padding:10px;display:inline-flex;"><img src="${currentBrand.logo_url}" style="width:${adj.logoSize||80}px;height:${adj.logoSize||80}px;object-fit:contain;border-radius:8px;display:block;"></div></div>` : ''}
+                <div style="font-family:'${font}',sans-serif;font-size:${adj.fontSize}px;font-weight:900;color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);">${escapeHtml(adj.titleText)}</div>
+                <div style="width:50px;height:3px;background:rgba(255,255,255,0.4);border-radius:2px;flex-shrink:0;"></div>
+                ${adj.subText ? `<div style="font-family:'${font}',sans-serif;font-size:${adj.subFontSize||Math.round(adj.fontSize*0.5)}px;font-weight:500;color:${adj.subColor||'rgba(255,255,255,.85)'};line-height:1.5;">${escapeHtml(adj.subText)}</div>` : ''}
+              </div>
             </div>
           </div>
         </div>
@@ -3081,16 +3083,19 @@ function renderCarouselSpecs(i) {
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
 
-        <!-- Preview vertical izquierda -->
+        <!-- Preview vertical izquierda — renderizado idéntico al export, escalado 0.5 -->
         <div style="padding:16px;border-right:1px solid var(--border);">
           <div style="font-size:11px;color:var(--text-3);font-weight:600;margin-bottom:8px;text-align:center;">Vista previa (formato Instagram)</div>
-          <div style="width:100%;aspect-ratio:1080/1350;border-radius:10px;overflow:hidden;padding:16px;display:flex;flex-direction:column;justify-content:flex-start;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};background:${bgStyle};text-align:${adj.align};box-sizing:border-box;position:relative;">
-            <div style="position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 1px,transparent 1px);background-size:20px 20px;pointer-events:none;"></div>
-            <div style="position:relative;z-index:1;width:100%;display:flex;flex-direction:column;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};gap:8px;">
-              ${isPremium && currentBrand?.logo_url ? `<div style="width:100%;display:flex;justify-content:${(adj.logoAlign||'center')==='left'?'flex-start':(adj.logoAlign||'center')==='right'?'flex-end':'center'};"><div style="background:rgba(255,255,255,.18);border-radius:6px;padding:3px;display:inline-flex;"><img src="${currentBrand.logo_url}" style="width:${logoSzPx}px;height:${logoSzPx}px;object-fit:contain;border-radius:4px;display:block;"></div></div>` : ''}
-              <div style="font-family:'${adj.font}',sans-serif;font-size:${Math.round(adj.titleSize*0.45)}px;font-weight:800;color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;">${escapeHtml(adj.titleText)}</div>
-              <div style="width:30px;height:2px;background:rgba(255,255,255,0.4);border-radius:2px;flex-shrink:0;"></div>
-              <div style="font-family:'${adj.font}',sans-serif;font-size:${Math.round(adj.contentSize*0.45)}px;color:${adj.contentColor||'rgba(255,255,255,.85)'};line-height:1.4;word-break:break-word;">${escapeHtml(adj.contentText)}</div>
+          <!-- Wrapper: 270x337.5px visible, contiene un div de 540x675 escalado al 50% -->
+          <div style="width:270px;height:337px;overflow:hidden;border-radius:10px;margin:0 auto;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+            <div style="width:540px;height:675px;transform:scale(0.5);transform-origin:top left;background:${bgStyle};display:flex;flex-direction:column;justify-content:center;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};padding:44px;box-sizing:border-box;font-family:'${adj.font}',sans-serif;text-align:${adj.align};overflow:hidden;position:relative;">
+              <div style="position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 2px,transparent 2px);background-size:40px 40px;pointer-events:none;"></div>
+              <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};gap:14px;width:100%;">
+                ${isPremium && currentBrand?.logo_url ? `<div style="width:100%;display:flex;justify-content:${(adj.logoAlign||'center')==='left'?'flex-start':(adj.logoAlign||'center')==='right'?'flex-end':'center'};"><div style="background:rgba(255,255,255,.18);border-radius:14px;padding:10px;display:inline-flex;"><img src="${currentBrand.logo_url}" style="width:${adj.logoSize||80}px;height:${adj.logoSize||80}px;object-fit:contain;border-radius:8px;display:block;"></div></div>` : ''}
+                <div style="font-family:'${adj.font}',sans-serif;font-size:${adj.titleSize}px;font-weight:800;color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);">${escapeHtml(adj.titleText)}</div>
+                <div style="width:50px;height:3px;background:rgba(255,255,255,0.4);border-radius:2px;flex-shrink:0;"></div>
+                <div style="font-family:'${adj.font}',sans-serif;font-size:${adj.contentSize}px;color:${adj.contentColor||'rgba(255,255,255,.85)'};line-height:1.5;word-break:break-word;">${escapeHtml(adj.contentText)}</div>
+              </div>
             </div>
           </div>
         </div>
@@ -4960,6 +4965,10 @@ function cdndInitDrag() {
     handle.removeEventListener('mousedown', _cdndRD);
     handle.addEventListener('mousedown', _cdndRD);
   }
+  // Clic en el fondo del canvas (fuera de cualquier bloque) → deseleccionar
+  canvas.removeEventListener('mousedown', _cdndCanvasBg);
+  canvas.addEventListener('mousedown', _cdndCanvasBg);
+
   document.removeEventListener('mousemove', _cdndMM);
   document.removeEventListener('mouseup',   _cdndMU);
   document.removeEventListener('touchmove', _cdndTM);
@@ -4968,6 +4977,13 @@ function cdndInitDrag() {
   document.addEventListener('mouseup',   _cdndMU);
   document.addEventListener('touchmove', _cdndTM, {passive:false});
   document.addEventListener('touchend',  _cdndTE);
+}
+
+// Deseleccionar al hacer clic en el fondo del canvas (no en un bloque)
+function _cdndCanvasBg(e) {
+  if (!e.target.closest('.cdnd-block')) {
+    cdndSelectBlock(null);
+  }
 }
 
 function _cdndMD(e) {
@@ -5203,51 +5219,97 @@ function cdndSetFont(font) {
   cdndBuildFonts(); cdndRenderAll(); cdndSaveBack();
 }
 
-// ── Export pixel-perfect: captura el canvas HTML del Studio con html2canvas ──
+// ── Export pixel-perfect del Studio ──
+// Estrategia: html2canvas captura #cdndCanvas tal como se ve en pantalla.
+// Escalamos con W / el.offsetWidth para que el ancho sea exactamente 1080px.
+// El alto resultante puede diferir 1-2px del objetivo (por decimales en el ratio
+// del canvas preview), así que recortamos centrado al tamaño exacto de Instagram.
 async function cdndExport() {
   showNotification('⏳ Generando PNG...', 'success');
   try {
     const W = 1080, H = cdnd.format === 'story' ? 1920 : 1350;
     const canvasEl = document.getElementById('cdndCanvas');
 
-    // Escala: el canvas preview mide CDND_W x CDND_H, el export mide W x H
-    const scaleX = W / CDND_W;   // 1080 / 270 = 4
-    const scaleY = H / CDND_H;   // 1350 / 338 ≈ 3.994
+    // Deseleccionar todos los bloques antes de capturar para que
+    // no aparezcan etiquetas, bordes de selección ni handles en el PNG
+    document.querySelectorAll('.cdnd-block').forEach(el => el.classList.remove('selected'));
+    // Ocultar también snap lines y safe zone que no deben verse en el export
+    const snapH = document.getElementById('cdndSnapH');
+    const snapV = document.getElementById('cdndSnapV');
+    const safeZ = canvasEl.querySelector('.cdnd-safe-zone');
+    const grid  = document.getElementById('cdndGrid');
+    if (snapH) snapH.style.opacity = '0';
+    if (snapV) snapV.style.opacity = '0';
+    if (safeZ) safeZ.style.display = 'none';
+    if (grid)  grid.style.display  = 'none';
 
-    // Precargar logo en dataURL para evitar CORS en html2canvas
-    const logoImg = document.getElementById('cdndLogoImg');
-    if (logoImg && logoImg.src && !logoImg.src.startsWith('data:')) {
+    // Leer dimensiones reales del elemento (cambian si se selecciona Story)
+    const elW = canvasEl.offsetWidth  || CDND_W;
+    const elH = canvasEl.offsetHeight || CDND_H;
+    const SCALE = W / elW; // escala exacta para que el ancho = 1080px
+
+    // Precargar logo como dataURL para evitar bloqueo CORS en html2canvas
+    const logoImgEl = document.getElementById('cdndLogoImg');
+    if (logoImgEl && logoImgEl.src && !logoImgEl.src.startsWith('data:')) {
       try {
-        const du = await imageToDataURL(logoImg.src);
-        if (du && du.length > 100) logoImg.src = du;
+        const du = await imageToDataURL(logoImgEl.src);
+        if (du && du.length > 100) {
+          logoImgEl.src = du;
+          await new Promise(r => { logoImgEl.onload = r; setTimeout(r, 400); });
+        }
       } catch(e) { /* continuar sin dataURL */ }
     }
 
-    // Esperar que las fuentes y la imagen estén listas
+    // Esperar fuentes y render
     await document.fonts.ready;
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-    await new Promise(r => setTimeout(r, 150));
+    await new Promise(r => setTimeout(r, 200));
 
-    // Capturar el elemento canvas con html2canvas escalado al tamaño final
-    // Usamos scale = scaleX (ambas escalas son iguales en ratio 4:5)
-    const resultCanvas = await html2canvas(canvasEl, {
-      scale: scaleX,
+    // 1) Capturar el Studio canvas con html2canvas
+    const raw = await html2canvas(canvasEl, {
+      scale: SCALE,
       useCORS: true,
       allowTaint: true,
       backgroundColor: null,
-      width: CDND_W,
-      height: CDND_H,
+      width:  elW,
+      height: elH,
       logging: false,
-      imageTimeout: 10000,
+      imageTimeout: 12000,
     });
+    // raw.width = W (exacto), raw.height = elH * SCALE (puede diferir 1-2px de H)
+
+    // 2) Recortar/escalar al tamaño exacto de Instagram centrado verticalmente
+    const out = document.createElement('canvas');
+    out.width  = W;
+    out.height = H;
+    const ctx = out.getContext('2d');
+    const srcY = Math.round((raw.height - H) / 2); // recorte simétrico top/bottom
+    const srcH = Math.min(H, raw.height);           // por si raw es más pequeño
+    ctx.drawImage(raw, 0, Math.max(0, srcY), W, srcH, 0, Math.max(0, -srcY), W, srcH);
 
     const a = document.createElement('a');
     a.download = 'studio_' + (cdnd.index + 1) + '_' + W + 'x' + H + '.png';
-    a.href = resultCanvas.toDataURL('image/png');
+    a.href = out.toDataURL('image/png');
     a.click();
     showNotification('✅ PNG ' + W + '×' + H + 'px exportado — alta calidad', 'success');
 
   } catch(e) { showNotification('Error: ' + e.message, 'error'); }
+  finally {
+    // Restaurar visibilidad de los elementos del Studio
+    const canvasEl2 = document.getElementById('cdndCanvas');
+    const snapH2 = document.getElementById('cdndSnapH');
+    const snapV2 = document.getElementById('cdndSnapV');
+    const safeZ2 = canvasEl2?.querySelector('.cdnd-safe-zone');
+    const grid2  = document.getElementById('cdndGrid');
+    if (snapH2) snapH2.style.opacity = '';
+    if (snapV2) snapV2.style.opacity = '';
+    if (safeZ2) safeZ2.style.display = '';
+    if (grid2 && cdnd.gridOn) grid2.style.display = '';
+    // Restaurar selección si había un bloque seleccionado
+    if (cdnd.selectedBlock) {
+      document.getElementById('cdndBlock' + cdnd.selectedBlock.charAt(0).toUpperCase() + cdnd.selectedBlock.slice(1))?.classList.add('selected');
+    }
+  }
 }
 
 </script>
