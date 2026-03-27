@@ -2805,10 +2805,11 @@ function renderThumbnailSpecs(i) {
   if (!panel || !currentThumbnails[i]) return;
   const t = currentThumbnails[i];
   if (!window.thumbAdjust) window.thumbAdjust = {};
+  const isPremium = currentUser?.plan_type === 'premium';
   if (!window.thumbAdjust[i]) {
     const _t = currentThumbnails && currentThumbnails[i];
-    const _tfc = (currentUser?.plan_type === 'premium' && currentBrand?.font_color) ? currentBrand.font_color : (_t?.text_color || '#ffffff');
-    const _sfc = (currentUser?.plan_type === 'premium' && currentBrand?.sub_font_color) ? currentBrand.sub_font_color : '#cccccc';
+    const _tfc = (isPremium && currentBrand?.font_color) ? currentBrand.font_color : (_t?.text_color || '#ffffff');
+    const _sfc = (isPremium && currentBrand?.sub_font_color) ? currentBrand.sub_font_color : '#cccccc';
     window.thumbAdjust[i] = {
       fontSize: _t ? parseInt(_t.font_size||'42') : 42,
       subFontSize: _t ? Math.round(parseInt(_t.font_size||'42') * 0.5) : 20,
@@ -2816,13 +2817,19 @@ function renderThumbnailSpecs(i) {
       titleText: _t ? (_t.text || '') : '',
       subText: _t ? (_t.secondary_text || '') : '',
       titleColor: _tfc, subColor: _sfc,
+      titleFont: (isPremium && currentBrand?.font_name) || 'DM Sans',
+      subFontFamily: (isPremium && currentBrand?.sub_font_name) || (isPremium && currentBrand?.font_name) || 'DM Sans',
     };
+  } else {
+    // Migrar campos faltantes en adj existentes
+    const _adj = window.thumbAdjust[i];
+    if (_adj.subFontSize === undefined) _adj.subFontSize = Math.round((_adj.fontSize||42) * 0.5);
+    if (_adj.titleColor  === undefined) _adj.titleColor  = t.text_color || '#ffffff';
+    if (_adj.subColor    === undefined) _adj.subColor    = '#cccccc';
+    if (_adj.titleFont   === undefined) _adj.titleFont   = (isPremium && currentBrand?.font_name) || 'DM Sans';
+    if (_adj.subFontFamily === undefined) _adj.subFontFamily = (isPremium && currentBrand?.sub_font_name) || _adj.titleFont;
   }
   const adj = window.thumbAdjust[i];
-  if (adj.subFontSize === undefined) adj.subFontSize = Math.round((adj.fontSize||42) * 0.5);
-  if (adj.titleColor === undefined) adj.titleColor = t.text_color || '#ffffff';
-  if (adj.subColor   === undefined) adj.subColor   = '#cccccc';
-  const isPremium = currentUser?.plan_type === 'premium';
   const hasLogo = isPremium && currentBrand?.logo_url;
   const cp = (isPremium && currentBrand?.color_primary)   || null;
   const cs = (isPremium && currentBrand?.color_secondary) || null;
@@ -2855,9 +2862,9 @@ function renderThumbnailSpecs(i) {
               <div style="position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 2px,transparent 2px);background-size:40px 40px;pointer-events:none;"></div>
               <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};gap:14px;width:100%;">
                 ${hasLogo ? `<div style="width:100%;display:flex;justify-content:${(adj.logoAlign||'center')==='left'?'flex-start':(adj.logoAlign||'center')==='right'?'flex-end':'center'};"><div style="background:rgba(255,255,255,.18);border-radius:14px;padding:10px;display:inline-flex;"><img src="${currentBrand.logo_url}" style="width:${adj.logoSize||80}px;height:${adj.logoSize||80}px;object-fit:contain;border-radius:8px;display:block;"></div></div>` : ''}
-                <div style="font-family:'${font}',sans-serif;font-size:${adj.fontSize}px;font-weight:900;color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);">${escapeHtml(adj.titleText)}</div>
+                <div style="font-family:'${adj.titleFont||font}',sans-serif;font-size:${adj.fontSize}px;font-weight:900;color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);">${escapeHtml(adj.titleText)}</div>
                 <div style="width:50px;height:3px;background:rgba(255,255,255,0.4);border-radius:2px;flex-shrink:0;"></div>
-                ${adj.subText ? `<div style="font-family:'${subFont}',sans-serif;font-size:${adj.subFontSize||Math.round(adj.fontSize*0.5)}px;font-weight:500;color:${adj.subColor||'rgba(255,255,255,.85)'};line-height:1.5;">${escapeHtml(adj.subText)}</div>` : ''}
+                ${adj.subText ? `<div style="font-family:'${adj.subFontFamily||subFont}',sans-serif;font-size:${adj.subFontSize||Math.round(adj.fontSize*0.5)}px;font-weight:500;color:${adj.subColor||'rgba(255,255,255,.85)'};line-height:1.5;">${escapeHtml(adj.subText)}</div>` : ''}
               </div>
             </div>
           </div>
@@ -2927,6 +2934,22 @@ function renderThumbnailSpecs(i) {
             </div>
           </div>
 
+          <!-- Fuente título -->
+          <div>
+            <div style="font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">✏️ Fuente título</div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;">
+              ${['DM Sans','Montserrat','Poppins','Playfair Display','Raleway','Oswald','Lato','Roboto','Inter','Nunito'].map(f=>`<button onclick="thumbAdjustFn(${i},'titleFont','${f}')" style="padding:3px 7px;border-radius:5px;border:1px solid var(--border);background:${(adj.titleFont||font)===f?'var(--brand)':'var(--surface-2)'};color:${(adj.titleFont||font)===f?'#fff':'var(--text-2)'};cursor:pointer;font-size:10px;font-family:'${f}',sans-serif;">${f}</button>`).join('')}
+            </div>
+          </div>
+
+          <!-- Fuente subtítulo -->
+          <div>
+            <div style="font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">💬 Fuente subtítulo</div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;">
+              ${['DM Sans','Montserrat','Poppins','Playfair Display','Raleway','Oswald','Lato','Roboto','Inter','Nunito'].map(f=>`<button onclick="thumbAdjustFn(${i},'subFontFamily','${f}')" style="padding:3px 7px;border-radius:5px;border:1px solid var(--border);background:${(adj.subFontFamily||subFont)===f?'var(--brand)':'var(--surface-2)'};color:${(adj.subFontFamily||subFont)===f?'#fff':'var(--text-2)'};cursor:pointer;font-size:10px;font-family:'${f}',sans-serif;">${f}</button>`).join('')}
+            </div>
+          </div>
+
           <!-- Logo -->
           ${hasLogo ? `
           <div>
@@ -2972,20 +2995,21 @@ function thumbAdjustFn(i, prop, val) {
   if (!window.thumbAdjust) window.thumbAdjust = {};
   if (!window.thumbAdjust[i]) {
     const _t = currentThumbnails && currentThumbnails[i];
-    const _tfc = (currentUser?.plan_type === 'premium' && currentBrand?.font_color) ? currentBrand.font_color : (_t?.text_color || '#ffffff');
+    const isPrem = currentUser?.plan_type === 'premium';
+    const _tfc = (isPrem && currentBrand?.font_color) ? currentBrand.font_color : (_t?.text_color || '#ffffff');
     window.thumbAdjust[i] = {
       fontSize: _t ? parseInt(_t.font_size||'42') : 42,
       subFontSize: _t ? Math.round(parseInt(_t.font_size||'42') * 0.5) : 20,
-      align: 'center',
-      logoAlign: 'center',
-      logoSize: 80,
+      align: 'center', logoAlign: 'center', logoSize: 80,
       titleText: _t ? (_t.text || '') : '',
       subText: _t ? (_t.secondary_text || '') : '',
       titleColor: _tfc,
-      subColor: _tfc,
+      subColor: (isPrem && currentBrand?.sub_font_color) || '#cccccc',
+      titleFont: (isPrem && currentBrand?.font_name) || 'DM Sans',
+      subFontFamily: (isPrem && currentBrand?.sub_font_name) || (isPrem && currentBrand?.font_name) || 'DM Sans',
     };
   }
-  if (prop === 'align' || prop === 'logoAlign') {
+  if (prop === 'align' || prop === 'logoAlign' || prop === 'titleFont' || prop === 'subFontFamily') {
     window.thumbAdjust[i][prop] = val;
   } else {
     window.thumbAdjust[i][prop] = Math.max(
@@ -3041,21 +3065,23 @@ function renderCarouselSpecs(i) {
   const s = currentCarouselSlides[i];
   if (!window.slideAdjust) window.slideAdjust = {};
   if (!window.slideAdjust[i]) {
-    const isPremium = currentUser?.plan_type === 'premium';
-    const _fcS = (isPremium && currentBrand?.font_color) ? currentBrand.font_color : '#ffffff';
-    const _sfcS = (isPremium && currentBrand?.sub_font_color) ? currentBrand.sub_font_color : '#cccccc';
+    const isPrem2 = currentUser?.plan_type === 'premium';
+    const _fcS = (isPrem2 && currentBrand?.font_color) ? currentBrand.font_color : '#ffffff';
+    const _sfcS = (isPrem2 && currentBrand?.sub_font_color) ? currentBrand.sub_font_color : '#cccccc';
     window.slideAdjust[i] = {
       titleSize: 40, contentSize: 20, align: 'center', logoAlign: 'center', logoSize: 80,
       titleText: s.title || '', contentText: s.content || '',
-      font: (isPremium && currentBrand?.font_name) ? currentBrand.font_name : 'DM Sans',
+      font:    (isPrem2 && currentBrand?.font_name)     ? currentBrand.font_name     : 'DM Sans',
+      subFont: (isPrem2 && currentBrand?.sub_font_name) ? currentBrand.sub_font_name : (isPrem2 && currentBrand?.font_name) || 'DM Sans',
       titleColor: _fcS, contentColor: _sfcS,
-      colorPrimary: (isPremium && currentBrand?.color_primary) || null,
-      colorSecondary: (isPremium && currentBrand?.color_secondary) || null,
+      colorPrimary: (isPrem2 && currentBrand?.color_primary) || null,
+      colorSecondary: (isPrem2 && currentBrand?.color_secondary) || null,
     };
   } else {
     const _adjS = window.slideAdjust[i];
-    if (!_adjS.titleColor) { const _f = (currentUser?.plan_type==='premium'&&currentBrand?.font_color)||'#ffffff'; _adjS.titleColor=_f; }
-    if (!_adjS.contentColor) { _adjS.contentColor = (currentUser?.plan_type==='premium'&&currentBrand?.sub_font_color)||'#cccccc'; }
+    if (!_adjS.titleColor)  { _adjS.titleColor  = (currentUser?.plan_type==='premium'&&currentBrand?.font_color)||'#ffffff'; }
+    if (!_adjS.contentColor){ _adjS.contentColor = (currentUser?.plan_type==='premium'&&currentBrand?.sub_font_color)||'#cccccc'; }
+    if (!_adjS.subFont)     { _adjS.subFont = (currentUser?.plan_type==='premium'&&currentBrand?.sub_font_name)||(currentUser?.plan_type==='premium'&&currentBrand?.font_name)||'DM Sans'; }
   }
   const adj = window.slideAdjust[i];
   const isPremium = currentUser?.plan_type === 'premium';
@@ -3177,11 +3203,19 @@ function renderCarouselSpecs(i) {
             </div>
           </div>
 
-          <!-- Fuente -->
+          <!-- Fuente título -->
           <div>
-            <div style="font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">✍️ Fuente</div>
+            <div style="font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">✏️ Fuente título</div>
             <div style="display:flex;flex-wrap:wrap;gap:4px;">
-              ${fonts.map(f=>`<button onclick="slideAdjustFn(${i},'font','${f}')" style="padding:3px 7px;border-radius:5px;border:1px solid var(--border);background:${adj.font===f?'var(--brand)':'var(--surface-2)'};color:${adj.font===f?'#fff':'var(--text-2)'};cursor:pointer;font-size:10px;font-family:'${f}',sans-serif;">${f}</button>`).join('')}
+              ${fonts.map(f=>`<button onclick="slideAdjustFn(${i},'font','${f}')" style="padding:3px 7px;border-radius:5px;border:1px solid var(--border);background:${(adj.font||'DM Sans')===f?'var(--brand)':'var(--surface-2)'};color:${(adj.font||'DM Sans')===f?'#fff':'var(--text-2)'};cursor:pointer;font-size:10px;font-family:'${f}',sans-serif;">${f}</button>`).join('')}
+            </div>
+          </div>
+
+          <!-- Fuente contenido -->
+          <div>
+            <div style="font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">💬 Fuente contenido</div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;">
+              ${fonts.map(f=>`<button onclick="slideAdjustFn(${i},'subFont','${f}')" style="padding:3px 7px;border-radius:5px;border:1px solid var(--border);background:${(adj.subFont||brandSubFont)===f?'var(--brand)':'var(--surface-2)'};color:${(adj.subFont||brandSubFont)===f?'#fff':'var(--text-2)'};cursor:pointer;font-size:10px;font-family:'${f}',sans-serif;">${f}</button>`).join('')}
             </div>
           </div>
 
@@ -3229,7 +3263,7 @@ function renderCarouselSpecs(i) {
 function slideAdjustFn(i, prop, val) {
   if (!window.slideAdjust) window.slideAdjust = {};
   if (!window.slideAdjust[i]) return;
-  if (prop === 'align' || prop === 'font' || prop === 'logoAlign' || prop === 'titleColor' || prop === 'contentColor') {
+  if (prop === 'align' || prop === 'font' || prop === 'subFont' || prop === 'logoAlign' || prop === 'titleColor' || prop === 'contentColor') {
     window.slideAdjust[i][prop] = val;
   } else {
     const min = prop === 'titleSize' ? 12 : prop === 'logoSize' ? 40 : 10;
@@ -3506,9 +3540,9 @@ async function downloadThumbnailImage(i) {
         logoBox.appendChild(img); wrap.appendChild(logoBox); inner.appendChild(wrap);
       }
 
-      // Título
+      // Título — usa fuente de título ajustada (o la de marca)
       const titleEl = document.createElement('div');
-      titleEl.style.cssText = `font-size:${fs}px;font-weight:900;color:${fcTh};line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${font}',sans-serif;word-break:break-word;`;
+      titleEl.style.cssText = `font-size:${fs}px;font-weight:900;color:${fcTh};line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${adj.titleFont||font}',sans-serif;word-break:break-word;`;
       titleEl.textContent = titleText;
       inner.appendChild(titleEl);
 
@@ -3517,10 +3551,10 @@ async function downloadThumbnailImage(i) {
       lineDeco.style.cssText = `width:50px;height:3px;background:rgba(255,255,255,0.4);border-radius:2px;flex-shrink:0;`;
       inner.appendChild(lineDeco);
 
-      // Subtítulo — usa subFontExport (fuente de subtítulo de marca)
+      // Subtítulo — usa fuente de subtítulo ajustada (o sub_font_name de marca)
       if (subText) {
         const subEl = document.createElement('div');
-        subEl.style.cssText = `font-size:${subFs}px;font-weight:500;color:${fcSub};line-height:1.5;font-family:'${subFontExport}',sans-serif;word-break:break-word;`;
+        subEl.style.cssText = `font-size:${subFs}px;font-weight:500;color:${fcSub};line-height:1.5;font-family:'${adj.subFontFamily||subFontExport}',sans-serif;word-break:break-word;`;
         subEl.textContent = subText;
         inner.appendChild(subEl);
       }
@@ -3601,13 +3635,13 @@ async function downloadCarouselSlideImage(i) {
       lineDeco.style.cssText = `width:50px;height:3px;background:rgba(255,255,255,0.4);border-radius:2px;flex-shrink:0;`;
       inner.appendChild(lineDeco);
 
-      // Título
+      // Título — usa fuente de título ajustada
       const titleEl = document.createElement('div');
       titleEl.style.cssText = `font-size:${ts}px;font-weight:800;color:${fcTitle};line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${font}',sans-serif;word-break:break-word;`;
       titleEl.textContent = titleText;
       inner.appendChild(titleEl);
 
-      // Contenido — usa fuente de subtítulo de marca
+      // Contenido — usa fuente de contenido ajustada (subFontSlide)
       if (contText) {
         const contEl = document.createElement('div');
         contEl.style.cssText = `font-size:${contSize}px;font-weight:400;color:${fcContent};line-height:1.5;font-family:'${subFontSlide}',sans-serif;word-break:break-word;`;
@@ -4839,8 +4873,8 @@ function openCdndEditor(type, index) {
     const {c1,c2} = parseGradient(t.background_gradient || 'linear-gradient(135deg,#7C3AED,#F43F5E)');
     cdnd.style.bg1        = (isPrem && currentBrand?.color_primary)   || c1 || '#7C3AED';
     cdnd.style.bg2        = (isPrem && currentBrand?.color_secondary) || c2 || '#F43F5E';
-    cdnd.style.titleFont  = (isPrem && currentBrand?.font_name) || 'DM Sans';
-    cdnd.style.subFont    = (isPrem && currentBrand?.sub_font_name) || (isPrem && currentBrand?.font_name) || 'DM Sans';
+    cdnd.style.titleFont  = adj.titleFont     || (isPrem && currentBrand?.font_name)     || 'DM Sans';
+    cdnd.style.subFont    = adj.subFontFamily || (isPrem && currentBrand?.sub_font_name) || (isPrem && currentBrand?.font_name) || 'DM Sans';
     cdnd.style.titleSize  = adj.fontSize  || 42;
     cdnd.style.titleColor = adj.titleColor || (isPrem && currentBrand?.font_color) || '#ffffff';
     cdnd.style.titleAlign = adj.align || 'center';
@@ -4892,16 +4926,16 @@ function cdndSaveBack() {
     if (!window.thumbAdjust) window.thumbAdjust = {};
     if (!window.thumbAdjust[i]) window.thumbAdjust[i] = {};
     const adj = window.thumbAdjust[i];
-    adj.cdndBlocks   = JSON.parse(JSON.stringify(cdnd.blocks));
-    adj.titleFont    = cdnd.style.titleFont;
-    adj.subFont      = cdnd.style.subFont;
-    adj.fontSize     = cdnd.style.titleSize;
-    adj.titleColor   = cdnd.style.titleColor;
-    adj.subFontSize  = cdnd.style.subSize;
-    adj.subColor     = cdnd.style.subColor;
-    adj.logoSize     = cdnd.style.logoSize;
-    adj.titleText    = cdnd.content.title;
-    adj.subText      = cdnd.content.sub;
+    adj.cdndBlocks     = JSON.parse(JSON.stringify(cdnd.blocks));
+    adj.titleFont      = cdnd.style.titleFont;
+    adj.subFontFamily  = cdnd.style.subFont;   // panel usa subFontFamily
+    adj.fontSize       = cdnd.style.titleSize;
+    adj.titleColor     = cdnd.style.titleColor;
+    adj.subFontSize    = cdnd.style.subSize;
+    adj.subColor       = cdnd.style.subColor;
+    adj.logoSize       = cdnd.style.logoSize;
+    adj.titleText      = cdnd.content.title;
+    adj.subText        = cdnd.content.sub;
     renderThumbnailSpecs(i);
   }
 }
