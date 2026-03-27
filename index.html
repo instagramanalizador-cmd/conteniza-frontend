@@ -158,40 +158,37 @@
        USER PANEL BAR
        ============================================= */
     .user-bar {
-      background: var(--grad-brand);
+      background: linear-gradient(135deg, rgba(139,95,191,0.95), rgba(233,30,140,0.95));
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
       display: none;
     }
     .user-bar.visible { display: block; }
     .user-bar-inner {
-      max-width: 1100px;
+      max-width: 1200px;
       margin: 0 auto;
-      padding: 6px 20px;
-      display: flex;
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
       align-items: center;
-      justify-content: space-between;
-      gap: 6px;
-      flex-wrap: nowrap;
+      gap: 16px;
+      height: 52px;
     }
     .user-bar-left {
       display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-shrink: 0;
+      flex-direction: column;
+      justify-content: center;
+      gap: 1px;
     }
     .user-pill {
-      background: rgba(255,255,255,.15);
-      border: 1px solid rgba(255,255,255,.2);
-      color: #fff;
-      padding: 4px 14px;
-      border-radius: var(--radius-full);
-      font-size: 13px;
-      font-weight: 500;
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 6px;
-      backdrop-filter: blur(8px);
+      gap: 4px;
+      color: rgba(255,255,255,0.9);
+      font-size: 11px;
+      font-weight: 500;
     }
-    .user-bar-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .user-bar-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; justify-content: flex-end; }
 
     /* =============================================
        BUTTONS
@@ -1556,10 +1553,23 @@
 <!-- ==================== USER BAR ==================== -->
 <div class="user-bar" id="userBar">
   <div class="user-bar-inner">
+    <!-- Izquierda: info del usuario -->
     <div class="user-bar-left">
-      <div class="user-pill">👤 <span id="userEmail">–</span></div>
-      <div class="user-pill">📊 <span id="userCredits">–</span> análisis restantes</div>
-      <div class="user-pill">Plan: <span id="userPlan">–</span></div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">👤</div>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#fff;line-height:1;" id="userEmail">–</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.6);margin-top:2px;">Plan: <span id="userPlan" style="font-weight:700;color:rgba(255,255,255,0.9);">–</span></div>
+        </div>
+      </div>
+    </div>
+    <!-- Centro: créditos -->
+    <div style="display:flex;align-items:center;justify-content:center;gap:6px;">
+      <div style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:20px;padding:4px 14px;display:flex;align-items:center;gap:6px;">
+        <span style="font-size:12px;">⚡</span>
+        <span style="font-size:12px;font-weight:700;color:#fff;" id="userCredits">–</span>
+        <span style="font-size:10px;color:rgba(255,255,255,0.6);">análisis</span>
+      </div>
     </div>
     <div class="user-bar-right">
       <button id="upgradePlanBtn" class="btn btn-primary btn-sm hidden" onclick="showPlansScreen()" style="font-size:12px;">⬆️ Mejorar plan</button>
@@ -2400,6 +2410,10 @@ function updateUserPanel() {
   document.getElementById('userEmail').textContent   = currentUser.email;
   document.getElementById('userCredits').textContent = userCredits;
   document.getElementById('userPlan').textContent    = currentUser.plan_type.toUpperCase();
+  // Actualizar indicador del creditIndicator también
+  const planColors = {free:'rgba(255,255,255,0.5)', pro:'#FFD700', premium:'#fff'};
+  const planEl = document.getElementById('userPlan');
+  if (planEl) planEl.style.color = planColors[currentUser.plan_type] || 'rgba(255,255,255,0.9)';
   const adminBtn = document.getElementById('adminBtn');
   if (adminBtn) adminBtn.classList.toggle('hidden', !currentUser.is_admin);
   // Mostrar botón Mejorar plan solo para usuarios Free
@@ -3105,8 +3119,9 @@ function renderCarouselSpecs(i) {
   }
   const adj = window.slideAdjust[i];
   const isPremium = currentUser?.plan_type === 'premium';
-  const cp = adj.colorPrimary  || (isPremium && currentBrand?.color_primary)  || null;
-  const cs = adj.colorSecondary|| (isPremium && currentBrand?.color_secondary)|| null;
+  // Prioridad: ajuste del usuario > marca guardada > default IA
+  const cp = adj.colorPrimary   || (isPremium && currentBrand?.color_primary)   || null;
+  const cs = adj.colorSecondary  || (isPremium && currentBrand?.color_secondary) || null;
   const hasBg = cp && cs;
   const bgStyle = hasBg ? `linear-gradient(135deg,${cp},${cs})` : (s.color_scheme || 'linear-gradient(135deg,#7C3AED,#F43F5E)');
   const fonts = ['DM Sans','Montserrat','Poppins','Playfair Display','Raleway','Oswald','Lato','Roboto','Inter','Nunito'];
@@ -4992,6 +5007,12 @@ function cdndInitDrag() {
     block.addEventListener('mousedown', cdndOnMouseDown);
     block.addEventListener('touchstart', cdndOnTouchStart, {passive:false});
   });
+  // Resize handle del logo
+  const logoHandle = document.querySelector('#cdndLogo .cdnd-block-handle');
+  if (logoHandle) {
+    logoHandle.addEventListener('mousedown', cdndOnResizeStart);
+    logoHandle.addEventListener('touchstart', cdndOnResizeTouchStart, {passive:false});
+  }
 
   document.addEventListener('mousemove', cdndOnMouseMove);
   document.addEventListener('mouseup',   cdndOnMouseUp);
@@ -5083,6 +5104,52 @@ function cdndMoveDrag(clientX, clientY) {
 
 function cdndOnMouseUp()  { cdndEndDrag(); }
 function cdndOnTouchEnd() { cdndEndDrag(); }
+
+let cdndResizing = false;
+let cdndResizeStart = { x: 0, logoSize: 60 };
+
+function cdndOnResizeStart(e) {
+  e.preventDefault(); e.stopPropagation();
+  cdndResizing = true;
+  cdndResizeStart = { x: e.clientX, logoSize: cdndState.style.logoSize };
+  document.addEventListener('mousemove', cdndOnResizeMove);
+  document.addEventListener('mouseup', cdndOnResizeEnd);
+}
+
+function cdndOnResizeTouchStart(e) {
+  e.preventDefault(); e.stopPropagation();
+  cdndResizing = true;
+  cdndResizeStart = { x: e.touches[0].clientX, logoSize: cdndState.style.logoSize };
+  document.addEventListener('touchmove', cdndOnResizeTouchMove, {passive:false});
+  document.addEventListener('touchend', cdndOnResizeEnd);
+}
+
+function cdndOnResizeMove(e) {
+  if (!cdndResizing) return;
+  const delta = e.clientX - cdndResizeStart.x;
+  cdndState.style.logoSize = Math.max(20, Math.min(200, cdndResizeStart.logoSize + delta));
+  document.getElementById('cdndLogoSize').textContent = Math.round(cdndState.style.logoSize);
+  cdndRender();
+}
+
+function cdndOnResizeTouchMove(e) {
+  if (!cdndResizing) return;
+  e.preventDefault();
+  const delta = e.touches[0].clientX - cdndResizeStart.x;
+  cdndState.style.logoSize = Math.max(20, Math.min(200, cdndResizeStart.logoSize + delta));
+  document.getElementById('cdndLogoSize').textContent = Math.round(cdndState.style.logoSize);
+  cdndRender();
+}
+
+function cdndOnResizeEnd() {
+  cdndResizing = false;
+  document.removeEventListener('mousemove', cdndOnResizeMove);
+  document.removeEventListener('mouseup', cdndOnResizeEnd);
+  document.removeEventListener('touchmove', cdndOnResizeTouchMove);
+  document.removeEventListener('touchend', cdndOnResizeEnd);
+  cdndSaveState();
+}
+
 function cdndEndDrag() {
   if (!cdndDragging) return;
   const elId = 'cdnd' + cdndDragging.charAt(0).toUpperCase() + cdndDragging.slice(1);
@@ -5245,82 +5312,79 @@ function cdndSetFont(font) {
 
 /* ── Exportar PNG desde el editor ── */
 async function cdndExport() {
-  showNotification('⏳ Exportando desde Studio...', 'success');
+  showNotification('⏳ Exportando en alta calidad...', 'success');
   try {
     const s = cdndState.style;
     const c = cdndState.content;
     const b = cdndState.blocks;
     const fmt = cdndState.format;
-    const W = fmt === 'story' ? 1080 : 1080;
+    const W = 1080;
     const H = fmt === 'story' ? 1920 : 1350;
+
+    // Usar tamaño 2x para calidad (540x675 o 540x960) con scale:2 = 1080x1350/1920
+    const RW = 540;
+    const RH = fmt === 'story' ? 960 : 675;
+    const SCALE_F = RW / 270; // factor de escala respecto al preview
 
     const logoUrl = c.logoUrl ? await imageToDataURL(c.logoUrl) : null;
 
     const canvas = await captureHtmlToCanvas(el => {
-      el.style.cssText = `width:270px;height:${H===1920?388:338}px;background:linear-gradient(135deg,${s.bg1},${s.bg2});position:relative;overflow:hidden;font-family:'${s.font}',sans-serif;`;
+      el.style.cssText = `width:${RW}px;height:${RH}px;background:linear-gradient(135deg,${s.bg1},${s.bg2});position:relative;overflow:hidden;font-family:'${s.font}',sans-serif;`;
 
-      // Patrón
+      // Patrón decorativo
       const pat = document.createElement('div');
-      pat.style.cssText = `position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 1px,transparent 1px);background-size:15px 15px;pointer-events:none;`;
+      pat.style.cssText = `position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 1px,transparent 1px);background-size:30px 30px;pointer-events:none;`;
       el.appendChild(pat);
-
-      const canvasW = 270;
-      const canvasH = H === 1920 ? 388 : 338;
 
       // Logo
       if (logoUrl && b.logo.visible) {
+        const logoSzScaled = s.logoSize * SCALE_F;
+        const px = (b.logo.x / 100 * RW) - logoSzScaled / 2;
+        const py = (b.logo.y / 100 * RH);
         const wrap = document.createElement('div');
-        const px = (b.logo.x / 100 * canvasW) - s.logoSize/2;
-        const py = (b.logo.y / 100 * canvasH);
-        wrap.style.cssText = `position:absolute;left:${px}px;top:${py}px;background:rgba(255,255,255,0.18);border-radius:10px;padding:6px;`;
+        wrap.style.cssText = `position:absolute;left:${px}px;top:${py}px;background:rgba(255,255,255,0.18);border-radius:${10*SCALE_F}px;padding:${6*SCALE_F}px;`;
         const img = document.createElement('img');
         img.src = logoUrl;
-        img.style.cssText = `width:${s.logoSize}px;height:${s.logoSize}px;object-fit:contain;display:block;border-radius:6px;`;
+        img.style.cssText = `width:${logoSzScaled}px;height:${logoSzScaled}px;object-fit:contain;display:block;border-radius:${6*SCALE_F}px;`;
         wrap.appendChild(img); el.appendChild(wrap);
       }
 
       // Título
       if (b.title.visible && c.title) {
+        const blockW = b.title.w / 100 * RW;
+        const px = (b.title.x / 100 * RW) - blockW / 2;
+        const py = b.title.y / 100 * RH;
         const titleDiv = document.createElement('div');
-        const blockW = b.title.w / 100 * canvasW;
-        const px = (b.title.x / 100 * canvasW) - blockW/2;
-        const py = b.title.y / 100 * canvasH;
-        titleDiv.style.cssText = `position:absolute;left:${px}px;top:${py}px;width:${blockW}px;font-size:${Math.round(s.titleSize*0.45)}px;font-weight:800;color:${s.titleColor};line-height:1.2;text-align:${s.titleAlign||'center'};font-family:'${s.font}',sans-serif;text-shadow:0 2px 8px rgba(0,0,0,0.4);word-break:break-word;`;
+        titleDiv.style.cssText = `position:absolute;left:${px}px;top:${py}px;width:${blockW}px;font-size:${s.titleSize * SCALE_F * 0.45}px;font-weight:800;color:${s.titleColor};line-height:1.2;text-align:${s.titleAlign||'center'};font-family:'${s.font}',sans-serif;text-shadow:0 ${2*SCALE_F}px ${8*SCALE_F}px rgba(0,0,0,0.4);word-break:break-word;`;
         titleDiv.textContent = c.title;
         el.appendChild(titleDiv);
       }
 
       // Subtítulo
       if (b.sub.visible && c.sub) {
+        const blockW = b.sub.w / 100 * RW;
+        const px = (b.sub.x / 100 * RW) - blockW / 2;
+        const py = b.sub.y / 100 * RH;
         const subDiv = document.createElement('div');
-        const blockW = b.sub.w / 100 * canvasW;
-        const px = (b.sub.x / 100 * canvasW) - blockW/2;
-        const py = b.sub.y / 100 * canvasH;
-        subDiv.style.cssText = `position:absolute;left:${px}px;top:${py}px;width:${blockW}px;font-size:${Math.round(s.subSize*0.45)}px;color:${s.subColor};line-height:1.4;text-align:${s.subAlign||'center'};font-family:'${s.font}',sans-serif;word-break:break-word;`;
+        subDiv.style.cssText = `position:absolute;left:${px}px;top:${py}px;width:${blockW}px;font-size:${s.subSize * SCALE_F * 0.45}px;color:${s.subColor};line-height:1.4;text-align:${s.subAlign||'center'};font-family:'${s.font}',sans-serif;word-break:break-word;`;
         subDiv.textContent = c.sub;
         el.appendChild(subDiv);
       }
-    }, 270, H === 1920 ? 388 : 338);
 
-    // Crear canvas final a escala completa
-    const finalCanvas = document.createElement('canvas');
-    finalCanvas.width  = W;
-    finalCanvas.height = H;
-    const ctx = finalCanvas.getContext('2d');
-    ctx.drawImage(canvas, 0, 0, W, H);
+    }, RW, RH);
 
+    // canvas ya es 1080x1350 con scale:2 desde captureHtmlToCanvas
     const a = document.createElement('a');
     a.download = `studio_${cdndState.type}_${cdndState.index+1}_${W}x${H}.png`;
-    a.href = finalCanvas.toDataURL('image/png');
+    a.href = canvas.toDataURL('image/png');
     a.click();
 
-    showNotification(`✅ PNG ${W}×${H}px exportado desde Studio`, 'success');
+    showNotification(`✅ PNG ${W}×${H}px exportado en alta calidad`, 'success');
   } catch(e) {
     console.error('Export error:', e);
-    showNotification('Error exportando: ' + e.message, 'error');
+    showNotification('Error: ' + e.message, 'error');
   }
 }
-
 /* ── Abrir Studio desde los botones existentes ── */
 // Añadir botón "✏️ Studio" en renderCarouselSpecs y renderThumbnailSpecs
 // Se llama desde los botones de descarga ya existentes
@@ -5455,7 +5519,7 @@ async function cdndExport() {
   <!-- Preview -->
   <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:24px;margin-bottom:24px;">
     <h3 style="font-size:15px;font-weight:700;margin:0 0 16px;">👁️ Vista previa</h3>
-    <div id="brandPreviewCard" style="border-radius:12px;padding:20px;width:160px;aspect-ratio:1080/1350;overflow:hidden;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;background:linear-gradient(135deg,#8B5FBF,#E91E8C);box-sizing:border-box;margin:0 auto;">
+    <div id="brandPreviewCard" style="border-radius:12px;padding:20px;width:220px;aspect-ratio:1080/1350;overflow:visible;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;background:linear-gradient(135deg,#8B5FBF,#E91E8C);box-sizing:border-box;margin:0 auto;">
       <div id="previewLogo" style="display:none;margin-bottom:12px;">
         <img id="previewLogoImg" style="width:48px;height:48px;border-radius:8px;object-fit:contain;background:#fff;padding:4px;">
       </div>
