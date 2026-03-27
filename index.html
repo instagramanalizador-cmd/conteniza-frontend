@@ -2539,6 +2539,8 @@ function renderThumbnails(thumbs) {
   if (!c) return;
   if (!thumbs||!thumbs.length) { c.innerHTML='<p style="color:var(--text-3);font-size:13px;">No hay miniaturas generadas</p>'; return; }
   currentThumbnails = thumbs;
+  // Reset thumbAdjust para usar los colores actuales de Mi Marca
+  window.thumbAdjust = {};
   c.innerHTML = `<div class="thumb-grid" id="thumbGrid"></div><div id="thumbSpecs" style="margin-top:16px;"></div>`;
   const grid = document.getElementById('thumbGrid');
   thumbs.forEach((t,i) => {
@@ -2772,6 +2774,8 @@ function renderCarousel(slides) {
   const container = document.getElementById('carouselSlides');
   if (!container||!slides||!slides.length) return;
   currentCarouselSlides = slides;
+  // Reset slideAdjust para usar los colores actuales de Mi Marca
+  window.slideAdjust = {};
   // Aplicar marca si es Premium y tiene configuración
   const isPremium = currentUser?.plan_type === 'premium';
   const brandBg = (isPremium && currentBrand?.color_primary && currentBrand?.color_secondary)
@@ -4605,7 +4609,7 @@ async function openInInstagram() {
   <!-- Preview -->
   <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:24px;margin-bottom:24px;">
     <h3 style="font-size:15px;font-weight:700;margin:0 0 16px;">👁️ Vista previa</h3>
-    <div id="brandPreviewCard" style="border-radius:12px;padding:24px;width:100%;aspect-ratio:1080/1350;overflow:hidden;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;background:linear-gradient(135deg,#8B5FBF,#E91E8C);box-sizing:border-box;">
+    <div id="brandPreviewCard" style="border-radius:12px;padding:20px;width:160px;aspect-ratio:1080/1350;overflow:hidden;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;background:linear-gradient(135deg,#8B5FBF,#E91E8C);box-sizing:border-box;margin:0 auto;">
       <div id="previewLogo" style="display:none;margin-bottom:12px;">
         <img id="previewLogoImg" style="width:48px;height:48px;border-radius:8px;object-fit:contain;background:#fff;padding:4px;">
       </div>
