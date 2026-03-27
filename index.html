@@ -1,58 +1,4 @@
-async function cdndExport() {
-  showNotification('⏳ Generando PNG...','success');
-  try {
-    const s=cdndState.style,c=cdndState.content,b=cdndState.blocks;
-    const W=1080,H=cdndState.format==='story'?1920:1350,SX=W/270,SY=H/338;
-    await document.fonts.ready;
-    let logoImg=null;
-    if(c.logoUrl&&b.logo.visible){
-      const du=await imageToDataURL(c.logoUrl);
-      if(du&&du.length>100) logoImg=await new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=du;});
-    }
-    const cv=document.createElement('canvas');cv.width=W;cv.height=H;
-    const ctx=cv.getContext('2d');
-    const gr=ctx.createLinearGradient(0,0,W,H);
-    gr.addColorStop(0,s.bg1);gr.addColorStop(1,s.bg2);
-    ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);
-    if(logoImg&&b.logo.visible){
-      // MISMA fórmula que cdndRender para consistencia pixel-perfect
-      const logoTot = s.logoSize + 20; // size + padding (igual que render)
-      const leftPct = b.logo.x - (logoTot / CDND_CANVAS_W * 100 / 2);
-      const topPct  = b.logo.y - (logoTot / CDND_CANVAS_H * 100 / 2);
-      const wx = leftPct / 100 * W;
-      const wy = topPct  / 100 * H;
-      const sz = s.logoSize * SX, pad = 8 * SX, tot = logoTot * SX;
-      ctx.save();ctx.fillStyle='rgba(255,255,255,0.18)';
-      ctx.beginPath();ctx.roundRect(wx,wy,tot,tot,12*SX);ctx.fill();ctx.restore();
-      ctx.drawImage(logoImg,wx+pad,wy+pad,sz,sz);
-    }
-    function drawText(txt,cx,cy,bw,fs,ff,color,fw,lh,align){
-      ctx.save();ctx.font=fw+' '+fs+'px \''+ff+'\',sans-serif';
-      ctx.fillStyle=color;ctx.textAlign=align||'center';ctx.textBaseline='top';
-      if(fw==='800'){ctx.shadowColor='rgba(0,0,0,0.35)';ctx.shadowBlur=10;ctx.shadowOffsetY=3;}
-      const words=txt.split(' ');let line='',ly=cy;
-      const lx=align==='left'?cx-bw/2:align==='right'?cx+bw/2:cx;
-      for(let i=0;i<words.length;i++){
-        const t=line+words[i]+' ';
-        if(ctx.measureText(t).width>bw&&i>0){ctx.fillText(line.trim(),lx,ly);line=words[i]+' ';ly+=lh;}
-        else line=t;
-      }
-      ctx.fillText(line.trim(),lx,ly);ctx.restore();
-    }
-    if(b.title.visible&&c.title){
-      const bw=b.title.w/100*W,fs=Math.round(s.titleSize*SX);
-      drawText(c.title,b.title.x/100*W,b.title.y/100*H,bw,fs,s.titleFont||s.font,s.titleColor,'800',fs*1.25,s.titleAlign||'center');
-    }
-    if(b.sub.visible&&c.sub){
-      const bw=b.sub.w/100*W,fs=Math.round(s.subSize*SX);
-      drawText(c.sub,b.sub.x/100*W,b.sub.y/100*H,bw,fs,s.subFont||s.font,s.subColor,'400',fs*1.4,s.subAlign||'center');
-    }
-    const a=document.createElement('a');
-    a.download='studio_'+(cdndState.index+1)+'_'+W+'x'+H+'.png';
-    a.href=cv.toDataURL('image/png');a.click();
-    showNotification('✅ PNG '+W+'×'+H+'px exportado','success');
-  }catch(e){showNotification('Error: '+e.message,'error');}
-}<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -212,36 +158,40 @@ async function cdndExport() {
        USER PANEL BAR
        ============================================= */
     .user-bar {
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-      border-bottom: 1px solid rgba(139,95,191,0.4);
+      background: var(--grad-brand);
       display: none;
     }
     .user-bar.visible { display: block; }
     .user-bar-inner {
-      max-width: 1400px;
+      max-width: 1100px;
       margin: 0 auto;
-      padding: 0 24px;
+      padding: 6px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
-      height: 48px;
-      min-width: 0;
+      gap: 6px;
+      flex-wrap: nowrap;
     }
     .user-bar-left {
       display: flex;
       align-items: center;
-      min-width: 0;
+      gap: 8px;
+      flex-shrink: 0;
     }
     .user-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      color: rgba(255,255,255,0.9);
-      font-size: 11px;
+      background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.2);
+      color: #fff;
+      padding: 4px 14px;
+      border-radius: var(--radius-full);
+      font-size: 13px;
       font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      backdrop-filter: blur(8px);
     }
-    .user-bar-right { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+    .user-bar-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 
     /* =============================================
        BUTTONS
@@ -1194,7 +1144,7 @@ async function cdndExport() {
       .hero-title { font-size: 36px; }
       .hero-sub { font-size: 15px; }
       .topbar-inner { padding: 0 16px; }
-      
+      .user-bar-inner { padding: 8px 16px; flex-wrap: wrap; gap: 8px; }
       .result-section-head { padding: 12px 16px; }
       .result-section-body { padding: 14px; }
     }
@@ -1236,7 +1186,7 @@ async function cdndExport() {
       #generateBtn { padding: 16px; font-size: 15px; }
 
       /* User bar */
-      
+      .user-bar-inner { padding: 8px 12px; gap: 6px; }
       .user-pill { font-size: 11px; padding: 4px 8px; }
       .user-bar-right { gap: 6px; }
       .user-bar-right .btn { padding: 6px 10px; font-size: 11px; }
@@ -1265,276 +1215,6 @@ async function cdndExport() {
       .fab { width: 48px; height: 48px; font-size: 18px; bottom: 16px; right: 16px; }
       #sidebarFab { bottom: 72px; }
     }
-
-
-/* ═══════════════════════════════════════════
-   EDITOR DRAG & DROP — Conteniza Studio
-   ═══════════════════════════════════════════ */
-.cdnd-overlay {
-  position: fixed; inset: 0; z-index: 10000;
-  background: rgba(0,0,0,0.85);
-  backdrop-filter: blur(8px);
-  display: flex; align-items: center; justify-content: center;
-  padding: 20px; box-sizing: border-box;
-  opacity: 0; pointer-events: none;
-  transition: opacity .3s ease;
-}
-.cdnd-overlay.open { opacity: 1; pointer-events: all; }
-
-.cdnd-studio {
-  display: grid;
-  grid-template-columns: 1fr 320px;
-  grid-template-rows: auto 1fr;
-  gap: 0;
-  width: 100%; max-width: 1100px;
-  height: 90vh;
-  background: #0f0f13;
-  border-radius: 20px;
-  overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.08);
-  box-shadow: 0 40px 80px rgba(0,0,0,0.8);
-}
-
-.cdnd-topbar {
-  grid-column: 1 / -1;
-  background: #1a1a22;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-  padding: 14px 20px;
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 16px;
-}
-.cdnd-topbar-title {
-  font-family: 'Syne', sans-serif;
-  font-size: 15px; font-weight: 700;
-  color: #fff; display: flex; align-items: center; gap: 10px;
-}
-.cdnd-topbar-title .badge {
-  font-size: 10px; background: var(--brand);
-  color: #fff; padding: 2px 8px; border-radius: 99px;
-  font-weight: 600; letter-spacing: .5px;
-}
-.cdnd-topbar-actions { display: flex; gap: 8px; }
-.cdnd-btn {
-  padding: 7px 14px; border-radius: 8px; font-size: 12px;
-  font-weight: 600; cursor: pointer; border: none;
-  transition: all .15s;
-}
-.cdnd-btn-ghost {
-  background: rgba(255,255,255,0.06);
-  color: rgba(255,255,255,0.7);
-  border: 1px solid rgba(255,255,255,0.1);
-}
-.cdnd-btn-ghost:hover { background: rgba(255,255,255,0.12); color: #fff; }
-.cdnd-btn-primary {
-  background: var(--brand); color: #fff;
-}
-.cdnd-btn-primary:hover { opacity: .85; }
-.cdnd-btn-success {
-  background: #10b981; color: #fff;
-}
-.cdnd-btn-success:hover { opacity: .85; }
-
-/* Canvas area */
-.cdnd-canvas-area {
-  background: #0a0a10;
-  display: flex; align-items: center; justify-content: center;
-  padding: 30px; overflow: hidden; position: relative;
-}
-.cdnd-canvas-wrap {
-  position: relative;
-  filter: drop-shadow(0 20px 60px rgba(0,0,0,0.6));
-}
-.cdnd-canvas {
-  position: relative;
-  width: 270px; height: 338px; /* 1080/4 × 1350/4 */
-  border-radius: 10px; overflow: hidden;
-  cursor: default;
-  user-select: none;
-}
-.cdnd-canvas-bg {
-  position: absolute; inset: 0;
-  background: linear-gradient(135deg, #7C3AED, #F43F5E);
-}
-.cdnd-canvas-pattern {
-  position: absolute; inset: 0;
-  opacity: 0.04;
-  background-image: radial-gradient(circle, #fff 1px, transparent 1px);
-  background-size: 15px 15px;
-}
-.cdnd-grid-overlay {
-  position: absolute; inset: 0; pointer-events: none;
-  opacity: 0; transition: opacity .2s;
-}
-.cdnd-grid-overlay.visible { opacity: 1; }
-.cdnd-grid-line {
-  position: absolute; background: rgba(255,255,255,0.12);
-}
-.cdnd-grid-line.h { width: 100%; height: 1px; }
-.cdnd-grid-line.v { height: 100%; width: 1px; }
-
-/* Bloques arrastrables */
-.cdnd-block {
-  position: absolute;
-  cursor: grab; user-select: none;
-  transition: box-shadow .15s;
-  border-radius: 4px;
-  border: 1.5px dashed transparent;
-}
-.cdnd-block:hover {
-  border-color: rgba(255,255,255,0.4);
-}
-.cdnd-block.selected {
-  border-color: #fff;
-  box-shadow: 0 0 0 2px rgba(255,255,255,0.3);
-}
-.cdnd-block.dragging {
-  cursor: grabbing;
-  opacity: 0.85;
-  z-index: 999;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.5);
-}
-.cdnd-block-label {
-  position: absolute; top: -18px; left: 0;
-  font-size: 9px; color: rgba(255,255,255,0.6);
-  font-weight: 600; letter-spacing: .5px;
-  white-space: nowrap; pointer-events: none;
-  text-transform: uppercase;
-}
-.cdnd-block-handle {
-  position: absolute; bottom: -6px; right: -6px;
-  width: 12px; height: 12px;
-  background: #fff; border-radius: 50%;
-  cursor: se-resize; border: 2px solid rgba(0,0,0,0.3);
-  display: none;
-}
-.cdnd-block.selected .cdnd-block-handle { display: block; }
-
-/* Zona guías de snap */
-.cdnd-snap-line {
-  position: absolute; background: rgba(99,202,255,0.7);
-  pointer-events: none; display: none; z-index: 998;
-}
-.cdnd-snap-line.h { width: 100%; height: 1px; left: 0; }
-.cdnd-snap-line.v { height: 100%; width: 1px; top: 0; }
-
-/* Panel derecho */
-.cdnd-panel {
-  background: #1a1a22;
-  border-left: 1px solid rgba(255,255,255,0.06);
-  display: flex; flex-direction: column;
-  overflow: hidden;
-}
-.cdnd-panel-tabs {
-  display: flex; border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-.cdnd-tab {
-  flex: 1; padding: 10px 8px; font-size: 11px;
-  font-weight: 600; cursor: pointer; text-align: center;
-  color: rgba(255,255,255,0.4);
-  border-bottom: 2px solid transparent;
-  transition: all .15s; background: none; border-top: none;
-  border-left: none; border-right: none;
-}
-.cdnd-tab.active { color: #fff; border-bottom-color: var(--brand); }
-.cdnd-panel-content {
-  flex: 1; overflow-y: auto; padding: 16px;
-  display: flex; flex-direction: column; gap: 16px;
-}
-.cdnd-section-title {
-  font-size: 10px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: 1px;
-  color: rgba(255,255,255,0.35); margin-bottom: 8px;
-}
-.cdnd-row {
-  display: flex; align-items: center;
-  justify-content: space-between; gap: 8px;
-}
-.cdnd-label {
-  font-size: 12px; color: rgba(255,255,255,0.6); min-width: 60px;
-}
-.cdnd-input {
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 6px; color: #fff; font-size: 12px;
-  padding: 5px 8px; width: 70px; text-align: center;
-}
-.cdnd-input:focus { outline: none; border-color: var(--brand); }
-.cdnd-stepper {
-  display: flex; align-items: center; gap: 4px;
-}
-.cdnd-step-btn {
-  width: 26px; height: 26px; border-radius: 6px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.7); cursor: pointer;
-  font-size: 14px; display: flex; align-items: center; justify-content: center;
-  transition: background .15s;
-}
-.cdnd-step-btn:hover { background: rgba(255,255,255,0.14); color: #fff; }
-.cdnd-step-val {
-  font-size: 12px; font-weight: 700; color: #fff;
-  min-width: 32px; text-align: center;
-}
-.cdnd-color-input {
-  width: 36px; height: 28px; border: none;
-  border-radius: 6px; cursor: pointer; padding: 1px;
-}
-.cdnd-align-btns { display: flex; gap: 3px; }
-.cdnd-align-btn {
-  flex: 1; padding: 5px 6px; border-radius: 5px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.5); cursor: pointer;
-  font-size: 12px; transition: all .15s;
-}
-.cdnd-align-btn.active {
-  background: var(--brand); color: #fff;
-  border-color: var(--brand);
-}
-.cdnd-font-grid {
-  display: flex; flex-wrap: wrap; gap: 4px;
-}
-.cdnd-font-btn {
-  padding: 4px 8px; border-radius: 5px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.5); cursor: pointer;
-  font-size: 10px; transition: all .15s;
-}
-.cdnd-font-btn.active {
-  background: var(--brand); color: #fff; border-color: var(--brand);
-}
-.cdnd-divider {
-  height: 1px; background: rgba(255,255,255,0.06); margin: 4px 0;
-}
-.cdnd-block-list { display: flex; flex-direction: column; gap: 6px; }
-.cdnd-block-item {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 8px; padding: 8px 12px;
-  display: flex; align-items: center; justify-content: space-between;
-  cursor: pointer; transition: all .15s;
-}
-.cdnd-block-item:hover { border-color: rgba(255,255,255,0.2); }
-.cdnd-block-item.active {
-  border-color: var(--brand);
-  background: rgba(var(--brand-rgb), 0.1);
-}
-.cdnd-block-item-icon { font-size: 16px; margin-right: 8px; }
-.cdnd-block-item-name { font-size: 12px; color: rgba(255,255,255,0.7); font-weight: 600; }
-.cdnd-eye-btn {
-  background: none; border: none; cursor: pointer;
-  color: rgba(255,255,255,0.4); font-size: 14px;
-  transition: color .15s; padding: 2px;
-}
-.cdnd-eye-btn:hover { color: #fff; }
-.cdnd-coords {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
-}
-.cdnd-status {
-  font-size: 10px; color: rgba(255,255,255,0.25);
-  text-align: center; padding: 8px;
-}
 
     /* ── Onboarding ── */
     #onboardingModal { backdrop-filter: blur(4px); }
@@ -1606,27 +1286,16 @@ async function cdndExport() {
 <!-- ==================== USER BAR ==================== -->
 <div class="user-bar" id="userBar">
   <div class="user-bar-inner">
-    <!-- Izquierda: info usuario -->
-    <div style="display:flex;align-items:center;gap:12px;min-width:0;flex-shrink:1;">
-      <!-- Avatar -->
-      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#8B5FBF,#E91E8C);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;box-shadow:0 2px 8px rgba(139,95,191,0.4);">👤</div>
-      <!-- Email truncado -->
-      <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
-        <span id="userEmail" style="font-size:12px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;">–</span>
-        <span id="userPlan" style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.6);letter-spacing:.5px;text-transform:uppercase;">–</span>
-      </div>
-      <!-- Créditos -->
-      <div style="display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:4px 12px;flex-shrink:0;">
-        <span style="font-size:13px;">⚡</span>
-        <span id="userCredits" style="font-size:12px;font-weight:700;color:#fff;">–</span>
-        <span style="font-size:10px;color:rgba(255,255,255,0.5);">análisis</span>
-      </div>
+    <div class="user-bar-left">
+      <div class="user-pill">👤 <span id="userEmail">–</span></div>
+      <div class="user-pill">📊 <span id="userCredits">–</span> análisis restantes</div>
+      <div class="user-pill">Plan: <span id="userPlan">–</span></div>
     </div>
     <div class="user-bar-right">
-      <button id="upgradePlanBtn" class="btn btn-primary btn-sm hidden" onclick="showPlansScreen()" style="font-size:11px;padding:5px 10px;">⬆️ Mejorar plan</button>
-      <button class="btn btn-ghost btn-sm" onclick="openSidebar()" style="font-size:11px;padding:5px 10px;">📜 Historial</button>
-      <button id="brandBtn" class="btn btn-ghost btn-sm hidden" onclick="showBrandScreen()" style="font-size:11px;padding:5px 10px;">🎨 Mi marca</button>
-      <button id="openInstagramBtn" class="btn btn-sm hidden" onclick="openInInstagram()" style="background:linear-gradient(135deg,#833AB4,#FD1D1D,#FCB045);color:#fff;border:none;font-size:11px;padding:5px 10px;">📱 Instagram</button>
+      <button id="upgradePlanBtn" class="btn btn-primary btn-sm hidden" onclick="showPlansScreen()" style="font-size:12px;">⬆️ Mejorar plan</button>
+      <button class="btn btn-ghost btn-sm" onclick="openSidebar()">📜 Historial</button>
+      <button id="brandBtn" class="btn btn-ghost btn-sm hidden" onclick="showBrandScreen()" title="Configurar mi marca">🎨 Mi marca</button>
+      <button id="openInstagramBtn" class="btn btn-sm hidden" onclick="openInInstagram()" title="Publicar en Instagram" style="background:linear-gradient(135deg,#833AB4,#FD1D1D,#FCB045);color:#fff;border:none;font-size:11px;">📱 Instagram</button>
       <button class="btn btn-outline btn-sm hidden" id="cancelSubBtn" onclick="cancelSubscription()" style="color:var(--danger);border-color:var(--danger);">Cancelar plan</button>
       <button class="btn btn-danger btn-sm" onclick="logout()">Salir</button>
       <button class="btn btn-ghost btn-sm hidden" id="adminBtn" onclick="openAdmin()">⚙️ Admin</button>
@@ -2430,7 +2099,7 @@ async function showMainApp() {
   restoreDraft();
   showEmailVerificationBanner();
   updateSubscriptionUI();
-  // Cargar marca ANTES de que el usuario pueda generar contenido
+  // Cargar marca al entrar (sin abrir pantalla Mi Marca)
   if (currentUser?.plan_type === 'premium') await loadBrandSilent();
 }
 
@@ -2461,10 +2130,6 @@ function updateUserPanel() {
   document.getElementById('userEmail').textContent   = currentUser.email;
   document.getElementById('userCredits').textContent = userCredits;
   document.getElementById('userPlan').textContent    = currentUser.plan_type.toUpperCase();
-  // Actualizar indicador del creditIndicator también
-  const planColors = {free:'rgba(255,255,255,0.5)', pro:'#FFD700', premium:'#fff'};
-  const planEl = document.getElementById('userPlan');
-  if (planEl) planEl.style.color = planColors[currentUser.plan_type] || 'rgba(255,255,255,0.9)';
   const adminBtn = document.getElementById('adminBtn');
   if (adminBtn) adminBtn.classList.toggle('hidden', !currentUser.is_admin);
   // Mostrar botón Mejorar plan solo para usuarios Free
@@ -2944,10 +2609,7 @@ function renderThumbnailSpecs(i) {
       <!-- Header -->
       <div style="background:var(--brand);padding:10px 16px;display:flex;justify-content:space-between;align-items:center;">
         <span style="color:#fff;font-weight:700;font-size:13px;">✏️ Miniatura ${i+1} — 1080×1350px</span>
-        <div style="display:flex;gap:6px;">
-          <button onclick="openCdndEditor('thumb',${i})" style="background:linear-gradient(135deg,#7C3AED,#F43F5E);color:#fff;font-weight:700;font-size:11px;padding:5px 12px;border:none;border-radius:6px;cursor:pointer;">🎨 Studio</button>
-          <button onclick="downloadThumbnailImage(${i})" style="background:#fff;color:var(--brand);font-weight:700;font-size:11px;padding:5px 10px;border:none;border-radius:6px;cursor:pointer;">📥 PNG</button>
-        </div>
+        <button onclick="downloadThumbnailImage(${i})" style="background:#fff;color:var(--brand);font-weight:700;font-size:11px;padding:5px 10px;border:none;border-radius:6px;cursor:pointer;">📥 Descargar PNG</button>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
@@ -3109,8 +2771,6 @@ function renderCarousel(slides) {
   currentCarouselSlides = slides;
   // Reset slideAdjust para usar los colores actuales de Mi Marca
   window.slideAdjust = {};
-  // Log para debug
-  if (currentBrand?.color_primary) console.log('🎨 Marca cargada:', currentBrand.color_primary, currentBrand.color_secondary);
   // Aplicar marca si es Premium y tiene configuración
   const isPremium = currentUser?.plan_type === 'premium';
   const brandBg = (isPremium && currentBrand?.color_primary && currentBrand?.color_secondary)
@@ -3165,9 +2825,8 @@ function renderCarouselSpecs(i) {
   }
   const adj = window.slideAdjust[i];
   const isPremium = currentUser?.plan_type === 'premium';
-  // Prioridad: ajuste del usuario > marca guardada > default IA
-  const cp = adj.colorPrimary   || (isPremium && currentBrand?.color_primary)   || null;
-  const cs = adj.colorSecondary  || (isPremium && currentBrand?.color_secondary) || null;
+  const cp = adj.colorPrimary  || (isPremium && currentBrand?.color_primary)  || null;
+  const cs = adj.colorSecondary|| (isPremium && currentBrand?.color_secondary)|| null;
   const hasBg = cp && cs;
   const bgStyle = hasBg ? `linear-gradient(135deg,${cp},${cs})` : (s.color_scheme || 'linear-gradient(135deg,#7C3AED,#F43F5E)');
   const fonts = ['DM Sans','Montserrat','Poppins','Playfair Display','Raleway','Oswald','Lato','Roboto','Inter','Nunito'];
@@ -3179,10 +2838,7 @@ function renderCarouselSpecs(i) {
       <!-- Header -->
       <div style="background:var(--brand);padding:10px 16px;display:flex;justify-content:space-between;align-items:center;">
         <span style="color:#fff;font-weight:700;font-size:13px;">✏️ Slide ${i+1} / ${currentCarouselSlides.length} — 1080×1350px</span>
-        <div style="display:flex;gap:6px;">
-          <button onclick="openCdndEditor('slide',${i})" style="background:linear-gradient(135deg,#7C3AED,#F43F5E);color:#fff;font-weight:700;font-size:11px;padding:5px 12px;border:none;border-radius:6px;cursor:pointer;">🎨 Studio</button>
-          <button onclick="downloadCarouselSlideImage(${i})" style="background:#fff;color:var(--brand);font-weight:700;font-size:11px;padding:5px 10px;border:none;border-radius:6px;cursor:pointer;">📥 PNG</button>
-        </div>
+        <button onclick="downloadCarouselSlideImage(${i})" style="background:#fff;color:var(--brand);font-weight:700;font-size:11px;padding:5px 10px;border:none;border-radius:6px;cursor:pointer;">📥 Descargar PNG</button>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
@@ -4367,17 +4023,6 @@ async function loadBrandSilent() {
     const d = await r.json();
     if (d.success && d.brand) {
       currentBrand = d.brand;
-      // También actualizar los campos de Mi Marca si están visibles
-      const cp = document.getElementById('colorPrimary');
-      if (cp && d.brand.color_primary) {
-        cp.value = d.brand.color_primary;
-        const hex = document.getElementById('colorPrimaryHex');
-        if (hex) hex.value = d.brand.color_primary;
-      }
-      const fc = document.getElementById('fontColor');
-      if (fc && d.brand.font_color) fc.value = d.brand.font_color;
-      const sfc = document.getElementById('subFontColor');
-      if (sfc && d.brand.sub_font_color) sfc.value = d.brand.sub_font_color;
     }
   } catch(e) {}
 }
@@ -4536,23 +4181,11 @@ async function saveBrand() {
       currentBrand.font_name       = selectedFont;
       currentBrand.font_color      = document.getElementById('fontColor')?.value || '#ffffff';
       currentBrand.sub_font_color  = document.getElementById('subFontColor')?.value || '#cccccc';
-      // Resetear adjusts para que usen los nuevos colores
+      // Resetear adjusts y re-renderizar con nueva marca
       window.slideAdjust = {};
       window.thumbAdjust = {};
-      // Regenerar previews si hay contenido
       if (currentCarouselSlides?.length) renderCarousel(currentCarouselSlides);
       if (currentThumbnails?.length)     renderThumbnails(currentThumbnails);
-      // Si Studio está abierto, actualizar también
-      const studioOpen = document.getElementById('cdndOverlay')?.classList.contains('open');
-      if (studioOpen) {
-        cdndState.style.bg1        = currentBrand.color_primary   || cdndState.style.bg1;
-        cdndState.style.bg2        = currentBrand.color_secondary || cdndState.style.bg2;
-        cdndState.style.titleFont  = currentBrand.font_name       || cdndState.style.titleFont;
-        cdndState.style.subFont    = currentBrand.font_name       || cdndState.style.subFont;
-        cdndState.style.titleColor = currentBrand.font_color      || cdndState.style.titleColor;
-        cdndState.style.subColor   = currentBrand.sub_font_color  || cdndState.style.subColor;
-        cdndRender();
-      }
       showNotification('✅ Marca guardada y aplicada a todos los previews', 'success');
     } else throw new Error(d.error);
   } catch(e) { showNotification('Error guardando marca: ' + e.message, 'error'); }
@@ -4798,735 +4431,114 @@ async function captureHtmlToCanvas(buildFn, width, height) {
 /* ============================================================
    PUBLICAR EN INSTAGRAM — Descarga + abre Instagram
    ============================================================ */
+
 async function openInInstagram() {
   const btn = document.getElementById('openInstagramBtn');
-  if (btn) { btn.disabled=true; btn.textContent='⏳ Preparando...'; }
-
+  if(btn){btn.disabled=true;btn.textContent='⏳...';}
   try {
-    // Detectar qué sección está activa
-    const pubType = selectedPubType || 'post';
     const hasThumbs   = currentThumbnails?.length > 0;
     const hasCarousel = currentCarouselSlides?.length > 0;
-
-    if (!hasThumbs && !hasCarousel) {
-      showNotification('Genera contenido primero','error'); return;
-    }
-
-    // Mostrar modal de selección
-    await showInstagramModal(pubType, hasThumbs, hasCarousel);
-
+    if(!hasThumbs&&!hasCarousel){showNotification('Genera contenido primero','error');return;}
+    await showInstagramModal(hasThumbs, hasCarousel);
   } finally {
-    if (btn) { btn.disabled=false; btn.textContent='📱 Instagram'; }
+    if(btn){btn.disabled=false;btn.textContent='📱 Instagram';}
   }
 }
 
-async function showInstagramModal(pubType, hasThumbs, hasCarousel) {
+async function showInstagramModal(hasThumbs, hasCarousel) {
   return new Promise((resolve) => {
-    // Construir opciones según lo que hay disponible
     let opts = '';
-    if (hasThumbs) {
-      const n = currentThumbnails.length;
-      opts += `<label style="display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;margin-bottom:8px;">
-        <input type="radio" name="igExport" value="thumb_all" checked>
-        <span>📸 Exportar ${n > 1 ? 'todas las '+n+' miniaturas' : 'la miniatura'} (Post)</span>
-      </label>`;
-      if (n > 1) {
-        for (let i=0;i<n;i++) {
-          opts += `<label style="display:flex;align-items:center;gap:8px;padding:8px 10px 8px 24px;border:1px solid var(--border);border-radius:8px;cursor:pointer;margin-bottom:6px;">
-            <input type="radio" name="igExport" value="thumb_${i}">
-            <span>📸 Solo miniatura ${i+1}</span>
-          </label>`;
-        }
-      }
+    if(hasThumbs){
+      const n=currentThumbnails.length;
+      opts+=`<label style="display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;margin-bottom:6px;"><input type="radio" name="igExp" value="thumb_all" checked><span>📸 ${n>1?'Todas las '+n+' miniaturas':'La miniatura'} (Post)</span></label>`;
+      if(n>1) for(let i=0;i<n;i++) opts+=`<label style="display:flex;align-items:center;gap:8px;padding:8px 10px 8px 28px;border:1px solid var(--border);border-radius:8px;cursor:pointer;margin-bottom:4px;"><input type="radio" name="igExp" value="thumb_${i}"><span>📸 Solo miniatura ${i+1}</span></label>`;
     }
-    if (hasCarousel) {
-      const n = currentCarouselSlides.length;
-      opts += `<label style="display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;margin-bottom:8px;">
-        <input type="radio" name="igExport" value="carousel_all" ${!hasThumbs?'checked':''}>
-        <span>🎠 Exportar los ${n} slides del carrusel (ZIP)</span>
-      </label>`;
-      for (let i=0;i<n;i++) {
-        opts += `<label style="display:flex;align-items:center;gap:8px;padding:8px 10px 8px 24px;border:1px solid var(--border);border-radius:8px;cursor:pointer;margin-bottom:6px;">
-          <input type="radio" name="igExport" value="carousel_${i}">
-          <span>🎠 Solo slide ${i+1}</span>
-        </label>`;
-      }
+    if(hasCarousel){
+      const n=currentCarouselSlides.length;
+      opts+=`<label style="display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;margin-bottom:6px;"><input type="radio" name="igExp" value="carousel_all" ${!hasThumbs?'checked':''}><span>🎠 Todos los ${n} slides del carrusel (ZIP)</span></label>`;
+      for(let i=0;i<n;i++) opts+=`<label style="display:flex;align-items:center;gap:8px;padding:8px 10px 8px 28px;border:1px solid var(--border);border-radius:8px;cursor:pointer;margin-bottom:4px;"><input type="radio" name="igExp" value="carousel_${i}"><span>🎠 Solo slide ${i+1}</span></label>`;
     }
-
-    const modal = document.createElement('div');
-    modal.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:20px;';
-    modal.innerHTML = `
-      <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:16px;padding:24px;width:100%;max-width:420px;max-height:80vh;overflow-y:auto;">
-        <div style="font-size:16px;font-weight:700;margin-bottom:4px;">📱 Publicar en Instagram</div>
-        <div style="font-size:12px;color:var(--text-3);margin-bottom:16px;">Selecciona qué exportar. El caption se copiará al portapapeles.</div>
-        <div id="igModalOpts">${opts}</div>
-        <div style="display:flex;gap:8px;margin-top:16px;">
-          <button onclick="igModalExport()" class="btn btn-primary" style="flex:1;">📥 Exportar y abrir Instagram</button>
-          <button onclick="this.closest('[style*=fixed]').remove();resolve();" class="btn btn-ghost">Cancelar</button>
-        </div>
-      </div>`;
-
-    window._igModalResolve = resolve;
+    const modal=document.createElement('div');
+    modal.id='igModal';
+    modal.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:20px;';
+    modal.innerHTML=`<div style="background:var(--surface);border:1.5px solid var(--border);border-radius:16px;padding:24px;width:100%;max-width:420px;max-height:80vh;overflow-y:auto;"><div style="font-size:16px;font-weight:700;margin-bottom:4px;">📱 Publicar en Instagram</div><div style="font-size:12px;color:var(--text-3);margin-bottom:16px;">Selecciona qué exportar. El caption se copiará al portapapeles.</div>${opts}<div style="display:flex;gap:8px;margin-top:16px;"><button onclick="igModalExport()" class="btn btn-primary" style="flex:1;">📥 Exportar y abrir Instagram</button><button onclick="document.getElementById('igModal')?.remove()" class="btn btn-ghost">Cancelar</button></div></div>`;
+    window._igResolve=resolve;
     document.body.appendChild(modal);
   });
 }
 
 async function igModalExport() {
-  const modal = document.querySelector('[style*="z-index:99999"]');
-  const sel = modal?.querySelector('input[name="igExport"]:checked')?.value;
-  if (!sel) return;
-  modal?.remove();
-
-  // Copiar caption
-  const caption = (currentResults?.captions?.[0]||'') + ((currentResults?.hashtags||[]).length ? '\n\n'+(currentResults.hashtags.join(' ')) : '');
-  if (caption && navigator.clipboard) {
-    await navigator.clipboard.writeText(caption);
-    showNotification('✅ Caption copiado','success');
-  }
-
-  // Exportar según selección
-  if (sel === 'thumb_all') {
-    for (let i=0;i<currentThumbnails.length;i++) await downloadThumbnailImage(i);
-  } else if (sel.startsWith('thumb_')) {
-    await downloadThumbnailImage(parseInt(sel.split('_')[1]));
-  } else if (sel === 'carousel_all') {
-    await exportCarouselImages();
-  } else if (sel.startsWith('carousel_')) {
-    await downloadCarouselSlideImage(parseInt(sel.split('_')[1]));
-  }
-
-  // Abrir Instagram
-  setTimeout(() => {
-    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-      window.location.href = 'instagram://camera';
-      setTimeout(() => window.open('https://www.instagram.com','_blank'), 1500);
-    } else {
-      window.open('https://www.instagram.com','_blank');
-    }
-  }, 500);
-
-  if (window._igModalResolve) window._igModalResolve();
+  const modal=document.getElementById('igModal');
+  const sel=modal?.querySelector('input[name="igExp"]:checked')?.value;
+  if(!sel){modal?.remove();return;}
+  modal.remove();
+  const caption=(currentResults?.captions?.[0]||'')+((currentResults?.hashtags||[]).length?'\n\n'+(currentResults.hashtags.join(' ')):'');
+  if(caption&&navigator.clipboard) await navigator.clipboard.writeText(caption).catch(()=>{});
+  if(sel==='thumb_all') for(let i=0;i<currentThumbnails.length;i++) await downloadThumbnailImage(i);
+  else if(sel.startsWith('thumb_')) await downloadThumbnailImage(parseInt(sel.split('_')[1]));
+  else if(sel==='carousel_all') await exportCarouselImages();
+  else if(sel.startsWith('carousel_')) await downloadCarouselSlideImage(parseInt(sel.split('_')[1]));
+  setTimeout(()=>{
+    if(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)){window.location.href='instagram://camera';setTimeout(()=>window.open('https://www.instagram.com','_blank'),1500);}
+    else window.open('https://www.instagram.com','_blank');
+  },500);
+  if(window._igResolve) window._igResolve();
 }
 
-/* ═══════════════════════════════════════════════════════════
-   CONTENIZA STUDIO — Editor Drag & Drop v31
-   Sistema profesional de posicionamiento libre
-   ═══════════════════════════════════════════════════════════ */
-
-const CDND_FONTS = ['DM Sans','Montserrat','Poppins','Playfair Display','Raleway','Oswald','Lato','Roboto','Inter','Nunito'];
-const CDND_CANVAS_W = 270; // px en pantalla (= 1080/4)
-const CDND_CANVAS_H = 338; // px en pantalla (= 1350/4)
-const CDND_SCALE = 4;       // factor para exportar a 1080×1350
-
-// Estado del editor
-let cdndState = {
-  type: 'slide',   // 'slide' | 'thumb'
-  index: 0,
-  format: 'post',  // 'post' | 'story'
-  selectedBlock: null,
-  gridVisible: false,
-  blocks: {
-    logo:  { x: 50, y: 8,  w: 60, visible: true },
-    title: { x: 50, y: 38, w: 84, visible: true, align: 'center' },
-    sub:   { x: 50, y: 62, w: 84, visible: true, align: 'center' },
-  },
-  style: {
-    bg1: '#7C3AED', bg2: '#F43F5E',
-    font: 'DM Sans',
-    titleFont: 'DM Sans', subFont: 'DM Sans',
-    titleSize: 40, titleColor: '#ffffff', titleAlign: 'center',
-    subSize: 20,   subColor: '#cccccc',   subAlign: 'center',
-    logoSize: 60,
-  },
-  content: { title: '', sub: '', logoUrl: null }
-};
-
-let cdndDragging = null;
-let cdndDragStart = { x: 0, y: 0, bx: 0, by: 0 };
-
-/* ── Abrir el editor ── */
-function openCdndEditor(type, index) {
-  const overlay = document.getElementById('cdndOverlay');
-  if (!overlay) return;
-
-  cdndState.type  = type;
-  cdndState.index = index;
-
-  // Cargar datos según tipo
-  if (type === 'slide') {
-    const s   = currentCarouselSlides?.[index];
-    const adj = window.slideAdjust?.[index] || {};
-    const isPremium = currentUser?.plan_type === 'premium';
-
-    cdndState.content.title  = adj.titleText   || s?.title   || '';
-    cdndState.content.sub    = adj.contentText || s?.content || '';
-    cdndState.content.logoUrl = isPremium && currentBrand?.logo_url ? currentBrand.logo_url : null;
-
-    cdndState.style.bg1        = adj.colorPrimary   || (isPremium && currentBrand?.color_primary)   || '#7C3AED';
-    cdndState.style.bg2        = adj.colorSecondary || (isPremium && currentBrand?.color_secondary) || '#F43F5E';
-    const _brandFont = (isPremium && currentBrand?.font_name) || 'DM Sans';
-    cdndState.style.font       = adj.font       || _brandFont;
-    cdndState.style.titleFont  = adj.titleFont  || _brandFont;
-    cdndState.style.subFont    = adj.subFont    || _brandFont;
-    cdndState.style.titleSize  = adj.titleSize  || 40;
-    cdndState.style.titleColor = adj.titleColor || (isPremium && currentBrand?.font_color) || '#ffffff';
-    cdndState.style.subSize    = adj.contentSize   || 20;
-    cdndState.style.subColor   = adj.contentColor  || (isPremium && currentBrand?.sub_font_color) || '#cccccc';
-    cdndState.style.logoSize   = adj.logoSize   || 60;
-
-    document.getElementById('cdndSlideLabel').textContent = `Slide ${index+1} / ${currentCarouselSlides?.length || 1}`;
-
-    // Cargar posiciones guardadas si existen
-    if (adj.cdndBlocks) cdndState.blocks = JSON.parse(JSON.stringify(adj.cdndBlocks));
-    else cdndResetPositions(true);
-
-  } else {
-    const t   = currentThumbnails?.[index];
-    const adj = window.thumbAdjust?.[index] || {};
-    const isPremium = currentUser?.plan_type === 'premium';
-
-    cdndState.content.title   = adj.titleText || t?.text || '';
-    cdndState.content.sub     = adj.subText   || t?.secondary_text || '';
-    cdndState.content.logoUrl = isPremium && currentBrand?.logo_url ? currentBrand.logo_url : null;
-
-    const {c1,c2} = parseGradient(t?.background_gradient || 'linear-gradient(135deg,#7C3AED,#F43F5E)');
-    cdndState.style.bg1        = (isPremium && currentBrand?.color_primary)   || c1 || '#7C3AED';
-    cdndState.style.bg2        = (isPremium && currentBrand?.color_secondary) || c2 || '#F43F5E';
-    const _brandFontTh = (isPremium && currentBrand?.font_name) || 'DM Sans';
-    cdndState.style.font       = _brandFontTh;
-    cdndState.style.titleFont  = _brandFontTh;
-    cdndState.style.subFont    = _brandFontTh;
-    cdndState.style.titleSize  = adj.fontSize  || 42;
-    cdndState.style.titleColor = adj.titleColor || (isPremium && currentBrand?.font_color) || '#ffffff';
-    cdndState.style.subSize    = adj.subFontSize || 20;
-    cdndState.style.subColor   = adj.subColor   || (isPremium && currentBrand?.sub_font_color) || '#cccccc';
-    cdndState.style.logoSize   = adj.logoSize || 60;
-
-    document.getElementById('cdndSlideLabel').textContent = `Miniatura ${index+1}`;
-
-    if (adj.cdndBlocks) cdndState.blocks = JSON.parse(JSON.stringify(adj.cdndBlocks));
-    else cdndResetPositions(true);
-  }
-
-  cdndRender();
-  cdndInitDrag();
-  cdndBuildFontGrid();
-  overlay.classList.add('open');
-  cdndSelectBlock(null);
-}
-
-function cdndClose() {
-  document.getElementById('cdndOverlay').classList.remove('open');
-  // Guardar estado en el adj correspondiente
-  cdndSaveState();
-}
-
-function cdndSaveState() {
-  if (cdndState.type === 'slide') {
-    if (!window.slideAdjust) window.slideAdjust = {};
-    if (!window.slideAdjust[cdndState.index]) window.slideAdjust[cdndState.index] = {};
-    const adj = window.slideAdjust[cdndState.index];
-    adj.cdndBlocks    = JSON.parse(JSON.stringify(cdndState.blocks));
-    adj.colorPrimary  = cdndState.style.bg1;
-    adj.colorSecondary= cdndState.style.bg2;
-    adj.font          = cdndState.style.font;
-    adj.titleFont     = cdndState.style.titleFont || cdndState.style.font;
-    adj.subFont       = cdndState.style.subFont   || cdndState.style.font;
-    adj.titleSize     = cdndState.style.titleSize;
-    adj.titleColor    = cdndState.style.titleColor;
-    adj.contentSize   = cdndState.style.subSize;
-    adj.contentColor  = cdndState.style.subColor;
-    adj.logoSize      = cdndState.style.logoSize;
-    adj.titleText     = cdndState.content.title;
-    adj.contentText   = cdndState.content.sub;
-    // Actualizar preview del carrusel
-    renderCarouselSpecs(cdndState.index);
-  } else {
-    if (!window.thumbAdjust) window.thumbAdjust = {};
-    if (!window.thumbAdjust[cdndState.index]) window.thumbAdjust[cdndState.index] = {};
-    const adj = window.thumbAdjust[cdndState.index];
-    adj.cdndBlocks   = JSON.parse(JSON.stringify(cdndState.blocks));
-    adj.fontSize     = cdndState.style.titleSize;
-    adj.titleColor   = cdndState.style.titleColor;
-    adj.subFontSize  = cdndState.style.subSize;
-    adj.subColor     = cdndState.style.subColor;
-    adj.logoSize     = cdndState.style.logoSize;
-    adj.titleText    = cdndState.content.title;
-    adj.subText      = cdndState.content.sub;
-    renderThumbnailSpecs(cdndState.index);
-  }
-}
-
-/* ── Render del canvas ── */
-function cdndRender() {
-  const s = cdndState.style;
-  const c = cdndState.content;
-  const b = cdndState.blocks;
-
-  // Fondo
-  document.getElementById('cdndBg').style.background = `linear-gradient(135deg,${s.bg1},${s.bg2})`;
-  document.getElementById('cdndBgColor1').value = s.bg1;
-  document.getElementById('cdndBgColor2').value = s.bg2;
-
-  // Título
-  const titleEl = document.getElementById('cdndTitle');
-  const titleTxt = document.getElementById('cdndTitleText');
-  titleEl.style.top  = b.title.y + '%';
-  titleEl.style.left = (b.title.x - b.title.w/2) + '%';
-  titleEl.style.width= b.title.w + '%';
-  titleEl.style.display = b.title.visible ? 'block' : 'none';
-  titleTxt.style.fontFamily = `'${s.titleFont||s.font}',sans-serif`;
-  titleTxt.style.fontSize   = Math.round(s.titleSize * 0.45) + 'px';
-  titleTxt.style.color      = s.titleColor;
-  titleTxt.style.textAlign  = s.titleAlign || 'center';
-  titleEl.style.textAlign   = s.titleAlign || 'center';
-  titleTxt.textContent      = c.title;
-
-  // Subtítulo
-  const subEl  = document.getElementById('cdndSub');
-  const subTxt = document.getElementById('cdndSubText');
-  subEl.style.top   = b.sub.y + '%';
-  subEl.style.left  = (b.sub.x - b.sub.w/2) + '%';
-  subEl.style.width = b.sub.w + '%';
-  subEl.style.display = b.sub.visible ? 'block' : 'none';
-  subTxt.style.fontFamily = `'${s.subFont||s.font}',sans-serif`;
-  subTxt.style.fontSize   = Math.round(s.subSize * 0.45) + 'px';
-  subTxt.style.color      = s.subColor;
-  subTxt.style.textAlign  = s.subAlign || 'center';
-  subEl.style.textAlign   = s.subAlign || 'center';
-  subTxt.textContent      = c.sub;
-
-  // Logo
-  const logoEl  = document.getElementById('cdndLogo');
-  const logoImg = document.getElementById('cdndLogoImg');
-  if (c.logoUrl) {
-    logoEl.style.display = b.logo.visible ? 'block' : 'none';
-    // b.logo.x/y = posición del CENTRO del logo en %
-    const logoWpx  = s.logoSize + 20; // logo + padding del wrap
-    const logoWpct = logoWpx / CDND_CANVAS_W * 100;
-    const logoHpx  = s.logoSize + 20;
-    const logoHpct = logoHpx / CDND_CANVAS_H * 100;
-    logoEl.style.left = (b.logo.x - logoWpct/2) + '%';
-    logoEl.style.top  = (b.logo.y - logoHpct/2) + '%';
-    logoImg.src          = c.logoUrl;
-    logoImg.style.width  = s.logoSize + 'px';
-    logoImg.style.height = s.logoSize + 'px';
-    document.getElementById('cdndLogoPanel').style.display = 'block';
-  } else {
-    logoEl.style.display = 'none';
-    document.getElementById('cdndLogoPanel').style.display = 'none';
-  }
-
-  // Panel de estilo
-  document.getElementById('cdndTitleSize').textContent = s.titleSize;
-  document.getElementById('cdndSubSize').textContent   = s.subSize;
-  document.getElementById('cdndLogoSize').textContent  = s.logoSize;
-  document.getElementById('cdndTitleColor').value = s.titleColor;
-  document.getElementById('cdndSubColor').value   = s.subColor;
-
-  // Alineación btns
-  ['title','sub'].forEach(t => {
-    const align = t === 'title' ? s.titleAlign : s.subAlign;
-    document.querySelectorAll(`[onclick*="cdndSetTextAlign('${t}'"]`).forEach(b => {
-      b.classList.toggle('active', b.getAttribute('onclick').includes(`'${align||'center'}'`));
-    });
-  });
-
-  // Grid
-  document.getElementById('cdndGrid').classList.toggle('visible', cdndState.gridVisible);
-}
-
-/* ── Drag & Drop ── */
-function cdndInitDrag() {
-  const canvas = document.getElementById('cdndCanvas');
-  const blocks = canvas.querySelectorAll('.cdnd-block');
-
-  blocks.forEach(block => {
-    block.addEventListener('mousedown', cdndOnMouseDown);
-    block.addEventListener('touchstart', cdndOnTouchStart, {passive:false});
-  });
-  // Resize handle del logo
-  const logoHandle = document.querySelector('#cdndLogo .cdnd-block-handle');
-  if (logoHandle) {
-    logoHandle.addEventListener('mousedown', cdndOnResizeStart);
-    logoHandle.addEventListener('touchstart', cdndOnResizeTouchStart, {passive:false});
-  }
-
-  document.addEventListener('mousemove', cdndOnMouseMove);
-  document.addEventListener('mouseup',   cdndOnMouseUp);
-  document.addEventListener('touchmove', cdndOnTouchMove, {passive:false});
-  document.addEventListener('touchend',  cdndOnTouchEnd);
-}
-
-function cdndGetBlockId(el) {
-  return el.closest('[data-block]')?.dataset.block;
-}
-
-function cdndOnMouseDown(e) {
-  if (e.target.classList.contains('cdnd-block-handle')) return;
-  e.preventDefault();
-  const blockId = cdndGetBlockId(e.currentTarget);
-  if (!blockId) return;
-  cdndSelectBlock(blockId);
-  cdndStartDrag(blockId, e.clientX, e.clientY);
-}
-
-function cdndOnTouchStart(e) {
-  if (e.target.classList.contains('cdnd-block-handle')) return;
-  e.preventDefault();
-  const blockId = cdndGetBlockId(e.currentTarget);
-  if (!blockId) return;
-  cdndSelectBlock(blockId);
-  cdndStartDrag(blockId, e.touches[0].clientX, e.touches[0].clientY);
-}
-
-function cdndStartDrag(blockId, clientX, clientY) {
-  cdndDragging = blockId;
-  const b = cdndState.blocks[blockId];
-  cdndDragStart = { x: clientX, y: clientY, bx: b.x, by: b.y };
-  document.getElementById('cdnd' + blockId.charAt(0).toUpperCase() + blockId.slice(1)).classList.add('dragging');
-}
-
-function cdndOnMouseMove(e) {
-  if (!cdndDragging) return;
-  cdndMoveDrag(e.clientX, e.clientY);
-}
-
-function cdndOnTouchMove(e) {
-  if (!cdndDragging) return;
-  e.preventDefault();
-  cdndMoveDrag(e.touches[0].clientX, e.touches[0].clientY);
-}
-
-function cdndMoveDrag(clientX, clientY) {
-  const canvas = document.getElementById('cdndCanvas');
-  const rect   = canvas.getBoundingClientRect();
-  const dx = clientX - cdndDragStart.x;
-  const dy = clientY - cdndDragStart.y;
-
-  let newX = cdndDragStart.bx + (dx / rect.width  * 100);
-  let newY = cdndDragStart.by + (dy / rect.height * 100);
-
-  // Snap a tercios y centro (±2%)
-  const snaps = [0, 16.67, 33.33, 50, 66.67, 83.33, 100];
-  const SNAP_DIST = 2;
-  let snappedX = newX, snappedY = newY;
-  let snapHActive = false, snapVActive = false;
-
-  snaps.forEach(s => {
-    if (Math.abs(newX - s) < SNAP_DIST) { snappedX = s; snapVActive = true; }
-    if (Math.abs(newY - s) < SNAP_DIST) { snappedY = s; snapHActive = true; }
-  });
-
-  // Clamp
-  snappedX = Math.max(0, Math.min(100, snappedX));
-  snappedY = Math.max(0, Math.min(100, snappedY));
-
-  cdndState.blocks[cdndDragging].x = Math.round(snappedX * 10) / 10;
-  cdndState.blocks[cdndDragging].y = Math.round(snappedY * 10) / 10;
-
-  // Mostrar líneas de snap
-  const snapH = document.getElementById('snapH');
-  const snapV = document.getElementById('snapV');
-  snapH.style.display = snapHActive ? 'block' : 'none';
-  snapH.style.top = snappedY + '%';
-  snapV.style.display = snapVActive ? 'block' : 'none';
-  snapV.style.left = snappedX + '%';
-
-  // Actualizar inputs
-  document.getElementById('cdndInputX').value = Math.round(snappedX);
-  document.getElementById('cdndInputY').value = Math.round(snappedY);
-
-  cdndRender();
-}
-
-function cdndOnMouseUp()  { cdndEndDrag(); }
-function cdndOnTouchEnd() { cdndEndDrag(); }
-
-let cdndResizing = false;
-let cdndResizeStart = { x: 0, logoSize: 60 };
-
-function cdndOnResizeStart(e) {
-  e.preventDefault(); e.stopPropagation();
-  cdndResizing = true;
-  cdndResizeStart = { x: e.clientX, logoSize: cdndState.style.logoSize };
-  document.addEventListener('mousemove', cdndOnResizeMove);
-  document.addEventListener('mouseup', cdndOnResizeEnd);
-}
-
-function cdndOnResizeTouchStart(e) {
-  e.preventDefault(); e.stopPropagation();
-  cdndResizing = true;
-  cdndResizeStart = { x: e.touches[0].clientX, logoSize: cdndState.style.logoSize };
-  document.addEventListener('touchmove', cdndOnResizeTouchMove, {passive:false});
-  document.addEventListener('touchend', cdndOnResizeEnd);
-}
-
-function cdndOnResizeMove(e) {
-  if (!cdndResizing) return;
-  const delta = e.clientX - cdndResizeStart.x;
-  cdndState.style.logoSize = Math.max(20, Math.min(200, cdndResizeStart.logoSize + delta));
-  document.getElementById('cdndLogoSize').textContent = Math.round(cdndState.style.logoSize);
-  cdndRender();
-}
-
-function cdndOnResizeTouchMove(e) {
-  if (!cdndResizing) return;
-  e.preventDefault();
-  const delta = e.touches[0].clientX - cdndResizeStart.x;
-  cdndState.style.logoSize = Math.max(20, Math.min(200, cdndResizeStart.logoSize + delta));
-  document.getElementById('cdndLogoSize').textContent = Math.round(cdndState.style.logoSize);
-  cdndRender();
-}
-
-function cdndOnResizeEnd() {
-  cdndResizing = false;
-  document.removeEventListener('mousemove', cdndOnResizeMove);
-  document.removeEventListener('mouseup', cdndOnResizeEnd);
-  document.removeEventListener('touchmove', cdndOnResizeTouchMove);
-  document.removeEventListener('touchend', cdndOnResizeEnd);
-  cdndSaveState();
-}
-
-function cdndEndDrag() {
-  if (!cdndDragging) return;
-  const elId = 'cdnd' + cdndDragging.charAt(0).toUpperCase() + cdndDragging.slice(1);
-  document.getElementById(elId)?.classList.remove('dragging');
-  document.getElementById('snapH').style.display = 'none';
-  document.getElementById('snapV').style.display = 'none';
-  cdndDragging = null;
-  cdndSaveState();
-}
-
-/* ── Controles ── */
-function cdndSelectBlock(blockId) {
-  cdndState.selectedBlock = blockId;
-  document.querySelectorAll('.cdnd-block').forEach(b => b.classList.remove('selected'));
-  document.querySelectorAll('.cdnd-block-item').forEach(b => b.classList.remove('active'));
-
-  if (blockId) {
-    const elId = 'cdnd' + blockId.charAt(0).toUpperCase() + blockId.slice(1);
-    document.getElementById(elId)?.classList.add('selected');
-    document.getElementById('blockItem' + blockId.charAt(0).toUpperCase() + blockId.slice(1))?.classList.add('active');
-    document.getElementById('cdndBlockControls').style.display = 'block';
-    document.getElementById('cdndStatus').style.display = 'none';
-    document.getElementById('cdndBlockTitle').textContent = `Posición — ${blockId === 'logo' ? 'Logo' : blockId === 'title' ? 'Título' : 'Subtítulo'}`;
-    document.getElementById('cdndInputX').value = Math.round(cdndState.blocks[blockId].x);
-    document.getElementById('cdndInputY').value = Math.round(cdndState.blocks[blockId].y);
-  } else {
-    document.getElementById('cdndBlockControls').style.display = 'none';
-    document.getElementById('cdndStatus').style.display = 'block';
-  }
-}
-
-function cdndToggleBlock(blockId) {
-  cdndState.blocks[blockId].visible = !cdndState.blocks[blockId].visible;
-  const eyeId = 'eye' + blockId.charAt(0).toUpperCase() + blockId.slice(1);
-  document.getElementById(eyeId).textContent = cdndState.blocks[blockId].visible ? '👁' : '🚫';
-  cdndRender();
-}
-
-function cdndToggleGrid() {
-  cdndState.gridVisible = !cdndState.gridVisible;
-  document.getElementById('cdndGridBtn').style.background = cdndState.gridVisible ? 'rgba(var(--brand-rgb,99,102,241),0.3)' : '';
-  cdndRender();
-}
-
-function cdndTab(tab) {
-  ['blocks','style','layout'].forEach(t => {
-    document.getElementById('cdndTab' + t.charAt(0).toUpperCase() + t.slice(1)).style.display = t === tab ? 'flex' : 'none';
-    document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.toggle('active', t === tab);
-  });
-}
-
-function cdndUpdateBg() {
-  cdndState.style.bg1 = document.getElementById('cdndBgColor1').value;
-  cdndState.style.bg2 = document.getElementById('cdndBgColor2').value;
-  cdndRender(); cdndSaveState();
-}
-
-function cdndAdjSize(type, delta) {
-  if (type === 'title') {
-    cdndState.style.titleSize = Math.max(12, Math.min(120, cdndState.style.titleSize + delta));
-  } else {
-    cdndState.style.subSize = Math.max(8, Math.min(60, cdndState.style.subSize + delta));
-  }
-  cdndRender(); cdndSaveState();
-}
-
-function cdndAdjLogoSize(delta) {
-  cdndState.style.logoSize = Math.max(30, Math.min(200, cdndState.style.logoSize + delta));
-  cdndRender(); cdndSaveState();
-}
-
-function cdndUpdateText(type) {
-  if (type === 'title') cdndState.style.titleColor = document.getElementById('cdndTitleColor').value;
-  else                  cdndState.style.subColor   = document.getElementById('cdndSubColor').value;
-  cdndRender(); cdndSaveState();
-}
-
-function cdndSetTextAlign(type, align) {
-  if (type === 'title') cdndState.style.titleAlign = align;
-  else                  cdndState.style.subAlign   = align;
-  cdndRender(); cdndSaveState();
-}
-
-function cdndSetPos(axis, val) {
-  if (!cdndState.selectedBlock) return;
-  const v = parseFloat(val);
-  if (isNaN(v)) return;
-  cdndState.blocks[cdndState.selectedBlock][axis] = Math.max(0, Math.min(100, v));
-  cdndRender(); cdndSaveState();
-}
-
-function cdndQuickAlign(pos) {
-  if (!cdndState.selectedBlock) return;
-  const b = cdndState.blocks[cdndState.selectedBlock];
-  const map = {
-    'top-left':    [16, 10], 'top-center':    [50, 10], 'top-right':    [84, 10],
-    'mid-left':    [16, 50], 'center':         [50, 50], 'mid-right':    [84, 50],
-    'bot-left':    [16, 85], 'bot-center':    [50, 85], 'bot-right':    [84, 85],
-  };
-  const [x, y] = map[pos] || [50, 50];
-  b.x = x; b.y = y;
-  document.getElementById('cdndInputX').value = x;
-  document.getElementById('cdndInputY').value = y;
-  cdndRender(); cdndSaveState();
-}
-
-function cdndResetPositions(silent) {
-  cdndState.blocks = {
-    logo:  { x: 50, y: 8,  w: 60, visible: !!cdndState.content.logoUrl },
-    title: { x: 50, y: 38, w: 84, visible: true, align: 'center' },
-    sub:   { x: 50, y: 62, w: 84, visible: true, align: 'center' },
-  };
-  if (!silent) { cdndRender(); cdndSaveState(); }
-}
-
-function cdndApplyLayout(layout) {
-  const layouts = {
-    'logo-top-title-mid-sub-bot':         { logo:[50,8],  title:[50,38], sub:[50,68] },
-    'logo-left-title-center-sub-center':  { logo:[16,10], title:[50,42], sub:[50,62] },
-    'title-top-sub-mid-logo-bot':         { logo:[50,82], title:[50,15], sub:[50,42] },
-    'logo-top-title-bot':                 { logo:[50,10], title:[50,68], sub:[50,82] },
-    'all-center':                         { logo:[50,25], title:[50,50], sub:[50,68] },
-  };
-  const l = layouts[layout];
-  if (!l) return;
-  cdndState.blocks.logo.x  = l.logo[0];  cdndState.blocks.logo.y  = l.logo[1];
-  cdndState.blocks.title.x = l.title[0]; cdndState.blocks.title.y = l.title[1];
-  cdndState.blocks.sub.x   = l.sub[0];   cdndState.blocks.sub.y   = l.sub[1];
-  cdndRender(); cdndSaveState();
-}
-
-function cdndSetFormat(format) {
-  cdndState.format = format;
-  const canvas = document.getElementById('cdndCanvas');
-  if (format === 'story') {
-    canvas.style.width  = '218px'; // 1080/4.96
-    canvas.style.height = '388px'; // 1920/4.96
-  } else {
-    canvas.style.width  = '270px';
-    canvas.style.height = '338px';
-  }
-  document.getElementById('cdndFmtPost').style.background  = format === 'post'  ? 'rgba(99,102,241,0.3)' : '';
-  document.getElementById('cdndFmtStory').style.background = format === 'story' ? 'rgba(99,102,241,0.3)' : '';
-}
-
-function cdndBuildFontGrid() {
-  const grid = document.getElementById('cdndFontGrid');
-  if (!grid) return;
-  const activeFont = cdndFontTarget === 'sub' ? cdndState.style.subFont :
-                     cdndFontTarget === 'title' ? cdndState.style.titleFont :
-                     cdndState.style.font;
-  grid.innerHTML = CDND_FONTS.map(f => `
-    <button class="cdnd-font-btn ${activeFont === f ? 'active' : ''}"
-      onclick="cdndSetFont('${f}')" style="font-family:'${f}',sans-serif;">${f}</button>
-  `).join('');
-}
-
-let cdndFontTarget = 'both'; // 'title' | 'sub' | 'both'
-
-function cdndSetFontTarget(target) {
-  cdndFontTarget = target;
-  ['Title','Sub','Both'].forEach(t => {
-    const btn = document.getElementById('cdndFontTarget' + t);
-    if (btn) btn.className = 'cdnd-btn ' + (t.toLowerCase() === target ? 'cdnd-btn-primary' : 'cdnd-btn-ghost');
-  });
-}
-
-function cdndSetFont(font) {
-  if (cdndFontTarget === 'title' || cdndFontTarget === 'both') cdndState.style.titleFont = font;
-  if (cdndFontTarget === 'sub'   || cdndFontTarget === 'both') cdndState.style.subFont   = font;
-  if (cdndFontTarget === 'both') cdndState.style.font = font;
-  cdndBuildFontGrid();
-  cdndRender(); cdndSaveState();
-}
-
-/* ── Exportar PNG desde el editor ── */
 async function cdndExport() {
-  showNotification('⏳ Exportando en alta calidad...', 'success');
+  showNotification('⏳ Generando PNG...','success');
   try {
-    const fmt = cdndState.format;
-    const W = 1080;
-    const H = fmt === 'story' ? 1920 : 1350;
-
-    // Escalar el canvas visual de Studio a 2x para exportar en alta calidad
-    const studioCanvas = document.getElementById('cdndCanvas');
-    if (!studioCanvas) throw new Error('Canvas no encontrado');
-
-    // Temporalmente escalar el canvas a 2x
-    const origW = studioCanvas.offsetWidth;
-    const origH = studioCanvas.offsetHeight;
-    const scale = 2;
-
-    studioCanvas.style.transform = `scale(${scale})`;
-    studioCanvas.style.transformOrigin = 'top left';
-    studioCanvas.style.width = origW + 'px';
-    studioCanvas.style.height = origH + 'px';
-
-    await new Promise(r => setTimeout(r, 100)); // esperar reflow
-
-    const html2canvas = window.html2canvas;
-    if (!html2canvas) throw new Error('html2canvas no disponible');
-
-    const capturedCanvas = await html2canvas(studioCanvas, {
-      scale: scale,
-      useCORS: true,
-      allowTaint: false,
-      backgroundColor: null,
-      width: origW,
-      height: origH,
-      logging: false,
-    });
-
-    // Restaurar tamaño original
-    studioCanvas.style.transform = '';
-    studioCanvas.style.transformOrigin = '';
-
-    // Escalar al tamaño final de Instagram
-    const finalCanvas = document.createElement('canvas');
-    finalCanvas.width  = W;
-    finalCanvas.height = H;
-    const ctx = finalCanvas.getContext('2d');
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(capturedCanvas, 0, 0, W, H);
-
-    const a = document.createElement('a');
-    a.download = `studio_${cdndState.type}_${cdndState.index+1}_${W}x${H}.png`;
-    a.href = finalCanvas.toDataURL('image/png');
-    a.click();
-
-    showNotification(`✅ PNG ${W}×${H}px exportado — fiel al diseño en pantalla`, 'success');
-  } catch(e) {
-    console.error('Export error:', e);
-    showNotification('Error exportando: ' + e.message, 'error');
-  }
-}/* ── Abrir Studio desde los botones existentes ── */
-// Añadir botón "✏️ Studio" en renderCarouselSpecs y renderThumbnailSpecs
-// Se llama desde los botones de descarga ya existentes
-
+    const s=cdndState.style,c=cdndState.content,b=cdndState.blocks;
+    const W=1080,H=cdndState.format==='story'?1920:1350,SX=W/270,SY=H/338;
+    await document.fonts.ready;
+    let logoImg=null;
+    if(c.logoUrl&&b.logo.visible){
+      const du=await imageToDataURL(c.logoUrl);
+      if(du&&du.length>100) logoImg=await new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=du;});
+    }
+    const cv=document.createElement('canvas');cv.width=W;cv.height=H;
+    const ctx=cv.getContext('2d');
+    const gr=ctx.createLinearGradient(0,0,W,H);
+    gr.addColorStop(0,s.bg1);gr.addColorStop(1,s.bg2);
+    ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);
+    if(logoImg&&b.logo.visible){
+      const logoTot=s.logoSize+20;
+      const leftPct=b.logo.x-(logoTot/CDND_CANVAS_W*100/2);
+      const topPct=b.logo.y-(logoTot/CDND_CANVAS_H*100/2);
+      const wx=leftPct/100*W, wy=topPct/100*H;
+      const sz=s.logoSize*SX, pad=8*SX, tot=logoTot*SX;
+      ctx.save();ctx.fillStyle='rgba(255,255,255,0.18)';
+      ctx.beginPath();ctx.roundRect(wx,wy,tot,tot,12*SX);ctx.fill();ctx.restore();
+      ctx.drawImage(logoImg,wx+pad,wy+pad,sz,sz);
+    }
+    function drawText(txt,cx,cy,bw,fs,ff,color,fw,lh,align){
+      ctx.save();
+      ctx.font=fw+' '+fs+'px \''+ff+'\',sans-serif';
+      ctx.fillStyle=color;ctx.textAlign=align||'center';ctx.textBaseline='top';
+      if(fw==='800'){ctx.shadowColor='rgba(0,0,0,0.35)';ctx.shadowBlur=10;ctx.shadowOffsetY=3;}
+      const words=txt.split(' ');let line='',ly=cy;
+      const lx=align==='left'?cx-bw/2:align==='right'?cx+bw/2:cx;
+      for(let i=0;i<words.length;i++){
+        const t=line+words[i]+' ';
+        if(ctx.measureText(t).width>bw&&i>0){ctx.fillText(line.trim(),lx,ly);line=words[i]+' ';ly+=lh;}
+        else line=t;
+      }
+      ctx.fillText(line.trim(),lx,ly);ctx.restore();
+    }
+    if(b.title.visible&&c.title){
+      const bw=b.title.w/100*W,fs=Math.round(s.titleSize*SX);
+      drawText(c.title,b.title.x/100*W,b.title.y/100*H,bw,fs,s.titleFont||s.font,s.titleColor,'800',fs*1.25,s.titleAlign||'center');
+    }
+    if(b.sub.visible&&c.sub){
+      const bw=b.sub.w/100*W,fs=Math.round(s.subSize*SX);
+      drawText(c.sub,b.sub.x/100*W,b.sub.y/100*H,bw,fs,s.subFont||s.font,s.subColor,'400',fs*1.4,s.subAlign||'center');
+    }
+    const a=document.createElement('a');
+    a.download='studio_'+(cdndState.index+1)+'_'+W+'x'+H+'.png';
+    a.href=cv.toDataURL('image/png');a.click();
+    showNotification('✅ PNG '+W+'×'+H+'px exportado','success');
+  }catch(e){showNotification('Error: '+e.message,'error');}
+}
 </script>
 
 <!-- =========================================================
@@ -5657,7 +4669,7 @@ async function cdndExport() {
   <!-- Preview -->
   <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:24px;margin-bottom:24px;">
     <h3 style="font-size:15px;font-weight:700;margin:0 0 16px;">👁️ Vista previa</h3>
-    <div id="brandPreviewCard" style="border-radius:12px;padding:20px;width:220px;aspect-ratio:1080/1350;overflow:visible;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;background:linear-gradient(135deg,#8B5FBF,#E91E8C);box-sizing:border-box;margin:0 auto;">
+    <div id="brandPreviewCard" style="border-radius:12px;padding:20px;width:160px;aspect-ratio:1080/1350;overflow:hidden;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;background:linear-gradient(135deg,#8B5FBF,#E91E8C);box-sizing:border-box;margin:0 auto;">
       <div id="previewLogo" style="display:none;margin-bottom:12px;">
         <img id="previewLogoImg" style="width:48px;height:48px;border-radius:8px;object-fit:contain;background:#fff;padding:4px;">
       </div>
@@ -5672,292 +4684,6 @@ async function cdndExport() {
   </button>
 
 </div>
-</div>
-
-
-<!-- ═══════════════════════════════════════════════════════
-     CONTENIZA STUDIO — Editor Drag & Drop v31
-     ═══════════════════════════════════════════════════════ -->
-<div class="cdnd-overlay" id="cdndOverlay">
-  <div class="cdnd-studio">
-
-    <!-- Top bar -->
-    <div class="cdnd-topbar">
-      <div class="cdnd-topbar-title">
-        🎨 Conteniza Studio
-        <span class="badge">EDITOR PRO</span>
-        <span style="font-size:12px;color:rgba(255,255,255,0.4);font-weight:400;" id="cdndSlideLabel"></span>
-      </div>
-      <div class="cdnd-topbar-actions">
-        <button class="cdnd-btn cdnd-btn-ghost" onclick="cdndToggleGrid()" id="cdndGridBtn" title="Mostrar/ocultar cuadrícula">⊞ Cuadrícula</button>
-        <button class="cdnd-btn cdnd-btn-ghost" onclick="cdndResetPositions()" title="Restablecer posiciones">↺ Resetear</button>
-        <button class="cdnd-btn cdnd-btn-success" onclick="cdndExport()" title="Descargar PNG">📥 Exportar PNG</button>
-        <button class="cdnd-btn cdnd-btn-ghost" onclick="cdndClose()">✕ Cerrar</button>
-      </div>
-    </div>
-
-    <!-- Canvas -->
-    <div class="cdnd-canvas-area">
-      <div class="cdnd-canvas-wrap">
-        <div class="cdnd-canvas" id="cdndCanvas">
-          <div class="cdnd-canvas-bg" id="cdndBg"></div>
-          <div class="cdnd-canvas-pattern"></div>
-
-          <!-- Líneas de snap -->
-          <div class="cdnd-snap-line h" id="snapH" style="top:0;"></div>
-          <div class="cdnd-snap-line v" id="snapV" style="left:0;"></div>
-
-          <!-- Grid overlay -->
-          <div class="cdnd-grid-overlay" id="cdndGrid">
-            <!-- Tercios horizontales -->
-            <div class="cdnd-grid-line h" style="top:33.33%;"></div>
-            <div class="cdnd-grid-line h" style="top:66.66%;"></div>
-            <!-- Tercios verticales -->
-            <div class="cdnd-grid-line v" style="left:33.33%;"></div>
-            <div class="cdnd-grid-line v" style="left:66.66%;"></div>
-            <!-- Centro -->
-            <div class="cdnd-grid-line h" style="top:50%;background:rgba(255,255,255,0.06);"></div>
-            <div class="cdnd-grid-line v" style="left:50%;background:rgba(255,255,255,0.06);"></div>
-          </div>
-
-          <!-- Bloques arrastrables -->
-          <div class="cdnd-block" id="cdndLogo" data-block="logo" style="display:none;top:8%;left:50%;transform:translateX(-50%);">
-            <div class="cdnd-block-label">Logo</div>
-            <img id="cdndLogoImg" style="display:block;border-radius:6px;background:rgba(255,255,255,0.15);padding:3px;">
-            <div class="cdnd-block-handle"></div>
-          </div>
-
-          <div class="cdnd-block" id="cdndTitle" data-block="title" style="top:35%;left:8%;right:8%;text-align:center;">
-            <div class="cdnd-block-label">Título</div>
-            <div id="cdndTitleText" style="font-weight:800;line-height:1.2;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,0.4);word-break:break-word;"></div>
-            <div class="cdnd-block-handle"></div>
-          </div>
-
-          <div class="cdnd-block" id="cdndSub" data-block="sub" style="top:60%;left:8%;right:8%;text-align:center;">
-            <div class="cdnd-block-label">Subtítulo</div>
-            <div id="cdndSubText" style="line-height:1.4;color:rgba(255,255,255,0.85);word-break:break-word;"></div>
-            <div class="cdnd-block-handle"></div>
-          </div>
-
-          <!-- Zona segura -->
-          <div style="position:absolute;inset:0;border:2px dashed rgba(255,255,255,0.06);pointer-events:none;border-radius:10px;margin:10%;"></div>
-        </div>
-
-        <!-- Regla de referencia -->
-        <div style="text-align:center;margin-top:8px;font-size:10px;color:rgba(255,255,255,0.25);">
-          1080 × 1350 px · Zona segura 10% · Regla de tercios activa
-        </div>
-      </div>
-    </div>
-
-    <!-- Panel derecho -->
-    <div class="cdnd-panel">
-      <div class="cdnd-panel-tabs">
-        <button class="cdnd-tab active" onclick="cdndTab('blocks')" id="tabBlocks">Bloques</button>
-        <button class="cdnd-tab" onclick="cdndTab('style')" id="tabStyle">Estilo</button>
-        <button class="cdnd-tab" onclick="cdndTab('layout')" id="tabLayout">Layout</button>
-      </div>
-
-      <!-- TAB: Bloques -->
-      <div class="cdnd-panel-content" id="cdndTabBlocks">
-        <div>
-          <div class="cdnd-section-title">Elementos</div>
-          <div class="cdnd-block-list">
-            <div class="cdnd-block-item" id="blockItemLogo" onclick="cdndSelectBlock('logo')">
-              <div style="display:flex;align-items:center;">
-                <span class="cdnd-block-item-icon">🖼️</span>
-                <span class="cdnd-block-item-name">Logo</span>
-              </div>
-              <button class="cdnd-eye-btn" onclick="event.stopPropagation();cdndToggleBlock('logo')" id="eyeLogo">👁</button>
-            </div>
-            <div class="cdnd-block-item" id="blockItemTitle" onclick="cdndSelectBlock('title')">
-              <div style="display:flex;align-items:center;">
-                <span class="cdnd-block-item-icon">✏️</span>
-                <span class="cdnd-block-item-name">Título</span>
-              </div>
-              <button class="cdnd-eye-btn" onclick="event.stopPropagation();cdndToggleBlock('title')" id="eyeTitle">👁</button>
-            </div>
-            <div class="cdnd-block-item" id="blockItemSub" onclick="cdndSelectBlock('sub')">
-              <div style="display:flex;align-items:center;">
-                <span class="cdnd-block-item-icon">💬</span>
-                <span class="cdnd-block-item-name">Subtítulo</span>
-              </div>
-              <button class="cdnd-eye-btn" onclick="event.stopPropagation();cdndToggleBlock('sub')" id="eyeSub">👁</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="cdnd-divider"></div>
-
-        <!-- Posición del bloque seleccionado -->
-        <div id="cdndBlockControls" style="display:none;">
-          <div class="cdnd-section-title" id="cdndBlockTitle">Posición</div>
-          <div class="cdnd-coords">
-            <div>
-              <div class="cdnd-section-title">X (%)</div>
-              <input class="cdnd-input" type="number" id="cdndInputX" min="0" max="100" oninput="cdndSetPos('x',this.value)">
-            </div>
-            <div>
-              <div class="cdnd-section-title">Y (%)</div>
-              <input class="cdnd-input" type="number" id="cdndInputY" min="0" max="100" oninput="cdndSetPos('y',this.value)">
-            </div>
-          </div>
-          <div style="margin-top:10px;">
-            <div class="cdnd-section-title">Alineación rápida</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-top:6px;">
-              <button class="cdnd-btn cdnd-btn-ghost" onclick="cdndQuickAlign('top-left')" style="font-size:10px;padding:5px;">↖ Arr-Izq</button>
-              <button class="cdnd-btn cdnd-btn-ghost" onclick="cdndQuickAlign('top-center')" style="font-size:10px;padding:5px;">↑ Arr-Centro</button>
-              <button class="cdnd-btn cdnd-btn-ghost" onclick="cdndQuickAlign('top-right')" style="font-size:10px;padding:5px;">↗ Arr-Der</button>
-              <button class="cdnd-btn cdnd-btn-ghost" onclick="cdndQuickAlign('mid-left')" style="font-size:10px;padding:5px;">← Centro-Izq</button>
-              <button class="cdnd-btn cdnd-btn-ghost" onclick="cdndQuickAlign('center')" style="font-size:10px;padding:5px;">⊙ Centro</button>
-              <button class="cdnd-btn cdnd-btn-ghost" onclick="cdndQuickAlign('mid-right')" style="font-size:10px;padding:5px;">→ Centro-Der</button>
-              <button class="cdnd-btn cdnd-btn-ghost" onclick="cdndQuickAlign('bot-left')" style="font-size:10px;padding:5px;">↙ Abj-Izq</button>
-              <button class="cdnd-btn cdnd-btn-ghost" onclick="cdndQuickAlign('bot-center')" style="font-size:10px;padding:5px;">↓ Abj-Centro</button>
-              <button class="cdnd-btn cdnd-btn-ghost" onclick="cdndQuickAlign('bot-right')" style="font-size:10px;padding:5px;">↘ Abj-Der</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="cdnd-status" id="cdndStatus">Selecciona un bloque para editar su posición</div>
-      </div>
-
-      <!-- TAB: Estilo -->
-      <div class="cdnd-panel-content" id="cdndTabStyle" style="display:none;">
-
-        <!-- Fondo -->
-        <div>
-          <div class="cdnd-section-title">Fondo</div>
-          <div class="cdnd-row">
-            <span class="cdnd-label">Color 1</span>
-            <input type="color" class="cdnd-color-input" id="cdndBgColor1" oninput="cdndUpdateBg()">
-          </div>
-          <div class="cdnd-row" style="margin-top:6px;">
-            <span class="cdnd-label">Color 2</span>
-            <input type="color" class="cdnd-color-input" id="cdndBgColor2" oninput="cdndUpdateBg()">
-          </div>
-        </div>
-
-        <div class="cdnd-divider"></div>
-
-        <!-- Título -->
-        <div>
-          <div class="cdnd-section-title">Título</div>
-          <div class="cdnd-row">
-            <span class="cdnd-label">Tamaño</span>
-            <div class="cdnd-stepper">
-              <button class="cdnd-step-btn" onclick="cdndAdjSize('title',-2)">−</button>
-              <span class="cdnd-step-val" id="cdndTitleSize">40</span>
-              <button class="cdnd-step-btn" onclick="cdndAdjSize('title',2)">+</button>
-            </div>
-          </div>
-          <div class="cdnd-row" style="margin-top:6px;">
-            <span class="cdnd-label">Color</span>
-            <input type="color" class="cdnd-color-input" id="cdndTitleColor" value="#ffffff" oninput="cdndUpdateText('title')">
-          </div>
-          <div class="cdnd-row" style="margin-top:6px;">
-            <span class="cdnd-label">Alineación</span>
-            <div class="cdnd-align-btns">
-              <button class="cdnd-align-btn" onclick="cdndSetTextAlign('title','left')">◀</button>
-              <button class="cdnd-align-btn active" onclick="cdndSetTextAlign('title','center')">■</button>
-              <button class="cdnd-align-btn" onclick="cdndSetTextAlign('title','right')">▶</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="cdnd-divider"></div>
-
-        <!-- Subtítulo -->
-        <div>
-          <div class="cdnd-section-title">Subtítulo / Contenido</div>
-          <div class="cdnd-row">
-            <span class="cdnd-label">Tamaño</span>
-            <div class="cdnd-stepper">
-              <button class="cdnd-step-btn" onclick="cdndAdjSize('sub',-2)">−</button>
-              <span class="cdnd-step-val" id="cdndSubSize">20</span>
-              <button class="cdnd-step-btn" onclick="cdndAdjSize('sub',2)">+</button>
-            </div>
-          </div>
-          <div class="cdnd-row" style="margin-top:6px;">
-            <span class="cdnd-label">Color</span>
-            <input type="color" class="cdnd-color-input" id="cdndSubColor" value="#cccccc" oninput="cdndUpdateText('sub')">
-          </div>
-          <div class="cdnd-row" style="margin-top:6px;">
-            <span class="cdnd-label">Alineación</span>
-            <div class="cdnd-align-btns">
-              <button class="cdnd-align-btn" onclick="cdndSetTextAlign('sub','left')">◀</button>
-              <button class="cdnd-align-btn active" onclick="cdndSetTextAlign('sub','center')">■</button>
-              <button class="cdnd-align-btn" onclick="cdndSetTextAlign('sub','right')">▶</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="cdnd-divider"></div>
-
-        <!-- Fuente -->
-        <div>
-          <div class="cdnd-section-title">Fuente</div>
-          <div style="display:flex;gap:4px;margin-bottom:8px;">
-            <button id="cdndFontTargetTitle" onclick="cdndSetFontTarget('title')" class="cdnd-btn cdnd-btn-primary" style="flex:1;font-size:10px;padding:4px;">✏️ Título</button>
-            <button id="cdndFontTargetSub" onclick="cdndSetFontTarget('sub')" class="cdnd-btn cdnd-btn-ghost" style="flex:1;font-size:10px;padding:4px;">💬 Subtítulo</button>
-            <button id="cdndFontTargetBoth" onclick="cdndSetFontTarget('both')" class="cdnd-btn cdnd-btn-ghost" style="flex:1;font-size:10px;padding:4px;">⊕ Ambos</button>
-          </div>
-          <div class="cdnd-font-grid" id="cdndFontGrid"></div>
-        </div>
-
-        <!-- Logo -->
-        <div id="cdndLogoPanel" style="display:none;">
-          <div class="cdnd-divider"></div>
-          <div class="cdnd-section-title">Logo</div>
-          <div class="cdnd-row">
-            <span class="cdnd-label">Tamaño</span>
-            <div class="cdnd-stepper">
-              <button class="cdnd-step-btn" onclick="cdndAdjLogoSize(-10)">−</button>
-              <span class="cdnd-step-val" id="cdndLogoSize">60</span>
-              <button class="cdnd-step-btn" onclick="cdndAdjLogoSize(10)">+</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- TAB: Layout -->
-      <div class="cdnd-panel-content" id="cdndTabLayout" style="display:none;">
-        <div>
-          <div class="cdnd-section-title">Zonas de diseño gráfico</div>
-          <div style="font-size:11px;color:rgba(255,255,255,0.4);line-height:1.6;margin-bottom:12px;">
-            Basado en regla de tercios (1080×1350px)
-          </div>
-          <div style="display:flex;flex-direction:column;gap:6px;">
-            <button class="cdnd-btn cdnd-btn-ghost" onclick="cdndApplyLayout('logo-top-title-mid-sub-bot')" style="text-align:left;font-size:11px;">
-              📐 Clásico — Logo arriba · Título centro · Sub abajo
-            </button>
-            <button class="cdnd-btn cdnd-btn-ghost" onclick="cdndApplyLayout('logo-left-title-center-sub-center')" style="text-align:left;font-size:11px;">
-              📐 Editorial — Logo izquierda · Texto centrado
-            </button>
-            <button class="cdnd-btn cdnd-btn-ghost" onclick="cdndApplyLayout('title-top-sub-mid-logo-bot')" style="text-align:left;font-size:11px;">
-              📐 Invertido — Título arriba · Sub centro · Logo abajo
-            </button>
-            <button class="cdnd-btn cdnd-btn-ghost" onclick="cdndApplyLayout('logo-top-title-bot')" style="text-align:left;font-size:11px;">
-              📐 Minimalista — Logo arriba · Título abajo
-            </button>
-            <button class="cdnd-btn cdnd-btn-ghost" onclick="cdndApplyLayout('all-center')" style="text-align:left;font-size:11px;">
-              📐 Centrado — Todo al centro
-            </button>
-          </div>
-        </div>
-
-        <div class="cdnd-divider"></div>
-
-        <div>
-          <div class="cdnd-section-title">Formato de exportación</div>
-          <div style="display:flex;flex-direction:column;gap:6px;">
-            <button class="cdnd-btn cdnd-btn-ghost" id="cdndFmtPost" onclick="cdndSetFormat('post')" style="text-align:left;font-size:11px;">📸 Post/Carrusel 1080×1350</button>
-            <button class="cdnd-btn cdnd-btn-ghost" id="cdndFmtStory" onclick="cdndSetFormat('story')" style="text-align:left;font-size:11px;">📱 Story/Reel 1080×1920</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div>
 </div>
 
   <script src="consent.js"></script>
