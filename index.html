@@ -2098,6 +2098,8 @@ function showMainApp() {
   restoreDraft();
   showEmailVerificationBanner();
   updateSubscriptionUI();
+  // Cargar marca al entrar (sin abrir pantalla Mi Marca)
+  if (currentUser?.plan_type === 'premium') loadBrandSilent();
 }
 
 function updateTopbarActions() {
@@ -2919,6 +2921,22 @@ function updateSlideCardPreview(i) {
     contentEl.style.fontSize = adj.contentSize + 'px';
     contentEl.textContent = adj.contentText;
   }
+  // Actualizar logo en la card
+  let logoEl = card.querySelector('.slide-logo-preview');
+  if (isPremium && currentBrand?.logo_url) {
+    const ls = (adj.logoSize || 80) + 'px';
+    if (!logoEl) {
+      logoEl = document.createElement('img');
+      logoEl.className = 'slide-logo-preview';
+      logoEl.style.cssText = `position:absolute;top:10px;${adj.align==='right'?'right':'left'}:10px;border-radius:6px;object-fit:contain;background:rgba(255,255,255,.2);padding:3px;`;
+      card.appendChild(logoEl);
+    }
+    logoEl.src = currentBrand.logo_url;
+    logoEl.style.width = ls;
+    logoEl.style.height = ls;
+  } else if (logoEl) {
+    logoEl.remove();
+  }
 }
 
 function scrollSlider(id, dir) {
@@ -3127,8 +3145,7 @@ async function downloadThumbnailImage(i) {
       // Pie
       const foot = document.createElement('div');
       foot.style.cssText = `position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:10px;color:rgba(255,255,255,0.25);font-family:'${font}',sans-serif;`;
-      foot.textContent = '✨ Conteniza';
-      el.appendChild(foot);
+      // Sin pie de página
     }, 540, 675);
 
     const a = document.createElement('a');
@@ -3214,8 +3231,7 @@ async function downloadCarouselSlideImage(i) {
       // Pie
       const foot = document.createElement('div');
       foot.style.cssText = `position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:10px;color:rgba(255,255,255,0.25);font-family:'${font}',sans-serif;`;
-      foot.textContent = '✨ Conteniza';
-      el.appendChild(foot);
+      // Sin pie de página
     }, 540, 675);
 
     const a = document.createElement('a');
@@ -3826,6 +3842,16 @@ async function showBrandScreen() {
 
 function hideBrandScreen() {
   document.getElementById('brandScreen').classList.add('hidden');
+}
+
+async function loadBrandSilent() {
+  try {
+    const r = await apiFetch(`${API_URL}/brand`);
+    const d = await r.json();
+    if (d.success && d.brand) {
+      currentBrand = d.brand;
+    }
+  } catch(e) {}
 }
 
 async function loadBrandConfig() {
