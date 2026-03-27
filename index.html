@@ -3063,6 +3063,10 @@ function renderCarouselSpecs(i) {
   const fonts = ['DM Sans','Montserrat','Poppins','Playfair Display','Raleway','Oswald','Lato','Roboto','Inter','Nunito'];
   const logoSzPx = Math.round((adj.logoSize||80) * 0.4);
 
+  // Bug 3 fix: guardar posición de scroll del panel de controles antes de re-renderizar
+  const _prevControlsEl = panel.querySelector('[data-controls-scroll]');
+  const _savedScroll = _prevControlsEl ? _prevControlsEl.scrollTop : 0;
+
   panel.innerHTML = `
     <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-top:12px;">
 
@@ -3092,7 +3096,7 @@ function renderCarouselSpecs(i) {
         </div>
 
         <!-- Controles derecha -->
-        <div style="padding:16px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;max-height:600px;">
+        <div data-controls-scroll style="padding:16px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;max-height:600px;">
 
           <!-- Textos -->
           <div>
@@ -3206,6 +3210,11 @@ function renderCarouselSpecs(i) {
       </div>
     </div>
   `;
+  // Bug 3 fix: restaurar posición del scroll del panel de controles
+  if (_savedScroll > 0) {
+    const _newControlsEl = panel.querySelector('[data-controls-scroll]');
+    if (_newControlsEl) _newControlsEl.scrollTop = _savedScroll;
+  }
 }
 
 function slideAdjustFn(i, prop, val) {
@@ -3219,8 +3228,7 @@ function slideAdjustFn(i, prop, val) {
     window.slideAdjust[i][prop] = Math.max(min, Math.min(max, window.slideAdjust[i][prop] + val));
   }
   renderCarouselSpecs(i);
-  // Actualizar también el slide visual en el carrusel
-  updateSlideCardPreview(i);
+  // NO actualizar la tarjeta horizontal del carrusel — solo la vista previa vertical
 }
 
 function slideAdjustText(i, prop, val) {
@@ -3243,7 +3251,7 @@ function slideAdjustColor(i, prop, val) {
   if (!window.slideAdjust || !window.slideAdjust[i]) return;
   window.slideAdjust[i][prop] = val;
   renderCarouselSpecs(i);
-  updateSlideCardPreview(i);
+  // NO actualizar tarjeta horizontal
 }
 
 function slideResetColors(i) {
@@ -3252,7 +3260,7 @@ function slideResetColors(i) {
   window.slideAdjust[i].colorPrimary   = (isPremium && currentBrand?.color_primary)   ? currentBrand.color_primary   : null;
   window.slideAdjust[i].colorSecondary = (isPremium && currentBrand?.color_secondary) ? currentBrand.color_secondary : null;
   renderCarouselSpecs(i);
-  updateSlideCardPreview(i);
+  // NO actualizar tarjeta horizontal
 }
 
 function updateSlideCardPreview(i) {
@@ -5200,7 +5208,19 @@ async function cdndExport() {
     const s=cdnd.style, c=cdnd.content, b=cdnd.blocks;
     const W=1080, H=cdnd.format==='story'?1920:1350;
     const SX=W/CDND_W, SY=H/CDND_H;
+
+    // Esperar que las fuentes estén completamente listas en el navegador
     await document.fonts.ready;
+    // Warmup extra: forzar que las fuentes del canvas estén cargadas
+    const _warmupCv=document.createElement('canvas');
+    const _warmupCtx=_warmupCv.getContext('2d');
+    _warmupCtx.font=`800 40px '${s.titleFont}',sans-serif`;
+    _warmupCtx.measureText('A');
+    _warmupCtx.font=`400 20px '${s.subFont}',sans-serif`;
+    _warmupCtx.measureText('A');
+    // Pequeña pausa para garantizar que el render de fuentes esté listo
+    await new Promise(r=>setTimeout(r,120));
+
     // Cargar logo
     let logoImg=null;
     if(c.logoUrl&&b.logo.visible){
@@ -5209,10 +5229,12 @@ async function cdndExport() {
     }
     const cv=document.createElement('canvas');cv.width=W;cv.height=H;
     const ctx=cv.getContext('2d');
+
     // Fondo
     const gr=ctx.createLinearGradient(0,0,W,H);
     gr.addColorStop(0,s.bg1);gr.addColorStop(1,s.bg2);
     ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);
+
     // Logo — misma fórmula que cdndRenderAll
     if(logoImg&&b.logo.visible){
       const sz=s.logoSize*SX, pad=8*SX, tot=sz+pad*2;
@@ -5225,41 +5247,61 @@ async function cdndExport() {
       ctx.fill();ctx.restore();
       ctx.drawImage(logoImg,wx+pad,wy+pad,sz,sz);
     }
-    // Texto helper con word-wrap
+
+    // Helper: medir cuántas líneas ocupa un texto y devolver el alto total
+    function measureTextHeight(ctx2, txt, bw, lh) {
+      const words=(txt||'').split(' ');
+      let line='', lines=1;
+      for(let i=0;i<words.length;i++){
+        const t=line+words[i]+' ';
+        if(ctx2.measureText(t).width>bw&&i>0){lines++;line=words[i]+' ';}
+        else line=t;
+      }
+      return lines*lh;
+    }
+
+    // Helper: dibujar texto con word-wrap y devolver el alto real ocupado
     function drawText(txt,bx,by,bw,fs,ff,color,fw,lh,align){
       ctx.save();
       ctx.font=fw+' '+fs+"px '"+ff+"',sans-serif";
-      ctx.fillStyle=color;ctx.textAlign=align||'center';ctx.textBaseline='top';
-      if(fw==='800'){ctx.shadowColor='rgba(0,0,0,.35)';ctx.shadowBlur=10;ctx.shadowOffsetY=3;}
-      const words=txt.split(' ');let line='',ly=by;
+      ctx.fillStyle=color;
+      ctx.textAlign=align||'center';
+      ctx.textBaseline='top';
+      if(fw==='800'){ctx.shadowColor='rgba(0,0,0,.35)';ctx.shadowBlur=Math.round(10*SX);ctx.shadowOffsetY=Math.round(3*SX);}
+      const words=(txt||'').split(' ');let line='',ly=by,lineCount=0;
       const lx=align==='left'?bx-bw/2:align==='right'?bx+bw/2:bx;
       for(let i=0;i<words.length;i++){
         const t=line+words[i]+' ';
-        if(ctx.measureText(t).width>bw&&i>0){ctx.fillText(line.trim(),lx,ly);line=words[i]+' ';ly+=lh;}
+        if(ctx.measureText(t).width>bw&&i>0){ctx.fillText(line.trim(),lx,ly);line=words[i]+' ';ly+=lh;lineCount++;}
         else line=t;
       }
       ctx.fillText(line.trim(),lx,ly);ctx.restore();
+      return ly+lh-by; // alto total ocupado
     }
-    // Título — mismo cálculo que render
+
+    // Título
     if(b.title.visible&&c.title){
       const bw=90/100*W;
       const cx=(b.title.x-90/2)/100*W+bw/2;
       const cy=b.title.y/100*H;
       const fs=Math.round(s.titleSize*SX);
-      drawText(c.title,cx,cy,bw,fs,s.titleFont,s.titleColor,'800',fs*1.25,s.titleAlign||'center');
+      const lh=Math.round(fs*1.25);
+      drawText(c.title,cx,cy,bw,fs,s.titleFont,s.titleColor,'800',lh,s.titleAlign||'center');
     }
-    // Subtítulo
+    // Subtítulo — posición independiente del título (los bloques son libres en el Studio)
     if(b.sub.visible&&c.sub){
       const bw=90/100*W;
       const cx=(b.sub.x-90/2)/100*W+bw/2;
       const cy=b.sub.y/100*H;
       const fs=Math.round(s.subSize*SX);
-      drawText(c.sub,cx,cy,bw,fs,s.subFont,s.subColor,'400',fs*1.4,s.subAlign||'center');
+      const lh=Math.round(fs*1.4);
+      drawText(c.sub,cx,cy,bw,fs,s.subFont,s.subColor,'400',lh,s.subAlign||'center');
     }
     const a=document.createElement('a');
     a.download='studio_'+(cdnd.index+1)+'_'+W+'x'+H+'.png';
     a.href=cv.toDataURL('image/png');a.click();
     showNotification('✅ PNG '+W+'×'+H+'px exportado — alta calidad','success');
+
   }catch(e){showNotification('Error: '+e.message,'error');}
 }
 
