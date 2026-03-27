@@ -2603,8 +2603,8 @@ function renderThumbnailSpecs(i) {
         <!-- Preview -->
         <div style="border-radius:10px;height:300px;overflow:hidden;padding:20px;display:flex;flex-direction:column;justify-content:flex-start;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};background:linear-gradient(135deg,${gc1},${gc2});text-align:${adj.align};">
           ${hasLogo ? `<div style="width:100%;text-align:${adj.logoAlign||'center'};margin-bottom:8px;"><img src="${currentBrand.logo_url}" style="width:${Math.round(adj.logoSize*0.5)}px;height:${Math.round(adj.logoSize*0.5)}px;object-fit:contain;border-radius:8px;background:rgba(255,255,255,.2);padding:4px;display:inline-block;"></div>` : ''}
-          <div style="font-family:'${font}',sans-serif;font-size:${Math.round(adj.fontSize*0.55)}px;font-weight:900;color:${t.text_color||'#fff'};line-height:1.2;">${escapeHtml(adj.titleText)}</div>
-          ${adj.subText ? `<div style="font-family:'${font}',sans-serif;font-size:${adj.subFontSize||Math.round(adj.fontSize*0.3)}px;color:rgba(255,255,255,.85);margin-top:6px;">${escapeHtml(adj.subText)}</div>` : ''}
+          <div style="font-family:'${font}',sans-serif;font-size:${Math.round(adj.fontSize*0.55)}px;font-weight:900;color:${adj.titleColor||t.text_color||'#fff'};line-height:1.2;">${escapeHtml(adj.titleText)}</div>
+          ${adj.subText ? `<div style="font-family:'${font}',sans-serif;font-size:${adj.subFontSize||Math.round(adj.fontSize*0.3)}px;color:${adj.subColor||'rgba(255,255,255,.85)'};margin-top:6px;">${escapeHtml(adj.subText)}</div>` : ''}
         </div>
 
         <!-- Textos editables -->
@@ -2635,6 +2635,17 @@ function renderThumbnailSpecs(i) {
               <button onclick="thumbAdjustFn(${i},'subFontSize',-2)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:14px;">−</button>
               <span style="font-size:12px;font-weight:700;min-width:36px;text-align:center;">${adj.subFontSize||20}</span>
               <button onclick="thumbAdjustFn(${i},'subFontSize',2)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:14px;">+</button>
+            </div>
+          </div>
+          <!-- Colores de fuente miniatura -->
+          <div style="grid-column:1/-1;display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:4px;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:11px;color:var(--text-3);font-weight:600;">Color título:</span>
+              <input type="color" value="${adj.titleColor||'#ffffff'}" onchange="thumbAdjustColor(${i},'titleColor',this.value)" style="width:32px;height:32px;border:none;border-radius:6px;cursor:pointer;padding:2px;">
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:11px;color:var(--text-3);font-weight:600;">Color subtítulo:</span>
+              <input type="color" value="${adj.subColor||'#ffffff'}" onchange="thumbAdjustColor(${i},'subColor',this.value)" style="width:32px;height:32px;border:none;border-radius:6px;cursor:pointer;padding:2px;">
             </div>
           </div>
           ${hasLogo ? `
@@ -2674,11 +2685,18 @@ function thumbAdjustText(i, prop, val) {
   window.thumbAdjust[i][prop] = val;
   renderThumbnailSpecs(i);
 }
+function thumbAdjustColor(i, prop, val) {
+  if (!window.thumbAdjust || !window.thumbAdjust[i]) return;
+  window.thumbAdjust[i][prop] = val;
+  renderThumbnailSpecs(i);
+}
+
 
 function thumbAdjustFn(i, prop, val) {
   if (!window.thumbAdjust) window.thumbAdjust = {};
   if (!window.thumbAdjust[i]) {
     const _t = currentThumbnails && currentThumbnails[i];
+    const _tfc = (currentUser?.plan_type === 'premium' && currentBrand?.font_color) ? currentBrand.font_color : (_t?.text_color || '#ffffff');
     window.thumbAdjust[i] = {
       fontSize: _t ? parseInt(_t.font_size||'42') : 42,
       subFontSize: _t ? Math.round(parseInt(_t.font_size||'42') * 0.5) : 20,
@@ -2686,7 +2704,9 @@ function thumbAdjustFn(i, prop, val) {
       logoAlign: 'center',
       logoSize: 80,
       titleText: _t ? (_t.text || '') : '',
-      subText: _t ? (_t.secondary_text || '') : ''
+      subText: _t ? (_t.secondary_text || '') : '',
+      titleColor: _tfc,
+      subColor: _tfc,
     };
   }
   if (prop === 'align' || prop === 'logoAlign') {
@@ -2778,8 +2798,8 @@ function renderCarouselSpecs(i) {
         <!-- Preview mini del slide -->
         <div id="slidePreview-${i}" style="border-radius:10px;padding:20px;height:300px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-start;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};background:${cp&&cs?`linear-gradient(135deg,${cp},${cs})`:s.color_scheme||'linear-gradient(135deg,#7C3AED,#F43F5E)'};text-align:${adj.align};">
           ${isPremium && currentBrand?.logo_url ? `<div style="width:100%;text-align:${adj.logoAlign||'center'};margin-bottom:8px;"><img src="${currentBrand.logo_url}" style="width:${Math.round((adj.logoSize||80)*0.45)}px;height:${Math.round((adj.logoSize||80)*0.45)}px;border-radius:6px;object-fit:contain;background:rgba(255,255,255,.2);padding:3px;display:inline-block;"></div>` : ''}
-          <div style="font-family:'${adj.font}',sans-serif;font-size:${adj.titleSize}px;font-weight:800;color:#fff;line-height:1.2;text-shadow:0 2px 8px rgba(0,0,0,.3);">${escapeHtml(adj.titleText)}</div>
-          <div style="font-family:'${adj.font}',sans-serif;font-size:${adj.contentSize}px;color:rgba(255,255,255,.85);margin-top:6px;line-height:1.4;">${escapeHtml(adj.contentText)}</div>
+          <div style="font-family:'${adj.font}',sans-serif;font-size:${adj.titleSize}px;font-weight:800;color:${adj.titleColor||'#ffffff'};line-height:1.2;text-shadow:0 2px 8px rgba(0,0,0,.3);">${escapeHtml(adj.titleText)}</div>
+          <div style="font-family:'${adj.font}',sans-serif;font-size:${adj.contentSize}px;color:${adj.contentColor||'rgba(255,255,255,.85)'};margin-top:6px;line-height:1.4;">${escapeHtml(adj.contentText)}</div>
         </div>
 
         <!-- Editar textos -->
@@ -2870,6 +2890,17 @@ function renderCarouselSpecs(i) {
             </div>
             <button onclick="slideResetColors(${i})" style="font-size:11px;color:var(--text-3);background:none;border:none;cursor:pointer;text-decoration:underline;">↺ Restablecer</button>
           </div>
+          <!-- Colores de fuente -->
+          <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:11px;color:var(--text-3);font-weight:600;">Color título:</span>
+              <input type="color" value="${adj.titleColor||'#ffffff'}" onchange="slideAdjustFn(${i},'titleColor',this.value)" style="width:32px;height:32px;border:none;border-radius:6px;cursor:pointer;padding:2px;">
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:11px;color:var(--text-3);font-weight:600;">Color contenido:</span>
+              <input type="color" value="${adj.contentColor||'#ffffff'}" onchange="slideAdjustFn(${i},'contentColor',this.value)" style="width:32px;height:32px;border:none;border-radius:6px;cursor:pointer;padding:2px;">
+            </div>
+          </div>
         </div>
 
         <!-- Marca activa -->
@@ -2887,7 +2918,7 @@ function renderCarouselSpecs(i) {
 function slideAdjustFn(i, prop, val) {
   if (!window.slideAdjust) window.slideAdjust = {};
   if (!window.slideAdjust[i]) return;
-  if (prop === 'align' || prop === 'font' || prop === 'logoAlign') {
+  if (prop === 'align' || prop === 'font' || prop === 'logoAlign' || prop === 'titleColor' || prop === 'contentColor') {
     window.slideAdjust[i][prop] = val;
   } else {
     const min = prop === 'titleSize' ? 12 : prop === 'logoSize' ? 40 : 10;
@@ -3156,7 +3187,8 @@ async function downloadThumbnailImage(i) {
 
       // Título
       const titleEl = document.createElement('div');
-      const fcTh = (isPremium && currentBrand?.font_color) ? currentBrand.font_color : (t.text_color||'#ffffff');
+      const fcTh = adj.titleColor || (isPremium && currentBrand?.font_color) || t.text_color || '#ffffff';
+      const fcSub = adj.subColor  || (isPremium && currentBrand?.font_color) || 'rgba(255,255,255,0.88)';
       titleEl.style.cssText = `font-size:${fs}px;font-weight:900;color:${fcTh};line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${font}',sans-serif;word-break:break-word;`;
       titleEl.textContent = titleText;
       inner.appendChild(titleEl);
@@ -3170,7 +3202,7 @@ async function downloadThumbnailImage(i) {
       if (subText) {
         const subEl = document.createElement('div');
         const secFs = Math.round(fs * 0.5);
-        subEl.style.cssText = `font-size:${secFs}px;font-weight:500;color:rgba(255,255,255,0.88);line-height:1.5;font-family:'${font}',sans-serif;word-break:break-word;`;
+        subEl.style.cssText = `font-size:${secFs}px;font-weight:500;color:${fcSub};line-height:1.5;font-family:'${font}',sans-serif;word-break:break-word;`;
         subEl.textContent = subText;
         inner.appendChild(subEl);
       }
@@ -3250,7 +3282,8 @@ async function downloadCarouselSlideImage(i) {
 
       // Título
       const titleEl = document.createElement('div');
-      const fc = (isPremium && currentBrand?.font_color) ? currentBrand.font_color : '#ffffff';
+      const fc = adj?.titleColor || (isPremium && currentBrand?.font_color) || '#ffffff';
+      const fcContent = adj?.contentColor || (isPremium && currentBrand?.font_color) || '#ffffff';
       titleEl.style.cssText = `font-size:${ts}px;font-weight:800;color:${fc};line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${font}',sans-serif;word-break:break-word;`;
       titleEl.textContent = titleText;
       inner.appendChild(titleEl);
@@ -3258,7 +3291,7 @@ async function downloadCarouselSlideImage(i) {
       // Contenido
       if (contText) {
         const contEl = document.createElement('div');
-        contEl.style.cssText = `font-size:${cs2}px;font-weight:400;color:rgba(255,255,255,0.88);line-height:1.5;font-family:'${font}',sans-serif;word-break:break-word;`;
+        contEl.style.cssText = `font-size:${cs2}px;font-weight:400;color:${fcContent};opacity:0.9;line-height:1.5;font-family:'${font}',sans-serif;word-break:break-word;`;
         contEl.textContent = contText;
         inner.appendChild(contEl);
       }
