@@ -2750,7 +2750,7 @@ function renderCarouselSpecs(i) {
 
         <!-- Preview mini del slide -->
         <div id="slidePreview-${i}" style="border-radius:10px;padding:20px;min-height:100px;display:flex;flex-direction:column;justify-content:center;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};background:${cp&&cs?`linear-gradient(135deg,${cp},${cs})`:s.color_scheme||'linear-gradient(135deg,#7C3AED,#F43F5E)'};text-align:${adj.align};">
-          ${isPremium && currentBrand?.logo_url ? `<img src="${currentBrand.logo_url}" style="width:36px;height:36px;border-radius:6px;object-fit:contain;margin-bottom:8px;background:rgba(255,255,255,.2);padding:3px;">` : ''}
+          ${isPremium && currentBrand?.logo_url ? `<img src="${currentBrand.logo_url}" style="width:${Math.round((adj.logoSize||80)*0.45)}px;height:${Math.round((adj.logoSize||80)*0.45)}px;border-radius:6px;object-fit:contain;margin-bottom:8px;background:rgba(255,255,255,.2);padding:3px;">` : ''}
           <div style="font-family:'${adj.font}',sans-serif;font-size:${adj.titleSize}px;font-weight:800;color:#fff;line-height:1.2;text-shadow:0 2px 8px rgba(0,0,0,.3);">${escapeHtml(adj.titleText)}</div>
           <div style="font-family:'${adj.font}',sans-serif;font-size:${adj.contentSize}px;color:rgba(255,255,255,.85);margin-top:6px;line-height:1.4;">${escapeHtml(adj.contentText)}</div>
         </div>
@@ -3094,7 +3094,8 @@ async function downloadThumbnailImage(i) {
     const align = adj.align || 'center';
     const fs    = adj.fontSize || 42;
     const ls    = adj.logoSize || 80;
-    const logoUrl = isPremium && currentBrand?.logo_url ? currentBrand.logo_url : null;
+    const logoRaw = isPremium && currentBrand?.logo_url ? currentBrand.logo_url : null;
+    const logoUrl = logoRaw ? await imageToDataURL(logoRaw) : null;
     const titleText = adj.titleText || t.text || '';
     const subText   = (adj.subText !== undefined ? adj.subText : t.secondary_text) || '';
     const alignItems = align==='left'?'flex-start':align==='right'?'flex-end':'center';
@@ -3115,7 +3116,7 @@ async function downloadThumbnailImage(i) {
         const wrap = document.createElement('div');
         wrap.style.cssText = `background:rgba(255,255,255,0.18);border-radius:14px;padding:10px;display:inline-flex;`;
         const img = document.createElement('img');
-        img.src = logoUrl; img.crossOrigin = 'anonymous';
+        img.src = logoUrl;
         img.style.cssText = `width:${ls}px;height:${ls}px;object-fit:contain;display:block;border-radius:8px;`;
         wrap.appendChild(img); inner.appendChild(wrap);
       }
@@ -3181,7 +3182,8 @@ async function downloadCarouselSlideImage(i) {
     const ts    = adj.titleSize || 40;
     const cs2   = adj.contentSize || 20;
     const ls    = adj.logoSize || 80;
-    const logoUrl = isPremium && currentBrand?.logo_url ? currentBrand.logo_url : null;
+    const logoRaw = isPremium && currentBrand?.logo_url ? currentBrand.logo_url : null;
+    const logoUrl = logoRaw ? await imageToDataURL(logoRaw) : null;
     const titleText = adj.titleText || s.title || '';
     const contText  = adj.contentText || s.content || '';
     const alignItems = align==='left'?'flex-start':align==='right'?'flex-end':'center';
@@ -3202,9 +3204,10 @@ async function downloadCarouselSlideImage(i) {
         const wrap = document.createElement('div');
         wrap.style.cssText = `background:rgba(255,255,255,0.18);border-radius:14px;padding:10px;display:inline-flex;`;
         const img = document.createElement('img');
-        img.src = logoUrl; img.crossOrigin = 'anonymous';
+        img.src = logoUrl;
         img.style.cssText = `width:${ls}px;height:${ls}px;object-fit:contain;display:block;border-radius:8px;`;
         wrap.appendChild(img); inner.appendChild(wrap);
+        await new Promise(r => { img.onload = r; img.onerror = r; setTimeout(r, 3000); });
       }
 
       // Línea decorativa
@@ -3842,6 +3845,35 @@ async function showBrandScreen() {
 
 function hideBrandScreen() {
   document.getElementById('brandScreen').classList.add('hidden');
+}
+
+
+/* Convertir URL de imagen a dataURL para evitar problemas CORS en html2canvas */
+async function imageToDataURL(url) {
+  try {
+    const response = await fetch(url, { mode: 'no-cors' });
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch(e) {
+    // Si falla fetch, intentar con Image
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const cv = document.createElement('canvas');
+        cv.width = img.width; cv.height = img.height;
+        cv.getContext('2d').drawImage(img, 0, 0);
+        try { resolve(cv.toDataURL()); } catch(e) { resolve(url); }
+      };
+      img.onerror = () => resolve(url); // fallback: usar URL directa
+      img.src = url + '?t=' + Date.now(); // evitar caché
+    });
+  }
 }
 
 async function loadBrandSilent() {
