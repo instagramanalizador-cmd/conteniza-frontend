@@ -2835,6 +2835,11 @@ function renderThumbnailSpecs(i) {
   const cs = (isPremium && currentBrand?.color_secondary) || null;
   const font    = (isPremium && currentBrand?.font_name)     || (t.font_family||'DM Sans').replace(/['"]/g,'');
   const subFont = (isPremium && currentBrand?.sub_font_name) || font;
+  // Negrita/Cursiva de marca — overrideable por adj
+  const titleFW = adj.titleBold   !== undefined ? (adj.titleBold   ? '800':'400') : (isPremium && currentBrand?.title_bold   !== false ? '800':'400');
+  const titleFS = adj.titleItalic !== undefined ? (adj.titleItalic ? 'italic':'normal') : (isPremium && currentBrand?.title_italic ? 'italic':'normal');
+  const subFW   = adj.subBold     !== undefined ? (adj.subBold     ? '700':'400') : (isPremium && currentBrand?.sub_bold   ? '700':'400');
+  const subFS_s = adj.subItalic   !== undefined ? (adj.subItalic   ? 'italic':'normal') : (isPremium && currentBrand?.sub_italic ? 'italic':'normal');
   const {c1,c2} = parseGradient(t.background_gradient);
   const gc1 = cp || c1; const gc2 = cs || c2;
   const logoSzPx = Math.round(adj.logoSize * 0.4);
@@ -2862,9 +2867,9 @@ function renderThumbnailSpecs(i) {
               <div style="position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 2px,transparent 2px);background-size:40px 40px;pointer-events:none;"></div>
               <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};gap:12px;width:100%;">
                 ${hasLogo ? `<div style="width:100%;display:flex;justify-content:${(adj.logoAlign||'center')==='left'?'flex-start':(adj.logoAlign||'center')==='right'?'flex-end':'center'};"><div style="background:rgba(255,255,255,.18);border-radius:12px;padding:8px;display:inline-flex;"><img src="${currentBrand.logo_url}" style="width:${adj.logoSize||80}px;height:${adj.logoSize||80}px;object-fit:contain;border-radius:6px;display:block;"></div></div>` : ''}
-                <div style="font-family:'${adj.titleFont||font}',sans-serif;font-size:${adj.fontSize}px;font-weight:900;color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);">${escapeHtml(adj.titleText)}</div>
+                <div style="font-family:'${adj.titleFont||font}',sans-serif;font-size:${adj.fontSize}px;font-weight:${titleFW};font-style:${titleFS};color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);">${escapeHtml(adj.titleText)}</div>
                 <div style="width:40px;height:3px;background:rgba(255,255,255,0.4);border-radius:2px;flex-shrink:0;"></div>
-                ${adj.subText ? `<div style="font-family:'${adj.subFontFamily||subFont}',sans-serif;font-size:${adj.subFontSize||Math.round(adj.fontSize*0.5)}px;font-weight:500;color:${adj.subColor||'rgba(255,255,255,.85)'};line-height:1.5;">${escapeHtml(adj.subText)}</div>` : ''}
+                ${adj.subText ? `<div style="font-family:'${adj.subFontFamily||subFont}',sans-serif;font-size:${adj.subFontSize||Math.round(adj.fontSize*0.5)}px;font-weight:${subFW};font-style:${subFS_s};color:${adj.subColor||'rgba(255,255,255,.85)'};line-height:1.5;">${escapeHtml(adj.subText)}</div>` : ''}
               </div>
             </div>
           </div>
@@ -3070,6 +3075,11 @@ function renderCarouselSpecs(i) {
   // Fuente de subtítulo/contenido de marca (independiente del título)
   const brandSubFont = (isPremium && currentBrand?.sub_font_name) || (isPremium && currentBrand?.font_name) || 'DM Sans';
   const adjSubFont   = adj.subFont || brandSubFont;
+  // Negrita/Cursiva de marca
+  const sTitleFW = isPremium && currentBrand?.title_bold  !== false ? '800' : '400';
+  const sTitleFS = isPremium && currentBrand?.title_italic ? 'italic' : 'normal';
+  const sSubFW   = isPremium && currentBrand?.sub_bold    ? '700'   : '400';
+  const sSubFS   = isPremium && currentBrand?.sub_italic  ? 'italic' : 'normal';
 
   // Bug 3 fix: guardar posición de scroll del panel de controles antes de re-renderizar
   const _prevControlsEl = panel.querySelector('[data-controls-scroll]');
@@ -3098,9 +3108,9 @@ function renderCarouselSpecs(i) {
               <div style="position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 2px,transparent 2px);background-size:40px 40px;pointer-events:none;"></div>
               <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};gap:12px;width:100%;">
                 ${isPremium && currentBrand?.logo_url ? `<div style="width:100%;display:flex;justify-content:${(adj.logoAlign||'center')==='left'?'flex-start':(adj.logoAlign||'center')==='right'?'flex-end':'center'};"><div style="background:rgba(255,255,255,.18);border-radius:12px;padding:8px;display:inline-flex;"><img src="${currentBrand.logo_url}" style="width:${adj.logoSize||80}px;height:${adj.logoSize||80}px;object-fit:contain;border-radius:6px;display:block;"></div></div>` : ''}
-                <div style="font-family:'${adj.font}',sans-serif;font-size:${adj.titleSize}px;font-weight:800;color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);">${escapeHtml(adj.titleText)}</div>
+                <div style="font-family:'${adj.font}',sans-serif;font-size:${adj.titleSize}px;font-weight:${sTitleFW};font-style:${sTitleFS};color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);">${escapeHtml(adj.titleText)}</div>
                 <div style="width:40px;height:3px;background:rgba(255,255,255,0.4);border-radius:2px;flex-shrink:0;"></div>
-                <div style="font-family:'${adjSubFont}',sans-serif;font-size:${adj.contentSize}px;color:${adj.contentColor||'rgba(255,255,255,.85)'};line-height:1.5;word-break:break-word;">${escapeHtml(adj.contentText)}</div>
+                <div style="font-family:'${adjSubFont}',sans-serif;font-size:${adj.contentSize}px;font-weight:${sSubFW};font-style:${sSubFS};color:${adj.contentColor||'rgba(255,255,255,.85)'};line-height:1.5;word-break:break-word;">${escapeHtml(adj.contentText)}</div>
               </div>
             </div>
           </div>
@@ -3484,9 +3494,13 @@ async function downloadThumbnailImage(i) {
         logoBox.appendChild(img); wrap.appendChild(logoBox); inner.appendChild(wrap);
       }
 
-      // Título — usa fuente de título ajustada (o la de marca)
+      // Título — usa fuente de título ajustada (o la de marca) + negrita/cursiva de marca
+      const _tFW = isPremium && currentBrand?.title_bold  !== false ? '800' : '400';
+      const _tFS = isPremium && currentBrand?.title_italic ? 'italic' : 'normal';
+      const _sFW = isPremium && currentBrand?.sub_bold    ? '700'   : '400';
+      const _sFS = isPremium && currentBrand?.sub_italic  ? 'italic' : 'normal';
       const titleEl = document.createElement('div');
-      titleEl.style.cssText = `font-size:${fs}px;font-weight:900;color:${fcTh};line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${adj.titleFont||font}',sans-serif;word-break:break-word;`;
+      titleEl.style.cssText = `font-size:${fs}px;font-weight:${_tFW};font-style:${_tFS};color:${fcTh};line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${adj.titleFont||font}',sans-serif;word-break:break-word;`;
       titleEl.textContent = titleText;
       inner.appendChild(titleEl);
 
@@ -3495,10 +3509,10 @@ async function downloadThumbnailImage(i) {
       lineDeco.style.cssText = `width:50px;height:3px;background:rgba(255,255,255,0.4);border-radius:2px;flex-shrink:0;`;
       inner.appendChild(lineDeco);
 
-      // Subtítulo — usa fuente de subtítulo ajustada (o sub_font_name de marca)
+      // Subtítulo — usa fuente de subtítulo ajustada (o sub_font_name de marca) + negrita/cursiva
       if (subText) {
         const subEl = document.createElement('div');
-        subEl.style.cssText = `font-size:${subFs}px;font-weight:500;color:${fcSub};line-height:1.5;font-family:'${adj.subFontFamily||subFontExport}',sans-serif;word-break:break-word;`;
+        subEl.style.cssText = `font-size:${subFs}px;font-weight:${_sFW};font-style:${_sFS};color:${fcSub};line-height:1.5;font-family:'${adj.subFontFamily||subFontExport}',sans-serif;word-break:break-word;`;
         subEl.textContent = subText;
         inner.appendChild(subEl);
       }
@@ -3579,16 +3593,20 @@ async function downloadCarouselSlideImage(i) {
       lineDeco.style.cssText = `width:50px;height:3px;background:rgba(255,255,255,0.4);border-radius:2px;flex-shrink:0;`;
       inner.appendChild(lineDeco);
 
-      // Título — usa fuente de título ajustada
+      // Título — negrita/cursiva de marca
+      const _cTFW = isPremium && currentBrand?.title_bold  !== false ? '800' : '400';
+      const _cTFS = isPremium && currentBrand?.title_italic ? 'italic' : 'normal';
+      const _cCFW = isPremium && currentBrand?.sub_bold    ? '700'   : '400';
+      const _cCFS = isPremium && currentBrand?.sub_italic  ? 'italic' : 'normal';
       const titleEl = document.createElement('div');
-      titleEl.style.cssText = `font-size:${ts}px;font-weight:800;color:${fcTitle};line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${font}',sans-serif;word-break:break-word;`;
+      titleEl.style.cssText = `font-size:${ts}px;font-weight:${_cTFW};font-style:${_cTFS};color:${fcTitle};line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${font}',sans-serif;word-break:break-word;`;
       titleEl.textContent = titleText;
       inner.appendChild(titleEl);
 
-      // Contenido — usa fuente de contenido ajustada (subFontSlide)
+      // Contenido — negrita/cursiva de marca
       if (contText) {
         const contEl = document.createElement('div');
-        contEl.style.cssText = `font-size:${contSize}px;font-weight:400;color:${fcContent};line-height:1.5;font-family:'${subFontSlide}',sans-serif;word-break:break-word;`;
+        contEl.style.cssText = `font-size:${contSize}px;font-weight:${_cCFW};font-style:${_cCFS};color:${fcContent};line-height:1.5;font-family:'${subFontSlide}',sans-serif;word-break:break-word;`;
         contEl.textContent = contText;
         inner.appendChild(contEl);
       }
@@ -4192,9 +4210,10 @@ function goHome() {
    MI MARCA — Configuración de identidad visual (Premium)
    ============================================================ */
 const BRAND_FONTS = ['DM Sans','Montserrat','Poppins','Playfair Display','Raleway','Oswald','Lato','Roboto','Inter','Nunito'];
-let currentBrand = { logo_url: null, color_primary: '#8B5FBF', color_secondary: '#E91E8C', font_name: 'DM Sans', sub_font_name: 'DM Sans' };
+let currentBrand = { logo_url: null, color_primary: '#8B5FBF', color_secondary: '#E91E8C', font_name: 'DM Sans', sub_font_name: 'DM Sans', title_bold: true, title_italic: false, sub_bold: false, sub_italic: false };
 let selectedFont    = 'DM Sans';
 let selectedSubFont = 'DM Sans';
+let brandStyles = { titleBold: true, titleItalic: false, subBold: false, subItalic: false };
 
 async function showBrandScreen() {
   if (!currentUser) return;
@@ -4206,6 +4225,7 @@ async function showBrandScreen() {
   window.scrollTo(0, 0);
   await loadBrandConfig();
   renderFontGrid();
+  _syncBrandStyleButtons();
   updateBrandPreview();
 }
 
@@ -4259,6 +4279,10 @@ async function loadBrandSilent() {
       currentBrand    = d.brand;
       selectedFont    = d.brand.font_name     || 'DM Sans';
       selectedSubFont = d.brand.sub_font_name || d.brand.font_name || 'DM Sans';
+      brandStyles.titleBold   = d.brand.title_bold   !== undefined ? !!d.brand.title_bold   : true;
+      brandStyles.titleItalic = d.brand.title_italic !== undefined ? !!d.brand.title_italic : false;
+      brandStyles.subBold     = d.brand.sub_bold     !== undefined ? !!d.brand.sub_bold     : false;
+      brandStyles.subItalic   = d.brand.sub_italic   !== undefined ? !!d.brand.sub_italic   : false;
     }
   } catch(e) {}
 }
@@ -4279,6 +4303,12 @@ async function loadBrandConfig() {
       // Colores fuente
       if (currentBrand.font_color)     { document.getElementById('fontColor').value = currentBrand.font_color; document.getElementById('fontColorHex').value = currentBrand.font_color; }
       if (currentBrand.sub_font_color) { document.getElementById('subFontColor').value = currentBrand.sub_font_color; document.getElementById('subFontColorHex').value = currentBrand.sub_font_color; }
+      // Cargar estilos negrita/cursiva
+      brandStyles.titleBold   = currentBrand.title_bold   !== undefined ? !!currentBrand.title_bold   : true;
+      brandStyles.titleItalic = currentBrand.title_italic !== undefined ? !!currentBrand.title_italic : false;
+      brandStyles.subBold     = currentBrand.sub_bold     !== undefined ? !!currentBrand.sub_bold     : false;
+      brandStyles.subItalic   = currentBrand.sub_italic   !== undefined ? !!currentBrand.sub_italic   : false;
+      _syncBrandStyleButtons();
       // Logo
       if (currentBrand.logo_url) {
         document.getElementById('logoPreview').innerHTML = `<img src="${currentBrand.logo_url}" style="width:100%;height:100%;object-fit:contain;border-radius:10px;">`;
@@ -4361,6 +4391,29 @@ function syncColor(type) {
   }
 }
 
+function _syncBrandStyleButtons() {
+  ['titleBold','titleItalic','subBold','subItalic'].forEach(key => {
+    const btnId = key === 'titleBold' ? 'brandTitleBold' : key === 'titleItalic' ? 'brandTitleItalic' : key === 'subBold' ? 'brandSubBold' : 'brandSubItalic';
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    btn.style.background  = brandStyles[key] ? 'var(--brand)' : 'var(--surface-2)';
+    btn.style.color       = brandStyles[key] ? '#fff' : 'var(--text-2)';
+    btn.style.borderColor = brandStyles[key] ? 'var(--brand)' : 'var(--border)';
+  });
+}
+
+function toggleBrandStyle(key) {
+  brandStyles[key] = !brandStyles[key];
+  const btnId = key === 'titleBold' ? 'brandTitleBold' : key === 'titleItalic' ? 'brandTitleItalic' : key === 'subBold' ? 'brandSubBold' : 'brandSubItalic';
+  const btn = document.getElementById(btnId);
+  if (btn) {
+    btn.style.background   = brandStyles[key] ? 'var(--brand)' : 'var(--surface-2)';
+    btn.style.color        = brandStyles[key] ? '#fff' : 'var(--text-2)';
+    btn.style.borderColor  = brandStyles[key] ? 'var(--brand)' : 'var(--border)';
+  }
+  updateBrandPreview();
+}
+
 function updateBrandPreview() {
   const cp  = document.getElementById('colorPrimary').value;
   const cs  = document.getElementById('colorSecondary').value;
@@ -4374,8 +4427,18 @@ function updateBrandPreview() {
   const title = document.getElementById('previewTitle');
   const sub   = document.getElementById('previewSub');
   if (card)  card.style.background  = `linear-gradient(135deg,${cp},${cs})`;
-  if (title) { title.style.fontFamily = `'${selectedFont}',sans-serif`;    title.style.color = fc;  }
-  if (sub)   { sub.style.fontFamily   = `'${selectedSubFont}',sans-serif`; sub.style.color   = sfc; }
+  if (title) {
+    title.style.fontFamily  = `'${selectedFont}',sans-serif`;
+    title.style.color       = fc;
+    title.style.fontWeight  = brandStyles.titleBold   ? '800' : '400';
+    title.style.fontStyle   = brandStyles.titleItalic ? 'italic' : 'normal';
+  }
+  if (sub) {
+    sub.style.fontFamily  = `'${selectedSubFont}',sans-serif`;
+    sub.style.color       = sfc;
+    sub.style.fontWeight  = brandStyles.subBold   ? '700' : '400';
+    sub.style.fontStyle   = brandStyles.subItalic ? 'italic' : 'normal';
+  }
 }
 
 async function handleLogoUpload(event) {
@@ -4427,7 +4490,11 @@ async function saveBrand() {
         font_name:       selectedFont,
         sub_font_name:   selectedSubFont,
         font_color:      document.getElementById('fontColor')?.value || '#ffffff',
-        sub_font_color:  document.getElementById('subFontColor')?.value || '#cccccc'
+        sub_font_color:  document.getElementById('subFontColor')?.value || '#cccccc',
+        title_bold:      brandStyles.titleBold,
+        title_italic:    brandStyles.titleItalic,
+        sub_bold:        brandStyles.subBold,
+        sub_italic:      brandStyles.subItalic,
       })
     });
     const d = await r.json();
@@ -4438,6 +4505,10 @@ async function saveBrand() {
       currentBrand.sub_font_name   = selectedSubFont;
       currentBrand.font_color      = document.getElementById('fontColor')?.value || '#ffffff';
       currentBrand.sub_font_color  = document.getElementById('subFontColor')?.value || '#cccccc';
+      currentBrand.title_bold      = brandStyles.titleBold;
+      currentBrand.title_italic    = brandStyles.titleItalic;
+      currentBrand.sub_bold        = brandStyles.subBold;
+      currentBrand.sub_italic      = brandStyles.subItalic;
       // Resetear adjusts y re-renderizar
       window.slideAdjust = {};
       window.thumbAdjust = {};
@@ -5386,40 +5457,50 @@ async function cdndExport() {
     <!-- Columna derecha: todos los controles -->
     <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:14px;">
 
-      <!-- LOGO -->
+      <!-- LOGO + COLORES en una sola tarjeta -->
       <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:16px;">
-        <div style="font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">📷 Logo</div>
-        <div style="display:flex;align-items:center;gap:12px;">
-          <div id="logoPreview" style="width:64px;height:64px;border-radius:10px;background:var(--surface-2);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden;flex-shrink:0;">🏢</div>
-          <div style="flex:1;">
-            <label style="display:inline-block;background:var(--brand-light);color:var(--brand);padding:8px 16px;border-radius:var(--radius-md);cursor:pointer;font-weight:600;font-size:12px;">
-              📁 Subir logo
-              <input type="file" id="logoInput" accept="image/*" style="display:none;" onchange="handleLogoUpload(event)">
-            </label>
-            <p style="font-size:11px;color:var(--text-3);margin:5px 0 0;">JPG, PNG, WebP o SVG · Máx 5MB</p>
-            <button id="removeLogoBtn" onclick="removeLogo()" class="hidden" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:11px;margin-top:3px;padding:0;">🗑️ Eliminar</button>
-          </div>
-        </div>
-      </div>
+        <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
 
-      <!-- COLORES DE FONDO -->
-      <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:16px;">
-        <div style="font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">🎨 Colores de fondo</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-          <div>
-            <label style="font-size:12px;color:var(--text-2);font-weight:600;display:block;margin-bottom:6px;">Color primario</label>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <input type="color" id="colorPrimary" value="#8B5FBF" oninput="updateBrandPreview()" style="width:40px;height:36px;border:none;border-radius:8px;cursor:pointer;padding:2px;flex-shrink:0;">
-              <input type="text" id="colorPrimaryHex" value="#8B5FBF" maxlength="7" style="flex:1;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text);min-width:0;" oninput="syncColor('primary')">
+          <!-- Logo -->
+          <div style="flex-shrink:0;">
+            <div style="font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">📷 Logo</div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div id="logoPreview" style="width:60px;height:60px;border-radius:10px;background:var(--surface-2);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;overflow:hidden;flex-shrink:0;">🏢</div>
+              <div>
+                <label style="display:inline-block;background:var(--brand-light);color:var(--brand);padding:7px 14px;border-radius:var(--radius-md);cursor:pointer;font-weight:600;font-size:12px;">
+                  📁 Subir logo
+                  <input type="file" id="logoInput" accept="image/*" style="display:none;" onchange="handleLogoUpload(event)">
+                </label>
+                <p style="font-size:10px;color:var(--text-3);margin:4px 0 0;">JPG, PNG, WebP, SVG · Máx 5MB</p>
+                <button id="removeLogoBtn" onclick="removeLogo()" class="hidden" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:11px;margin-top:2px;padding:0;">🗑️ Eliminar</button>
+              </div>
             </div>
           </div>
-          <div>
-            <label style="font-size:12px;color:var(--text-2);font-weight:600;display:block;margin-bottom:6px;">Color secundario</label>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <input type="color" id="colorSecondary" value="#E91E8C" oninput="updateBrandPreview()" style="width:40px;height:36px;border:none;border-radius:8px;cursor:pointer;padding:2px;flex-shrink:0;">
-              <input type="text" id="colorSecondaryHex" value="#E91E8C" maxlength="7" style="flex:1;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text);min-width:0;" oninput="syncColor('secondary')">
+
+          <!-- Separador vertical -->
+          <div style="width:1px;background:var(--border);align-self:stretch;flex-shrink:0;"></div>
+
+          <!-- Colores de fondo -->
+          <div style="flex:1;min-width:200px;">
+            <div style="font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">🎨 Colores de fondo</div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div>
+                <label style="font-size:11px;color:var(--text-2);font-weight:600;display:block;margin-bottom:4px;">Primario</label>
+                <div style="display:flex;align-items:center;gap:7px;">
+                  <input type="color" id="colorPrimary" value="#8B5FBF" oninput="updateBrandPreview()" style="width:36px;height:32px;border:none;border-radius:7px;cursor:pointer;padding:2px;flex-shrink:0;">
+                  <input type="text" id="colorPrimaryHex" value="#8B5FBF" maxlength="7" style="flex:1;padding:6px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;background:var(--surface);color:var(--text);min-width:0;" oninput="syncColor('primary')">
+                </div>
+              </div>
+              <div>
+                <label style="font-size:11px;color:var(--text-2);font-weight:600;display:block;margin-bottom:4px;">Secundario</label>
+                <div style="display:flex;align-items:center;gap:7px;">
+                  <input type="color" id="colorSecondary" value="#E91E8C" oninput="updateBrandPreview()" style="width:36px;height:32px;border:none;border-radius:7px;cursor:pointer;padding:2px;flex-shrink:0;">
+                  <input type="text" id="colorSecondaryHex" value="#E91E8C" maxlength="7" style="flex:1;padding:6px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;background:var(--surface);color:var(--text);min-width:0;" oninput="syncColor('secondary')">
+                </div>
+              </div>
             </div>
           </div>
+
         </div>
       </div>
 
@@ -5432,13 +5513,16 @@ async function cdndExport() {
           <div>
             <div style="font-size:12px;color:var(--text-2);font-weight:600;margin-bottom:8px;">✏️ Fuente título</div>
             <div id="fontGrid" style="display:flex;flex-direction:column;gap:4px;"></div>
-            <div style="margin-top:10px;">
-              <div style="font-size:11px;color:var(--text-3);margin-bottom:5px;font-weight:600;">Color</div>
+            <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px;">
+              <!-- Color + Negrita/Cursiva en una fila -->
               <div style="display:flex;align-items:center;gap:6px;">
-                <input type="color" id="fontColor" value="#ffffff" oninput="updateBrandPreview()" style="width:32px;height:28px;border:none;border-radius:6px;cursor:pointer;padding:1px;">
-                <input type="text" id="fontColorHex" value="#ffffff" maxlength="7" style="flex:1;padding:5px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:11px;background:var(--surface);color:var(--text);min-width:0;" oninput="syncFontColor()">
+                <input type="color" id="fontColor" value="#ffffff" oninput="updateBrandPreview()" style="width:30px;height:26px;border:none;border-radius:5px;cursor:pointer;padding:1px;flex-shrink:0;">
+                <input type="text" id="fontColorHex" value="#ffffff" maxlength="7" style="flex:1;padding:5px 7px;border:1.5px solid var(--border);border-radius:6px;font-size:11px;background:var(--surface);color:var(--text);min-width:0;" oninput="syncFontColor()">
+                <button id="brandTitleBold" onclick="toggleBrandStyle('titleBold')" title="Negrita" style="width:28px;height:26px;border-radius:6px;border:1.5px solid var(--border);background:var(--surface-2);cursor:pointer;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">B</button>
+                <button id="brandTitleItalic" onclick="toggleBrandStyle('titleItalic')" title="Cursiva" style="width:28px;height:26px;border-radius:6px;border:1.5px solid var(--border);background:var(--surface-2);cursor:pointer;font-style:italic;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:600;">I</button>
               </div>
-              <div style="display:flex;gap:4px;margin-top:5px;">
+              <!-- Colores rápidos -->
+              <div style="display:flex;gap:4px;">
                 <button onclick="setFontColor('#ffffff')" style="background:#fff;border:1px solid #ddd;border-radius:4px;width:20px;height:20px;cursor:pointer;" title="Blanco"></button>
                 <button onclick="setFontColor('#000000')" style="background:#000;border:1px solid #ddd;border-radius:4px;width:20px;height:20px;cursor:pointer;" title="Negro"></button>
                 <button onclick="setFontColor('#FFD700')" style="background:#FFD700;border:1px solid #ddd;border-radius:4px;width:20px;height:20px;cursor:pointer;" title="Dorado"></button>
@@ -5452,13 +5536,16 @@ async function cdndExport() {
           <div>
             <div style="font-size:12px;color:var(--text-2);font-weight:600;margin-bottom:8px;">💬 Fuente subtítulo</div>
             <div id="subFontGrid" style="display:flex;flex-direction:column;gap:4px;"></div>
-            <div style="margin-top:10px;">
-              <div style="font-size:11px;color:var(--text-3);margin-bottom:5px;font-weight:600;">Color</div>
+            <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px;">
+              <!-- Color + Negrita/Cursiva en una fila -->
               <div style="display:flex;align-items:center;gap:6px;">
-                <input type="color" id="subFontColor" value="#cccccc" oninput="updateBrandPreview()" style="width:32px;height:28px;border:none;border-radius:6px;cursor:pointer;padding:1px;">
-                <input type="text" id="subFontColorHex" value="#cccccc" maxlength="7" style="flex:1;padding:5px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:11px;background:var(--surface);color:var(--text);min-width:0;" oninput="syncSubFontColor()">
+                <input type="color" id="subFontColor" value="#cccccc" oninput="updateBrandPreview()" style="width:30px;height:26px;border:none;border-radius:5px;cursor:pointer;padding:1px;flex-shrink:0;">
+                <input type="text" id="subFontColorHex" value="#cccccc" maxlength="7" style="flex:1;padding:5px 7px;border:1.5px solid var(--border);border-radius:6px;font-size:11px;background:var(--surface);color:var(--text);min-width:0;" oninput="syncSubFontColor()">
+                <button id="brandSubBold" onclick="toggleBrandStyle('subBold')" title="Negrita" style="width:28px;height:26px;border-radius:6px;border:1.5px solid var(--border);background:var(--surface-2);cursor:pointer;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">B</button>
+                <button id="brandSubItalic" onclick="toggleBrandStyle('subItalic')" title="Cursiva" style="width:28px;height:26px;border-radius:6px;border:1.5px solid var(--border);background:var(--surface-2);cursor:pointer;font-style:italic;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:600;">I</button>
               </div>
-              <div style="display:flex;gap:4px;margin-top:5px;">
+              <!-- Colores rápidos -->
+              <div style="display:flex;gap:4px;">
                 <button onclick="setSubFontColor('#ffffff')" style="background:#fff;border:1px solid #ddd;border-radius:4px;width:20px;height:20px;cursor:pointer;" title="Blanco"></button>
                 <button onclick="setSubFontColor('#cccccc')" style="background:#ccc;border:1px solid #ddd;border-radius:4px;width:20px;height:20px;cursor:pointer;" title="Gris"></button>
                 <button onclick="setSubFontColor('#000000')" style="background:#000;border:1px solid #ddd;border-radius:4px;width:20px;height:20px;cursor:pointer;" title="Negro"></button>
