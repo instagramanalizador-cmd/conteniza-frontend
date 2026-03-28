@@ -4295,24 +4295,19 @@ async function loadBrandConfig() {
 function renderFontGrid() {
   const titleGrid = document.getElementById('fontGrid');
   const subGrid   = document.getElementById('subFontGrid');
+  const btnStyle = (active) => `padding:5px 10px;border-radius:7px;border:1.5px solid ${active?'var(--brand)':'var(--border)'};cursor:pointer;text-align:left;background:${active?'var(--brand-light)':'var(--surface)'};width:100%;`;
   if (titleGrid) {
     titleGrid.innerHTML = BRAND_FONTS.map(font => `
-      <div onclick="selectFont('${font}')" id="font-btn-${font.replace(/ /g,'-')}"
-        style="padding:10px;border-radius:8px;border:2px solid ${selectedFont===font ? 'var(--brand)' : 'var(--border)'};
-               cursor:pointer;text-align:center;background:${selectedFont===font ? 'var(--brand-light)' : 'var(--surface)'};">
-        <div style="font-family:'${font}',sans-serif;font-size:14px;font-weight:700;color:var(--text);">${font}</div>
-        <div style="font-family:'${font}',sans-serif;font-size:11px;color:var(--text-3);">Título Aa</div>
-      </div>
+      <button onclick="selectFont('${font}')" id="font-btn-${font.replace(/ /g,'-')}" style="${btnStyle(selectedFont===font)}">
+        <span style="font-family:'${font}',sans-serif;font-size:13px;font-weight:700;color:${selectedFont===font?'var(--brand)':'var(--text)'};">${font}</span>
+      </button>
     `).join('');
   }
   if (subGrid) {
     subGrid.innerHTML = BRAND_FONTS.map(font => `
-      <div onclick="selectSubFont('${font}')" id="sub-font-btn-${font.replace(/ /g,'-')}"
-        style="padding:10px;border-radius:8px;border:2px solid ${selectedSubFont===font ? 'var(--brand)' : 'var(--border)'};
-               cursor:pointer;text-align:center;background:${selectedSubFont===font ? 'var(--brand-light)' : 'var(--surface)'};">
-        <div style="font-family:'${font}',sans-serif;font-size:14px;font-weight:400;color:var(--text);">${font}</div>
-        <div style="font-family:'${font}',sans-serif;font-size:11px;color:var(--text-3);">Subtítulo Aa</div>
-      </div>
+      <button onclick="selectSubFont('${font}')" id="sub-font-btn-${font.replace(/ /g,'-')}" style="${btnStyle(selectedSubFont===font)}">
+        <span style="font-family:'${font}',sans-serif;font-size:13px;font-weight:400;color:${selectedSubFont===font?'var(--brand)':'var(--text)'};">${font}</span>
+      </button>
     `).join('');
   }
 }
@@ -5353,139 +5348,131 @@ async function cdndExport() {
      BRAND SCREEN — Mi Marca (Solo Premium)
      ========================================================= -->
 <div id="brandScreen" class="hidden">
-<div style="max-width:700px;margin:0 auto;padding:24px 16px 80px;">
+<div style="max-width:900px;margin:0 auto;padding:24px 16px 80px;">
 
   <!-- Header -->
-  <div style="display:flex;align-items:center;gap:12px;margin-bottom:28px;">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
     <button onclick="hideBrandScreen()" style="background:none;border:none;cursor:pointer;color:var(--text-2);font-size:22px;">←</button>
     <div>
       <h2 style="font-family:'Syne',sans-serif;font-size:22px;font-weight:700;margin:0;">🎨 Mi Marca</h2>
       <p style="font-size:13px;color:var(--text-3);margin:2px 0 0;">Personaliza tus publicaciones con tu identidad visual</p>
     </div>
+    <button onclick="saveBrand()" class="btn btn-primary" style="margin-left:auto;padding:10px 24px;font-size:14px;font-weight:700;">
+      💾 Guardar
+    </button>
   </div>
 
-  <!-- Logo -->
-  <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:24px;margin-bottom:16px;">
-    <h3 style="font-size:15px;font-weight:700;margin:0 0 16px;">📷 Logo de tu marca</h3>
-    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-      <div id="logoPreview" style="width:80px;height:80px;border-radius:12px;background:var(--surface-2);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden;flex-shrink:0;">
-        🏢
-      </div>
-      <div style="flex:1;min-width:180px;">
-        <label style="display:inline-block;background:var(--brand-light);color:var(--brand);padding:10px 20px;border-radius:var(--radius-md);cursor:pointer;font-weight:600;font-size:13px;">
-          📁 Subir logo
-          <input type="file" id="logoInput" accept="image/*" style="display:none;" onchange="handleLogoUpload(event)">
-        </label>
-        <p style="font-size:11px;color:var(--text-3);margin:6px 0 0;">JPG, PNG, WebP o SVG. Máx 5MB.</p>
-        <button id="removeLogoBtn" onclick="removeLogo()" class="hidden" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:12px;margin-top:4px;">🗑️ Eliminar logo</button>
-      </div>
-    </div>
-  </div>
+  <!-- Layout: preview izquierda + controles derecha -->
+  <div style="display:flex;gap:20px;align-items:flex-start;">
 
-  <!-- Colores -->
-  <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:24px;margin-bottom:16px;">
-    <h3 style="font-size:15px;font-weight:700;margin:0 0 16px;">🎨 Colores de marca</h3>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-      <div>
-        <label style="font-size:13px;color:var(--text-2);font-weight:600;display:block;margin-bottom:8px;">Color primario</label>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <input type="color" id="colorPrimary" value="#8B5FBF" oninput="updateBrandPreview()"
-            style="width:44px;height:44px;border:none;border-radius:8px;cursor:pointer;padding:2px;">
-          <input type="text" id="colorPrimaryHex" value="#8B5FBF" maxlength="7"
-            style="flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:13px;background:var(--surface);color:var(--text);"
-            oninput="syncColor('primary')">
+    <!-- Columna izquierda: Preview fija -->
+    <div style="flex-shrink:0;width:240px;">
+      <div style="font-size:11px;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;text-align:center;margin-bottom:10px;">Vista previa</div>
+      <div style="width:240px;height:300px;overflow:hidden;border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,0.25);">
+        <div id="brandPreviewCard" style="width:480px;height:600px;transform:scale(0.5);transform-origin:top left;background:linear-gradient(135deg,#8B5FBF,#E91E8C);display:flex;flex-direction:column;justify-content:center;align-items:center;padding:44px;box-sizing:border-box;text-align:center;gap:14px;">
+          <div id="previewLogo" style="display:none;">
+            <div style="background:rgba(255,255,255,0.18);border-radius:14px;padding:10px;display:inline-flex;">
+              <img id="previewLogoImg" style="width:80px;height:80px;border-radius:8px;object-fit:contain;display:block;">
+            </div>
+          </div>
+          <div id="previewTitle" style="font-family:'DM Sans',sans-serif;font-size:40px;font-weight:800;color:#fff;line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);">Tu título aquí</div>
+          <div style="width:50px;height:3px;background:rgba(255,255,255,0.4);border-radius:2px;flex-shrink:0;"></div>
+          <div id="previewSub" style="font-family:'DM Sans',sans-serif;font-size:22px;color:rgba(255,255,255,.8);line-height:1.5;">Subtítulo de ejemplo</div>
         </div>
       </div>
-      <div>
-        <label style="font-size:13px;color:var(--text-2);font-weight:600;display:block;margin-bottom:8px;">Color secundario</label>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <input type="color" id="colorSecondary" value="#E91E8C" oninput="updateBrandPreview()"
-            style="width:44px;height:44px;border:none;border-radius:8px;cursor:pointer;padding:2px;">
-          <input type="text" id="colorSecondaryHex" value="#E91E8C" maxlength="7"
-            style="flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:13px;background:var(--surface);color:var(--text);"
-            oninput="syncColor('secondary')">
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Fuente -->
-  <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:24px;margin-bottom:16px;">
-    <h3 style="font-size:15px;font-weight:700;margin:0 0 16px;">✍️ Tipografía</h3>
-
-    <!-- Fuente título -->
-    <div style="margin-bottom:16px;">
-      <label style="font-size:12px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:10px;">✏️ Fuente del título</label>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;" id="fontGrid">
-      </div>
+      <p style="font-size:10px;color:var(--text-3);text-align:center;margin-top:8px;">480×600px · escala 50%</p>
     </div>
 
-    <!-- Fuente subtítulo -->
-    <div style="margin-bottom:16px;">
-      <label style="font-size:12px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:10px;">💬 Fuente del subtítulo / contenido</label>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;" id="subFontGrid">
-      </div>
-    </div>
+    <!-- Columna derecha: todos los controles -->
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:14px;">
 
-    <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-      <!-- Color título -->
-      <div>
-        <label style="font-size:12px;color:var(--text-3);font-weight:600;display:block;margin-bottom:6px;">Color título</label>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <input type="color" id="fontColor" value="#ffffff" oninput="updateBrandPreview()"
-            style="width:40px;height:40px;border:none;border-radius:8px;cursor:pointer;padding:2px;">
-          <input type="text" id="fontColorHex" value="#ffffff" maxlength="7"
-            style="flex:1;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:12px;background:var(--surface);color:var(--text);"
-            oninput="syncFontColor()">
-        </div>
-        <div style="display:flex;gap:5px;margin-top:6px;">
-          <button onclick="setFontColor('#ffffff')" style="background:#fff;border:1px solid #ddd;border-radius:5px;width:24px;height:24px;cursor:pointer;" title="Blanco"></button>
-          <button onclick="setFontColor('#000000')" style="background:#000;border:1px solid #ddd;border-radius:5px;width:24px;height:24px;cursor:pointer;" title="Negro"></button>
-          <button onclick="setFontColor('#FFD700')" style="background:#FFD700;border:1px solid #ddd;border-radius:5px;width:24px;height:24px;cursor:pointer;" title="Dorado"></button>
-          <button onclick="setFontColor('#FF6B6B')" style="background:#FF6B6B;border:1px solid #ddd;border-radius:5px;width:24px;height:24px;cursor:pointer;" title="Coral"></button>
-        </div>
-      </div>
-      <!-- Color subtítulo -->
-      <div>
-        <label style="font-size:12px;color:var(--text-3);font-weight:600;display:block;margin-bottom:6px;">Color subtítulo</label>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <input type="color" id="subFontColor" value="#cccccc" oninput="updateBrandPreview()"
-            style="width:40px;height:40px;border:none;border-radius:8px;cursor:pointer;padding:2px;">
-          <input type="text" id="subFontColorHex" value="#cccccc" maxlength="7"
-            style="flex:1;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:12px;background:var(--surface);color:var(--text);"
-            oninput="syncSubFontColor()">
-        </div>
-        <div style="display:flex;gap:5px;margin-top:6px;">
-          <button onclick="setSubFontColor('#ffffff')" style="background:#fff;border:1px solid #ddd;border-radius:5px;width:24px;height:24px;cursor:pointer;" title="Blanco"></button>
-          <button onclick="setSubFontColor('#cccccc')" style="background:#ccc;border:1px solid #ddd;border-radius:5px;width:24px;height:24px;cursor:pointer;" title="Gris"></button>
-          <button onclick="setSubFontColor('#000000')" style="background:#000;border:1px solid #ddd;border-radius:5px;width:24px;height:24px;cursor:pointer;" title="Negro"></button>
-          <button onclick="setSubFontColor('#FFD700')" style="background:#FFD700;border:1px solid #ddd;border-radius:5px;width:24px;height:24px;cursor:pointer;" title="Dorado"></button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Preview — 270x337px wrapper con div 540x675 escalado al 50% -->
-  <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:24px;margin-bottom:24px;">
-    <h3 style="font-size:15px;font-weight:700;margin:0 0 16px;">👁️ Vista previa</h3>
-    <div style="width:270px;height:337px;overflow:hidden;border-radius:12px;margin:0 auto;box-shadow:0 4px 20px rgba(0,0,0,0.25);">
-      <div id="brandPreviewCard" style="width:540px;height:675px;transform:scale(0.5);transform-origin:top left;background:linear-gradient(135deg,#8B5FBF,#E91E8C);display:flex;flex-direction:column;justify-content:center;align-items:center;padding:44px;box-sizing:border-box;text-align:center;gap:14px;">
-        <div id="previewLogo" style="display:none;">
-          <div style="background:rgba(255,255,255,0.18);border-radius:14px;padding:10px;display:inline-flex;">
-            <img id="previewLogoImg" style="width:80px;height:80px;border-radius:8px;object-fit:contain;display:block;">
+      <!-- LOGO -->
+      <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:16px;">
+        <div style="font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">📷 Logo</div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div id="logoPreview" style="width:64px;height:64px;border-radius:10px;background:var(--surface-2);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden;flex-shrink:0;">🏢</div>
+          <div style="flex:1;">
+            <label style="display:inline-block;background:var(--brand-light);color:var(--brand);padding:8px 16px;border-radius:var(--radius-md);cursor:pointer;font-weight:600;font-size:12px;">
+              📁 Subir logo
+              <input type="file" id="logoInput" accept="image/*" style="display:none;" onchange="handleLogoUpload(event)">
+            </label>
+            <p style="font-size:11px;color:var(--text-3);margin:5px 0 0;">JPG, PNG, WebP o SVG · Máx 5MB</p>
+            <button id="removeLogoBtn" onclick="removeLogo()" class="hidden" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:11px;margin-top:3px;padding:0;">🗑️ Eliminar</button>
           </div>
         </div>
-        <div id="previewTitle" style="font-family:'DM Sans',sans-serif;font-size:40px;font-weight:800;color:#fff;line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);">Tu título aquí</div>
-        <div style="width:50px;height:3px;background:rgba(255,255,255,0.4);border-radius:2px;flex-shrink:0;"></div>
-        <div id="previewSub" style="font-family:'DM Sans',sans-serif;font-size:22px;color:rgba(255,255,255,.8);line-height:1.5;">Contenido de ejemplo para ver la tipografía y los colores de tu marca</div>
       </div>
+
+      <!-- COLORES DE FONDO -->
+      <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:16px;">
+        <div style="font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">🎨 Colores de fondo</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <label style="font-size:12px;color:var(--text-2);font-weight:600;display:block;margin-bottom:6px;">Color primario</label>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="color" id="colorPrimary" value="#8B5FBF" oninput="updateBrandPreview()" style="width:40px;height:36px;border:none;border-radius:8px;cursor:pointer;padding:2px;flex-shrink:0;">
+              <input type="text" id="colorPrimaryHex" value="#8B5FBF" maxlength="7" style="flex:1;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text);min-width:0;" oninput="syncColor('primary')">
+            </div>
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-2);font-weight:600;display:block;margin-bottom:6px;">Color secundario</label>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="color" id="colorSecondary" value="#E91E8C" oninput="updateBrandPreview()" style="width:40px;height:36px;border:none;border-radius:8px;cursor:pointer;padding:2px;flex-shrink:0;">
+              <input type="text" id="colorSecondaryHex" value="#E91E8C" maxlength="7" style="flex:1;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text);min-width:0;" oninput="syncColor('secondary')">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TIPOGRAFÍA: dos columnas título / subtítulo -->
+      <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:16px;">
+        <div style="font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">✍️ Tipografía</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+
+          <!-- Título -->
+          <div>
+            <div style="font-size:12px;color:var(--text-2);font-weight:600;margin-bottom:8px;">✏️ Fuente título</div>
+            <div id="fontGrid" style="display:flex;flex-direction:column;gap:4px;"></div>
+            <div style="margin-top:10px;">
+              <div style="font-size:11px;color:var(--text-3);margin-bottom:5px;font-weight:600;">Color</div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <input type="color" id="fontColor" value="#ffffff" oninput="updateBrandPreview()" style="width:32px;height:28px;border:none;border-radius:6px;cursor:pointer;padding:1px;">
+                <input type="text" id="fontColorHex" value="#ffffff" maxlength="7" style="flex:1;padding:5px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:11px;background:var(--surface);color:var(--text);min-width:0;" oninput="syncFontColor()">
+              </div>
+              <div style="display:flex;gap:4px;margin-top:5px;">
+                <button onclick="setFontColor('#ffffff')" style="background:#fff;border:1px solid #ddd;border-radius:4px;width:20px;height:20px;cursor:pointer;" title="Blanco"></button>
+                <button onclick="setFontColor('#000000')" style="background:#000;border:1px solid #ddd;border-radius:4px;width:20px;height:20px;cursor:pointer;" title="Negro"></button>
+                <button onclick="setFontColor('#FFD700')" style="background:#FFD700;border:1px solid #ddd;border-radius:4px;width:20px;height:20px;cursor:pointer;" title="Dorado"></button>
+                <button onclick="setFontColor('#FF6B6B')" style="background:#FF6B6B;border:1px solid #ddd;border-radius:4px;width:20px;height:20px;cursor:pointer;" title="Coral"></button>
+                <button onclick="setFontColor('#00C9FF')" style="background:#00C9FF;border:1px solid #ddd;border-radius:4px;width:20px;height:20px;cursor:pointer;" title="Azul"></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Subtítulo -->
+          <div>
+            <div style="font-size:12px;color:var(--text-2);font-weight:600;margin-bottom:8px;">💬 Fuente subtítulo</div>
+            <div id="subFontGrid" style="display:flex;flex-direction:column;gap:4px;"></div>
+            <div style="margin-top:10px;">
+              <div style="font-size:11px;color:var(--text-3);margin-bottom:5px;font-weight:600;">Color</div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <input type="color" id="subFontColor" value="#cccccc" oninput="updateBrandPreview()" style="width:32px;height:28px;border:none;border-radius:6px;cursor:pointer;padding:1px;">
+                <input type="text" id="subFontColorHex" value="#cccccc" maxlength="7" style="flex:1;padding:5px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:11px;background:var(--surface);color:var(--text);min-width:0;" oninput="syncSubFontColor()">
+              </div>
+              <div style="display:flex;gap:4px;margin-top:5px;">
+                <button onclick="setSubFontColor('#ffffff')" style="background:#fff;border:1px solid #ddd;border-radius:4px;width:20px;height:20px;cursor:pointer;" title="Blanco"></button>
+                <button onclick="setSubFontColor('#cccccc')" style="background:#ccc;border:1px solid #ddd;border-radius:4px;width:20px;height:20px;cursor:pointer;" title="Gris"></button>
+                <button onclick="setSubFontColor('#000000')" style="background:#000;border:1px solid #ddd;border-radius:4px;width:20px;height:20px;cursor:pointer;" title="Negro"></button>
+                <button onclick="setSubFontColor('#FFD700')" style="background:#FFD700;border:1px solid #ddd;border-radius:4px;width:20px;height:20px;cursor:pointer;" title="Dorado"></button>
+                <button onclick="setSubFontColor('#00C9FF')" style="background:#00C9FF;border:1px solid #ddd;border-radius:4px;width:20px;height:20px;cursor:pointer;" title="Azul"></button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
     </div>
   </div>
-
-  <!-- Guardar -->
-  <button onclick="saveBrand()" class="btn btn-primary btn-full" style="padding:16px;font-size:16px;font-weight:700;">
-    💾 Guardar configuración de marca
-  </button>
 
 </div>
 </div>
