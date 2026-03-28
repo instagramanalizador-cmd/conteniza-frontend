@@ -4873,8 +4873,20 @@ function openCdndEditor(type, index) {
     cdnd.style.subColor   = adj.contentColor || (isPrem && currentBrand?.sub_font_color) || '#cccccc';
     cdnd.style.subAlign   = 'center';
     cdnd.style.logoSize   = adj.logoSize   || 60;
-    if (adj.cdndBlocks) cdnd.blocks = JSON.parse(JSON.stringify(adj.cdndBlocks));
-    else cdndResetPositions(true);
+    if (adj.cdndBlocks) {
+      // Restaurar posiciones previas del Studio
+      cdnd.blocks = JSON.parse(JSON.stringify(adj.cdndBlocks));
+    } else {
+      // Primera apertura: derivar posiciones del panel
+      const logoAlign = adj.logoAlign || 'center';
+      const logoX = logoAlign === 'left' ? 16 : logoAlign === 'right' ? 84 : 50;
+      const hasLogo = !!cdnd.content.logoUrl;
+      cdnd.blocks = {
+        logo:  { x: logoX, y: 15,  visible: hasLogo },
+        title: { x: 50,    y: hasLogo ? 42 : 35, visible: true, align: adj.align || 'center' },
+        sub:   { x: 50,    y: hasLogo ? 62 : 55, visible: true, align: adj.align || 'center' },
+      };
+    }
     document.getElementById('cdndSlideLabel').textContent = 'Slide '+(index+1)+' / '+(currentCarouselSlides?.length||1);
   } else {
     const t   = currentThumbnails?.[index] || {};
@@ -4893,8 +4905,20 @@ function openCdndEditor(type, index) {
     cdnd.style.subSize    = adj.subFontSize || 20;
     cdnd.style.subColor   = adj.subColor || (isPrem && currentBrand?.sub_font_color) || '#cccccc';
     cdnd.style.logoSize   = adj.logoSize || 60;
-    if (adj.cdndBlocks) cdnd.blocks = JSON.parse(JSON.stringify(adj.cdndBlocks));
-    else cdndResetPositions(true);
+    if (adj.cdndBlocks) {
+      // Si ya fue editado en Studio antes, restaurar posiciones guardadas
+      cdnd.blocks = JSON.parse(JSON.stringify(adj.cdndBlocks));
+    } else {
+      // Primera apertura: derivar posiciones del panel de edición
+      const logoAlign = adj.logoAlign || 'center';
+      const logoX = logoAlign === 'left' ? 16 : logoAlign === 'right' ? 84 : 50;
+      const hasLogo = !!cdnd.content.logoUrl;
+      cdnd.blocks = {
+        logo:  { x: logoX, y: 15,  visible: hasLogo },
+        title: { x: 50,    y: hasLogo ? 42 : 35, visible: true, align: adj.align || 'center' },
+        sub:   { x: 50,    y: hasLogo ? 62 : 55, visible: true, align: adj.align || 'center' },
+      };
+    }
     document.getElementById('cdndSlideLabel').textContent = 'Miniatura '+(index+1);
   }
 
@@ -4933,6 +4957,11 @@ function cdndSaveBack() {
     adj.logoSize      = cdnd.style.logoSize;
     adj.titleText     = cdnd.content.title;
     adj.contentText   = cdnd.content.sub;
+    // Sincronizar logoAlign del panel según posición X del logo en Studio
+    if (cdnd.blocks.logo) {
+      const lx = cdnd.blocks.logo.x;
+      adj.logoAlign = lx < 33 ? 'left' : lx > 67 ? 'right' : 'center';
+    }
     renderCarouselSpecs(i);
   } else {
     if (!window.thumbAdjust) window.thumbAdjust = {};
@@ -4940,7 +4969,7 @@ function cdndSaveBack() {
     const adj = window.thumbAdjust[i];
     adj.cdndBlocks     = JSON.parse(JSON.stringify(cdnd.blocks));
     adj.titleFont      = cdnd.style.titleFont;
-    adj.subFontFamily  = cdnd.style.subFont;   // panel usa subFontFamily
+    adj.subFontFamily  = cdnd.style.subFont;
     adj.fontSize       = cdnd.style.titleSize;
     adj.titleColor     = cdnd.style.titleColor;
     adj.subFontSize    = cdnd.style.subSize;
@@ -4948,6 +4977,11 @@ function cdndSaveBack() {
     adj.logoSize       = cdnd.style.logoSize;
     adj.titleText      = cdnd.content.title;
     adj.subText        = cdnd.content.sub;
+    // Sincronizar logoAlign del panel según posición X del logo en Studio
+    if (cdnd.blocks.logo) {
+      const lx = cdnd.blocks.logo.x;
+      adj.logoAlign = lx < 33 ? 'left' : lx > 67 ? 'right' : 'center';
+    }
     renderThumbnailSpecs(i);
   }
 }
