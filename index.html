@@ -2896,7 +2896,7 @@ function renderThumbnailSpecs(i) {
             </div>
           </div>
 
-          <!-- TÍTULO: tamaño + color en una fila -->
+          <!-- TÍTULO: tamaño + color + B/I en una fila -->
           <div style="border-bottom:1px solid var(--border);padding:10px 14px;">
             <div style="font-size:10px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">✏️ Título</div>
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
@@ -2906,9 +2906,11 @@ function renderThumbnailSpecs(i) {
                 <span style="font-size:12px;font-weight:700;min-width:26px;text-align:center;">${adj.fontSize}</span>
                 <button onclick="thumbAdjustFn(${i},'fontSize',4)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:5px;width:22px;height:22px;cursor:pointer;font-size:12px;line-height:1;">+</button>
               </div>
-              <span style="font-size:11px;color:var(--text-2);margin-left:6px;">Color</span>
+              <span style="font-size:11px;color:var(--text-2);margin-left:4px;">Color</span>
               <input type="color" value="${adj.titleColor||'#ffffff'}" onchange="thumbAdjustColor(${i},'titleColor',this.value)"
-                style="width:28px;height:24px;border:none;border-radius:5px;cursor:pointer;padding:1px;flex-shrink:0;">
+                style="width:26px;height:22px;border:none;border-radius:5px;cursor:pointer;padding:1px;flex-shrink:0;">
+              <button onclick="thumbAdjustFn(${i},'titleBold',null)" style="width:24px;height:22px;border-radius:4px;border:1px solid var(--border);background:${adj.titleBold?'var(--brand)':'var(--surface-2)'};color:${adj.titleBold?'#fff':'var(--text-2)'};cursor:pointer;font-weight:900;font-size:12px;flex-shrink:0;" title="Negrita">B</button>
+              <button onclick="thumbAdjustFn(${i},'titleItalic',null)" style="width:24px;height:22px;border-radius:4px;border:1px solid var(--border);background:${adj.titleItalic?'var(--brand)':'var(--surface-2)'};color:${adj.titleItalic?'#fff':'var(--text-2)'};cursor:pointer;font-style:italic;font-size:12px;flex-shrink:0;" title="Cursiva">I</button>
             </div>
             <div style="font-size:10px;color:var(--text-3);margin-bottom:5px;font-weight:600;">Fuente</div>
             <div style="display:flex;flex-wrap:wrap;gap:3px;">
@@ -2916,7 +2918,7 @@ function renderThumbnailSpecs(i) {
             </div>
           </div>
 
-          <!-- SUBTÍTULO: tamaño + color en una fila -->
+          <!-- SUBTÍTULO: tamaño + color + B/I en una fila -->
           <div style="border-bottom:1px solid var(--border);padding:10px 14px;">
             <div style="font-size:10px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">💬 Subtítulo</div>
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
@@ -2926,9 +2928,11 @@ function renderThumbnailSpecs(i) {
                 <span style="font-size:12px;font-weight:700;min-width:26px;text-align:center;">${adj.subFontSize||20}</span>
                 <button onclick="thumbAdjustFn(${i},'subFontSize',2)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:5px;width:22px;height:22px;cursor:pointer;font-size:12px;line-height:1;">+</button>
               </div>
-              <span style="font-size:11px;color:var(--text-2);margin-left:6px;">Color</span>
+              <span style="font-size:11px;color:var(--text-2);margin-left:4px;">Color</span>
               <input type="color" value="${adj.subColor||'#cccccc'}" onchange="thumbAdjustColor(${i},'subColor',this.value)"
-                style="width:28px;height:24px;border:none;border-radius:5px;cursor:pointer;padding:1px;flex-shrink:0;">
+                style="width:26px;height:22px;border:none;border-radius:5px;cursor:pointer;padding:1px;flex-shrink:0;">
+              <button onclick="thumbAdjustFn(${i},'subBold',null)" style="width:24px;height:22px;border-radius:4px;border:1px solid var(--border);background:${adj.subBold?'var(--brand)':'var(--surface-2)'};color:${adj.subBold?'#fff':'var(--text-2)'};cursor:pointer;font-weight:900;font-size:12px;flex-shrink:0;" title="Negrita">B</button>
+              <button onclick="thumbAdjustFn(${i},'subItalic',null)" style="width:24px;height:22px;border-radius:4px;border:1px solid var(--border);background:${adj.subItalic?'var(--brand)':'var(--surface-2)'};color:${adj.subItalic?'#fff':'var(--text-2)'};cursor:pointer;font-style:italic;font-size:12px;flex-shrink:0;" title="Cursiva">I</button>
             </div>
             <div style="font-size:10px;color:var(--text-3);margin-bottom:5px;font-weight:600;">Fuente</div>
             <div style="display:flex;flex-wrap:wrap;gap:3px;">
@@ -2993,6 +2997,8 @@ function thumbAdjustFn(i, prop, val) {
   }
   if (prop === 'align' || prop === 'logoAlign' || prop === 'titleFont' || prop === 'subFontFamily') {
     window.thumbAdjust[i][prop] = val;
+  } else if (prop === 'titleBold' || prop === 'titleItalic' || prop === 'subBold' || prop === 'subItalic') {
+    window.thumbAdjust[i][prop] = !window.thumbAdjust[i][prop];
   } else {
     window.thumbAdjust[i][prop] = Math.max(
       prop === 'fontSize' ? 16 : prop === 'subFontSize' ? 8 : 40,
@@ -3077,10 +3083,11 @@ function renderCarouselSpecs(i) {
   const brandSubFont = (isPremium && currentBrand?.sub_font_name) || (isPremium && currentBrand?.font_name) || 'DM Sans';
   const adjSubFont   = adj.subFont || brandSubFont;
   // Negrita/Cursiva de marca
-  const sTitleFW = isPremium && currentBrand?.title_bold  !== false ? '800' : '400';
-  const sTitleFS = isPremium && currentBrand?.title_italic ? 'italic' : 'normal';
-  const sSubFW   = isPremium && currentBrand?.sub_bold    ? '700'   : '400';
-  const sSubFS   = isPremium && currentBrand?.sub_italic  ? 'italic' : 'normal';
+  // Negrita/Cursiva — adj tiene prioridad sobre marca
+  const sTitleFW = adj.titleBold   !== undefined ? (adj.titleBold   ? '800':'400') : (isPremium && currentBrand?.title_bold   !== false ? '800':'400');
+  const sTitleFS = adj.titleItalic !== undefined ? (adj.titleItalic ? 'italic':'normal') : (isPremium && currentBrand?.title_italic ? 'italic':'normal');
+  const sSubFW   = adj.subBold     !== undefined ? (adj.subBold     ? '700':'400') : (isPremium && currentBrand?.sub_bold   ? '700':'400');
+  const sSubFS   = adj.subItalic   !== undefined ? (adj.subItalic   ? 'italic':'normal') : (isPremium && currentBrand?.sub_italic ? 'italic':'normal');
 
   // Bug 3 fix: guardar posición de scroll del panel de controles antes de re-renderizar
   const _prevControlsEl = panel.querySelector('[data-controls-scroll]');
@@ -3149,7 +3156,7 @@ function renderCarouselSpecs(i) {
             </div>
           </div>
 
-          <!-- TÍTULO: tamaño + color + fuente -->
+          <!-- TÍTULO: tamaño + color + B/I + fuente -->
           <div style="border-bottom:1px solid var(--border);padding:10px 14px;">
             <div style="font-size:10px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px;">✏️ Título</div>
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
@@ -3160,7 +3167,9 @@ function renderCarouselSpecs(i) {
                 <button onclick="slideAdjustFn(${i},'titleSize',2)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:5px;width:22px;height:22px;cursor:pointer;font-size:12px;line-height:1;">+</button>
               </div>
               <span style="font-size:11px;color:var(--text-2);margin-left:4px;">Color</span>
-              <input type="color" value="${adj.titleColor||'#ffffff'}" onchange="slideAdjustFn(${i},'titleColor',this.value)" style="width:28px;height:24px;border:none;border-radius:5px;cursor:pointer;padding:1px;flex-shrink:0;">
+              <input type="color" value="${adj.titleColor||'#ffffff'}" onchange="slideAdjustFn(${i},'titleColor',this.value)" style="width:26px;height:22px;border:none;border-radius:5px;cursor:pointer;padding:1px;flex-shrink:0;">
+              <button onclick="slideAdjustFn(${i},'titleBold',null)" style="width:24px;height:22px;border-radius:4px;border:1px solid var(--border);background:${sTitleFW==='800'?'var(--brand)':'var(--surface-2)'};color:${sTitleFW==='800'?'#fff':'var(--text-2)'};cursor:pointer;font-weight:900;font-size:12px;flex-shrink:0;" title="Negrita">B</button>
+              <button onclick="slideAdjustFn(${i},'titleItalic',null)" style="width:24px;height:22px;border-radius:4px;border:1px solid var(--border);background:${sTitleFS==='italic'?'var(--brand)':'var(--surface-2)'};color:${sTitleFS==='italic'?'#fff':'var(--text-2)'};cursor:pointer;font-style:italic;font-size:12px;flex-shrink:0;" title="Cursiva">I</button>
             </div>
             <div style="font-size:10px;color:var(--text-3);margin-bottom:4px;font-weight:600;">Fuente</div>
             <div style="display:flex;flex-wrap:wrap;gap:3px;">
@@ -3168,7 +3177,7 @@ function renderCarouselSpecs(i) {
             </div>
           </div>
 
-          <!-- CONTENIDO: tamaño + color + fuente -->
+          <!-- CONTENIDO: tamaño + color + B/I + fuente -->
           <div style="border-bottom:1px solid var(--border);padding:10px 14px;">
             <div style="font-size:10px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px;">💬 Contenido</div>
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
@@ -3179,7 +3188,9 @@ function renderCarouselSpecs(i) {
                 <button onclick="slideAdjustFn(${i},'contentSize',2)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:5px;width:22px;height:22px;cursor:pointer;font-size:12px;line-height:1;">+</button>
               </div>
               <span style="font-size:11px;color:var(--text-2);margin-left:4px;">Color</span>
-              <input type="color" value="${adj.contentColor||'#cccccc'}" onchange="slideAdjustFn(${i},'contentColor',this.value)" style="width:28px;height:24px;border:none;border-radius:5px;cursor:pointer;padding:1px;flex-shrink:0;">
+              <input type="color" value="${adj.contentColor||'#cccccc'}" onchange="slideAdjustFn(${i},'contentColor',this.value)" style="width:26px;height:22px;border:none;border-radius:5px;cursor:pointer;padding:1px;flex-shrink:0;">
+              <button onclick="slideAdjustFn(${i},'subBold',null)" style="width:24px;height:22px;border-radius:4px;border:1px solid var(--border);background:${sSubFW==='700'?'var(--brand)':'var(--surface-2)'};color:${sSubFW==='700'?'#fff':'var(--text-2)'};cursor:pointer;font-weight:900;font-size:12px;flex-shrink:0;" title="Negrita">B</button>
+              <button onclick="slideAdjustFn(${i},'subItalic',null)" style="width:24px;height:22px;border-radius:4px;border:1px solid var(--border);background:${sSubFS==='italic'?'var(--brand)':'var(--surface-2)'};color:${sSubFS==='italic'?'#fff':'var(--text-2)'};cursor:pointer;font-style:italic;font-size:12px;flex-shrink:0;" title="Cursiva">I</button>
             </div>
             <div style="font-size:10px;color:var(--text-3);margin-bottom:4px;font-weight:600;">Fuente</div>
             <div style="display:flex;flex-wrap:wrap;gap:3px;">
@@ -3221,6 +3232,8 @@ function slideAdjustFn(i, prop, val) {
   if (!window.slideAdjust[i]) return;
   if (prop === 'align' || prop === 'font' || prop === 'subFont' || prop === 'logoAlign' || prop === 'titleColor' || prop === 'contentColor') {
     window.slideAdjust[i][prop] = val;
+  } else if (prop === 'titleBold' || prop === 'titleItalic' || prop === 'subBold' || prop === 'subItalic') {
+    window.slideAdjust[i][prop] = !window.slideAdjust[i][prop];
   } else {
     const min = prop === 'titleSize' ? 12 : prop === 'logoSize' ? 40 : 10;
     const max = prop === 'titleSize' ? 80 : prop === 'logoSize' ? 200 : 50;
@@ -3233,17 +3246,8 @@ function slideAdjustFn(i, prop, val) {
 function slideAdjustText(i, prop, val) {
   if (!window.slideAdjust || !window.slideAdjust[i]) return;
   window.slideAdjust[i][prop] = val;
-  // Actualizar preview en tiempo real
-  const preview = document.getElementById('slidePreview-' + i);
-  if (preview) {
-    const adj = window.slideAdjust[i];
-    preview.style.textAlign = adj.align;
-    preview.style.alignItems = adj.align === 'left' ? 'flex-start' : adj.align === 'right' ? 'flex-end' : 'center';
-    const titleEl = preview.querySelector('.slide-edit-title');
-    const contentEl = preview.querySelector('.slide-edit-content');
-    if (titleEl) titleEl.textContent = val && prop === 'titleText' ? val : adj.titleText;
-    if (contentEl) contentEl.textContent = val && prop === 'contentText' ? val : adj.contentText;
-  }
+  // Re-renderizar la vista previa vertical (igual que thumbAdjustText)
+  renderCarouselSpecs(i);
 }
 
 function slideAdjustColor(i, prop, val) {
@@ -4839,7 +4843,9 @@ let cdnd = {
     bg1:'#7C3AED', bg2:'#F43F5E',
     titleFont:'DM Sans', subFont:'DM Sans',
     titleSize:40, titleColor:'#ffffff', titleAlign:'center',
+    titleBold:true, titleItalic:false,
     subSize:20,   subColor:'#cccccc',   subAlign:'center',
+    subBold:false, subItalic:false,
     logoSize:60,
   },
   content: { title:'', sub:'', logoUrl:null },
@@ -4873,6 +4879,10 @@ function openCdndEditor(type, index) {
     cdnd.style.subColor   = adj.contentColor || (isPrem && currentBrand?.sub_font_color) || '#cccccc';
     cdnd.style.subAlign   = 'center';
     cdnd.style.logoSize   = adj.logoSize   || 60;
+    cdnd.style.titleBold   = adj.titleBold   !== undefined ? adj.titleBold   : (isPrem && currentBrand?.title_bold  !== false);
+    cdnd.style.titleItalic = adj.titleItalic !== undefined ? adj.titleItalic : !!(isPrem && currentBrand?.title_italic);
+    cdnd.style.subBold     = adj.subBold     !== undefined ? adj.subBold     : !!(isPrem && currentBrand?.sub_bold);
+    cdnd.style.subItalic   = adj.subItalic   !== undefined ? adj.subItalic   : !!(isPrem && currentBrand?.sub_italic);
     if (adj.cdndBlocks) {
       // Restaurar posiciones previas del Studio
       cdnd.blocks = JSON.parse(JSON.stringify(adj.cdndBlocks));
@@ -4905,6 +4915,10 @@ function openCdndEditor(type, index) {
     cdnd.style.subSize    = adj.subFontSize || 20;
     cdnd.style.subColor   = adj.subColor || (isPrem && currentBrand?.sub_font_color) || '#cccccc';
     cdnd.style.logoSize   = adj.logoSize || 60;
+    cdnd.style.titleBold   = adj.titleBold   !== undefined ? adj.titleBold   : (isPrem && currentBrand?.title_bold  !== false);
+    cdnd.style.titleItalic = adj.titleItalic !== undefined ? adj.titleItalic : !!(isPrem && currentBrand?.title_italic);
+    cdnd.style.subBold     = adj.subBold     !== undefined ? adj.subBold     : !!(isPrem && currentBrand?.sub_bold);
+    cdnd.style.subItalic   = adj.subItalic   !== undefined ? adj.subItalic   : !!(isPrem && currentBrand?.sub_italic);
     if (adj.cdndBlocks) {
       // Si ya fue editado en Studio antes, restaurar posiciones guardadas
       cdnd.blocks = JSON.parse(JSON.stringify(adj.cdndBlocks));
@@ -4955,6 +4969,10 @@ function cdndSaveBack() {
     adj.contentSize   = cdnd.style.subSize;
     adj.contentColor  = cdnd.style.subColor;
     adj.logoSize      = cdnd.style.logoSize;
+    adj.titleBold     = cdnd.style.titleBold;
+    adj.titleItalic   = cdnd.style.titleItalic;
+    adj.subBold       = cdnd.style.subBold;
+    adj.subItalic     = cdnd.style.subItalic;
     adj.titleText     = cdnd.content.title;
     adj.contentText   = cdnd.content.sub;
     // Sincronizar logoAlign del panel según posición X del logo en Studio
@@ -4975,6 +4993,10 @@ function cdndSaveBack() {
     adj.subFontSize    = cdnd.style.subSize;
     adj.subColor       = cdnd.style.subColor;
     adj.logoSize       = cdnd.style.logoSize;
+    adj.titleBold      = cdnd.style.titleBold;
+    adj.titleItalic    = cdnd.style.titleItalic;
+    adj.subBold        = cdnd.style.subBold;
+    adj.subItalic      = cdnd.style.subItalic;
     adj.titleText      = cdnd.content.title;
     adj.subText        = cdnd.content.sub;
     // Sincronizar logoAlign del panel según posición X del logo en Studio
@@ -5004,8 +5026,9 @@ function cdndRenderAll() {
   document.getElementById('cdndLogoStylePanel').style.display = hasLogo ? 'block' : 'none';
 
   if (hasLogo) {
-    const sz = s.logoSize;
-    const pad = 8;
+    // Studio preview é 270px wide, export é 540px: escalar logoSize al 50%
+    const sz = Math.round(s.logoSize * (CDND_W / 540));
+    const pad = Math.round(8 * (CDND_W / 540));
     const tot = sz + pad * 2;
     const totPct_x = tot / CDND_W * 100;
     const totPct_y = tot / CDND_H * 100;
@@ -5030,6 +5053,8 @@ function cdndRenderAll() {
   titleTx.style.fontSize    = Math.round(s.titleSize * 0.45) + 'px';
   titleTx.style.color       = s.titleColor;
   titleTx.style.textAlign   = s.titleAlign;
+  titleTx.style.fontWeight  = s.titleBold   ? '800' : '400';
+  titleTx.style.fontStyle   = s.titleItalic ? 'italic' : 'normal';
   titleTx.textContent       = c.title || 'Título';
 
   // Subtítulo
@@ -5043,7 +5068,19 @@ function cdndRenderAll() {
   subTx.style.fontSize    = Math.round(s.subSize * 0.45) + 'px';
   subTx.style.color       = s.subColor;
   subTx.style.textAlign   = s.subAlign;
+  subTx.style.fontWeight  = s.subBold   ? '700' : '400';
+  subTx.style.fontStyle   = s.subItalic ? 'italic' : 'normal';
   subTx.textContent       = c.sub || 'Subtítulo / contenido';
+
+  // Sincronizar botones B/I del Studio
+  ['titleBold','titleItalic','subBold','subItalic'].forEach(key => {
+    const btnId = { titleBold:'cdndTitleBoldBtn', titleItalic:'cdndTitleItalicBtn', subBold:'cdndSubBoldBtn', subItalic:'cdndSubItalicBtn' }[key];
+    const btn = document.getElementById(btnId);
+    if (btn) {
+      btn.style.background  = s[key] ? 'var(--brand)' : 'rgba(255,255,255,0.1)';
+      btn.style.borderColor = s[key] ? 'var(--brand)' : 'rgba(255,255,255,0.2)';
+    }
+  });
 
   // Panel estilo
   document.getElementById('cdndTitleSizeVal').textContent = s.titleSize;
@@ -5232,8 +5269,8 @@ function cdndUpdateBg() {
 }
 
 function cdndAdjVal(key, delta) {
-  const mins = {titleSize:12,subSize:8,logoSize:20};
-  const maxs = {titleSize:120,subSize:60,logoSize:200};
+  const mins = {titleSize:12, subSize:8, logoSize:20};
+  const maxs = {titleSize:120, subSize:60, logoSize:300};
   cdnd.style[key] = Math.max(mins[key]||0, Math.min(maxs[key]||999, cdnd.style[key]+delta));
   cdndRenderAll(); cdndSaveBack();
 }
@@ -5247,6 +5284,18 @@ function cdndUpdateColor(which) {
 function cdndSetAlign(which, align) {
   if(which==='title') cdnd.style.titleAlign = align;
   else                cdnd.style.subAlign   = align;
+  cdndRenderAll(); cdndSaveBack();
+}
+
+function cdndToggleStyle(key) {
+  cdnd.style[key] = !cdnd.style[key];
+  // Actualizar visual del botón
+  const btnId = { titleBold:'cdndTitleBoldBtn', titleItalic:'cdndTitleItalicBtn', subBold:'cdndSubBoldBtn', subItalic:'cdndSubItalicBtn' }[key];
+  const btn = document.getElementById(btnId);
+  if (btn) {
+    btn.style.background = cdnd.style[key] ? 'var(--brand)' : 'rgba(255,255,255,0.1)';
+    btn.style.borderColor = cdnd.style[key] ? 'var(--brand)' : 'rgba(255,255,255,0.2)';
+  }
   cdndRenderAll(); cdndSaveBack();
 }
 
@@ -5762,6 +5811,13 @@ async function cdndExport() {
           </div>
           <div class="cdnd-row"><span class="cdnd-lbl">Color</span><input type="color" class="cdnd-color-inp" id="cdndTitleColor" value="#ffffff" oninput="cdndUpdateColor('title')"></div>
           <div class="cdnd-row">
+            <span class="cdnd-lbl">Estilo</span>
+            <div style="display:flex;gap:4px;">
+              <button id="cdndTitleBoldBtn" onclick="cdndToggleStyle('titleBold')" style="width:28px;height:24px;border-radius:5px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);cursor:pointer;font-weight:900;font-size:13px;color:#fff;display:flex;align-items:center;justify-content:center;" title="Negrita">B</button>
+              <button id="cdndTitleItalicBtn" onclick="cdndToggleStyle('titleItalic')" style="width:28px;height:24px;border-radius:5px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);cursor:pointer;font-style:italic;font-size:13px;color:#fff;display:flex;align-items:center;justify-content:center;" title="Cursiva">I</button>
+            </div>
+          </div>
+          <div class="cdnd-row">
             <span class="cdnd-lbl">Alineación</span>
             <div class="cdnd-align-group">
               <button class="cdnd-align-btn" onclick="cdndSetAlign('title','left')">◀</button>
@@ -5783,6 +5839,13 @@ async function cdndExport() {
             </div>
           </div>
           <div class="cdnd-row"><span class="cdnd-lbl">Color</span><input type="color" class="cdnd-color-inp" id="cdndSubColor" value="#cccccc" oninput="cdndUpdateColor('sub')"></div>
+          <div class="cdnd-row">
+            <span class="cdnd-lbl">Estilo</span>
+            <div style="display:flex;gap:4px;">
+              <button id="cdndSubBoldBtn" onclick="cdndToggleStyle('subBold')" style="width:28px;height:24px;border-radius:5px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);cursor:pointer;font-weight:900;font-size:13px;color:#fff;display:flex;align-items:center;justify-content:center;" title="Negrita">B</button>
+              <button id="cdndSubItalicBtn" onclick="cdndToggleStyle('subItalic')" style="width:28px;height:24px;border-radius:5px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);cursor:pointer;font-style:italic;font-size:13px;color:#fff;display:flex;align-items:center;justify-content:center;" title="Cursiva">I</button>
+            </div>
+          </div>
           <div class="cdnd-row">
             <span class="cdnd-lbl">Alineación</span>
             <div class="cdnd-align-group">
