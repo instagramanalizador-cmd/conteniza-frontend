@@ -2767,8 +2767,10 @@ function renderThumbnails(thumbs) {
   if (!c) return;
   if (!thumbs||!thumbs.length) { c.innerHTML='<p style="color:var(--text-3);font-size:13px;">No hay miniaturas generadas</p>'; return; }
   currentThumbnails = thumbs;
-  // Reset thumbAdjust para usar los colores actuales de Mi Marca
-  window.thumbAdjust = {};
+  // Solo resetear thumbAdjust si es nuevo contenido (más miniaturas = nueva generación)
+  if (!window.thumbAdjust || Object.keys(window.thumbAdjust).length === 0 || Object.keys(window.thumbAdjust).length !== thumbs.length) {
+    window.thumbAdjust = {};
+  }
   c.innerHTML = `<div class="thumb-grid" id="thumbGrid"></div><div id="thumbSpecs" style="margin-top:16px;"></div>`;
   const grid = document.getElementById('thumbGrid');
   thumbs.forEach((t,i) => {
@@ -2819,6 +2821,7 @@ function renderThumbnailSpecs(i) {
       titleColor: _tfc, subColor: _sfc,
       titleFont: (isPremium && currentBrand?.font_name) || 'DM Sans',
       subFontFamily: (isPremium && currentBrand?.sub_font_name) || (isPremium && currentBrand?.font_name) || 'DM Sans',
+      logoY: 8, titleY: 42, subY: 62,
     };
   } else {
     // Migrar campos faltantes en adj existentes
@@ -2828,6 +2831,9 @@ function renderThumbnailSpecs(i) {
     if (_adj.subColor    === undefined) _adj.subColor    = '#cccccc';
     if (_adj.titleFont   === undefined) _adj.titleFont   = (isPremium && currentBrand?.font_name) || 'DM Sans';
     if (_adj.subFontFamily === undefined) _adj.subFontFamily = (isPremium && currentBrand?.sub_font_name) || _adj.titleFont;
+    if (_adj.logoY   === undefined) _adj.logoY   = 8;
+    if (_adj.titleY  === undefined) _adj.titleY  = 42;
+    if (_adj.subY    === undefined) _adj.subY    = 62;
   }
   const adj = window.thumbAdjust[i];
   const hasLogo = isPremium && currentBrand?.logo_url;
@@ -2862,21 +2868,32 @@ function renderThumbnailSpecs(i) {
         <!-- Preview fija izquierda -->
         <div style="flex-shrink:0;padding:16px;border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px;">
           <div style="font-size:10px;color:var(--text-3);font-weight:600;letter-spacing:.5px;text-transform:uppercase;">Vista previa</div>
-          <!-- 540x675 escalado a 37% = 200x250px visible — idéntico al export -->
-          <div style="width:200px;height:250px;overflow:hidden;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,0.25);">
-            <div style="width:540px;height:675px;transform:scale(0.37037);transform-origin:top left;background:linear-gradient(135deg,${gc1},${gc2});display:flex;flex-direction:column;justify-content:center;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};padding:44px;box-sizing:border-box;text-align:${adj.align};overflow:hidden;position:relative;">
+          <!-- 540x675 escalado a 37% = 200x250px — posicionamiento absoluto por elemento -->
+          <div style="width:200px;height:250px;overflow:hidden;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,0.25);position:relative;">
+            <div style="width:540px;height:675px;transform:scale(0.37037);transform-origin:top left;background:linear-gradient(135deg,${gc1},${gc2});overflow:hidden;position:relative;">
               <div style="position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 2px,transparent 2px);background-size:40px 40px;pointer-events:none;"></div>
-              <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};gap:14px;width:100%;">
-                ${hasLogo ? `<div style="width:100%;display:flex;justify-content:${(adj.logoAlign||'center')==='left'?'flex-start':(adj.logoAlign||'center')==='right'?'flex-end':'center'};"><div style="background:rgba(255,255,255,.18);border-radius:14px;padding:10px;display:inline-flex;"><img src="${currentBrand.logo_url}" style="width:${adj.logoSize||80}px;height:${adj.logoSize||80}px;object-fit:contain;border-radius:8px;display:block;"></div></div>` : ''}
-                <div style="font-family:'${adj.titleFont||font}',sans-serif;font-size:${adj.fontSize}px;font-weight:${titleFW};font-style:${titleFS};color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);">${escapeHtml(adj.titleText)}</div>
-                <div style="width:50px;height:3px;background:rgba(255,255,255,0.4);border-radius:2px;flex-shrink:0;"></div>
-                ${adj.subText ? `<div style="font-family:'${adj.subFontFamily||subFont}',sans-serif;font-size:${adj.subFontSize||Math.round(adj.fontSize*0.5)}px;font-weight:${subFW};font-style:${subFS_s};color:${adj.subColor||'rgba(255,255,255,.85)'};line-height:1.5;">${escapeHtml(adj.subText)}</div>` : ''}
-              </div>
+              ${hasLogo ? `<div style="position:absolute;top:${adj.logoY||8}%;${(adj.logoAlign||'center')==='left'?'left:8%':(adj.logoAlign||'center')==='right'?'right:8%':'left:50%;transform:translateX(-50%)'};"><div style="background:rgba(255,255,255,.18);border-radius:14px;padding:10px;display:inline-flex;"><img src="${currentBrand.logo_url}" style="width:${adj.logoSize||80}px;height:${adj.logoSize||80}px;object-fit:contain;border-radius:8px;display:block;"></div></div>` : ''}
+              <div style="position:absolute;top:${adj.titleY||42}%;left:8%;right:8%;text-align:${adj.align||'center'};font-family:'${adj.titleFont||font}',sans-serif;font-size:${adj.fontSize}px;font-weight:${titleFW};font-style:${titleFS};color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);">${escapeHtml(adj.titleText)}</div>
+              ${adj.subText ? `<div style="position:absolute;top:${adj.subY||62}%;left:8%;right:8%;text-align:${adj.align||'center'};font-family:'${adj.subFontFamily||subFont}',sans-serif;font-size:${adj.subFontSize||Math.round(adj.fontSize*0.5)}px;font-weight:${subFW};font-style:${subFS_s};color:${adj.subColor||'rgba(255,255,255,.85)'};line-height:1.5;">${escapeHtml(adj.subText)}</div>` : ''}
             </div>
           </div>
-          <!-- Alineación debajo de la preview -->
-          <div style="display:flex;gap:4px;width:200px;">
-            ${['left','center','right'].map(a=>`<button onclick="thumbAdjustFn(${i},'align','${a}')" style="flex:1;padding:4px;border-radius:6px;border:1px solid var(--border);background:${adj.align===a?'var(--brand)':'var(--surface-2)'};color:${adj.align===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:12px;" title="${a==='left'?'Izquierda':a==='center'?'Centro':'Derecha'}">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
+          <!-- Controles de posición Y y alineación -->
+          <div style="display:flex;flex-direction:column;gap:4px;width:200px;">
+            <div style="display:flex;align-items:center;gap:4px;">
+              <span style="font-size:9px;color:var(--text-3);min-width:42px;">✏️ Pos Y</span>
+              <button onclick="thumbAdjustFn(${i},'titleY',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↑</button>
+              <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.titleY||42}%</span>
+              <button onclick="thumbAdjustFn(${i},'titleY',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↓</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <span style="font-size:9px;color:var(--text-3);min-width:42px;">💬 Pos Y</span>
+              <button onclick="thumbAdjustFn(${i},'subY',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↑</button>
+              <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.subY||62}%</span>
+              <button onclick="thumbAdjustFn(${i},'subY',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↓</button>
+            </div>
+            <div style="display:flex;gap:4px;">
+              ${['left','center','right'].map(a=>`<button onclick="thumbAdjustFn(${i},'align','${a}')" style="flex:1;padding:3px;border-radius:5px;border:1px solid var(--border);background:${adj.align===a?'var(--brand)':'var(--surface-2)'};color:${adj.align===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:12px;" title="${a==='left'?'Izquierda':a==='center'?'Centro':'Derecha'}">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
+            </div>
           </div>
         </div>
 
@@ -2999,6 +3016,8 @@ function thumbAdjustFn(i, prop, val) {
     window.thumbAdjust[i][prop] = val;
   } else if (prop === 'titleBold' || prop === 'titleItalic' || prop === 'subBold' || prop === 'subItalic') {
     window.thumbAdjust[i][prop] = !window.thumbAdjust[i][prop];
+  } else if (prop === 'titleY' || prop === 'subY' || prop === 'logoY') {
+    window.thumbAdjust[i][prop] = Math.max(0, Math.min(95, (window.thumbAdjust[i][prop] || 0) + val));
   } else {
     window.thumbAdjust[i][prop] = Math.max(
       prop === 'fontSize' ? 16 : prop === 'subFontSize' ? 8 : 40,
@@ -3015,8 +3034,10 @@ function renderCarousel(slides) {
   const container = document.getElementById('carouselSlides');
   if (!container||!slides||!slides.length) return;
   currentCarouselSlides = slides;
-  // Reset slideAdjust para usar los colores actuales de Mi Marca
-  window.slideAdjust = {};
+  // Solo resetear slideAdjust si es nuevo contenido (distinto número = nueva generación)
+  if (!window.slideAdjust || Object.keys(window.slideAdjust).length === 0 || Object.keys(window.slideAdjust).length !== slides.length) {
+    window.slideAdjust = {};
+  }
   // Aplicar marca si es Premium y tiene configuración
   const isPremium = currentUser?.plan_type === 'premium';
   const brandBg = (isPremium && currentBrand?.color_primary && currentBrand?.color_secondary)
@@ -3064,12 +3085,16 @@ function renderCarouselSpecs(i) {
       titleColor: _fcS, contentColor: _sfcS,
       colorPrimary: (isPrem2 && currentBrand?.color_primary) || null,
       colorSecondary: (isPrem2 && currentBrand?.color_secondary) || null,
+      logoY: 8, titleY: 38, contentY: 60,
     };
   } else {
     const _adjS = window.slideAdjust[i];
     if (!_adjS.titleColor)  { _adjS.titleColor  = (currentUser?.plan_type==='premium'&&currentBrand?.font_color)||'#ffffff'; }
     if (!_adjS.contentColor){ _adjS.contentColor = (currentUser?.plan_type==='premium'&&currentBrand?.sub_font_color)||'#cccccc'; }
     if (!_adjS.subFont)     { _adjS.subFont = (currentUser?.plan_type==='premium'&&currentBrand?.sub_font_name)||(currentUser?.plan_type==='premium'&&currentBrand?.font_name)||'DM Sans'; }
+    if (_adjS.logoY    === undefined) _adjS.logoY    = 8;
+    if (_adjS.titleY   === undefined) _adjS.titleY   = 38;
+    if (_adjS.contentY === undefined) _adjS.contentY = 60;
   }
   const adj = window.slideAdjust[i];
   const isPremium = currentUser?.plan_type === 'premium';
@@ -3111,21 +3136,32 @@ function renderCarouselSpecs(i) {
         <!-- Preview fija izquierda -->
         <div style="flex-shrink:0;padding:16px;border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px;">
           <div style="font-size:10px;color:var(--text-3);font-weight:600;letter-spacing:.5px;text-transform:uppercase;">Vista previa</div>
-          <!-- 540x675 escalado a 37% = 200x250px visible — idéntico al export -->
-          <div style="width:200px;height:250px;overflow:hidden;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,0.25);">
-            <div style="width:540px;height:675px;transform:scale(0.37037);transform-origin:top left;background:${bgStyle};display:flex;flex-direction:column;justify-content:center;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};padding:44px;box-sizing:border-box;text-align:${adj.align};overflow:hidden;position:relative;">
+          <!-- 540x675 escalado a 37% — posicionamiento absoluto por elemento -->
+          <div style="width:200px;height:250px;overflow:hidden;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,0.25);position:relative;">
+            <div style="width:540px;height:675px;transform:scale(0.37037);transform-origin:top left;background:${bgStyle};overflow:hidden;position:relative;">
               <div style="position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 2px,transparent 2px);background-size:40px 40px;pointer-events:none;"></div>
-              <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:${adj.align==='left'?'flex-start':adj.align==='right'?'flex-end':'center'};gap:14px;width:100%;">
-                ${isPremium && currentBrand?.logo_url ? `<div style="width:100%;display:flex;justify-content:${(adj.logoAlign||'center')==='left'?'flex-start':(adj.logoAlign||'center')==='right'?'flex-end':'center'};"><div style="background:rgba(255,255,255,.18);border-radius:14px;padding:10px;display:inline-flex;"><img src="${currentBrand.logo_url}" style="width:${adj.logoSize||80}px;height:${adj.logoSize||80}px;object-fit:contain;border-radius:8px;display:block;"></div></div>` : ''}
-                <div style="font-family:'${adj.font}',sans-serif;font-size:${adj.titleSize}px;font-weight:${sTitleFW};font-style:${sTitleFS};color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);">${escapeHtml(adj.titleText)}</div>
-                <div style="width:50px;height:3px;background:rgba(255,255,255,0.4);border-radius:2px;flex-shrink:0;"></div>
-                <div style="font-family:'${adjSubFont}',sans-serif;font-size:${adj.contentSize}px;font-weight:${sSubFW};font-style:${sSubFS};color:${adj.contentColor||'rgba(255,255,255,.85)'};line-height:1.5;word-break:break-word;">${escapeHtml(adj.contentText)}</div>
-              </div>
+              ${isPremium && currentBrand?.logo_url ? `<div style="position:absolute;top:${adj.logoY||8}%;${(adj.logoAlign||'center')==='left'?'left:8%':(adj.logoAlign||'center')==='right'?'right:8%':'left:50%;transform:translateX(-50%)'};"><div style="background:rgba(255,255,255,.18);border-radius:14px;padding:10px;display:inline-flex;"><img src="${currentBrand.logo_url}" style="width:${adj.logoSize||80}px;height:${adj.logoSize||80}px;object-fit:contain;border-radius:8px;display:block;"></div></div>` : ''}
+              <div style="position:absolute;top:${adj.titleY||38}%;left:8%;right:8%;text-align:${adj.align||'center'};font-family:'${adj.font}',sans-serif;font-size:${adj.titleSize}px;font-weight:${sTitleFW};font-style:${sTitleFS};color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);">${escapeHtml(adj.titleText)}</div>
+              <div style="position:absolute;top:${adj.contentY||60}%;left:8%;right:8%;text-align:${adj.align||'center'};font-family:'${adjSubFont}',sans-serif;font-size:${adj.contentSize}px;font-weight:${sSubFW};font-style:${sSubFS};color:${adj.contentColor||'rgba(255,255,255,.85)'};line-height:1.5;word-break:break-word;">${escapeHtml(adj.contentText)}</div>
             </div>
           </div>
-          <!-- Alineación debajo de la preview -->
-          <div style="display:flex;gap:4px;width:200px;">
-            ${['left','center','right'].map(a=>`<button onclick="slideAdjustFn(${i},'align','${a}')" style="flex:1;padding:4px;border-radius:6px;border:1px solid var(--border);background:${adj.align===a?'var(--brand)':'var(--surface-2)'};color:${adj.align===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:12px;" title="${a==='left'?'Izquierda':a==='center'?'Centro':'Derecha'}">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
+          <!-- Controles de posición Y y alineación -->
+          <div style="display:flex;flex-direction:column;gap:4px;width:200px;">
+            <div style="display:flex;align-items:center;gap:4px;">
+              <span style="font-size:9px;color:var(--text-3);min-width:42px;">✏️ Pos Y</span>
+              <button onclick="slideAdjustFn(${i},'titleY',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↑</button>
+              <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.titleY||38}%</span>
+              <button onclick="slideAdjustFn(${i},'titleY',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↓</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <span style="font-size:9px;color:var(--text-3);min-width:42px;">💬 Pos Y</span>
+              <button onclick="slideAdjustFn(${i},'contentY',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↑</button>
+              <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.contentY||60}%</span>
+              <button onclick="slideAdjustFn(${i},'contentY',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↓</button>
+            </div>
+            <div style="display:flex;gap:4px;">
+              ${['left','center','right'].map(a=>`<button onclick="slideAdjustFn(${i},'align','${a}')" style="flex:1;padding:3px;border-radius:5px;border:1px solid var(--border);background:${adj.align===a?'var(--brand)':'var(--surface-2)'};color:${adj.align===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:12px;" title="${a==='left'?'Izquierda':a==='center'?'Centro':'Derecha'}">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
+            </div>
           </div>
         </div>
 
@@ -3234,6 +3270,8 @@ function slideAdjustFn(i, prop, val) {
     window.slideAdjust[i][prop] = val;
   } else if (prop === 'titleBold' || prop === 'titleItalic' || prop === 'subBold' || prop === 'subItalic') {
     window.slideAdjust[i][prop] = !window.slideAdjust[i][prop];
+  } else if (prop === 'titleY' || prop === 'contentY' || prop === 'logoY') {
+    window.slideAdjust[i][prop] = Math.max(0, Math.min(95, (window.slideAdjust[i][prop] || 0) + val));
   } else {
     const min = prop === 'titleSize' ? 12 : prop === 'logoSize' ? 40 : 10;
     const max = prop === 'titleSize' ? 80 : prop === 'logoSize' ? 200 : 50;
