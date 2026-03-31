@@ -1275,7 +1275,7 @@
   justify-content:center;padding:24px;overflow:hidden;
 }
 .cdnd-canvas{
-  position:relative;width:270px;height:338px;
+  position:relative;width:200px;height:250px;
   border-radius:12px;overflow:hidden;
   box-shadow:0 16px 48px rgba(0,0,0,0.7),0 0 0 1px rgba(255,255,255,0.08);
   user-select:none;
@@ -2791,7 +2791,7 @@ function renderThumbnails(thumbs) {
     card.innerHTML = `
       <div class="thumb-num">${i+1}</div>
       <button class="thumb-dl-btn" onclick="event.stopPropagation();downloadThumbnailImage(${i})">📥 PNG</button>
-      ${brandF && currentBrand?.logo_url ? `<img src="${currentBrand.logo_url}" style="width:36px;height:36px;border-radius:6px;object-fit:contain;margin-bottom:6px;background:rgba(255,255,255,.2);padding:3px;">` : ''}
+      ${brandF && currentBrand?.logo_url ? `<img src="${currentBrand.logo_url}" style="width:64px;height:64px;border-radius:8px;object-fit:contain;margin-bottom:10px;background:rgba(255,255,255,.2);padding:4px;">` : ''}
       <div class="thumb-main-text" style="${brandF?`font-family:'${brandF}',sans-serif;`:''}color:${brandFC};">${escapeHtml(t.text||'TEXTO')}</div>
       ${t.secondary_text?`<div class="thumb-secondary" style="${brandSubF?`font-family:'${brandSubF}',sans-serif;`:''}color:${brandSFC};">${escapeHtml(t.secondary_text)}</div>`:''}
     `;
@@ -4900,8 +4900,8 @@ async function igModalExport() {
    CONTENIZA STUDIO v32 — Sistema drag&drop profesional
    ═══════════════════════════════════════════════════════════ */
 
-const CDND_W  = 270;   // canvas preview width px
-const CDND_H  = 338;   // canvas preview height px
+const CDND_W  = 200;   // canvas preview width px — igual que panel (540×0.37037)
+const CDND_H  = 250;   // canvas preview height px — igual que panel (675×0.37037)
 const CDND_FONTS = ['DM Sans','Montserrat','Poppins','Playfair Display','Raleway','Oswald','Lato','Roboto','Inter','Nunito'];
 
 let cdnd = {
@@ -4952,10 +4952,10 @@ function openCdndEditor(type, index) {
     cdnd.style.subFont    = adj.subFont    || (isPrem && currentBrand?.sub_font_name) || (isPrem && currentBrand?.font_name) || 'DM Sans';
     cdnd.style.titleSize  = adj.titleSize  || 40;
     cdnd.style.titleColor = adj.titleColor || (isPrem && currentBrand?.font_color) || '#ffffff';
-    cdnd.style.titleAlign = adj.align      || 'center';
+    cdnd.style.titleAlign = adj.titleAlign || adj.align || 'center';
     cdnd.style.subSize    = adj.contentSize  || 20;
     cdnd.style.subColor   = adj.contentColor || (isPrem && currentBrand?.sub_font_color) || '#cccccc';
-    cdnd.style.subAlign   = 'center';
+    cdnd.style.subAlign   = adj.contentAlign || adj.align || 'center';
     cdnd.style.logoSize   = adj.logoSize   || 60;
     cdnd.style.titleBold   = adj.titleBold   !== undefined ? adj.titleBold   : (isPrem && currentBrand?.title_bold  !== false);
     cdnd.style.titleItalic = adj.titleItalic !== undefined ? adj.titleItalic : !!(isPrem && currentBrand?.title_italic);
@@ -4969,8 +4969,8 @@ function openCdndEditor(type, index) {
       const hasLogo = !!cdnd.content.logoUrl;
       cdnd.blocks = {
         logo:  { x: adj.logoX ?? 50, y: adj.logoY ?? 15,  visible: hasLogo },
-        title: { x: adj.titleX ?? 50, y: adj.titleY ?? (hasLogo ? 42 : 35), visible: true, align: adj.align || 'center' },
-        sub:   { x: adj.contentX ?? 50, y: adj.contentY ?? (hasLogo ? 62 : 55), visible: true, align: adj.align || 'center' },
+        title: { x: adj.titleX ?? 50, y: adj.titleY ?? (hasLogo ? 42 : 35), visible: true, align: adj.titleAlign || adj.align || 'center' },
+        sub:   { x: adj.contentX ?? 50, y: adj.contentY ?? (hasLogo ? 62 : 55), visible: true, align: adj.contentAlign || adj.align || 'center' },
       };
     }
     document.getElementById('cdndSlideLabel').textContent = 'Slide '+(index+1)+' / '+(currentCarouselSlides?.length||1);
@@ -4987,9 +4987,10 @@ function openCdndEditor(type, index) {
     cdnd.style.subFont    = adj.subFontFamily || (isPrem && currentBrand?.sub_font_name) || (isPrem && currentBrand?.font_name) || 'DM Sans';
     cdnd.style.titleSize  = adj.fontSize  || 42;
     cdnd.style.titleColor = adj.titleColor || (isPrem && currentBrand?.font_color) || '#ffffff';
-    cdnd.style.titleAlign = adj.align || 'center';
+    cdnd.style.titleAlign = adj.titleAlign || adj.align || 'center';
     cdnd.style.subSize    = adj.subFontSize || 20;
     cdnd.style.subColor   = adj.subColor || (isPrem && currentBrand?.sub_font_color) || '#cccccc';
+    cdnd.style.subAlign   = adj.subAlign || adj.align || 'center';
     cdnd.style.logoSize   = adj.logoSize || 60;
     cdnd.style.titleBold   = adj.titleBold   !== undefined ? adj.titleBold   : (isPrem && currentBrand?.title_bold  !== false);
     cdnd.style.titleItalic = adj.titleItalic !== undefined ? adj.titleItalic : !!(isPrem && currentBrand?.title_italic);
@@ -5003,8 +5004,8 @@ function openCdndEditor(type, index) {
       const hasLogo = !!cdnd.content.logoUrl;
       cdnd.blocks = {
         logo:  { x: adj.logoX ?? 50, y: adj.logoY ?? 15,  visible: hasLogo },
-        title: { x: adj.titleX ?? 50, y: adj.titleY ?? (hasLogo ? 42 : 35), visible: true, align: adj.align || 'center' },
-        sub:   { x: adj.subX ?? 50, y: adj.subY ?? (hasLogo ? 62 : 55), visible: true, align: adj.align || 'center' },
+        title: { x: adj.titleX ?? 50, y: adj.titleY ?? (hasLogo ? 42 : 35), visible: true, align: adj.titleAlign || adj.align || 'center' },
+        sub:   { x: adj.subX ?? 50, y: adj.subY ?? (hasLogo ? 62 : 55), visible: true, align: adj.subAlign || adj.align || 'center' },
       };
     }
     document.getElementById('cdndSlideLabel').textContent = 'Miniatura '+(index+1);
@@ -5040,6 +5041,8 @@ function cdndSaveBack() {
     adj.titleSize     = cdnd.style.titleSize;
     adj.titleColor    = cdnd.style.titleColor;
     adj.align         = cdnd.style.titleAlign;
+    adj.titleAlign    = cdnd.style.titleAlign;
+    adj.contentAlign  = cdnd.style.subAlign;
     adj.contentSize   = cdnd.style.subSize;
     adj.contentColor  = cdnd.style.subColor;
     adj.logoSize      = cdnd.style.logoSize;
@@ -5072,6 +5075,9 @@ function cdndSaveBack() {
     adj.subItalic      = cdnd.style.subItalic;
     adj.titleText      = cdnd.content.title;
     adj.subText        = cdnd.content.sub;
+    adj.titleAlign     = cdnd.style.titleAlign;
+    adj.subAlign       = cdnd.style.subAlign;
+    adj.align          = cdnd.style.titleAlign;
     // Sincronizar posiciones X/Y del panel desde Studio
     if (cdnd.blocks.logo)  { adj.logoX = cdnd.blocks.logo.x;  adj.logoY = cdnd.blocks.logo.y; }
     if (cdnd.blocks.title) { adj.titleX = cdnd.blocks.title.x; adj.titleY = cdnd.blocks.title.y; }
@@ -5113,31 +5119,31 @@ function cdndRenderAll() {
     logoEl.style.display = 'none';
   }
 
-  // Título
+  // Título — siempre left:8% (igual que panel/export), solo Y es arrastrable
   const titleEl = document.getElementById('cdndBlockTitle');
   const titleTx = document.getElementById('cdndTitleEl');
-  const tW = 84; // igual que panel/export (84% del canvas)
-  titleEl.style.left  = (b.title.x - tW/2) + '%';
+  const tW = 84; // igual que panel/export
+  titleEl.style.left  = '8%';
   titleEl.style.top   = b.title.y + '%';
   titleEl.style.width = tW + '%';
   titleEl.style.display = b.title.visible ? 'block' : 'none';
   titleTx.style.fontFamily  = `'${s.titleFont}',sans-serif`;
-  titleTx.style.fontSize    = Math.round(s.titleSize * 0.5) + 'px';
+  titleTx.style.fontSize    = Math.round(s.titleSize * 0.37037) + 'px';
   titleTx.style.color       = s.titleColor;
   titleTx.style.textAlign   = s.titleAlign;
   titleTx.style.fontWeight  = s.titleBold   ? '800' : '400';
   titleTx.style.fontStyle   = s.titleItalic ? 'italic' : 'normal';
   titleTx.textContent       = c.title || 'Título';
 
-  // Subtítulo
+  // Subtítulo — siempre left:8%, solo Y es arrastrable
   const subEl = document.getElementById('cdndBlockSub');
   const subTx = document.getElementById('cdndSubEl');
-  subEl.style.left  = (b.sub.x - tW/2) + '%';
+  subEl.style.left  = '8%';
   subEl.style.top   = b.sub.y + '%';
   subEl.style.width = tW + '%';
   subEl.style.display = b.sub.visible ? 'block' : 'none';
   subTx.style.fontFamily  = `'${s.subFont}',sans-serif`;
-  subTx.style.fontSize    = Math.round(s.subSize * 0.5) + 'px';
+  subTx.style.fontSize    = Math.round(s.subSize * 0.37037) + 'px';
   subTx.style.color       = s.subColor;
   subTx.style.textAlign   = s.subAlign;
   subTx.style.fontWeight  = s.subBold   ? '700' : '400';
@@ -5435,7 +5441,7 @@ function cdndApplyLayout(name) {
 function cdndSetFormat(fmt) {
   cdnd.format = fmt;
   const canvas = document.getElementById('cdndCanvas');
-  if (fmt==='story'){canvas.style.width='215px';canvas.style.height='382px';}
+  if (fmt==='story'){canvas.style.width='200px';canvas.style.height='355px';}
   else {canvas.style.width=CDND_W+'px';canvas.style.height=CDND_H+'px';}
   document.getElementById('cdndFmtPost').style.borderColor  = fmt==='post' ?'var(--brand)':'';
   document.getElementById('cdndFmtStory').style.borderColor = fmt==='story'?'var(--brand)':'';
@@ -5793,7 +5799,7 @@ async function cdndExport() {
           </div>
         </div>
         <div style="text-align:center;margin-top:8px;font-size:9px;color:rgba(255,255,255,0.2);">
-          270×338px preview · exporta a 1080×1350px · arrastra los bloques
+          200×250px preview · exporta a 1080×1350px · arrastra los bloques
         </div>
       </div>
     </div>
