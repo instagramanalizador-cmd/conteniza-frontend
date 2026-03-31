@@ -2818,13 +2818,13 @@ function renderThumbnailSpecs(i) {
     window.thumbAdjust[i] = {
       fontSize: _t ? parseInt(_t.font_size||'42') : 42,
       subFontSize: _t ? Math.round(parseInt(_t.font_size||'42') * 0.5) : 20,
-      align: 'center', logoAlign: 'center', logoSize: 80,
+      align: 'center', logoSize: 80,
       titleText: _t ? (_t.text || '') : '',
       subText: _t ? (_t.secondary_text || '') : '',
       titleColor: _tfc, subColor: _sfc,
       titleFont: (isPremium && currentBrand?.font_name) || 'DM Sans',
       subFontFamily: (isPremium && currentBrand?.sub_font_name) || (isPremium && currentBrand?.font_name) || 'DM Sans',
-      logoY: 8, titleY: 42, subY: 62, titleX: 50, subX: 50,
+      logoY: 8, titleY: 42, subY: 62, titleX: 50, subX: 50, logoX: 50,
     };
   } else {
     // Migrar campos faltantes en adj existentes
@@ -2839,6 +2839,7 @@ function renderThumbnailSpecs(i) {
     if (_adj.subY    === undefined) _adj.subY    = 62;
     if (_adj.titleX  === undefined) _adj.titleX  = 50;
     if (_adj.subX    === undefined) _adj.subX    = 50;
+    if (_adj.logoX   === undefined) _adj.logoX   = 50;
   }
   const adj = window.thumbAdjust[i];
   const hasLogo = isPremium && currentBrand?.logo_url;
@@ -2877,39 +2878,44 @@ function renderThumbnailSpecs(i) {
           <div style="width:200px;height:250px;overflow:hidden;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,0.25);position:relative;">
             <div style="width:540px;height:675px;transform:scale(0.37037);transform-origin:top left;background:linear-gradient(135deg,${gc1},${gc2});overflow:hidden;position:relative;">
               <div style="position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 2px,transparent 2px);background-size:40px 40px;pointer-events:none;"></div>
-              ${hasLogo ? `<div style="position:absolute;top:${adj.logoY||8}%;${(adj.logoAlign||'center')==='left'?'left:8%':(adj.logoAlign||'center')==='right'?'right:8%':'left:50%;transform:translateX(-50%)'};"><div style="background:rgba(255,255,255,.18);border-radius:14px;padding:10px;display:inline-flex;"><img src="${currentBrand.logo_url}" style="width:${adj.logoSize||80}px;height:${adj.logoSize||80}px;object-fit:contain;border-radius:8px;display:block;"></div></div>` : ''}
+              ${hasLogo ? `<div style="position:absolute;top:${adj.logoY||8}%;left:${adj.logoX??50}%;transform:translateX(-50%);"><div style="background:rgba(255,255,255,.18);border-radius:14px;padding:10px;display:inline-flex;"><img src="${currentBrand.logo_url}" style="width:${adj.logoSize||80}px;height:${adj.logoSize||80}px;object-fit:contain;border-radius:8px;display:block;"></div></div>` : ''}
               <div style="position:absolute;top:${adj.titleY||42}%;left:${adj.titleX||50}%;transform:translateX(-50%);width:84%;text-align:${adj.align||'center'};font-family:'${adj.titleFont||font}',sans-serif;font-size:${adj.fontSize}px;font-weight:${titleFW};font-style:${titleFS};color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);">${escapeHtml(adj.titleText)}</div>
               ${adj.subText ? `<div style="position:absolute;top:${adj.subY||62}%;left:${adj.subX||50}%;transform:translateX(-50%);width:84%;text-align:${adj.align||'center'};font-family:'${adj.subFontFamily||subFont}',sans-serif;font-size:${adj.subFontSize||Math.round(adj.fontSize*0.5)}px;font-weight:${subFW};font-style:${subFS_s};color:${adj.subColor||'rgba(255,255,255,.85)'};line-height:1.5;">${escapeHtml(adj.subText)}</div>` : ''}
             </div>
           </div>
           <!-- Controles de posición Y/X y alineación -->
           <div style="display:flex;flex-direction:column;gap:4px;width:200px;">
+            <!-- Separador Título -->
+            <div style="font-size:9px;color:var(--brand);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-top:2px;">✏️ Título</div>
             <div style="display:flex;align-items:center;gap:4px;">
-              <span style="font-size:9px;color:var(--text-3);min-width:42px;">✏️ Pos Y</span>
+              <span style="font-size:9px;color:var(--text-3);min-width:38px;">Pos Y</span>
               <button onclick="thumbAdjustFn(${i},'titleY',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↑</button>
               <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.titleY||42}%</span>
               <button onclick="thumbAdjustFn(${i},'titleY',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↓</button>
             </div>
             <div style="display:flex;align-items:center;gap:4px;">
-              <span style="font-size:9px;color:var(--text-3);min-width:42px;">✏️ Pos X</span>
+              <span style="font-size:9px;color:var(--text-3);min-width:38px;">Pos X</span>
               <button onclick="thumbAdjustFn(${i},'titleX',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">←</button>
               <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.titleX||50}%</span>
               <button onclick="thumbAdjustFn(${i},'titleX',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">→</button>
             </div>
+            <!-- Separador Subtítulo -->
+            <div style="font-size:9px;color:var(--brand);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-top:4px;">💬 Subtítulo</div>
             <div style="display:flex;align-items:center;gap:4px;">
-              <span style="font-size:9px;color:var(--text-3);min-width:42px;">💬 Pos Y</span>
+              <span style="font-size:9px;color:var(--text-3);min-width:38px;">Pos Y</span>
               <button onclick="thumbAdjustFn(${i},'subY',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↑</button>
               <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.subY||62}%</span>
               <button onclick="thumbAdjustFn(${i},'subY',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↓</button>
             </div>
             <div style="display:flex;align-items:center;gap:4px;">
-              <span style="font-size:9px;color:var(--text-3);min-width:42px;">💬 Pos X</span>
+              <span style="font-size:9px;color:var(--text-3);min-width:38px;">Pos X</span>
               <button onclick="thumbAdjustFn(${i},'subX',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">←</button>
               <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.subX||50}%</span>
               <button onclick="thumbAdjustFn(${i},'subX',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">→</button>
             </div>
-            <div style="display:flex;gap:4px;">
-              ${['left','center','right'].map(a=>`<button onclick="thumbAdjustFn(${i},'align','${a}')" style="flex:1;padding:3px;border-radius:5px;border:1px solid var(--border);background:${adj.align===a?'var(--brand)':'var(--surface-2)'};color:${adj.align===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:12px;" title="${a==='left'?'Izquierda':a==='center'?'Centro':'Derecha'}">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
+            <!-- Alineación de texto -->
+            <div style="display:flex;gap:4px;margin-top:2px;">
+              ${['left','center','right'].map(a=>`<button onclick="thumbAdjustFn(${i},'align','${a}')" style="flex:1;padding:3px;border-radius:5px;border:1px solid var(--border);background:${adj.align===a?'var(--brand)':'var(--surface-2)'};color:${adj.align===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:12px;" title="${a==='left'?'Izq':a==='center'?'Centro':'Der'}">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
             </div>
           </div>
         </div>
@@ -2978,17 +2984,25 @@ function renderThumbnailSpecs(i) {
           ${hasLogo ? `
           <div style="padding:10px 14px;">
             <div style="font-size:10px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">🖼️ Logo</div>
-            <div style="display:flex;align-items:center;gap:8px;">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
               <span style="font-size:11px;color:var(--text-2);min-width:40px;">Tamaño</span>
               <div style="display:flex;align-items:center;gap:3px;">
                 <button onclick="thumbAdjustFn(${i},'logoSize',-20)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:5px;width:22px;height:22px;cursor:pointer;">−</button>
                 <span style="font-size:12px;font-weight:700;min-width:26px;text-align:center;">${adj.logoSize}</span>
                 <button onclick="thumbAdjustFn(${i},'logoSize',20)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:5px;width:22px;height:22px;cursor:pointer;">+</button>
               </div>
-              <span style="font-size:11px;color:var(--text-2);margin-left:6px;">Pos.</span>
-              <div style="display:flex;gap:3px;">
-                ${['left','center','right'].map(a=>`<button onclick="thumbAdjustFn(${i},'logoAlign','${a}')" style="padding:2px 7px;border-radius:4px;border:1px solid var(--border);background:${(adj.logoAlign||'center')===a?'var(--brand)':'var(--surface-2)'};color:${(adj.logoAlign||'center')===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:10px;">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
-              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
+              <span style="font-size:11px;color:var(--text-2);min-width:40px;">Pos Y</span>
+              <button onclick="thumbAdjustFn(${i},'logoY',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↑</button>
+              <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.logoY||8}%</span>
+              <button onclick="thumbAdjustFn(${i},'logoY',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↓</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+              <span style="font-size:11px;color:var(--text-2);min-width:40px;">Pos X</span>
+              <button onclick="thumbAdjustFn(${i},'logoX',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">←</button>
+              <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.logoX??50}%</span>
+              <button onclick="thumbAdjustFn(${i},'logoX',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">→</button>
             </div>
           </div>` : ''}
 
@@ -3020,7 +3034,7 @@ function thumbAdjustFn(i, prop, val) {
     window.thumbAdjust[i] = {
       fontSize: _t ? parseInt(_t.font_size||'42') : 42,
       subFontSize: _t ? Math.round(parseInt(_t.font_size||'42') * 0.5) : 20,
-      align: 'center', logoAlign: 'center', logoSize: 80,
+      align: 'center', logoSize: 80, logoX: 50, logoY: 8,
       titleText: _t ? (_t.text || '') : '',
       subText: _t ? (_t.secondary_text || '') : '',
       titleColor: _tfc,
@@ -3029,13 +3043,13 @@ function thumbAdjustFn(i, prop, val) {
       subFontFamily: (isPrem && currentBrand?.sub_font_name) || (isPrem && currentBrand?.font_name) || 'DM Sans',
     };
   }
-  if (prop === 'align' || prop === 'logoAlign' || prop === 'titleFont' || prop === 'subFontFamily') {
+  if (prop === 'align' || prop === 'titleFont' || prop === 'subFontFamily') {
     window.thumbAdjust[i][prop] = val;
   } else if (prop === 'titleBold' || prop === 'titleItalic' || prop === 'subBold' || prop === 'subItalic') {
     window.thumbAdjust[i][prop] = !window.thumbAdjust[i][prop];
   } else if (prop === 'titleY' || prop === 'subY' || prop === 'logoY') {
     window.thumbAdjust[i][prop] = Math.max(0, Math.min(95, (window.thumbAdjust[i][prop] || 0) + val));
-  } else if (prop === 'titleX' || prop === 'subX') {
+  } else if (prop === 'titleX' || prop === 'subX' || prop === 'logoX') {
     window.thumbAdjust[i][prop] = Math.max(5, Math.min(95, (window.thumbAdjust[i][prop] ?? 50) + val));
   } else {
     window.thumbAdjust[i][prop] = Math.max(
@@ -3097,14 +3111,14 @@ function renderCarouselSpecs(i) {
     const _fcS = (isPrem2 && currentBrand?.font_color) ? currentBrand.font_color : '#ffffff';
     const _sfcS = (isPrem2 && currentBrand?.sub_font_color) ? currentBrand.sub_font_color : '#cccccc';
     window.slideAdjust[i] = {
-      titleSize: 40, contentSize: 20, align: 'center', logoAlign: 'center', logoSize: 80,
+      titleSize: 40, contentSize: 20, align: 'center', logoSize: 80,
       titleText: s.title || '', contentText: s.content || '',
       font:    (isPrem2 && currentBrand?.font_name)     ? currentBrand.font_name     : 'DM Sans',
       subFont: (isPrem2 && currentBrand?.sub_font_name) ? currentBrand.sub_font_name : (isPrem2 && currentBrand?.font_name) || 'DM Sans',
       titleColor: _fcS, contentColor: _sfcS,
       colorPrimary: (isPrem2 && currentBrand?.color_primary) || null,
       colorSecondary: (isPrem2 && currentBrand?.color_secondary) || null,
-      logoY: 8, titleY: 38, contentY: 60, titleX: 50, contentX: 50,
+      logoY: 8, titleY: 38, contentY: 60, titleX: 50, contentX: 50, logoX: 50,
     };
   } else {
     const _adjS = window.slideAdjust[i];
@@ -3116,6 +3130,7 @@ function renderCarouselSpecs(i) {
     if (_adjS.contentY === undefined) _adjS.contentY = 60;
     if (_adjS.titleX   === undefined) _adjS.titleX   = 50;
     if (_adjS.contentX === undefined) _adjS.contentX = 50;
+    if (_adjS.logoX    === undefined) _adjS.logoX    = 50;
   }
   const adj = window.slideAdjust[i];
   const isPremium = currentUser?.plan_type === 'premium';
@@ -3161,38 +3176,43 @@ function renderCarouselSpecs(i) {
           <div style="width:200px;height:250px;overflow:hidden;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,0.25);position:relative;">
             <div style="width:540px;height:675px;transform:scale(0.37037);transform-origin:top left;background:${bgStyle};overflow:hidden;position:relative;">
               <div style="position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 2px,transparent 2px);background-size:40px 40px;pointer-events:none;"></div>
-              ${isPremium && currentBrand?.logo_url ? `<div style="position:absolute;top:${adj.logoY||8}%;${(adj.logoAlign||'center')==='left'?'left:8%':(adj.logoAlign||'center')==='right'?'right:8%':'left:50%;transform:translateX(-50%)'};"><div style="background:rgba(255,255,255,.18);border-radius:14px;padding:10px;display:inline-flex;"><img src="${currentBrand.logo_url}" style="width:${adj.logoSize||80}px;height:${adj.logoSize||80}px;object-fit:contain;border-radius:8px;display:block;"></div></div>` : ''}
+              ${isPremium && currentBrand?.logo_url ? `<div style="position:absolute;top:${adj.logoY||8}%;left:${adj.logoX??50}%;transform:translateX(-50%);"><div style="background:rgba(255,255,255,.18);border-radius:14px;padding:10px;display:inline-flex;"><img src="${currentBrand.logo_url}" style="width:${adj.logoSize||80}px;height:${adj.logoSize||80}px;object-fit:contain;border-radius:8px;display:block;"></div></div>` : ''}
               <div style="position:absolute;top:${adj.titleY||38}%;left:${adj.titleX||50}%;transform:translateX(-50%);width:84%;text-align:${adj.align||'center'};font-family:'${adj.font}',sans-serif;font-size:${adj.titleSize}px;font-weight:${sTitleFW};font-style:${sTitleFS};color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);">${escapeHtml(adj.titleText)}</div>
               <div style="position:absolute;top:${adj.contentY||60}%;left:${adj.contentX||50}%;transform:translateX(-50%);width:84%;text-align:${adj.align||'center'};font-family:'${adjSubFont}',sans-serif;font-size:${adj.contentSize}px;font-weight:${sSubFW};font-style:${sSubFS};color:${adj.contentColor||'rgba(255,255,255,.85)'};line-height:1.5;word-break:break-word;">${escapeHtml(adj.contentText)}</div>
             </div>
           </div>
           <!-- Controles de posición Y/X y alineación -->
           <div style="display:flex;flex-direction:column;gap:4px;width:200px;">
+            <!-- Título -->
+            <div style="font-size:9px;color:var(--brand);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-top:2px;">✏️ Título</div>
             <div style="display:flex;align-items:center;gap:4px;">
-              <span style="font-size:9px;color:var(--text-3);min-width:42px;">✏️ Pos Y</span>
+              <span style="font-size:9px;color:var(--text-3);min-width:38px;">Pos Y</span>
               <button onclick="slideAdjustFn(${i},'titleY',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↑</button>
               <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.titleY||38}%</span>
               <button onclick="slideAdjustFn(${i},'titleY',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↓</button>
             </div>
             <div style="display:flex;align-items:center;gap:4px;">
-              <span style="font-size:9px;color:var(--text-3);min-width:42px;">✏️ Pos X</span>
+              <span style="font-size:9px;color:var(--text-3);min-width:38px;">Pos X</span>
               <button onclick="slideAdjustFn(${i},'titleX',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">←</button>
               <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.titleX||50}%</span>
               <button onclick="slideAdjustFn(${i},'titleX',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">→</button>
             </div>
+            <!-- Contenido -->
+            <div style="font-size:9px;color:var(--brand);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-top:4px;">💬 Contenido</div>
             <div style="display:flex;align-items:center;gap:4px;">
-              <span style="font-size:9px;color:var(--text-3);min-width:42px;">💬 Pos Y</span>
+              <span style="font-size:9px;color:var(--text-3);min-width:38px;">Pos Y</span>
               <button onclick="slideAdjustFn(${i},'contentY',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↑</button>
               <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.contentY||60}%</span>
               <button onclick="slideAdjustFn(${i},'contentY',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↓</button>
             </div>
             <div style="display:flex;align-items:center;gap:4px;">
-              <span style="font-size:9px;color:var(--text-3);min-width:42px;">💬 Pos X</span>
+              <span style="font-size:9px;color:var(--text-3);min-width:38px;">Pos X</span>
               <button onclick="slideAdjustFn(${i},'contentX',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">←</button>
               <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.contentX||50}%</span>
               <button onclick="slideAdjustFn(${i},'contentX',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">→</button>
             </div>
-            <div style="display:flex;gap:4px;">
+            <!-- Alineación de texto -->
+            <div style="display:flex;gap:4px;margin-top:2px;">
               ${['left','center','right'].map(a=>`<button onclick="slideAdjustFn(${i},'align','${a}')" style="flex:1;padding:3px;border-radius:5px;border:1px solid var(--border);background:${adj.align===a?'var(--brand)':'var(--surface-2)'};color:${adj.align===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:12px;" title="${a==='left'?'Izquierda':a==='center'?'Centro':'Derecha'}">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
             </div>
           </div>
@@ -3271,17 +3291,25 @@ function renderCarouselSpecs(i) {
           ${isPremium && currentBrand?.logo_url ? `
           <div style="padding:10px 14px;">
             <div style="font-size:10px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px;">🖼️ Logo</div>
-            <div style="display:flex;align-items:center;gap:8px;">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
               <span style="font-size:11px;color:var(--text-2);min-width:40px;">Tamaño</span>
               <div style="display:flex;align-items:center;gap:3px;">
                 <button onclick="slideAdjustFn(${i},'logoSize',-10)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:5px;width:22px;height:22px;cursor:pointer;">−</button>
                 <span style="font-size:12px;font-weight:700;min-width:24px;text-align:center;">${adj.logoSize||80}</span>
                 <button onclick="slideAdjustFn(${i},'logoSize',10)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:5px;width:22px;height:22px;cursor:pointer;">+</button>
               </div>
-              <span style="font-size:11px;color:var(--text-2);margin-left:4px;">Pos.</span>
-              <div style="display:flex;gap:3px;">
-                ${['left','center','right'].map(a=>`<button onclick="slideAdjustFn(${i},'logoAlign','${a}')" style="padding:2px 7px;border-radius:4px;border:1px solid var(--border);background:${(adj.logoAlign||'center')===a?'var(--brand)':'var(--surface-2)'};color:${(adj.logoAlign||'center')===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:10px;">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
-              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
+              <span style="font-size:11px;color:var(--text-2);min-width:40px;">Pos Y</span>
+              <button onclick="slideAdjustFn(${i},'logoY',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↑</button>
+              <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.logoY||8}%</span>
+              <button onclick="slideAdjustFn(${i},'logoY',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↓</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+              <span style="font-size:11px;color:var(--text-2);min-width:40px;">Pos X</span>
+              <button onclick="slideAdjustFn(${i},'logoX',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">←</button>
+              <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.logoX??50}%</span>
+              <button onclick="slideAdjustFn(${i},'logoX',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">→</button>
             </div>
           </div>` : ''}
 
@@ -3299,13 +3327,13 @@ function renderCarouselSpecs(i) {
 function slideAdjustFn(i, prop, val) {
   if (!window.slideAdjust) window.slideAdjust = {};
   if (!window.slideAdjust[i]) return;
-  if (prop === 'align' || prop === 'font' || prop === 'subFont' || prop === 'logoAlign' || prop === 'titleColor' || prop === 'contentColor') {
+  if (prop === 'align' || prop === 'font' || prop === 'subFont' || prop === 'titleColor' || prop === 'contentColor') {
     window.slideAdjust[i][prop] = val;
   } else if (prop === 'titleBold' || prop === 'titleItalic' || prop === 'subBold' || prop === 'subItalic') {
     window.slideAdjust[i][prop] = !window.slideAdjust[i][prop];
   } else if (prop === 'titleY' || prop === 'contentY' || prop === 'logoY') {
     window.slideAdjust[i][prop] = Math.max(0, Math.min(95, (window.slideAdjust[i][prop] || 0) + val));
-  } else if (prop === 'titleX' || prop === 'contentX') {
+  } else if (prop === 'titleX' || prop === 'contentX' || prop === 'logoX') {
     window.slideAdjust[i][prop] = Math.max(5, Math.min(95, (window.slideAdjust[i][prop] ?? 50) + val));
   } else {
     const min = prop === 'titleSize' ? 12 : prop === 'logoSize' ? 40 : 10;
@@ -3534,21 +3562,14 @@ async function downloadThumbnailImage(i) {
     const subFontExport = (isPremium && currentBrand?.sub_font_name) || font;
     const align = adj.align || 'center';
     const fs    = adj.fontSize || 42;
-    // Subtítulo: tamaño independiente si fue ajustado, si no, 50% del título
     const subFs = adj.subFontSize || Math.round(fs * 0.5);
     const ls    = adj.logoSize || 80;
-    // logoAlign: puede ser 'left', 'center', 'right' — ajuste del editor
-    const logoAlign = adj.logoAlign || 'center';
     const logoRaw = isPremium && currentBrand?.logo_url ? currentBrand.logo_url : null;
     const logoUrl = logoRaw ? await imageToDataURL(logoRaw) : null;
     const titleText = adj.titleText || t.text || '';
     const subText   = (adj.subText !== undefined ? adj.subText : t.secondary_text) || '';
-    const alignItems = align==='left'?'flex-start':align==='right'?'flex-end':'center';
-    // Colores independientes para título y subtítulo
     const fcTh  = adj.titleColor || (isPremium && currentBrand?.font_color) || t.text_color || '#ffffff';
     const fcSub = adj.subColor   || (isPremium && currentBrand?.sub_font_color) || 'rgba(255,255,255,0.88)';
-    // Posición logo: 'left' => flex-start, 'center' => center, 'right' => flex-end
-    const logoAlignItems = logoAlign==='left'?'flex-start':logoAlign==='right'?'flex-end':'center';
 
     const canvas = await captureHtmlToCanvas(el => {
       el.style.cssText = `width:540px;height:675px;background:linear-gradient(135deg,${gc1},${gc2});overflow:hidden;position:relative;font-family:'${font}',sans-serif;`;
@@ -3558,14 +3579,12 @@ async function downloadThumbnailImage(i) {
       pat.style.cssText = `position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 2px,transparent 2px);background-size:40px 40px;pointer-events:none;`;
       el.appendChild(pat);
 
-      // Logo — posición absoluta con logoY y logoAlign
+      // Logo — posición absoluta con logoY y logoX
       if (logoUrl) {
         const logoWrap = document.createElement('div');
         const logoTop = (adj.logoY ?? 8);
-        const logoLeft = logoAlign==='left' ? '8%' : logoAlign==='right' ? 'auto' : '50%';
-        const logoRight = logoAlign==='right' ? '8%' : 'auto';
-        const logoTransform = logoAlign==='center' ? 'translateX(-50%)' : 'none';
-        logoWrap.style.cssText = `position:absolute;top:${logoTop}%;left:${logoLeft};right:${logoRight};transform:${logoTransform};`;
+        const logoXpct = adj.logoX ?? 50;
+        logoWrap.style.cssText = `position:absolute;top:${logoTop}%;left:${logoXpct}%;transform:translateX(-50%);`;
         const logoBox = document.createElement('div');
         logoBox.style.cssText = `background:rgba(255,255,255,0.18);border-radius:14px;padding:10px;display:inline-flex;`;
         const img = document.createElement('img');
@@ -3614,7 +3633,7 @@ async function downloadCarouselSlideImage(i) {
     const isPremium = currentUser?.plan_type === 'premium';
     if (!window.slideAdjust) window.slideAdjust = {};
     if (!window.slideAdjust[i]) window.slideAdjust[i] = {
-      titleSize: 40, contentSize: 20, align: 'center', logoAlign: 'center', logoSize: 80,
+      titleSize: 40, contentSize: 20, align: 'center', logoSize: 80, logoX: 50, logoY: 8,
       titleText: s.title || '', contentText: s.content || '',
       font: (isPremium && currentBrand?.font_name) || 'DM Sans',
       colorPrimary: null, colorSecondary: null
@@ -3629,14 +3648,10 @@ async function downloadCarouselSlideImage(i) {
     const ts    = adj.titleSize || 40;
     const contSize = adj.contentSize || 20;
     const ls    = adj.logoSize || 80;
-    const logoAlign = adj.logoAlign || 'center';
     const logoRaw = isPremium && currentBrand?.logo_url ? currentBrand.logo_url : null;
     const logoUrl = logoRaw ? await imageToDataURL(logoRaw) : null;
     const titleText = adj.titleText || s.title || '';
     const contText  = adj.contentText || s.content || '';
-    const alignItems = align==='left'?'flex-start':align==='right'?'flex-end':'center';
-    const logoAlignItems = logoAlign==='left'?'flex-start':logoAlign==='right'?'flex-end':'center';
-    // Colores independientes para título y contenido
     const fcTitle   = adj.titleColor   || (isPremium && currentBrand?.font_color)     || '#ffffff';
     const fcContent = adj.contentColor || (isPremium && currentBrand?.sub_font_color) || 'rgba(255,255,255,0.88)';
 
@@ -3648,14 +3663,12 @@ async function downloadCarouselSlideImage(i) {
       pat.style.cssText = `position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 2px,transparent 2px);background-size:40px 40px;pointer-events:none;`;
       el.appendChild(pat);
 
-      // Logo — posición absoluta con logoY y logoAlign
+      // Logo — posición absoluta con logoY y logoX
       if (logoUrl) {
         const logoWrap = document.createElement('div');
         const logoTop = (adj.logoY ?? 8);
-        const logoLeft = logoAlign==='left' ? '8%' : logoAlign==='right' ? 'auto' : '50%';
-        const logoRight = logoAlign==='right' ? '8%' : 'auto';
-        const logoTransform = logoAlign==='center' ? 'translateX(-50%)' : 'none';
-        logoWrap.style.cssText = `position:absolute;top:${logoTop}%;left:${logoLeft};right:${logoRight};transform:${logoTransform};`;
+        const logoXpct = adj.logoX ?? 50;
+        logoWrap.style.cssText = `position:absolute;top:${logoTop}%;left:${logoXpct}%;transform:translateX(-50%);`;
         const logoBox = document.createElement('div');
         logoBox.style.cssText = `background:rgba(255,255,255,0.18);border-radius:14px;padding:10px;display:inline-flex;`;
         const img = document.createElement('img');
@@ -4953,13 +4966,11 @@ function openCdndEditor(type, index) {
       cdnd.blocks = JSON.parse(JSON.stringify(adj.cdndBlocks));
     } else {
       // Primera apertura: derivar posiciones del panel
-      const logoAlign = adj.logoAlign || 'center';
-      const logoX = logoAlign === 'left' ? 16 : logoAlign === 'right' ? 84 : 50;
       const hasLogo = !!cdnd.content.logoUrl;
       cdnd.blocks = {
-        logo:  { x: logoX, y: 15,  visible: hasLogo },
-        title: { x: 50,    y: hasLogo ? 42 : 35, visible: true, align: adj.align || 'center' },
-        sub:   { x: 50,    y: hasLogo ? 62 : 55, visible: true, align: adj.align || 'center' },
+        logo:  { x: adj.logoX ?? 50, y: adj.logoY ?? 15,  visible: hasLogo },
+        title: { x: adj.titleX ?? 50, y: adj.titleY ?? (hasLogo ? 42 : 35), visible: true, align: adj.align || 'center' },
+        sub:   { x: adj.contentX ?? 50, y: adj.contentY ?? (hasLogo ? 62 : 55), visible: true, align: adj.align || 'center' },
       };
     }
     document.getElementById('cdndSlideLabel').textContent = 'Slide '+(index+1)+' / '+(currentCarouselSlides?.length||1);
@@ -4989,13 +5000,11 @@ function openCdndEditor(type, index) {
       cdnd.blocks = JSON.parse(JSON.stringify(adj.cdndBlocks));
     } else {
       // Primera apertura: derivar posiciones del panel de edición
-      const logoAlign = adj.logoAlign || 'center';
-      const logoX = logoAlign === 'left' ? 16 : logoAlign === 'right' ? 84 : 50;
       const hasLogo = !!cdnd.content.logoUrl;
       cdnd.blocks = {
-        logo:  { x: logoX, y: 15,  visible: hasLogo },
-        title: { x: 50,    y: hasLogo ? 42 : 35, visible: true, align: adj.align || 'center' },
-        sub:   { x: 50,    y: hasLogo ? 62 : 55, visible: true, align: adj.align || 'center' },
+        logo:  { x: adj.logoX ?? 50, y: adj.logoY ?? 15,  visible: hasLogo },
+        title: { x: adj.titleX ?? 50, y: adj.titleY ?? (hasLogo ? 42 : 35), visible: true, align: adj.align || 'center' },
+        sub:   { x: adj.subX ?? 50, y: adj.subY ?? (hasLogo ? 62 : 55), visible: true, align: adj.align || 'center' },
       };
     }
     document.getElementById('cdndSlideLabel').textContent = 'Miniatura '+(index+1);
@@ -5040,11 +5049,10 @@ function cdndSaveBack() {
     adj.subItalic     = cdnd.style.subItalic;
     adj.titleText     = cdnd.content.title;
     adj.contentText   = cdnd.content.sub;
-    // Sincronizar logoAlign del panel según posición X del logo en Studio
-    if (cdnd.blocks.logo) {
-      const lx = cdnd.blocks.logo.x;
-      adj.logoAlign = lx < 33 ? 'left' : lx > 67 ? 'right' : 'center';
-    }
+    // Sincronizar posiciones X/Y del panel desde Studio
+    if (cdnd.blocks.logo)  { adj.logoX = cdnd.blocks.logo.x;  adj.logoY = cdnd.blocks.logo.y; }
+    if (cdnd.blocks.title) { adj.titleX = cdnd.blocks.title.x; adj.titleY = cdnd.blocks.title.y; }
+    if (cdnd.blocks.sub)   { adj.contentX = cdnd.blocks.sub.x; adj.contentY = cdnd.blocks.sub.y; }
     renderCarouselSpecs(i);
   } else {
     if (!window.thumbAdjust) window.thumbAdjust = {};
@@ -5064,11 +5072,10 @@ function cdndSaveBack() {
     adj.subItalic      = cdnd.style.subItalic;
     adj.titleText      = cdnd.content.title;
     adj.subText        = cdnd.content.sub;
-    // Sincronizar logoAlign del panel según posición X del logo en Studio
-    if (cdnd.blocks.logo) {
-      const lx = cdnd.blocks.logo.x;
-      adj.logoAlign = lx < 33 ? 'left' : lx > 67 ? 'right' : 'center';
-    }
+    // Sincronizar posiciones X/Y del panel desde Studio
+    if (cdnd.blocks.logo)  { adj.logoX = cdnd.blocks.logo.x;  adj.logoY = cdnd.blocks.logo.y; }
+    if (cdnd.blocks.title) { adj.titleX = cdnd.blocks.title.x; adj.titleY = cdnd.blocks.title.y; }
+    if (cdnd.blocks.sub)   { adj.subX = cdnd.blocks.sub.x; adj.subY = cdnd.blocks.sub.y; }
     renderThumbnailSpecs(i);
   }
 }
