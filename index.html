@@ -2862,7 +2862,7 @@ function renderThumbnailSpecs(i) {
 
       <!-- Header -->
       <div style="background:var(--brand);padding:10px 16px;display:flex;justify-content:space-between;align-items:center;">
-        <span style="color:#fff;font-weight:700;font-size:13px;">✏️ Miniatura ${i+1} — 1080×1350px</span>
+        <span style="color:#fff;font-weight:700;font-size:13px;">✏️ Miniatura ${i+1} — ${(selectedPubType==='story'||selectedPubType==='reel')?'1080×1920px':'1080×1350px'}</span>
         <div style="display:flex;gap:6px;">
           ${currentUser?.plan_type==='premium'?`<button onclick="openCdndEditor('thumb',${i})" style="background:rgba(255,255,255,0.2);color:#fff;font-weight:700;font-size:11px;padding:5px 12px;border:none;border-radius:6px;cursor:pointer;">🎨 Studio</button>`:''}
           <button onclick="downloadThumbnailImage(${i})" style="background:#fff;color:var(--brand);font-weight:700;font-size:11px;padding:5px 10px;border:none;border-radius:6px;cursor:pointer;">📥 PNG</button>
@@ -3162,7 +3162,7 @@ function renderCarouselSpecs(i) {
 
       <!-- Header -->
       <div style="background:var(--brand);padding:10px 16px;display:flex;justify-content:space-between;align-items:center;">
-        <span style="color:#fff;font-weight:700;font-size:13px;">✏️ Slide ${i+1} / ${currentCarouselSlides.length} — 1080×1350px</span>
+        <span style="color:#fff;font-weight:700;font-size:13px;">✏️ Slide ${i+1} / ${currentCarouselSlides.length} — ${(selectedPubType==='story'||selectedPubType==='reel')?'1080×1920px':'1080×1350px'}</span>
         <div style="display:flex;gap:6px;">
           ${currentUser?.plan_type==='premium'?`<button onclick="openCdndEditor('slide',${i})" style="background:rgba(255,255,255,0.2);color:#fff;font-weight:700;font-size:11px;padding:5px 12px;border:none;border-radius:6px;cursor:pointer;">🎨 Studio</button>`:''}
           <button onclick="downloadCarouselSlideImage(${i})" style="background:#fff;color:var(--brand);font-weight:700;font-size:11px;padding:5px 10px;border:none;border-radius:6px;cursor:pointer;">📥 PNG</button>
@@ -3549,7 +3549,12 @@ function wrapText(ctx, text, maxW) {
 async function downloadThumbnailImage(i) {
   const t = currentThumbnails[i];
   if (!t) return;
-  showNotification('⏳ Generando miniatura 1080×1350px...', 'success');
+  const isStoryReel = selectedPubType === 'story' || selectedPubType === 'reel';
+  const exportW = 540;
+  const exportH = isStoryReel ? 960 : 675; // 960×2 = 1920, 675×2 = 1350
+  const finalW  = 1080;
+  const finalH  = isStoryReel ? 1920 : 1350;
+  showNotification(`⏳ Generando miniatura ${finalW}×${finalH}px...`, 'success');
   try {
     const isPremium = currentUser?.plan_type === 'premium';
     if (!window.thumbAdjust) window.thumbAdjust = {};
@@ -3577,7 +3582,7 @@ async function downloadThumbnailImage(i) {
     const fcSub = adj.subColor   || (isPremium && currentBrand?.sub_font_color) || 'rgba(255,255,255,0.88)';
 
     const canvas = await captureHtmlToCanvas(el => {
-      el.style.cssText = `width:540px;height:675px;background:linear-gradient(135deg,${gc1},${gc2});overflow:hidden;position:relative;font-family:'${font}',sans-serif;`;
+      el.style.cssText = `width:${exportW}px;height:${exportH}px;background:linear-gradient(135deg,${gc1},${gc2});overflow:hidden;position:relative;font-family:'${font}',sans-serif;`;
 
       // Patrón
       const pat = document.createElement('div');
@@ -3617,13 +3622,13 @@ async function downloadThumbnailImage(i) {
         subEl.textContent = subText;
         el.appendChild(subEl);
       }
-    }, 540, 675);
+    }, exportW, exportH);
 
     const a = document.createElement('a');
-    a.download = `miniatura_${i+1}_1080x1350.png`;
+    a.download = `miniatura_${i+1}_${finalW}x${finalH}.png`;
     a.href = canvas.toDataURL('image/png');
     a.click();
-    showNotification('✅ Miniatura 1080×1350px descargada', 'success');
+    showNotification(`✅ Miniatura ${finalW}×${finalH}px descargada`, 'success');
   } catch(e) {
     console.error('Error miniatura:', e);
     showNotification('Error: ' + e.message, 'error');
@@ -3633,7 +3638,12 @@ async function downloadThumbnailImage(i) {
 async function downloadCarouselSlideImage(i) {
   const s = currentCarouselSlides[i];
   if (!s) return;
-  showNotification('⏳ Generando slide 1080×1350px...', 'success');
+  const isStoryReel = selectedPubType === 'story' || selectedPubType === 'reel';
+  const exportW = 540;
+  const exportH = isStoryReel ? 960 : 675;
+  const finalW  = 1080;
+  const finalH  = isStoryReel ? 1920 : 1350;
+  showNotification(`⏳ Generando slide ${finalW}×${finalH}px...`, 'success');
   try {
     const isPremium = currentUser?.plan_type === 'premium';
     if (!window.slideAdjust) window.slideAdjust = {};
@@ -3661,7 +3671,7 @@ async function downloadCarouselSlideImage(i) {
     const fcContent = adj.contentColor || (isPremium && currentBrand?.sub_font_color) || 'rgba(255,255,255,0.88)';
 
     const canvas = await captureHtmlToCanvas(el => {
-      el.style.cssText = `width:540px;height:675px;background:${gradStr};overflow:hidden;position:relative;font-family:'${font}',sans-serif;`;
+      el.style.cssText = `width:${exportW}px;height:${exportH}px;background:${gradStr};overflow:hidden;position:relative;font-family:'${font}',sans-serif;`;
 
       // Patrón
       const pat = document.createElement('div');
@@ -3701,13 +3711,13 @@ async function downloadCarouselSlideImage(i) {
         contEl.textContent = contText;
         el.appendChild(contEl);
       }
-    }, 540, 675);
+    }, exportW, exportH);
 
     const a = document.createElement('a');
-    a.download = `slide_${String(i+1).padStart(2,'0')}_1080x1350.png`;
+    a.download = `slide_${String(i+1).padStart(2,'0')}_${finalW}x${finalH}.png`;
     a.href = canvas.toDataURL('image/png');
     a.click();
-    showNotification('✅ Slide PNG 1080×1350px descargado', 'success');
+    showNotification(`✅ Slide PNG ${finalW}×${finalH}px descargado`, 'success');
   } catch(e) {
     console.error('Error slide:', e);
     showNotification('Error: ' + e.message, 'error');
