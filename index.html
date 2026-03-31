@@ -1303,6 +1303,7 @@
   position:absolute;cursor:grab;user-select:none;
   border:1.5px dashed transparent;border-radius:4px;
   transition:border-color .12s;padding:2px;
+  box-sizing:border-box;
 }
 .cdnd-block:hover{border-color:rgba(255,255,255,0.35);}
 .cdnd-block.selected{
@@ -5120,13 +5121,13 @@ function cdndRenderAll() {
   // Título
   const titleEl = document.getElementById('cdndBlockTitle');
   const titleTx = document.getElementById('cdndTitleEl');
-  const tW = 90; // width % del bloque
+  const tW = 84; // igual que panel/export (84% del canvas)
   titleEl.style.left  = (b.title.x - tW/2) + '%';
   titleEl.style.top   = b.title.y + '%';
   titleEl.style.width = tW + '%';
   titleEl.style.display = b.title.visible ? 'block' : 'none';
   titleTx.style.fontFamily  = `'${s.titleFont}',sans-serif`;
-  titleTx.style.fontSize    = Math.round(s.titleSize * 0.45) + 'px';
+  titleTx.style.fontSize    = Math.round(s.titleSize * 0.5) + 'px';
   titleTx.style.color       = s.titleColor;
   titleTx.style.textAlign   = s.titleAlign;
   titleTx.style.fontWeight  = s.titleBold   ? '800' : '400';
@@ -5141,7 +5142,7 @@ function cdndRenderAll() {
   subEl.style.width = tW + '%';
   subEl.style.display = b.sub.visible ? 'block' : 'none';
   subTx.style.fontFamily  = `'${s.subFont}',sans-serif`;
-  subTx.style.fontSize    = Math.round(s.subSize * 0.45) + 'px';
+  subTx.style.fontSize    = Math.round(s.subSize * 0.5) + 'px';
   subTx.style.color       = s.subColor;
   subTx.style.textAlign   = s.subAlign;
   subTx.style.fontWeight  = s.subBold   ? '700' : '400';
@@ -5786,14 +5787,14 @@ async function cdndExport() {
             <div class="cdnd-resize-handle" id="cdndLogoHandle"></div>
           </div>
           <!-- Bloque Título -->
-          <div class="cdnd-block" id="cdndBlockTitle" data-block="title" style="left:5%;width:90%;top:35%;">
+          <div class="cdnd-block" id="cdndBlockTitle" data-block="title" style="left:8%;width:84%;top:35%;">
             <div class="cdnd-block-label">Título</div>
-            <div id="cdndTitleEl" style="font-weight:800;line-height:1.2;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.4);word-break:break-word;"></div>
+            <div id="cdndTitleEl" style="font-weight:800;line-height:1.2;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.4);word-break:break-word;overflow-wrap:break-word;width:100%;box-sizing:border-box;"></div>
           </div>
           <!-- Bloque Subtítulo -->
-          <div class="cdnd-block" id="cdndBlockSub" data-block="sub" style="left:5%;width:90%;top:62%;">
+          <div class="cdnd-block" id="cdndBlockSub" data-block="sub" style="left:8%;width:84%;top:62%;">
             <div class="cdnd-block-label">Subtítulo</div>
-            <div id="cdndSubEl" style="line-height:1.4;color:rgba(255,255,255,.85);word-break:break-word;"></div>
+            <div id="cdndSubEl" style="line-height:1.4;color:rgba(255,255,255,.85);word-break:break-word;overflow-wrap:break-word;width:100%;box-sizing:border-box;"></div>
           </div>
         </div>
         <div style="text-align:center;margin-top:8px;font-size:9px;color:rgba(255,255,255,0.2);">
