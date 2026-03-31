@@ -5115,7 +5115,7 @@ function cdndRenderAll() {
     logoEl.style.transform = 'translateX(-50%)';
     logoImg.src = c.logoUrl;
     // NO box-sizing:border-box — sz es tamaño puro de la imagen
-    logoImg.style.cssText = `width:${sz}px;height:${sz}px;object-fit:contain;background:rgba(255,255,255,.18);border-radius:${Math.round(8*scale)}px;padding:${pad}px;display:block;`;
+    logoImg.style.cssText = `width:${sz}px;height:${sz}px;object-fit:contain;background:rgba(255,255,255,.18);border-radius:${Math.round(14*scale)}px;padding:${pad}px;display:block;`;
   } else {
     logoEl.style.display = 'none';
   }
@@ -5440,12 +5440,37 @@ function cdndApplyLayout(name) {
 }
 
 function cdndSetFormat(fmt) {
+  const prevFmt = cdnd.format || 'post';
   cdnd.format = fmt;
   const canvas = document.getElementById('cdndCanvas');
-  if (fmt==='story'){canvas.style.width='200px';canvas.style.height='355px';}
-  else {canvas.style.width=CDND_W+'px';canvas.style.height=CDND_H+'px';}
+
+  // Ratios de altura: Post = 675/540 = 1.25, Story = 1920/1080 = 1.777
+  // Al cambiar formato, reescalar posiciones Y para que los elementos
+  // queden en la misma posición visual relativa
+  const H_POST  = 675;   // altura canvas Post en unidades reales
+  const H_STORY = 1920;  // altura canvas Story en unidades reales
+
+  if (fmt === 'story' && prevFmt !== 'story') {
+    // Post → Story: comprimir posiciones Y (mismo lugar visual en canvas más alto)
+    const factor = H_POST / H_STORY; // ~0.352
+    ['logo','title','sub'].forEach(k => {
+      if (cdnd.blocks[k]) cdnd.blocks[k].y = Math.round(cdnd.blocks[k].y * factor * 10) / 10;
+    });
+    canvas.style.width  = '200px';
+    canvas.style.height = '355px';
+  } else if (fmt !== 'story' && prevFmt === 'story') {
+    // Story → Post: expandir posiciones Y de vuelta
+    const factor = H_STORY / H_POST; // ~2.844
+    ['logo','title','sub'].forEach(k => {
+      if (cdnd.blocks[k]) cdnd.blocks[k].y = Math.min(90, Math.round(cdnd.blocks[k].y * factor * 10) / 10);
+    });
+    canvas.style.width  = CDND_W + 'px';
+    canvas.style.height = CDND_H + 'px';
+  }
+
   document.getElementById('cdndFmtPost').style.borderColor  = fmt==='post' ?'var(--brand)':'';
   document.getElementById('cdndFmtStory').style.borderColor = fmt==='story'?'var(--brand)':'';
+  cdndRenderAll();
 }
 
 // Fuente por bloque
