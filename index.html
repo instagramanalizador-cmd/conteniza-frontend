@@ -3048,13 +3048,15 @@ function thumbAdjustFn(i, prop, val) {
   } else if (prop === 'titleBold' || prop === 'titleItalic' || prop === 'subBold' || prop === 'subItalic') {
     window.thumbAdjust[i][prop] = !window.thumbAdjust[i][prop];
   } else if (prop === 'titleY' || prop === 'subY' || prop === 'logoY') {
-    window.thumbAdjust[i][prop] = Math.max(0, Math.min(95, (window.thumbAdjust[i][prop] || 0) + val));
-  } else if (prop === 'titleX' || prop === 'subX' || prop === 'logoX') {
-    window.thumbAdjust[i][prop] = Math.max(5, Math.min(95, (window.thumbAdjust[i][prop] ?? 50) + val));
+    window.thumbAdjust[i][prop] = Math.max(0, Math.min(90, (window.thumbAdjust[i][prop] || 0) + val));
+  } else if (prop === 'titleX' || prop === 'subX') {
+    window.thumbAdjust[i][prop] = Math.max(10, Math.min(90, (window.thumbAdjust[i][prop] ?? 50) + val));
+  } else if (prop === 'logoX') {
+    window.thumbAdjust[i][prop] = Math.max(8, Math.min(92, (window.thumbAdjust[i][prop] ?? 50) + val));
   } else {
     window.thumbAdjust[i][prop] = Math.max(
-      prop === 'fontSize' ? 16 : prop === 'subFontSize' ? 8 : 40,
-      Math.min(prop === 'fontSize' ? 120 : prop === 'subFontSize' ? 60 : 300, window.thumbAdjust[i][prop] + val)
+      prop === 'fontSize' ? 16 : prop === 'subFontSize' ? 8 : 30,
+      Math.min(prop === 'fontSize' ? 120 : prop === 'subFontSize' ? 60 : 160, window.thumbAdjust[i][prop] + val)
     );
   }
   renderThumbnailSpecs(i);
@@ -3332,12 +3334,14 @@ function slideAdjustFn(i, prop, val) {
   } else if (prop === 'titleBold' || prop === 'titleItalic' || prop === 'subBold' || prop === 'subItalic') {
     window.slideAdjust[i][prop] = !window.slideAdjust[i][prop];
   } else if (prop === 'titleY' || prop === 'contentY' || prop === 'logoY') {
-    window.slideAdjust[i][prop] = Math.max(0, Math.min(95, (window.slideAdjust[i][prop] || 0) + val));
-  } else if (prop === 'titleX' || prop === 'contentX' || prop === 'logoX') {
-    window.slideAdjust[i][prop] = Math.max(5, Math.min(95, (window.slideAdjust[i][prop] ?? 50) + val));
+    window.slideAdjust[i][prop] = Math.max(0, Math.min(90, (window.slideAdjust[i][prop] || 0) + val));
+  } else if (prop === 'titleX' || prop === 'contentX') {
+    window.slideAdjust[i][prop] = Math.max(10, Math.min(90, (window.slideAdjust[i][prop] ?? 50) + val));
+  } else if (prop === 'logoX') {
+    window.slideAdjust[i][prop] = Math.max(8, Math.min(92, (window.slideAdjust[i][prop] ?? 50) + val));
   } else {
-    const min = prop === 'titleSize' ? 12 : prop === 'logoSize' ? 40 : 10;
-    const max = prop === 'titleSize' ? 80 : prop === 'logoSize' ? 200 : 50;
+    const min = prop === 'titleSize' ? 12 : prop === 'logoSize' ? 30 : 10;
+    const max = prop === 'titleSize' ? 80 : prop === 'logoSize' ? 160 : 50;
     window.slideAdjust[i][prop] = Math.max(min, Math.min(max, window.slideAdjust[i][prop] + val));
   }
   renderCarouselSpecs(i);
@@ -5243,15 +5247,19 @@ function _cdndMove(cx, cy) {
   const dy = (cy - _dragStart.cy) / r.height * 100;
   let nx = _dragStart.bx + dx;
   let ny = _dragStart.by + dy;
-  // Snap a 0, 16.67, 33.33, 50, 66.67, 83.33, 100 (±2%)
+  // Snap a tercios (±2%)
   const snaps = [0,16.67,33.33,50,66.67,83.33,100];
   let snapX=false, snapY=false;
   snaps.forEach(s => {
     if(Math.abs(nx-s)<2){nx=s;snapX=true;}
     if(Math.abs(ny-s)<2){ny=s;snapY=true;}
   });
-  nx = Math.max(0, Math.min(100, nx));
-  ny = Math.max(0, Math.min(100, ny));
+  // Márgenes por tipo de bloque
+  const isLogo = _drag.id === 'logo';
+  const xMin = isLogo ? 8  : 10;
+  const xMax = isLogo ? 92 : 90;
+  nx = Math.max(xMin, Math.min(xMax, nx));
+  ny = Math.max(4,    Math.min(92,   ny));
   cdnd.blocks[_drag.id].x = Math.round(nx*10)/10;
   cdnd.blocks[_drag.id].y = Math.round(ny*10)/10;
   const snapH = document.getElementById('cdndSnapH');
@@ -5284,7 +5292,7 @@ function _cdndRD(e) {
 function _cdndRM(e) {
   if (!_resize) return;
   const delta = e.clientX - _resize.startX;
-  cdnd.style.logoSize = Math.max(20, Math.min(180, _resize.startSz + delta));
+  cdnd.style.logoSize = Math.max(30, Math.min(160, _resize.startSz + delta));
   document.getElementById('cdndLogoSizeVal').textContent = Math.round(cdnd.style.logoSize);
   cdndRenderAll();
 }
@@ -5341,8 +5349,8 @@ function cdndUpdateBg() {
 }
 
 function cdndAdjVal(key, delta) {
-  const mins = {titleSize:12, subSize:8, logoSize:20};
-  const maxs = {titleSize:120, subSize:60, logoSize:300};
+  const mins = {titleSize:12, subSize:8, logoSize:30};
+  const maxs = {titleSize:120, subSize:60, logoSize:160};
   cdnd.style[key] = Math.max(mins[key]||0, Math.min(maxs[key]||999, cdnd.style[key]+delta));
   cdndRenderAll(); cdndSaveBack();
 }
@@ -5375,16 +5383,26 @@ function cdndPosInput(axis, val) {
   if (!cdnd.selectedBlock) return;
   const v = parseFloat(val);
   if (isNaN(v)) return;
-  cdnd.blocks[cdnd.selectedBlock][axis] = Math.max(0,Math.min(100,v));
+  const isLogo = cdnd.selectedBlock === 'logo';
+  let clamped;
+  if (axis === 'x') {
+    clamped = Math.max(isLogo ? 8 : 10, Math.min(isLogo ? 92 : 90, v));
+  } else {
+    clamped = Math.max(4, Math.min(92, v));
+  }
+  cdnd.blocks[cdnd.selectedBlock][axis] = clamped;
   cdndRenderAll(); cdndSaveBack();
 }
 
 function cdndQuickPos(pos) {
   if (!cdnd.selectedBlock) return;
+  const isLogo = cdnd.selectedBlock === 'logo';
+  const L = isLogo ? 12 : 15;   // margen izquierda/derecha para posición rápida
+  const R = isLogo ? 88 : 85;
   const map = {
-    tl:[16,10], tc:[50,10], tr:[84,10],
-    ml:[16,50], mc:[50,50], mr:[84,50],
-    bl:[16,85], bc:[50,85], br:[84,85],
+    tl:[L,10],  tc:[50,10], tr:[R,10],
+    ml:[L,50],  mc:[50,50], mr:[R,50],
+    bl:[L,85],  bc:[50,85], br:[R,85],
   };
   const [x,y] = map[pos]||[50,50];
   cdnd.blocks[cdnd.selectedBlock].x = x;
