@@ -2826,6 +2826,7 @@ function renderThumbnailSpecs(i) {
       titleFont: (isPremium && currentBrand?.font_name) || 'DM Sans',
       subFontFamily: (isPremium && currentBrand?.sub_font_name) || (isPremium && currentBrand?.font_name) || 'DM Sans',
       logoY: 8, titleY: 42, subY: 62, titleX: 50, subX: 50, logoX: 50,
+      titleAlign: 'center', subAlign: 'center',
     };
   } else {
     // Migrar campos faltantes en adj existentes
@@ -2841,6 +2842,8 @@ function renderThumbnailSpecs(i) {
     if (_adj.titleX  === undefined) _adj.titleX  = 50;
     if (_adj.subX    === undefined) _adj.subX    = 50;
     if (_adj.logoX   === undefined) _adj.logoX   = 50;
+    if (_adj.titleAlign === undefined) _adj.titleAlign = _adj.align || 'center';
+    if (_adj.subAlign   === undefined) _adj.subAlign   = _adj.align || 'center';
   }
   const adj = window.thumbAdjust[i];
   const hasLogo = isPremium && currentBrand?.logo_url;
@@ -2880,8 +2883,8 @@ function renderThumbnailSpecs(i) {
             <div style="width:540px;height:675px;transform:scale(0.37037);transform-origin:top left;background:linear-gradient(135deg,${gc1},${gc2});overflow:hidden;position:relative;">
               <div style="position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 2px,transparent 2px);background-size:40px 40px;pointer-events:none;"></div>
               ${hasLogo ? `<div style="position:absolute;top:${adj.logoY||8}%;left:${adj.logoX??50}%;transform:translateX(-50%);"><div style="background:rgba(255,255,255,.18);border-radius:14px;padding:10px;display:inline-flex;"><img src="${currentBrand.logo_url}" style="width:${adj.logoSize||80}px;height:${adj.logoSize||80}px;object-fit:contain;border-radius:8px;display:block;"></div></div>` : ''}
-              <div style="position:absolute;top:${adj.titleY||42}%;left:8%;width:84%;text-align:${adj.align||'center'};font-family:'${adj.titleFont||font}',sans-serif;font-size:${adj.fontSize}px;font-weight:${titleFW};font-style:${titleFS};color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);">${escapeHtml(adj.titleText)}</div>
-              ${adj.subText ? `<div style="position:absolute;top:${adj.subY||62}%;left:8%;width:84%;text-align:${adj.align||'center'};font-family:'${adj.subFontFamily||subFont}',sans-serif;font-size:${adj.subFontSize||Math.round(adj.fontSize*0.5)}px;font-weight:${subFW};font-style:${subFS_s};color:${adj.subColor||'rgba(255,255,255,.85)'};line-height:1.5;">${escapeHtml(adj.subText)}</div>` : ''}
+              <div style="position:absolute;top:${adj.titleY||42}%;left:8%;width:84%;text-align:${adj.titleAlign||'center'};font-family:'${adj.titleFont||font}',sans-serif;font-size:${adj.fontSize}px;font-weight:${titleFW};font-style:${titleFS};color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);">${escapeHtml(adj.titleText)}</div>
+              ${adj.subText ? `<div style="position:absolute;top:${adj.subY||62}%;left:8%;width:84%;text-align:${adj.subAlign||'center'};font-family:'${adj.subFontFamily||subFont}',sans-serif;font-size:${adj.subFontSize||Math.round(adj.fontSize*0.5)}px;font-weight:${subFW};font-style:${subFS_s};color:${adj.subColor||'rgba(255,255,255,.85)'};line-height:1.5;">${escapeHtml(adj.subText)}</div>` : ''}
             </div>
           </div>
           <!-- Controles de posición Y y alineación -->
@@ -2894,6 +2897,9 @@ function renderThumbnailSpecs(i) {
               <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.titleY||42}%</span>
               <button onclick="thumbAdjustFn(${i},'titleY',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↓</button>
             </div>
+            <div style="display:flex;gap:3px;">
+              ${['left','center','right'].map(a=>`<button onclick="thumbAdjustFn(${i},'titleAlign','${a}')" style="flex:1;padding:3px;border-radius:5px;border:1px solid var(--border);background:${(adj.titleAlign||'center')===a?'var(--brand)':'var(--surface-2)'};color:${(adj.titleAlign||'center')===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:12px;" title="${a==='left'?'Izq':a==='center'?'Centro':'Der'}">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
+            </div>
             <!-- Subtítulo -->
             <div style="font-size:9px;color:var(--brand);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-top:4px;">💬 Subtítulo</div>
             <div style="display:flex;align-items:center;gap:4px;">
@@ -2902,10 +2908,8 @@ function renderThumbnailSpecs(i) {
               <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.subY||62}%</span>
               <button onclick="thumbAdjustFn(${i},'subY',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↓</button>
             </div>
-            <!-- Alineación de texto -->
-            <div style="font-size:9px;color:var(--text-3);margin-top:4px;">Alineación</div>
-            <div style="display:flex;gap:4px;">
-              ${['left','center','right'].map(a=>`<button onclick="thumbAdjustFn(${i},'align','${a}')" style="flex:1;padding:3px;border-radius:5px;border:1px solid var(--border);background:${adj.align===a?'var(--brand)':'var(--surface-2)'};color:${adj.align===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:12px;" title="${a==='left'?'Izq':a==='center'?'Centro':'Der'}">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
+            <div style="display:flex;gap:3px;">
+              ${['left','center','right'].map(a=>`<button onclick="thumbAdjustFn(${i},'subAlign','${a}')" style="flex:1;padding:3px;border-radius:5px;border:1px solid var(--border);background:${(adj.subAlign||'center')===a?'var(--brand)':'var(--surface-2)'};color:${(adj.subAlign||'center')===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:12px;" title="${a==='left'?'Izq':a==='center'?'Centro':'Der'}">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
             </div>
           </div>
         </div>
@@ -3033,7 +3037,7 @@ function thumbAdjustFn(i, prop, val) {
       subFontFamily: (isPrem && currentBrand?.sub_font_name) || (isPrem && currentBrand?.font_name) || 'DM Sans',
     };
   }
-  if (prop === 'align' || prop === 'titleFont' || prop === 'subFontFamily') {
+  if (prop === 'align' || prop === 'titleAlign' || prop === 'subAlign' || prop === 'titleFont' || prop === 'subFontFamily') {
     window.thumbAdjust[i][prop] = val;
   } else if (prop === 'titleBold' || prop === 'titleItalic' || prop === 'subBold' || prop === 'subItalic') {
     window.thumbAdjust[i][prop] = !window.thumbAdjust[i][prop];
@@ -3103,7 +3107,7 @@ function renderCarouselSpecs(i) {
     const _fcS = (isPrem2 && currentBrand?.font_color) ? currentBrand.font_color : '#ffffff';
     const _sfcS = (isPrem2 && currentBrand?.sub_font_color) ? currentBrand.sub_font_color : '#cccccc';
     window.slideAdjust[i] = {
-      titleSize: 40, contentSize: 20, align: 'center', logoSize: 80,
+      titleSize: 40, contentSize: 20, align: 'center', titleAlign: 'center', contentAlign: 'center', logoSize: 80,
       titleText: s.title || '', contentText: s.content || '',
       font:    (isPrem2 && currentBrand?.font_name)     ? currentBrand.font_name     : 'DM Sans',
       subFont: (isPrem2 && currentBrand?.sub_font_name) ? currentBrand.sub_font_name : (isPrem2 && currentBrand?.font_name) || 'DM Sans',
@@ -3123,6 +3127,8 @@ function renderCarouselSpecs(i) {
     if (_adjS.titleX   === undefined) _adjS.titleX   = 50;
     if (_adjS.contentX === undefined) _adjS.contentX = 50;
     if (_adjS.logoX    === undefined) _adjS.logoX    = 50;
+    if (_adjS.titleAlign   === undefined) _adjS.titleAlign   = _adjS.align || 'center';
+    if (_adjS.contentAlign === undefined) _adjS.contentAlign = _adjS.align || 'center';
   }
   const adj = window.slideAdjust[i];
   const isPremium = currentUser?.plan_type === 'premium';
@@ -3169,8 +3175,8 @@ function renderCarouselSpecs(i) {
             <div style="width:540px;height:675px;transform:scale(0.37037);transform-origin:top left;background:${bgStyle};overflow:hidden;position:relative;">
               <div style="position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 2px,transparent 2px);background-size:40px 40px;pointer-events:none;"></div>
               ${isPremium && currentBrand?.logo_url ? `<div style="position:absolute;top:${adj.logoY||8}%;left:${adj.logoX??50}%;transform:translateX(-50%);"><div style="background:rgba(255,255,255,.18);border-radius:14px;padding:10px;display:inline-flex;"><img src="${currentBrand.logo_url}" style="width:${adj.logoSize||80}px;height:${adj.logoSize||80}px;object-fit:contain;border-radius:8px;display:block;"></div></div>` : ''}
-              <div style="position:absolute;top:${adj.titleY||38}%;left:8%;width:84%;text-align:${adj.align||'center'};font-family:'${adj.font}',sans-serif;font-size:${adj.titleSize}px;font-weight:${sTitleFW};font-style:${sTitleFS};color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);">${escapeHtml(adj.titleText)}</div>
-              <div style="position:absolute;top:${adj.contentY||60}%;left:8%;width:84%;text-align:${adj.align||'center'};font-family:'${adjSubFont}',sans-serif;font-size:${adj.contentSize}px;font-weight:${sSubFW};font-style:${sSubFS};color:${adj.contentColor||'rgba(255,255,255,.85)'};line-height:1.5;word-break:break-word;">${escapeHtml(adj.contentText)}</div>
+              <div style="position:absolute;top:${adj.titleY||38}%;left:8%;width:84%;text-align:${adj.titleAlign||adj.align||'center'};font-family:'${adj.font}',sans-serif;font-size:${adj.titleSize}px;font-weight:${sTitleFW};font-style:${sTitleFS};color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);">${escapeHtml(adj.titleText)}</div>
+              <div style="position:absolute;top:${adj.contentY||60}%;left:8%;width:84%;text-align:${adj.contentAlign||adj.align||'center'};font-family:'${adjSubFont}',sans-serif;font-size:${adj.contentSize}px;font-weight:${sSubFW};font-style:${sSubFS};color:${adj.contentColor||'rgba(255,255,255,.85)'};line-height:1.5;word-break:break-word;">${escapeHtml(adj.contentText)}</div>
             </div>
           </div>
           <!-- Controles de posición Y y alineación -->
@@ -3183,6 +3189,9 @@ function renderCarouselSpecs(i) {
               <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.titleY||38}%</span>
               <button onclick="slideAdjustFn(${i},'titleY',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↓</button>
             </div>
+            <div style="display:flex;gap:3px;">
+              ${['left','center','right'].map(a=>`<button onclick="slideAdjustFn(${i},'titleAlign','${a}')" style="flex:1;padding:3px;border-radius:5px;border:1px solid var(--border);background:${(adj.titleAlign||adj.align||'center')===a?'var(--brand)':'var(--surface-2)'};color:${(adj.titleAlign||adj.align||'center')===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:12px;" title="${a==='left'?'Izquierda':a==='center'?'Centro':'Derecha'}">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
+            </div>
             <!-- Contenido -->
             <div style="font-size:9px;color:var(--brand);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-top:4px;">💬 Contenido</div>
             <div style="display:flex;align-items:center;gap:4px;">
@@ -3191,10 +3200,8 @@ function renderCarouselSpecs(i) {
               <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.contentY||60}%</span>
               <button onclick="slideAdjustFn(${i},'contentY',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↓</button>
             </div>
-            <!-- Alineación de texto -->
-            <div style="font-size:9px;color:var(--text-3);margin-top:4px;">Alineación</div>
-            <div style="display:flex;gap:4px;">
-              ${['left','center','right'].map(a=>`<button onclick="slideAdjustFn(${i},'align','${a}')" style="flex:1;padding:3px;border-radius:5px;border:1px solid var(--border);background:${adj.align===a?'var(--brand)':'var(--surface-2)'};color:${adj.align===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:12px;" title="${a==='left'?'Izquierda':a==='center'?'Centro':'Derecha'}">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
+            <div style="display:flex;gap:3px;">
+              ${['left','center','right'].map(a=>`<button onclick="slideAdjustFn(${i},'contentAlign','${a}')" style="flex:1;padding:3px;border-radius:5px;border:1px solid var(--border);background:${(adj.contentAlign||adj.align||'center')===a?'var(--brand)':'var(--surface-2)'};color:${(adj.contentAlign||adj.align||'center')===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:12px;" title="${a==='left'?'Izquierda':a==='center'?'Centro':'Derecha'}">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
             </div>
           </div>
         </div>
@@ -3308,7 +3315,7 @@ function renderCarouselSpecs(i) {
 function slideAdjustFn(i, prop, val) {
   if (!window.slideAdjust) window.slideAdjust = {};
   if (!window.slideAdjust[i]) return;
-  if (prop === 'align' || prop === 'font' || prop === 'subFont' || prop === 'titleColor' || prop === 'contentColor') {
+  if (prop === 'align' || prop === 'titleAlign' || prop === 'contentAlign' || prop === 'font' || prop === 'subFont' || prop === 'titleColor' || prop === 'contentColor') {
     window.slideAdjust[i][prop] = val;
   } else if (prop === 'titleBold' || prop === 'titleItalic' || prop === 'subBold' || prop === 'subItalic') {
     window.slideAdjust[i][prop] = !window.slideAdjust[i][prop];
@@ -3586,7 +3593,7 @@ async function downloadThumbnailImage(i) {
       const _tFS = adj.titleItalic !== undefined ? (adj.titleItalic ? 'italic':'normal') : (isPremium && currentBrand?.title_italic ? 'italic':'normal');
       const titleEl = document.createElement('div');
       const titleXpct = adj.titleX ?? 50;
-      titleEl.style.cssText = `position:absolute;top:${adj.titleY||42}%;left:8%;width:84%;text-align:${align};font-size:${fs}px;font-weight:${_tFW};font-style:${_tFS};color:${fcTh};line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${adj.titleFont||font}',sans-serif;word-break:break-word;box-sizing:border-box;`;
+      titleEl.style.cssText = `position:absolute;top:${adj.titleY||42}%;left:8%;width:84%;text-align:${adj.titleAlign||adj.align||'center'};font-size:${fs}px;font-weight:${_tFW};font-style:${_tFS};color:${fcTh};line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${adj.titleFont||font}',sans-serif;word-break:break-word;box-sizing:border-box;`;
       titleEl.textContent = titleText;
       el.appendChild(titleEl);
 
@@ -3596,7 +3603,7 @@ async function downloadThumbnailImage(i) {
         const _sFS = adj.subItalic !== undefined ? (adj.subItalic ? 'italic':'normal') : (isPremium && currentBrand?.sub_italic ? 'italic':'normal');
         const subEl = document.createElement('div');
         const subXpct = adj.subX ?? 50;
-        subEl.style.cssText = `position:absolute;top:${adj.subY||62}%;left:8%;width:84%;text-align:${align};font-size:${subFs}px;font-weight:${_sFW};font-style:${_sFS};color:${fcSub};line-height:1.5;font-family:'${adj.subFontFamily||subFontExport}',sans-serif;word-break:break-word;box-sizing:border-box;`;
+        subEl.style.cssText = `position:absolute;top:${adj.subY||62}%;left:8%;width:84%;text-align:${adj.subAlign||adj.align||'center'};font-size:${subFs}px;font-weight:${_sFW};font-style:${_sFS};color:${fcSub};line-height:1.5;font-family:'${adj.subFontFamily||subFontExport}',sans-serif;word-break:break-word;box-sizing:border-box;`;
         subEl.textContent = subText;
         el.appendChild(subEl);
       }
@@ -3675,7 +3682,7 @@ async function downloadCarouselSlideImage(i) {
       const _cTFS = adj.titleItalic !== undefined ? (adj.titleItalic ? 'italic':'normal') : (isPremium && currentBrand?.title_italic ? 'italic':'normal');
       const titleEl = document.createElement('div');
       const titleXpct = adj.titleX ?? 50;
-      titleEl.style.cssText = `position:absolute;top:${adj.titleY||38}%;left:8%;width:84%;text-align:${align};font-size:${ts}px;font-weight:${_cTFW};font-style:${_cTFS};color:${fcTitle};line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${font}',sans-serif;word-break:break-word;box-sizing:border-box;`;
+      titleEl.style.cssText = `position:absolute;top:${adj.titleY||38}%;left:8%;width:84%;text-align:${adj.titleAlign||adj.align||'center'};font-size:${ts}px;font-weight:${_cTFW};font-style:${_cTFS};color:${fcTitle};line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${font}',sans-serif;word-break:break-word;box-sizing:border-box;`;
       titleEl.textContent = titleText;
       el.appendChild(titleEl);
 
@@ -3685,7 +3692,7 @@ async function downloadCarouselSlideImage(i) {
         const _cCFS = adj.subItalic !== undefined ? (adj.subItalic ? 'italic':'normal') : (isPremium && currentBrand?.sub_italic ? 'italic':'normal');
         const contEl = document.createElement('div');
         const contentXpct = adj.contentX ?? 50;
-        contEl.style.cssText = `position:absolute;top:${adj.contentY||60}%;left:8%;width:84%;text-align:${align};font-size:${contSize}px;font-weight:${_cCFW};font-style:${_cCFS};color:${fcContent};line-height:1.5;font-family:'${subFontSlide}',sans-serif;word-break:break-word;box-sizing:border-box;`;
+        contEl.style.cssText = `position:absolute;top:${adj.contentY||60}%;left:8%;width:84%;text-align:${adj.contentAlign||adj.align||'center'};font-size:${contSize}px;font-weight:${_cCFW};font-style:${_cCFS};color:${fcContent};line-height:1.5;font-family:'${subFontSlide}',sans-serif;word-break:break-word;box-sizing:border-box;`;
         contEl.textContent = contText;
         el.appendChild(contEl);
       }
