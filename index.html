@@ -3050,7 +3050,7 @@ function thumbAdjustFn(i, prop, val) {
   } else {
     window.thumbAdjust[i][prop] = Math.max(
       prop === 'fontSize' ? 16 : prop === 'subFontSize' ? 8 : 30,
-      Math.min(prop === 'fontSize' ? 120 : prop === 'subFontSize' ? 60 : 160, window.thumbAdjust[i][prop] + val)
+      Math.min(prop === 'fontSize' ? 120 : prop === 'subFontSize' ? 60 : 300, window.thumbAdjust[i][prop] + val)
     );
   }
   renderThumbnailSpecs(i);
@@ -3327,7 +3327,7 @@ function slideAdjustFn(i, prop, val) {
     window.slideAdjust[i][prop] = Math.max(8, Math.min(92, (window.slideAdjust[i][prop] ?? 50) + val));
   } else {
     const min = prop === 'titleSize' ? 12 : prop === 'logoSize' ? 30 : 10;
-    const max = prop === 'titleSize' ? 80 : prop === 'logoSize' ? 160 : 50;
+    const max = prop === 'titleSize' ? 80 : prop === 'logoSize' ? 300 : 50;
     window.slideAdjust[i][prop] = Math.max(min, Math.min(max, window.slideAdjust[i][prop] + val));
   }
   renderCarouselSpecs(i);
@@ -4668,7 +4668,7 @@ async function exportCarouselImages() {
       if (logo) {
         try {
           const img = await loadImage(logo);
-          const logoSize = 160; // Logo más grande
+          const logoSize = 200; // Logo más grande
           const logoX = (W - logoSize) / 2;
           // Fondo blanco redondeado para el logo
           ctx.save();
@@ -5295,7 +5295,7 @@ function _cdndRD(e) {
 function _cdndRM(e) {
   if (!_resize) return;
   const delta = e.clientX - _resize.startX;
-  cdnd.style.logoSize = Math.max(30, Math.min(160, _resize.startSz + delta));
+  cdnd.style.logoSize = Math.max(30, Math.min(300, _resize.startSz + delta));
   document.getElementById('cdndLogoSizeVal').textContent = Math.round(cdnd.style.logoSize);
   cdndRenderAll();
 }
@@ -5353,7 +5353,7 @@ function cdndUpdateBg() {
 
 function cdndAdjVal(key, delta) {
   const mins = {titleSize:12, subSize:8, logoSize:30};
-  const maxs = {titleSize:120, subSize:60, logoSize:160};
+  const maxs = {titleSize:120, subSize:60, logoSize:300};
   cdnd.style[key] = Math.max(mins[key]||0, Math.min(maxs[key]||999, cdnd.style[key]+delta));
   cdndRenderAll(); cdndSaveBack();
 }
@@ -5808,7 +5808,7 @@ async function cdndExport() {
           <div class="cdnd-snap-h" id="cdndSnapH" style="top:50%"></div>
           <div class="cdnd-snap-v" id="cdndSnapV" style="left:50%"></div>
           <!-- Bloque Logo -->
-          <div class="cdnd-block" id="cdndBlockLogo" data-block="logo" style="display:none;">
+          <div class="cdnd-block" id="cdndBlockLogo" data-block="logo" style="display:none;padding:0;">
             <div class="cdnd-block-label">Logo</div>
             <img id="cdndLogoImg" style="display:block;border-radius:6px;">
             <div class="cdnd-resize-handle" id="cdndLogoHandle"></div>
