@@ -5104,15 +5104,14 @@ function cdndRenderAll() {
   document.getElementById('cdndLogoStylePanel').style.display = hasLogo ? 'block' : 'none';
 
   if (hasLogo) {
-    // Studio preview é 270px wide, export é 540px: escalar logoSize al 50%
+    // Escalar logoSize al ratio del canvas (200/540 = 0.37037)
     const sz = Math.round(s.logoSize * (CDND_W / 540));
     const pad = Math.round(8 * (CDND_W / 540));
-    const tot = sz + pad * 2;
-    const totPct_x = tot / CDND_W * 100;
-    const totPct_y = tot / CDND_H * 100;
     logoEl.style.display = b.logo.visible ? 'block' : 'none';
-    logoEl.style.left    = (b.logo.x - totPct_x/2) + '%';
-    logoEl.style.top     = (b.logo.y - totPct_y/2) + '%';
+    // Mismo sistema que el panel: left = logoX%, transform translateX(-50%) para center-anchor
+    logoEl.style.left      = b.logo.x + '%';
+    logoEl.style.top       = b.logo.y + '%';
+    logoEl.style.transform = 'translateX(-50%)';
     logoImg.src = c.logoUrl;
     logoImg.style.cssText = `width:${sz}px;height:${sz}px;object-fit:contain;background:rgba(255,255,255,.18);border-radius:8px;padding:${pad}px;display:block;box-sizing:border-box;`;
   } else {
