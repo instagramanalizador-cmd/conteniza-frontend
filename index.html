@@ -926,12 +926,12 @@
     .thumb-dl-btn:hover { background: var(--success); }
     .thumb-main-text {
       font-size: 20px;
-      font-weight: 900;
+      font-weight: inherit;
       line-height: 1.1;
       text-shadow: 0 2px 8px rgba(0,0,0,.3);
       margin-bottom: 10px;
     }
-    .thumb-secondary { font-size: 13px; opacity: .9; line-height: 1.3; }
+    .thumb-secondary { font-size: 13px; line-height: 1.3; }
 
     /* SEO block */
     .seo-block {
@@ -2710,7 +2710,10 @@ function renderResults(r, pubType) {
       ${escapeHtml(c)}
     </div>`;
   }).join('');
-  // Thumbnails
+  // Thumbnails — asegurar que la marca está cargada antes de renderizar
+  if (currentUser?.plan_type === 'premium' && (!currentBrand?.color_primary)) {
+    await loadBrandSilent();
+  }
   renderThumbnails(r.thumbnails);
   // Carousel
   renderCarousel(r.carousel_slides);
@@ -2783,13 +2786,20 @@ function renderThumbnails(thumbs) {
       : null;
     card.style.background = useBrandBg || t.background_gradient || SLIDE_GRADIENTS[i%SLIDE_GRADIENTS.length];
     card.onclick = () => selectThumbnail(i);
-    const brandF = (currentUser?.plan_type==='premium' && currentBrand?.font_name) ? currentBrand.font_name : null;
+    const brandF    = isPrem && currentBrand?.font_name    ? currentBrand.font_name    : null;
+    const brandSubF = isPrem && currentBrand?.sub_font_name ? currentBrand.sub_font_name : brandF;
+    const brandFC   = isPrem && currentBrand?.font_color    ? currentBrand.font_color    : '#ffffff';
+    const brandSFC  = isPrem && currentBrand?.sub_font_color ? currentBrand.sub_font_color : 'rgba(255,255,255,0.88)';
+    const titleFW   = isPrem && currentBrand?.title_bold  !== false ? '900' : '400';
+    const titleFSt  = isPrem && currentBrand?.title_italic ? 'italic' : 'normal';
+    const subFW     = isPrem && currentBrand?.sub_bold    ? '700'   : '400';
+    const subFSt    = isPrem && currentBrand?.sub_italic  ? 'italic' : 'normal';
     card.innerHTML = `
       <div class="thumb-num">${i+1}</div>
       <button class="thumb-dl-btn" onclick="event.stopPropagation();downloadThumbnailImage(${i})">📥 PNG</button>
-      ${brandF && currentBrand?.logo_url ? `<img src="${currentBrand.logo_url}" style="width:36px;height:36px;border-radius:6px;object-fit:contain;margin-bottom:6px;background:rgba(255,255,255,.2);padding:3px;">` : ''}
-      <div class="thumb-main-text" style="${brandF ? `font-family:'${brandF}',sans-serif;` : ''}">${escapeHtml(t.text||'TEXTO')}</div>
-      ${t.secondary_text?`<div class="thumb-secondary" style="${brandF ? `font-family:'${brandF}',sans-serif;` : ''}">${escapeHtml(t.secondary_text)}</div>`:''}
+      ${isPrem && currentBrand?.logo_url ? `<img src="${currentBrand.logo_url}" style="width:36px;height:36px;border-radius:6px;object-fit:contain;margin-bottom:6px;background:rgba(255,255,255,.2);padding:3px;">` : ''}
+      <div class="thumb-main-text" style="${brandF?`font-family:'${brandF}',sans-serif;`:''}color:${brandFC};font-weight:${titleFW};font-style:${titleFSt};">${escapeHtml(t.text||'TEXTO')}</div>
+      ${t.secondary_text?`<div class="thumb-secondary" style="${brandSubF?`font-family:'${brandSubF}',sans-serif;`:''}color:${brandSFC};font-weight:${subFW};font-style:${subFSt};">${escapeHtml(t.secondary_text)}</div>`:''}
     `;
     grid.appendChild(card);
   });
@@ -2821,7 +2831,7 @@ function renderThumbnailSpecs(i) {
       titleColor: _tfc, subColor: _sfc,
       titleFont: (isPremium && currentBrand?.font_name) || 'DM Sans',
       subFontFamily: (isPremium && currentBrand?.sub_font_name) || (isPremium && currentBrand?.font_name) || 'DM Sans',
-      logoY: 8, titleY: 42, subY: 62,
+      logoY: 8, titleY: 42, subY: 62, titleX: 8, subX: 8, titleAlign: 'center', subAlign: 'center',
     };
   } else {
     // Migrar campos faltantes en adj existentes
@@ -2831,9 +2841,13 @@ function renderThumbnailSpecs(i) {
     if (_adj.subColor    === undefined) _adj.subColor    = '#cccccc';
     if (_adj.titleFont   === undefined) _adj.titleFont   = (isPremium && currentBrand?.font_name) || 'DM Sans';
     if (_adj.subFontFamily === undefined) _adj.subFontFamily = (isPremium && currentBrand?.sub_font_name) || _adj.titleFont;
-    if (_adj.logoY   === undefined) _adj.logoY   = 8;
-    if (_adj.titleY  === undefined) _adj.titleY  = 42;
-    if (_adj.subY    === undefined) _adj.subY    = 62;
+    if (_adj.logoY      === undefined) _adj.logoY      = 8;
+    if (_adj.titleY     === undefined) _adj.titleY     = 42;
+    if (_adj.subY       === undefined) _adj.subY       = 62;
+    if (_adj.titleX     === undefined) _adj.titleX     = 8;
+    if (_adj.subX       === undefined) _adj.subX       = 8;
+    if (_adj.titleAlign === undefined) _adj.titleAlign = _adj.align || 'center';
+    if (_adj.subAlign   === undefined) _adj.subAlign   = _adj.align || 'center';
   }
   const adj = window.thumbAdjust[i];
   const hasLogo = isPremium && currentBrand?.logo_url;
@@ -2873,26 +2887,41 @@ function renderThumbnailSpecs(i) {
             <div style="width:540px;height:675px;transform:scale(0.37037);transform-origin:top left;background:linear-gradient(135deg,${gc1},${gc2});overflow:hidden;position:relative;">
               <div style="position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 2px,transparent 2px);background-size:40px 40px;pointer-events:none;"></div>
               ${hasLogo ? `<div style="position:absolute;top:${adj.logoY||8}%;${(adj.logoAlign||'center')==='left'?'left:8%':(adj.logoAlign||'center')==='right'?'right:8%':'left:50%;transform:translateX(-50%)'};"><div style="background:rgba(255,255,255,.18);border-radius:14px;padding:10px;display:inline-flex;"><img src="${currentBrand.logo_url}" style="width:${adj.logoSize||80}px;height:${adj.logoSize||80}px;object-fit:contain;border-radius:8px;display:block;"></div></div>` : ''}
-              <div style="position:absolute;top:${adj.titleY||42}%;left:8%;right:8%;text-align:${adj.align||'center'};font-family:'${adj.titleFont||font}',sans-serif;font-size:${adj.fontSize}px;font-weight:${titleFW};font-style:${titleFS};color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);">${escapeHtml(adj.titleText)}</div>
-              ${adj.subText ? `<div style="position:absolute;top:${adj.subY||62}%;left:8%;right:8%;text-align:${adj.align||'center'};font-family:'${adj.subFontFamily||subFont}',sans-serif;font-size:${adj.subFontSize||Math.round(adj.fontSize*0.5)}px;font-weight:${subFW};font-style:${subFS_s};color:${adj.subColor||'rgba(255,255,255,.85)'};line-height:1.5;">${escapeHtml(adj.subText)}</div>` : ''}
+              <div style="position:absolute;top:${adj.titleY||42}%;left:${adj.titleX||8}%;right:${100-(adj.titleX||8)-(adj.titleW||84)}%;text-align:${adj.titleAlign||adj.align||'center'};font-family:'${adj.titleFont||font}',sans-serif;font-size:${adj.fontSize}px;font-weight:${titleFW};font-style:${titleFS};color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);">${escapeHtml(adj.titleText)}</div>
+              ${adj.subText ? `<div style="position:absolute;top:${adj.subY||62}%;left:${adj.subX||8}%;right:${100-(adj.subX||8)-(adj.subW||84)}%;text-align:${adj.subAlign||adj.align||'center'};font-family:'${adj.subFontFamily||subFont}',sans-serif;font-size:${adj.subFontSize||Math.round(adj.fontSize*0.5)}px;font-weight:${subFW};font-style:${subFS_s};color:${adj.subColor||'rgba(255,255,255,.85)'};line-height:1.5;">${escapeHtml(adj.subText)}</div>` : ''}
             </div>
           </div>
-          <!-- Controles de posición Y y alineación -->
-          <div style="display:flex;flex-direction:column;gap:4px;width:200px;">
-            <div style="display:flex;align-items:center;gap:4px;">
-              <span style="font-size:9px;color:var(--text-3);min-width:42px;">✏️ Pos Y</span>
-              <button onclick="thumbAdjustFn(${i},'titleY',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↑</button>
-              <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.titleY||42}%</span>
-              <button onclick="thumbAdjustFn(${i},'titleY',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↓</button>
+          <!-- Controles de posición X/Y y alineación independiente por bloque -->
+          <div style="display:flex;flex-direction:column;gap:3px;width:200px;">
+            <!-- Título: X e Y -->
+            <div style="display:flex;align-items:center;gap:3px;">
+              <span style="font-size:9px;color:var(--text-3);min-width:14px;">✏️</span>
+              <span style="font-size:9px;color:var(--text-3);min-width:8px;">X</span>
+              <button onclick="thumbAdjustFn(${i},'titleX',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:18px;height:16px;cursor:pointer;font-size:10px;line-height:1;">◀</button>
+              <span style="font-size:9px;font-weight:700;min-width:20px;text-align:center;">${adj.titleX||8}%</span>
+              <button onclick="thumbAdjustFn(${i},'titleX',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:18px;height:16px;cursor:pointer;font-size:10px;line-height:1;">▶</button>
+              <span style="font-size:9px;color:var(--text-3);margin-left:2px;">Y</span>
+              <button onclick="thumbAdjustFn(${i},'titleY',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:18px;height:16px;cursor:pointer;font-size:10px;line-height:1;">↑</button>
+              <span style="font-size:9px;font-weight:700;min-width:20px;text-align:center;">${adj.titleY||42}%</span>
+              <button onclick="thumbAdjustFn(${i},'titleY',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:18px;height:16px;cursor:pointer;font-size:10px;line-height:1;">↓</button>
+              <div style="display:flex;gap:2px;margin-left:2px;">
+                ${['left','center','right'].map(a=>`<button onclick="thumbAdjustFn(${i},'titleAlign','${a}')" style="width:16px;height:16px;border-radius:3px;border:1px solid var(--border);background:${(adj.titleAlign||adj.align||'center')===a?'var(--brand)':'var(--surface-2)'};color:${(adj.titleAlign||adj.align||'center')===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:9px;">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
+              </div>
             </div>
-            <div style="display:flex;align-items:center;gap:4px;">
-              <span style="font-size:9px;color:var(--text-3);min-width:42px;">💬 Pos Y</span>
-              <button onclick="thumbAdjustFn(${i},'subY',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↑</button>
-              <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.subY||62}%</span>
-              <button onclick="thumbAdjustFn(${i},'subY',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↓</button>
-            </div>
-            <div style="display:flex;gap:4px;">
-              ${['left','center','right'].map(a=>`<button onclick="thumbAdjustFn(${i},'align','${a}')" style="flex:1;padding:3px;border-radius:5px;border:1px solid var(--border);background:${adj.align===a?'var(--brand)':'var(--surface-2)'};color:${adj.align===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:12px;" title="${a==='left'?'Izquierda':a==='center'?'Centro':'Derecha'}">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
+            <!-- Subtítulo: X e Y -->
+            <div style="display:flex;align-items:center;gap:3px;">
+              <span style="font-size:9px;color:var(--text-3);min-width:14px;">💬</span>
+              <span style="font-size:9px;color:var(--text-3);min-width:8px;">X</span>
+              <button onclick="thumbAdjustFn(${i},'subX',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:18px;height:16px;cursor:pointer;font-size:10px;line-height:1;">◀</button>
+              <span style="font-size:9px;font-weight:700;min-width:20px;text-align:center;">${adj.subX||8}%</span>
+              <button onclick="thumbAdjustFn(${i},'subX',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:18px;height:16px;cursor:pointer;font-size:10px;line-height:1;">▶</button>
+              <span style="font-size:9px;color:var(--text-3);margin-left:2px;">Y</span>
+              <button onclick="thumbAdjustFn(${i},'subY',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:18px;height:16px;cursor:pointer;font-size:10px;line-height:1;">↑</button>
+              <span style="font-size:9px;font-weight:700;min-width:20px;text-align:center;">${adj.subY||62}%</span>
+              <button onclick="thumbAdjustFn(${i},'subY',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:18px;height:16px;cursor:pointer;font-size:10px;line-height:1;">↓</button>
+              <div style="display:flex;gap:2px;margin-left:2px;">
+                ${['left','center','right'].map(a=>`<button onclick="thumbAdjustFn(${i},'subAlign','${a}')" style="width:16px;height:16px;border-radius:3px;border:1px solid var(--border);background:${(adj.subAlign||adj.align||'center')===a?'var(--brand)':'var(--surface-2)'};color:${(adj.subAlign||adj.align||'center')===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:9px;">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
+              </div>
             </div>
           </div>
         </div>
@@ -3010,14 +3039,15 @@ function thumbAdjustFn(i, prop, val) {
       subColor: (isPrem && currentBrand?.sub_font_color) || '#cccccc',
       titleFont: (isPrem && currentBrand?.font_name) || 'DM Sans',
       subFontFamily: (isPrem && currentBrand?.sub_font_name) || (isPrem && currentBrand?.font_name) || 'DM Sans',
+      logoY: 8, titleY: 42, subY: 62, titleX: 8, subX: 8, titleAlign: 'center', subAlign: 'center',
     };
   }
-  if (prop === 'align' || prop === 'logoAlign' || prop === 'titleFont' || prop === 'subFontFamily') {
+  if (prop === 'align' || prop === 'logoAlign' || prop === 'titleFont' || prop === 'subFontFamily' || prop === 'titleAlign' || prop === 'subAlign') {
     window.thumbAdjust[i][prop] = val;
   } else if (prop === 'titleBold' || prop === 'titleItalic' || prop === 'subBold' || prop === 'subItalic') {
     window.thumbAdjust[i][prop] = !window.thumbAdjust[i][prop];
-  } else if (prop === 'titleY' || prop === 'subY' || prop === 'logoY') {
-    window.thumbAdjust[i][prop] = Math.max(0, Math.min(95, (window.thumbAdjust[i][prop] || 0) + val));
+  } else if (prop === 'titleY' || prop === 'subY' || prop === 'logoY' || prop === 'titleX' || prop === 'subX') {
+    window.thumbAdjust[i][prop] = Math.max(0, Math.min(95, (window.thumbAdjust[i][prop] || (prop==='titleY'?42:prop==='subY'?62:prop==='logoY'?8:8)) + val));
   } else {
     window.thumbAdjust[i][prop] = Math.max(
       prop === 'fontSize' ? 16 : prop === 'subFontSize' ? 8 : 40,
@@ -3085,7 +3115,7 @@ function renderCarouselSpecs(i) {
       titleColor: _fcS, contentColor: _sfcS,
       colorPrimary: (isPrem2 && currentBrand?.color_primary) || null,
       colorSecondary: (isPrem2 && currentBrand?.color_secondary) || null,
-      logoY: 8, titleY: 38, contentY: 60,
+      logoY: 8, titleY: 38, contentY: 60, titleX: 8, contentX: 8,
     };
   } else {
     const _adjS = window.slideAdjust[i];
@@ -3095,6 +3125,8 @@ function renderCarouselSpecs(i) {
     if (_adjS.logoY    === undefined) _adjS.logoY    = 8;
     if (_adjS.titleY   === undefined) _adjS.titleY   = 38;
     if (_adjS.contentY === undefined) _adjS.contentY = 60;
+    if (_adjS.titleX   === undefined) _adjS.titleX   = 8;
+    if (_adjS.contentX === undefined) _adjS.contentX = 8;
   }
   const adj = window.slideAdjust[i];
   const isPremium = currentUser?.plan_type === 'premium';
@@ -3141,26 +3173,41 @@ function renderCarouselSpecs(i) {
             <div style="width:540px;height:675px;transform:scale(0.37037);transform-origin:top left;background:${bgStyle};overflow:hidden;position:relative;">
               <div style="position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 2px,transparent 2px);background-size:40px 40px;pointer-events:none;"></div>
               ${isPremium && currentBrand?.logo_url ? `<div style="position:absolute;top:${adj.logoY||8}%;${(adj.logoAlign||'center')==='left'?'left:8%':(adj.logoAlign||'center')==='right'?'right:8%':'left:50%;transform:translateX(-50%)'};"><div style="background:rgba(255,255,255,.18);border-radius:14px;padding:10px;display:inline-flex;"><img src="${currentBrand.logo_url}" style="width:${adj.logoSize||80}px;height:${adj.logoSize||80}px;object-fit:contain;border-radius:8px;display:block;"></div></div>` : ''}
-              <div style="position:absolute;top:${adj.titleY||38}%;left:8%;right:8%;text-align:${adj.align||'center'};font-family:'${adj.font}',sans-serif;font-size:${adj.titleSize}px;font-weight:${sTitleFW};font-style:${sTitleFS};color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);">${escapeHtml(adj.titleText)}</div>
-              <div style="position:absolute;top:${adj.contentY||60}%;left:8%;right:8%;text-align:${adj.align||'center'};font-family:'${adjSubFont}',sans-serif;font-size:${adj.contentSize}px;font-weight:${sSubFW};font-style:${sSubFS};color:${adj.contentColor||'rgba(255,255,255,.85)'};line-height:1.5;word-break:break-word;">${escapeHtml(adj.contentText)}</div>
+              <div style="position:absolute;top:${adj.titleY||38}%;left:${adj.titleX||8}%;right:${100-(adj.titleX||8)-(adj.titleW||84)}%;text-align:${adj.titleAlign||adj.align||'center'};font-family:'${adj.font}',sans-serif;font-size:${adj.titleSize}px;font-weight:${sTitleFW};font-style:${sTitleFS};color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);">${escapeHtml(adj.titleText)}</div>
+              <div style="position:absolute;top:${adj.contentY||60}%;left:${adj.contentX||8}%;right:${100-(adj.contentX||8)-(adj.contentW||84)}%;text-align:${adj.contentAlign||adj.align||'center'};font-family:'${adjSubFont}',sans-serif;font-size:${adj.contentSize}px;font-weight:${sSubFW};font-style:${sSubFS};color:${adj.contentColor||'rgba(255,255,255,.85)'};line-height:1.5;word-break:break-word;">${escapeHtml(adj.contentText)}</div>
             </div>
           </div>
-          <!-- Controles de posición Y y alineación -->
-          <div style="display:flex;flex-direction:column;gap:4px;width:200px;">
-            <div style="display:flex;align-items:center;gap:4px;">
-              <span style="font-size:9px;color:var(--text-3);min-width:42px;">✏️ Pos Y</span>
-              <button onclick="slideAdjustFn(${i},'titleY',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↑</button>
-              <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.titleY||38}%</span>
-              <button onclick="slideAdjustFn(${i},'titleY',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↓</button>
+          <!-- Controles X/Y + alineación independiente -->
+          <div style="display:flex;flex-direction:column;gap:3px;width:200px;">
+            <!-- Título: X e Y -->
+            <div style="display:flex;align-items:center;gap:3px;">
+              <span style="font-size:9px;color:var(--text-3);min-width:14px;">✏️</span>
+              <span style="font-size:9px;color:var(--text-3);min-width:8px;">X</span>
+              <button onclick="slideAdjustFn(${i},'titleX',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:18px;height:16px;cursor:pointer;font-size:10px;line-height:1;">◀</button>
+              <span style="font-size:9px;font-weight:700;min-width:20px;text-align:center;">${adj.titleX||8}%</span>
+              <button onclick="slideAdjustFn(${i},'titleX',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:18px;height:16px;cursor:pointer;font-size:10px;line-height:1;">▶</button>
+              <span style="font-size:9px;color:var(--text-3);margin-left:2px;">Y</span>
+              <button onclick="slideAdjustFn(${i},'titleY',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:18px;height:16px;cursor:pointer;font-size:10px;line-height:1;">↑</button>
+              <span style="font-size:9px;font-weight:700;min-width:20px;text-align:center;">${adj.titleY||38}%</span>
+              <button onclick="slideAdjustFn(${i},'titleY',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:18px;height:16px;cursor:pointer;font-size:10px;line-height:1;">↓</button>
+              <div style="display:flex;gap:2px;margin-left:2px;">
+                ${['left','center','right'].map(a=>`<button onclick="slideAdjustFn(${i},'titleAlign','${a}')" style="width:16px;height:16px;border-radius:3px;border:1px solid var(--border);background:${(adj.titleAlign||adj.align||'center')===a?'var(--brand)':'var(--surface-2)'};color:${(adj.titleAlign||adj.align||'center')===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:9px;">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
+              </div>
             </div>
-            <div style="display:flex;align-items:center;gap:4px;">
-              <span style="font-size:9px;color:var(--text-3);min-width:42px;">💬 Pos Y</span>
-              <button onclick="slideAdjustFn(${i},'contentY',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↑</button>
-              <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.contentY||60}%</span>
-              <button onclick="slideAdjustFn(${i},'contentY',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↓</button>
-            </div>
-            <div style="display:flex;gap:4px;">
-              ${['left','center','right'].map(a=>`<button onclick="slideAdjustFn(${i},'align','${a}')" style="flex:1;padding:3px;border-radius:5px;border:1px solid var(--border);background:${adj.align===a?'var(--brand)':'var(--surface-2)'};color:${adj.align===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:12px;" title="${a==='left'?'Izquierda':a==='center'?'Centro':'Derecha'}">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
+            <!-- Contenido: X e Y -->
+            <div style="display:flex;align-items:center;gap:3px;">
+              <span style="font-size:9px;color:var(--text-3);min-width:14px;">💬</span>
+              <span style="font-size:9px;color:var(--text-3);min-width:8px;">X</span>
+              <button onclick="slideAdjustFn(${i},'contentX',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:18px;height:16px;cursor:pointer;font-size:10px;line-height:1;">◀</button>
+              <span style="font-size:9px;font-weight:700;min-width:20px;text-align:center;">${adj.contentX||8}%</span>
+              <button onclick="slideAdjustFn(${i},'contentX',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:18px;height:16px;cursor:pointer;font-size:10px;line-height:1;">▶</button>
+              <span style="font-size:9px;color:var(--text-3);margin-left:2px;">Y</span>
+              <button onclick="slideAdjustFn(${i},'contentY',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:18px;height:16px;cursor:pointer;font-size:10px;line-height:1;">↑</button>
+              <span style="font-size:9px;font-weight:700;min-width:20px;text-align:center;">${adj.contentY||60}%</span>
+              <button onclick="slideAdjustFn(${i},'contentY',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:18px;height:16px;cursor:pointer;font-size:10px;line-height:1;">↓</button>
+              <div style="display:flex;gap:2px;margin-left:2px;">
+                ${['left','center','right'].map(a=>`<button onclick="slideAdjustFn(${i},'contentAlign','${a}')" style="width:16px;height:16px;border-radius:3px;border:1px solid var(--border);background:${(adj.contentAlign||adj.align||'center')===a?'var(--brand)':'var(--surface-2)'};color:${(adj.contentAlign||adj.align||'center')===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:9px;">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
+              </div>
             </div>
           </div>
         </div>
@@ -3266,12 +3313,13 @@ function renderCarouselSpecs(i) {
 function slideAdjustFn(i, prop, val) {
   if (!window.slideAdjust) window.slideAdjust = {};
   if (!window.slideAdjust[i]) return;
-  if (prop === 'align' || prop === 'font' || prop === 'subFont' || prop === 'logoAlign' || prop === 'titleColor' || prop === 'contentColor') {
+  if (prop === 'align' || prop === 'font' || prop === 'subFont' || prop === 'logoAlign' || prop === 'titleColor' || prop === 'contentColor' || prop === 'titleAlign' || prop === 'contentAlign') {
     window.slideAdjust[i][prop] = val;
   } else if (prop === 'titleBold' || prop === 'titleItalic' || prop === 'subBold' || prop === 'subItalic') {
     window.slideAdjust[i][prop] = !window.slideAdjust[i][prop];
-  } else if (prop === 'titleY' || prop === 'contentY' || prop === 'logoY') {
-    window.slideAdjust[i][prop] = Math.max(0, Math.min(95, (window.slideAdjust[i][prop] || 0) + val));
+  } else if (prop === 'titleY' || prop === 'contentY' || prop === 'logoY' || prop === 'titleX' || prop === 'contentX') {
+    const defaults = {titleY:38, contentY:60, logoY:8, titleX:8, contentX:8};
+    window.slideAdjust[i][prop] = Math.max(0, Math.min(95, (window.slideAdjust[i][prop] ?? defaults[prop]) + val));
   } else {
     const min = prop === 'titleSize' ? 12 : prop === 'logoSize' ? 40 : 10;
     const max = prop === 'titleSize' ? 80 : prop === 'logoSize' ? 200 : 50;
@@ -3516,52 +3564,47 @@ async function downloadThumbnailImage(i) {
     const logoAlignItems = logoAlign==='left'?'flex-start':logoAlign==='right'?'flex-end':'center';
 
     const canvas = await captureHtmlToCanvas(el => {
-      el.style.cssText = `width:540px;height:675px;background:linear-gradient(135deg,${gc1},${gc2});display:flex;flex-direction:column;justify-content:center;align-items:${alignItems};padding:44px;box-sizing:border-box;font-family:'${font}',sans-serif;text-align:${align};overflow:hidden;position:relative;`;
+      el.style.cssText = `width:540px;height:675px;background:linear-gradient(135deg,${gc1},${gc2});overflow:hidden;position:relative;font-family:'${font}',sans-serif;`;
 
       // Patrón
       const pat = document.createElement('div');
       pat.style.cssText = `position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 2px,transparent 2px);background-size:40px 40px;pointer-events:none;`;
       el.appendChild(pat);
 
-      const inner = document.createElement('div');
-      inner.style.cssText = `position:relative;z-index:1;display:flex;flex-direction:column;align-items:${alignItems};gap:14px;width:100%;`;
-
-      // Logo — con posición independiente según logoAlign
+      // Logo — posición absoluta según logoAlign + logoY
       if (logoUrl) {
-        const wrap = document.createElement('div');
-        wrap.style.cssText = `width:100%;display:flex;justify-content:${logoAlignItems};`;
+        const logoContainer = document.createElement('div');
+        const lx = logoAlign==='left' ? '8%' : logoAlign==='right' ? 'auto' : '50%';
+        const lr = logoAlign==='right' ? '8%' : 'auto';
+        const ltx = logoAlign==='center' ? 'translateX(-50%)' : 'none';
+        logoContainer.style.cssText = `position:absolute;top:${adj.logoY||8}%;left:${lx};right:${lr};transform:${ltx};`;
         const logoBox = document.createElement('div');
         logoBox.style.cssText = `background:rgba(255,255,255,0.18);border-radius:14px;padding:10px;display:inline-flex;`;
         const img = document.createElement('img');
         img.src = logoUrl;
         img.style.cssText = `width:${ls}px;height:${ls}px;object-fit:contain;display:block;border-radius:8px;`;
-        logoBox.appendChild(img); wrap.appendChild(logoBox); inner.appendChild(wrap);
+        logoBox.appendChild(img); logoContainer.appendChild(logoBox); el.appendChild(logoContainer);
       }
 
-      // Título — usa fuente de título ajustada (o la de marca) + negrita/cursiva de marca
-      const _tFW = isPremium && currentBrand?.title_bold  !== false ? '800' : '400';
-      const _tFS = isPremium && currentBrand?.title_italic ? 'italic' : 'normal';
-      const _sFW = isPremium && currentBrand?.sub_bold    ? '700'   : '400';
-      const _sFS = isPremium && currentBrand?.sub_italic  ? 'italic' : 'normal';
+      // Título — posición absoluta con X/Y/align del adj
+      const _tFW = adj.titleBold   !== undefined ? (adj.titleBold   ? '800':'400') : (isPremium && currentBrand?.title_bold  !== false ? '800':'400');
+      const _tFS = adj.titleItalic !== undefined ? (adj.titleItalic ? 'italic':'normal') : (isPremium && currentBrand?.title_italic ? 'italic':'normal');
+      const _sFW = adj.subBold     !== undefined ? (adj.subBold     ? '700':'400') : (isPremium && currentBrand?.sub_bold    ? '700':'400');
+      const _sFS = adj.subItalic   !== undefined ? (adj.subItalic   ? 'italic':'normal') : (isPremium && currentBrand?.sub_italic ? 'italic':'normal');
+      const tX = adj.titleX ?? 8;
+      const sX = adj.subX   ?? 8;
       const titleEl = document.createElement('div');
-      titleEl.style.cssText = `font-size:${fs}px;font-weight:${_tFW};font-style:${_tFS};color:${fcTh};line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${adj.titleFont||font}',sans-serif;word-break:break-word;`;
+      titleEl.style.cssText = `position:absolute;top:${adj.titleY||42}%;left:${tX}%;right:${tX}%;text-align:${adj.titleAlign||align};font-size:${fs}px;font-weight:${_tFW};font-style:${_tFS};color:${fcTh};line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${adj.titleFont||font}',sans-serif;word-break:break-word;`;
       titleEl.textContent = titleText;
-      inner.appendChild(titleEl);
+      el.appendChild(titleEl);
 
-      // Línea
-      const lineDeco = document.createElement('div');
-      lineDeco.style.cssText = `width:50px;height:3px;background:rgba(255,255,255,0.4);border-radius:2px;flex-shrink:0;`;
-      inner.appendChild(lineDeco);
-
-      // Subtítulo — usa fuente de subtítulo ajustada (o sub_font_name de marca) + negrita/cursiva
+      // Subtítulo — posición absoluta con X/Y/align del adj
       if (subText) {
         const subEl = document.createElement('div');
-        subEl.style.cssText = `font-size:${subFs}px;font-weight:${_sFW};font-style:${_sFS};color:${fcSub};line-height:1.5;font-family:'${adj.subFontFamily||subFontExport}',sans-serif;word-break:break-word;`;
+        subEl.style.cssText = `position:absolute;top:${adj.subY||62}%;left:${sX}%;right:${sX}%;text-align:${adj.subAlign||align};font-size:${subFs}px;font-weight:${_sFW};font-style:${_sFS};color:${fcSub};line-height:1.5;font-family:'${adj.subFontFamily||subFontExport}',sans-serif;word-break:break-word;`;
         subEl.textContent = subText;
-        inner.appendChild(subEl);
+        el.appendChild(subEl);
       }
-
-      el.appendChild(inner);
     }, 540, 675);
 
     const a = document.createElement('a');
@@ -3610,52 +3653,48 @@ async function downloadCarouselSlideImage(i) {
     const fcContent = adj.contentColor || (isPremium && currentBrand?.sub_font_color) || 'rgba(255,255,255,0.88)';
 
     const canvas = await captureHtmlToCanvas(el => {
-      el.style.cssText = `width:540px;height:675px;background:${gradStr};display:flex;flex-direction:column;justify-content:center;align-items:${alignItems};padding:44px;box-sizing:border-box;font-family:'${font}',sans-serif;text-align:${align};overflow:hidden;position:relative;`;
+      el.style.cssText = `width:540px;height:675px;background:${gradStr};overflow:hidden;position:relative;font-family:'${font}',sans-serif;`;
 
       // Patrón
       const pat = document.createElement('div');
       pat.style.cssText = `position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 2px,transparent 2px);background-size:40px 40px;pointer-events:none;`;
       el.appendChild(pat);
 
-      const inner = document.createElement('div');
-      inner.style.cssText = `position:relative;z-index:1;display:flex;flex-direction:column;align-items:${alignItems};gap:14px;width:100%;`;
-
-      // Logo — con posición independiente (logoAlign)
+      // Logo — posición absoluta según logoAlign + logoY
       if (logoUrl) {
-        const wrap = document.createElement('div');
-        wrap.style.cssText = `width:100%;display:flex;justify-content:${logoAlignItems};`;
+        const logoContainer = document.createElement('div');
+        const la = adj.logoAlign || 'center';
+        const lx = la==='left' ? '8%' : la==='right' ? 'auto' : '50%';
+        const lr = la==='right' ? '8%' : 'auto';
+        const ltx = la==='center' ? 'translateX(-50%)' : 'none';
+        logoContainer.style.cssText = `position:absolute;top:${adj.logoY||8}%;left:${lx};right:${lr};transform:${ltx};`;
         const logoBox = document.createElement('div');
         logoBox.style.cssText = `background:rgba(255,255,255,0.18);border-radius:14px;padding:10px;display:inline-flex;`;
         const img = document.createElement('img');
         img.src = logoUrl;
         img.style.cssText = `width:${ls}px;height:${ls}px;object-fit:contain;display:block;border-radius:8px;`;
-        logoBox.appendChild(img); wrap.appendChild(logoBox); inner.appendChild(wrap);
+        logoBox.appendChild(img); logoContainer.appendChild(logoBox); el.appendChild(logoContainer);
       }
 
-      // Línea decorativa
-      const lineDeco = document.createElement('div');
-      lineDeco.style.cssText = `width:50px;height:3px;background:rgba(255,255,255,0.4);border-radius:2px;flex-shrink:0;`;
-      inner.appendChild(lineDeco);
-
-      // Título — negrita/cursiva de marca
-      const _cTFW = isPremium && currentBrand?.title_bold  !== false ? '800' : '400';
-      const _cTFS = isPremium && currentBrand?.title_italic ? 'italic' : 'normal';
-      const _cCFW = isPremium && currentBrand?.sub_bold    ? '700'   : '400';
-      const _cCFS = isPremium && currentBrand?.sub_italic  ? 'italic' : 'normal';
+      // Título — posición absoluta con adj X/Y/align + bold/italic
+      const _cTFW = adj.titleBold   !== undefined ? (adj.titleBold   ? '800':'400') : (isPremium && currentBrand?.title_bold  !== false ? '800':'400');
+      const _cTFS = adj.titleItalic !== undefined ? (adj.titleItalic ? 'italic':'normal') : (isPremium && currentBrand?.title_italic ? 'italic':'normal');
+      const _cCFW = adj.subBold     !== undefined ? (adj.subBold     ? '700':'400') : (isPremium && currentBrand?.sub_bold    ? '700':'400');
+      const _cCFS = adj.subItalic   !== undefined ? (adj.subItalic   ? 'italic':'normal') : (isPremium && currentBrand?.sub_italic ? 'italic':'normal');
+      const ctX = adj.titleX   ?? 8;
+      const ccX = adj.contentX ?? 8;
       const titleEl = document.createElement('div');
-      titleEl.style.cssText = `font-size:${ts}px;font-weight:${_cTFW};font-style:${_cTFS};color:${fcTitle};line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${font}',sans-serif;word-break:break-word;`;
+      titleEl.style.cssText = `position:absolute;top:${adj.titleY||38}%;left:${ctX}%;right:${ctX}%;text-align:${adj.titleAlign||align};font-size:${ts}px;font-weight:${_cTFW};font-style:${_cTFS};color:${fcTitle};line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${font}',sans-serif;word-break:break-word;`;
       titleEl.textContent = titleText;
-      inner.appendChild(titleEl);
+      el.appendChild(titleEl);
 
-      // Contenido — negrita/cursiva de marca
+      // Contenido — posición absoluta con adj X/Y/align + bold/italic
       if (contText) {
         const contEl = document.createElement('div');
-        contEl.style.cssText = `font-size:${contSize}px;font-weight:${_cCFW};font-style:${_cCFS};color:${fcContent};line-height:1.5;font-family:'${subFontSlide}',sans-serif;word-break:break-word;`;
+        contEl.style.cssText = `position:absolute;top:${adj.contentY||60}%;left:${ccX}%;right:${ccX}%;text-align:${adj.contentAlign||align};font-size:${contSize}px;font-weight:${_cCFW};font-style:${_cCFS};color:${fcContent};line-height:1.5;font-family:'${subFontSlide}',sans-serif;word-break:break-word;`;
         contEl.textContent = contText;
-        inner.appendChild(contEl);
+        el.appendChild(contEl);
       }
-
-      el.appendChild(inner);
     }, 540, 675);
 
     const a = document.createElement('a');
