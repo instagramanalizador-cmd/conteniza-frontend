@@ -2880,13 +2880,13 @@ function renderThumbnailSpecs(i) {
             <div style="width:540px;height:675px;transform:scale(0.37037);transform-origin:top left;background:linear-gradient(135deg,${gc1},${gc2});overflow:hidden;position:relative;">
               <div style="position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 2px,transparent 2px);background-size:40px 40px;pointer-events:none;"></div>
               ${hasLogo ? `<div style="position:absolute;top:${adj.logoY||8}%;left:${adj.logoX??50}%;transform:translateX(-50%);"><div style="background:rgba(255,255,255,.18);border-radius:14px;padding:10px;display:inline-flex;"><img src="${currentBrand.logo_url}" style="width:${adj.logoSize||80}px;height:${adj.logoSize||80}px;object-fit:contain;border-radius:8px;display:block;"></div></div>` : ''}
-              <div style="position:absolute;top:${adj.titleY||42}%;left:${adj.titleX||50}%;transform:translateX(-50%);width:84%;text-align:${adj.align||'center'};font-family:'${adj.titleFont||font}',sans-serif;font-size:${adj.fontSize}px;font-weight:${titleFW};font-style:${titleFS};color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);">${escapeHtml(adj.titleText)}</div>
-              ${adj.subText ? `<div style="position:absolute;top:${adj.subY||62}%;left:${adj.subX||50}%;transform:translateX(-50%);width:84%;text-align:${adj.align||'center'};font-family:'${adj.subFontFamily||subFont}',sans-serif;font-size:${adj.subFontSize||Math.round(adj.fontSize*0.5)}px;font-weight:${subFW};font-style:${subFS_s};color:${adj.subColor||'rgba(255,255,255,.85)'};line-height:1.5;">${escapeHtml(adj.subText)}</div>` : ''}
+              <div style="position:absolute;top:${adj.titleY||42}%;left:8%;width:84%;text-align:${adj.align||'center'};font-family:'${adj.titleFont||font}',sans-serif;font-size:${adj.fontSize}px;font-weight:${titleFW};font-style:${titleFS};color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);">${escapeHtml(adj.titleText)}</div>
+              ${adj.subText ? `<div style="position:absolute;top:${adj.subY||62}%;left:8%;width:84%;text-align:${adj.align||'center'};font-family:'${adj.subFontFamily||subFont}',sans-serif;font-size:${adj.subFontSize||Math.round(adj.fontSize*0.5)}px;font-weight:${subFW};font-style:${subFS_s};color:${adj.subColor||'rgba(255,255,255,.85)'};line-height:1.5;">${escapeHtml(adj.subText)}</div>` : ''}
             </div>
           </div>
-          <!-- Controles de posición Y/X y alineación -->
+          <!-- Controles de posición Y y alineación -->
           <div style="display:flex;flex-direction:column;gap:4px;width:200px;">
-            <!-- Separador Título -->
+            <!-- Título -->
             <div style="font-size:9px;color:var(--brand);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-top:2px;">✏️ Título</div>
             <div style="display:flex;align-items:center;gap:4px;">
               <span style="font-size:9px;color:var(--text-3);min-width:38px;">Pos Y</span>
@@ -2894,13 +2894,7 @@ function renderThumbnailSpecs(i) {
               <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.titleY||42}%</span>
               <button onclick="thumbAdjustFn(${i},'titleY',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↓</button>
             </div>
-            <div style="display:flex;align-items:center;gap:4px;">
-              <span style="font-size:9px;color:var(--text-3);min-width:38px;">Pos X</span>
-              <button onclick="thumbAdjustFn(${i},'titleX',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">←</button>
-              <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.titleX||50}%</span>
-              <button onclick="thumbAdjustFn(${i},'titleX',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">→</button>
-            </div>
-            <!-- Separador Subtítulo -->
+            <!-- Subtítulo -->
             <div style="font-size:9px;color:var(--brand);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-top:4px;">💬 Subtítulo</div>
             <div style="display:flex;align-items:center;gap:4px;">
               <span style="font-size:9px;color:var(--text-3);min-width:38px;">Pos Y</span>
@@ -2908,14 +2902,9 @@ function renderThumbnailSpecs(i) {
               <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.subY||62}%</span>
               <button onclick="thumbAdjustFn(${i},'subY',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↓</button>
             </div>
-            <div style="display:flex;align-items:center;gap:4px;">
-              <span style="font-size:9px;color:var(--text-3);min-width:38px;">Pos X</span>
-              <button onclick="thumbAdjustFn(${i},'subX',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">←</button>
-              <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.subX||50}%</span>
-              <button onclick="thumbAdjustFn(${i},'subX',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">→</button>
-            </div>
             <!-- Alineación de texto -->
-            <div style="display:flex;gap:4px;margin-top:2px;">
+            <div style="font-size:9px;color:var(--text-3);margin-top:4px;">Alineación</div>
+            <div style="display:flex;gap:4px;">
               ${['left','center','right'].map(a=>`<button onclick="thumbAdjustFn(${i},'align','${a}')" style="flex:1;padding:3px;border-radius:5px;border:1px solid var(--border);background:${adj.align===a?'var(--brand)':'var(--surface-2)'};color:${adj.align===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:12px;" title="${a==='left'?'Izq':a==='center'?'Centro':'Der'}">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
             </div>
           </div>
@@ -3180,11 +3169,11 @@ function renderCarouselSpecs(i) {
             <div style="width:540px;height:675px;transform:scale(0.37037);transform-origin:top left;background:${bgStyle};overflow:hidden;position:relative;">
               <div style="position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 2px,transparent 2px);background-size:40px 40px;pointer-events:none;"></div>
               ${isPremium && currentBrand?.logo_url ? `<div style="position:absolute;top:${adj.logoY||8}%;left:${adj.logoX??50}%;transform:translateX(-50%);"><div style="background:rgba(255,255,255,.18);border-radius:14px;padding:10px;display:inline-flex;"><img src="${currentBrand.logo_url}" style="width:${adj.logoSize||80}px;height:${adj.logoSize||80}px;object-fit:contain;border-radius:8px;display:block;"></div></div>` : ''}
-              <div style="position:absolute;top:${adj.titleY||38}%;left:${adj.titleX||50}%;transform:translateX(-50%);width:84%;text-align:${adj.align||'center'};font-family:'${adj.font}',sans-serif;font-size:${adj.titleSize}px;font-weight:${sTitleFW};font-style:${sTitleFS};color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);">${escapeHtml(adj.titleText)}</div>
-              <div style="position:absolute;top:${adj.contentY||60}%;left:${adj.contentX||50}%;transform:translateX(-50%);width:84%;text-align:${adj.align||'center'};font-family:'${adjSubFont}',sans-serif;font-size:${adj.contentSize}px;font-weight:${sSubFW};font-style:${sSubFS};color:${adj.contentColor||'rgba(255,255,255,.85)'};line-height:1.5;word-break:break-word;">${escapeHtml(adj.contentText)}</div>
+              <div style="position:absolute;top:${adj.titleY||38}%;left:8%;width:84%;text-align:${adj.align||'center'};font-family:'${adj.font}',sans-serif;font-size:${adj.titleSize}px;font-weight:${sTitleFW};font-style:${sTitleFS};color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);">${escapeHtml(adj.titleText)}</div>
+              <div style="position:absolute;top:${adj.contentY||60}%;left:8%;width:84%;text-align:${adj.align||'center'};font-family:'${adjSubFont}',sans-serif;font-size:${adj.contentSize}px;font-weight:${sSubFW};font-style:${sSubFS};color:${adj.contentColor||'rgba(255,255,255,.85)'};line-height:1.5;word-break:break-word;">${escapeHtml(adj.contentText)}</div>
             </div>
           </div>
-          <!-- Controles de posición Y/X y alineación -->
+          <!-- Controles de posición Y y alineación -->
           <div style="display:flex;flex-direction:column;gap:4px;width:200px;">
             <!-- Título -->
             <div style="font-size:9px;color:var(--brand);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-top:2px;">✏️ Título</div>
@@ -3194,12 +3183,6 @@ function renderCarouselSpecs(i) {
               <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.titleY||38}%</span>
               <button onclick="slideAdjustFn(${i},'titleY',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↓</button>
             </div>
-            <div style="display:flex;align-items:center;gap:4px;">
-              <span style="font-size:9px;color:var(--text-3);min-width:38px;">Pos X</span>
-              <button onclick="slideAdjustFn(${i},'titleX',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">←</button>
-              <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.titleX||50}%</span>
-              <button onclick="slideAdjustFn(${i},'titleX',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">→</button>
-            </div>
             <!-- Contenido -->
             <div style="font-size:9px;color:var(--brand);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-top:4px;">💬 Contenido</div>
             <div style="display:flex;align-items:center;gap:4px;">
@@ -3208,14 +3191,9 @@ function renderCarouselSpecs(i) {
               <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.contentY||60}%</span>
               <button onclick="slideAdjustFn(${i},'contentY',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">↓</button>
             </div>
-            <div style="display:flex;align-items:center;gap:4px;">
-              <span style="font-size:9px;color:var(--text-3);min-width:38px;">Pos X</span>
-              <button onclick="slideAdjustFn(${i},'contentX',-5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">←</button>
-              <span style="font-size:10px;font-weight:700;min-width:22px;text-align:center;">${adj.contentX||50}%</span>
-              <button onclick="slideAdjustFn(${i},'contentX',5)" style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:20px;height:18px;cursor:pointer;font-size:11px;line-height:1;">→</button>
-            </div>
             <!-- Alineación de texto -->
-            <div style="display:flex;gap:4px;margin-top:2px;">
+            <div style="font-size:9px;color:var(--text-3);margin-top:4px;">Alineación</div>
+            <div style="display:flex;gap:4px;">
               ${['left','center','right'].map(a=>`<button onclick="slideAdjustFn(${i},'align','${a}')" style="flex:1;padding:3px;border-radius:5px;border:1px solid var(--border);background:${adj.align===a?'var(--brand)':'var(--surface-2)'};color:${adj.align===a?'#fff':'var(--text-2)'};cursor:pointer;font-size:12px;" title="${a==='left'?'Izquierda':a==='center'?'Centro':'Derecha'}">${a==='left'?'◀':a==='center'?'■':'▶'}</button>`).join('')}
             </div>
           </div>
@@ -3608,7 +3586,7 @@ async function downloadThumbnailImage(i) {
       const _tFS = adj.titleItalic !== undefined ? (adj.titleItalic ? 'italic':'normal') : (isPremium && currentBrand?.title_italic ? 'italic':'normal');
       const titleEl = document.createElement('div');
       const titleXpct = adj.titleX ?? 50;
-      titleEl.style.cssText = `position:absolute;top:${adj.titleY||42}%;left:${titleXpct}%;transform:translateX(-50%);width:84%;text-align:${align};font-size:${fs}px;font-weight:${_tFW};font-style:${_tFS};color:${fcTh};line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${adj.titleFont||font}',sans-serif;word-break:break-word;box-sizing:border-box;`;
+      titleEl.style.cssText = `position:absolute;top:${adj.titleY||42}%;left:8%;width:84%;text-align:${align};font-size:${fs}px;font-weight:${_tFW};font-style:${_tFS};color:${fcTh};line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${adj.titleFont||font}',sans-serif;word-break:break-word;box-sizing:border-box;`;
       titleEl.textContent = titleText;
       el.appendChild(titleEl);
 
@@ -3618,7 +3596,7 @@ async function downloadThumbnailImage(i) {
         const _sFS = adj.subItalic !== undefined ? (adj.subItalic ? 'italic':'normal') : (isPremium && currentBrand?.sub_italic ? 'italic':'normal');
         const subEl = document.createElement('div');
         const subXpct = adj.subX ?? 50;
-        subEl.style.cssText = `position:absolute;top:${adj.subY||62}%;left:${subXpct}%;transform:translateX(-50%);width:84%;text-align:${align};font-size:${subFs}px;font-weight:${_sFW};font-style:${_sFS};color:${fcSub};line-height:1.5;font-family:'${adj.subFontFamily||subFontExport}',sans-serif;word-break:break-word;box-sizing:border-box;`;
+        subEl.style.cssText = `position:absolute;top:${adj.subY||62}%;left:8%;width:84%;text-align:${align};font-size:${subFs}px;font-weight:${_sFW};font-style:${_sFS};color:${fcSub};line-height:1.5;font-family:'${adj.subFontFamily||subFontExport}',sans-serif;word-break:break-word;box-sizing:border-box;`;
         subEl.textContent = subText;
         el.appendChild(subEl);
       }
@@ -3697,7 +3675,7 @@ async function downloadCarouselSlideImage(i) {
       const _cTFS = adj.titleItalic !== undefined ? (adj.titleItalic ? 'italic':'normal') : (isPremium && currentBrand?.title_italic ? 'italic':'normal');
       const titleEl = document.createElement('div');
       const titleXpct = adj.titleX ?? 50;
-      titleEl.style.cssText = `position:absolute;top:${adj.titleY||38}%;left:${titleXpct}%;transform:translateX(-50%);width:84%;text-align:${align};font-size:${ts}px;font-weight:${_cTFW};font-style:${_cTFS};color:${fcTitle};line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${font}',sans-serif;word-break:break-word;box-sizing:border-box;`;
+      titleEl.style.cssText = `position:absolute;top:${adj.titleY||38}%;left:8%;width:84%;text-align:${align};font-size:${ts}px;font-weight:${_cTFW};font-style:${_cTFS};color:${fcTitle};line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.3);font-family:'${font}',sans-serif;word-break:break-word;box-sizing:border-box;`;
       titleEl.textContent = titleText;
       el.appendChild(titleEl);
 
@@ -3707,7 +3685,7 @@ async function downloadCarouselSlideImage(i) {
         const _cCFS = adj.subItalic !== undefined ? (adj.subItalic ? 'italic':'normal') : (isPremium && currentBrand?.sub_italic ? 'italic':'normal');
         const contEl = document.createElement('div');
         const contentXpct = adj.contentX ?? 50;
-        contEl.style.cssText = `position:absolute;top:${adj.contentY||60}%;left:${contentXpct}%;transform:translateX(-50%);width:84%;text-align:${align};font-size:${contSize}px;font-weight:${_cCFW};font-style:${_cCFS};color:${fcContent};line-height:1.5;font-family:'${subFontSlide}',sans-serif;word-break:break-word;box-sizing:border-box;`;
+        contEl.style.cssText = `position:absolute;top:${adj.contentY||60}%;left:8%;width:84%;text-align:${align};font-size:${contSize}px;font-weight:${_cCFW};font-style:${_cCFS};color:${fcContent};line-height:1.5;font-family:'${subFontSlide}',sans-serif;word-break:break-word;box-sizing:border-box;`;
         contEl.textContent = contText;
         el.appendChild(contEl);
       }
