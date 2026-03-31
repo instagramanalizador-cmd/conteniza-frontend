@@ -5104,16 +5104,18 @@ function cdndRenderAll() {
   document.getElementById('cdndLogoStylePanel').style.display = hasLogo ? 'block' : 'none';
 
   if (hasLogo) {
-    // Escalar logoSize al ratio del canvas (200/540 = 0.37037)
-    const sz = Math.round(s.logoSize * (CDND_W / 540));
-    const pad = Math.round(8 * (CDND_W / 540));
-    logoEl.style.display = b.logo.visible ? 'block' : 'none';
-    // Mismo sistema que el panel: left = logoX%, transform translateX(-50%) para center-anchor
+    // Panel usa: imagen de logoSize px + padding 10px, todo escalado por scale(0.37037)
+    // Studio canvas = 200px = 540 * 0.37037 → mismo factor
+    const scale = CDND_W / 540;           // 0.37037
+    const sz    = Math.round(s.logoSize * scale);   // tamaño imagen escalado
+    const pad   = Math.round(10 * scale);            // padding escalado (mismo 10px del panel)
+    logoEl.style.display   = b.logo.visible ? 'block' : 'none';
     logoEl.style.left      = b.logo.x + '%';
     logoEl.style.top       = b.logo.y + '%';
     logoEl.style.transform = 'translateX(-50%)';
     logoImg.src = c.logoUrl;
-    logoImg.style.cssText = `width:${sz}px;height:${sz}px;object-fit:contain;background:rgba(255,255,255,.18);border-radius:8px;padding:${pad}px;display:block;box-sizing:border-box;`;
+    // NO box-sizing:border-box — sz es tamaño puro de la imagen
+    logoImg.style.cssText = `width:${sz}px;height:${sz}px;object-fit:contain;background:rgba(255,255,255,.18);border-radius:${Math.round(8*scale)}px;padding:${pad}px;display:block;`;
   } else {
     logoEl.style.display = 'none';
   }
