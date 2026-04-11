@@ -53,6 +53,216 @@
       --grad-dark:  linear-gradient(135deg, #1E1B2E 0%, #2D1F6E 100%);
     }
 
+
+    /* =============================================
+       DARK MODE
+       ============================================= */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:          #0F0D1A;
+        --surface:     #1A1726;
+        --surface-2:   #231E35;
+        --border:      #2E2847;
+        --border-mid:  #4C3D8A;
+        --text:        #F0EEFF;
+        --text-2:      #A89EC9;
+        --text-3:      #6B6090;
+        --brand-light: #2D1F6E;
+        --accent-soft: #3D0A18;
+        --success-soft:#052E1C;
+        --warning-soft:#2D1F06;
+        --danger-soft: #2D0A0A;
+        --grad-soft:   linear-gradient(135deg, #2D1F6E 0%, #3D0A18 100%);
+      }
+    }
+    /* Forzar dark si el usuario lo activa manualmente */
+    [data-theme="dark"] {
+      --bg:          #0F0D1A;
+      --surface:     #1A1726;
+      --surface-2:   #231E35;
+      --border:      #2E2847;
+      --border-mid:  #4C3D8A;
+      --text:        #F0EEFF;
+      --text-2:      #A89EC9;
+      --text-3:      #6B6090;
+      --brand-light: #2D1F6E;
+      --accent-soft: #3D0A18;
+      --success-soft:#052E1C;
+      --warning-soft:#2D1F06;
+      --danger-soft: #2D0A0A;
+      --grad-soft:   linear-gradient(135deg, #2D1F6E 0%, #3D0A18 100%);
+    }
+    .dark-toggle {
+      background: none;
+      border: 1.5px solid var(--border-mid);
+      border-radius: var(--radius-full);
+      padding: 4px 10px;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--text-2);
+      transition: all .2s;
+    }
+    .dark-toggle:hover { background: var(--brand-light); color: var(--brand); }
+
+
+    /* Caption editable */
+    .caption-editable {
+      outline: none;
+      min-height: 60px;
+      padding: 4px 0;
+      line-height: 1.6;
+      color: var(--text);
+      font-size: 14px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      cursor: text;
+    }
+    .caption-editable:focus {
+      background: var(--surface-2);
+      border-radius: 8px;
+      padding: 8px;
+      margin: -8px;
+    }
+    .caption-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .caption-char-count {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--surface-2);
+      color: var(--text-3);
+      transition: all .2s;
+    }
+    .caption-char-count.warn  { background: var(--warning-soft); color: var(--warning); }
+    .caption-char-count.over  { background: var(--danger-soft);  color: var(--danger);  }
+    .caption-save-btn {
+      background: var(--success);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity .2s;
+    }
+    .caption-item:hover .caption-save-btn,
+    .caption-editable:focus ~ .caption-save-btn { opacity: 1; }
+    .caption-cut-line {
+      border: none;
+      border-top: 2px dashed var(--accent);
+      margin: 6px 0;
+      position: relative;
+    }
+    .caption-cut-label {
+      font-size: 10px;
+      color: var(--accent);
+      font-weight: 700;
+      text-align: center;
+      margin: 2px 0 6px;
+    }
+
+    /* Mobile preview */
+    .mobile-preview-wrap {
+      display: none;
+      margin-top: 14px;
+      border-top: 1px solid var(--border);
+      padding-top: 14px;
+    }
+    .mobile-preview-wrap.visible { display: block; }
+    .mobile-preview-label {
+      font-size: 11px;
+      color: var(--text-3);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      margin-bottom: 10px;
+    }
+    .ig-phone-mock {
+      max-width: 320px;
+      margin: 0 auto;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+    }
+    .ig-post-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .ig-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--grad-brand);
+    }
+    .ig-username {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .ig-post-img {
+      width: 100%;
+      aspect-ratio: 1;
+      background: var(--grad-soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+    }
+    .ig-post-caption {
+      padding: 10px 12px;
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--text);
+      max-height: 100px;
+      overflow: hidden;
+      position: relative;
+    }
+    .ig-post-caption::after {
+      content: '... más';
+      position: absolute;
+      bottom: 10px;
+      right: 12px;
+      background: var(--surface);
+      color: var(--text-3);
+      font-weight: 700;
+      padding-left: 4px;
+    }
+
+    /* Error state */
+    .error-state-results {
+      background: var(--danger-soft);
+      border: 1.5px solid var(--danger);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .error-state-results.visible { display: flex; align-items: center; gap: 12px; }
+    .error-retry-btn {
+      background: var(--danger);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
     html { scroll-behavior: smooth; }
 
@@ -1827,6 +2037,13 @@
 
       <!-- Panel de resultados -->
       <div id="resultsSection" class="results-panel">
+        <div class="error-state-results" id="errorStateResults">
+          <div style="flex:1;">
+            <div style="font-weight:700;color:var(--danger);margin-bottom:4px;">❌ Error generando contenido</div>
+            <div id="errorStateMsg" style="font-size:13px;color:var(--text-2);"></div>
+          </div>
+          <button class="error-retry-btn" onclick="retryGenerate()">🔄 Reintentar</button>
+        </div>
 
         <div class="results-header">
           <div style="display:flex;align-items:center;gap:8px;">
@@ -2698,7 +2915,6 @@ function renderResults(r, pubType) {
   if (captionsBody) captionsBody.style.display = 'block';
   cDiv.innerHTML = (r.captions||[]).map((c,i)=>{
     if (isReel) {
-      // Formatear guión de reel con secciones visuales
       const parts = c.split('|').map(p => p.trim());
       const formatted = parts.map(p => `<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;line-height:1.5;">${escapeHtml(p)}</div>`).join('');
       return `<div class="caption-item" style="padding:16px;">
@@ -2706,9 +2922,32 @@ function renderResults(r, pubType) {
         ${formatted}
       </div>`;
     }
-    return `<div class="caption-item">
-      <div class="caption-num">Caption ${i+1}</div>
-      ${escapeHtml(c)}
+    // Caption normal con edición inline, contador de chars y preview móvil
+    const safe = escapeHtml(c);
+    const len  = c.length;
+    const countClass = len > 2200 ? 'over' : len > 125 ? 'warn' : '';
+    const cut125 = c.length > 125 ? `<hr class="caption-cut-line"><div class="caption-cut-label">✂️ Corte "ver más" de Instagram (125 chars)</div>` : '';
+    return `<div class="caption-item" id="cap-item-${i}">
+      <div class="caption-toolbar">
+        <span class="caption-num">Caption ${i+1}</span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <span class="caption-char-count ${countClass}" id="cap-count-${i}">${len} / 2200</span>
+          <button class="caption-save-btn" id="cap-save-${i}" onclick="saveCaption(${i})">💾 Guardar</button>
+          <button onclick="toggleMobilePreview(${i})" style="background:none;border:1.5px solid var(--border);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;color:var(--text-2);">📱 Preview</button>
+        </div>
+      </div>
+      ${c.length > 125 ? `<div style="font-size:13px;line-height:1.6;color:var(--text);">${escapeHtml(c.substring(0,125))}</div>${cut125}<div style="font-size:13px;line-height:1.6;color:var(--text-2);">${escapeHtml(c.substring(125))}</div>` : `<div class="caption-editable" id="cap-${i}" contenteditable="true" oninput="onCaptionInput(${i})" >${safe}</div>`}
+      <div class="mobile-preview-wrap" id="cap-preview-${i}">
+        <div class="mobile-preview-label">📱 Vista previa Instagram</div>
+        <div class="ig-phone-mock">
+          <div class="ig-post-header">
+            <div class="ig-avatar"></div>
+            <div class="ig-username">${escapeHtml((currentUser?.email||'tu_cuenta').split('@')[0])}</div>
+          </div>
+          <div class="ig-post-img">🖼️</div>
+          <div class="ig-post-caption" id="cap-preview-text-${i}">${escapeHtml(c.substring(0,125))}</div>
+        </div>
+      </div>
     </div>`;
   }).join('');
   // Thumbnails
@@ -3831,11 +4070,41 @@ window.addEventListener('DOMContentLoaded', async () => {
    CARGA DINÁMICA DE PLANES DESDE /api/auth/plans
    ============================================================ */
 const PLAN_FEATURES = {
-  free:    ['Solo formato Post', 'Sin subida de archivos', 'Últimos 5 análisis en historial', 'Export PDF'],
-  pro:     ['Todos los formatos (Post, Carrusel, Story, Reel)', '📎 200MB almacenamiento/mes', 'Historial últimos 50 análisis', 'Export PDF', '📧 Soporte por email 24-48h'],
-  premium: ['Todo lo de Pro', '📎 5GB almacenamiento/mes', 'Subida de imágenes, audio y video', 'Historial ilimitado', '📧 Soporte prioritario por email']
+  free: [
+    '✅ 10 análisis / mes',
+    '✅ Formato Post',
+    '✅ Hooks, captions, hashtags',
+    '✅ Exportar PDF',
+    '✅ Dashboard básico',
+    '❌ Carrusel, Story, Reel',
+    '❌ Regenerar secciones',
+    '❌ Subida de archivos',
+    '❌ Mi Marca & Studio',
+  ],
+  pro: [
+    '✅ 100 análisis / mes',
+    '✅ Todos los formatos (Post, Carrusel, Story, Reel)',
+    '✅ Regenerar cualquier sección',
+    '✅ 📎 Subida de archivos 200MB/mes',
+    '✅ Historial últimos 50 análisis',
+    '✅ Exportar PNG, ZIP, PDF',
+    '✅ Publicar en Instagram',
+    '✅ Dashboard completo',
+    '✅ 📧 Soporte email 24-48h',
+    '❌ Mi Marca & Studio (Premium)',
+  ],
+  premium: [
+    '✅ 300 análisis / mes',
+    '✅ Todo lo de Pro',
+    '✅ 🎨 Mi Marca — colores, fuente, logo',
+    '✅ 🎬 Conteniza Studio — editor drag & drop',
+    '✅ IA con contexto de tu marca',
+    '✅ 📎 5GB almacenamiento/mes',
+    '✅ Historial ilimitado',
+    '✅ 📧 Soporte prioritario',
+  ]
 };
-const PLAN_BADGES = { pro: '🔥 Más popular', premium: '⭐ Mayor valor' };
+const PLAN_BADGES = { pro: '🔥 Más popular', premium: '⭐ Mi Marca + Studio' };
 
 async function loadPlans() {
   const grid = document.getElementById('plansGrid');
@@ -3868,18 +4137,19 @@ async function loadPlans() {
     grid.innerHTML = `
       <div class="plan-card">
         <div class="plan-name">Free</div><div class="plan-price">0€</div><div class="plan-period">para siempre</div>
-        <ul class="plan-features"><li>10 análisis por mes</li><li>Solo formato Post</li><li>Sin subida de archivos</li></ul>
+        <ul class="plan-features"><li>10 análisis por mes</li><li>Solo formato Post</li><li>Hooks, captions, hashtags</li><li>Export PDF</li></ul>
         <button class="btn btn-primary btn-full" onclick="selectPlan('free')">Comenzar gratis</button>
       </div>
       <div class="plan-card featured">
         <div class="plan-featured-badge">🔥 Más popular</div>
         <div class="plan-name">Pro</div><div class="plan-price">25€</div><div class="plan-period">/ mes</div>
-        <ul class="plan-features"><li><strong>100 análisis</strong> por mes</li><li>20 análisis por día</li><li>Todos los formatos</li><li>📎 200MB archivos/mes</li></ul>
+        <ul class="plan-features"><li><strong>100 análisis</strong> por mes</li><li>Todos los formatos</li><li>Regenerar secciones</li><li>📎 200MB archivos/mes</li><li>Export PNG + ZIP + PDF</li><li>Publicar en Instagram</li></ul>
         <button class="btn btn-primary btn-full" onclick="selectPlan('pro')">Contratar ahora</button>
       </div>
       <div class="plan-card">
-        <div class="plan-name">Premium</div><div class="plan-price">59€</div><div class="plan-period">/ mes</div>
-        <ul class="plan-features"><li><strong>500 análisis</strong> por mes</li><li>50 análisis por día</li><li>Todos los formatos</li><li>📎 5GB archivos/mes</li><li>Historial ilimitado</li><li>📧 Soporte prioritario por email</li></ul>
+        <div class="plan-featured-badge" style="background:linear-gradient(135deg,#F59E0B,#EF4444);">⭐ Mi Marca + Studio</div>
+        <div class="plan-name">Premium</div><div class="plan-price">49€</div><div class="plan-period">/ mes</div>
+        <ul class="plan-features"><li><strong>300 análisis</strong> por mes</li><li>Todo lo de Pro</li><li>🎨 Mi Marca personalizada</li><li>🎬 Conteniza Studio editor</li><li>IA con contexto de tu marca</li><li>5GB almacenamiento</li></ul>
         <button class="btn btn-primary btn-full" onclick="selectPlan('premium')">Contratar ahora</button>
       </div>`;
   }
@@ -6852,4 +7122,180 @@ document.addEventListener('DOMContentLoaded', () => {
     rs.insertAdjacentElement('afterbegin', wiz);
   }
 });
+</script>
+
+<script>
+/* ============================================================
+   DARK MODE TOGGLE
+   ============================================================ */
+(function(){
+  // Detectar preferencia guardada
+  const saved = localStorage.getItem('conteniza_theme');
+  if (saved === 'dark') document.documentElement.setAttribute('data-theme','dark');
+
+  function toggleDark() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('conteniza_theme','light');
+    } else {
+      document.documentElement.setAttribute('data-theme','dark');
+      localStorage.setItem('conteniza_theme','dark');
+    }
+    updateDarkBtn();
+  }
+  function updateDarkBtn() {
+    const btn = document.getElementById('darkToggleBtn');
+    if (!btn) return;
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    btn.textContent = isDark ? '☀️' : '🌙';
+    btn.title = isDark ? 'Modo claro' : 'Modo oscuro';
+  }
+  window.toggleDark = toggleDark;
+  window.updateDarkBtn = updateDarkBtn;
+
+  // Inyectar botón en topbar cuando el DOM esté listo
+  document.addEventListener('DOMContentLoaded', () => {
+    const actions = document.getElementById('topbarActions');
+    if (actions && !document.getElementById('darkToggleBtn')) {
+      const btn = document.createElement('button');
+      btn.id = 'darkToggleBtn';
+      btn.className = 'dark-toggle';
+      btn.onclick = toggleDark;
+      btn.title = 'Modo oscuro';
+      btn.textContent = '🌙';
+      actions.insertBefore(btn, actions.firstChild);
+      updateDarkBtn();
+    }
+  });
+})();
+
+/* ============================================================
+   CAPTION — EDICIÓN INLINE, CONTADOR, PREVIEW MÓVIL
+   ============================================================ */
+function onCaptionInput(i) {
+  const el = document.getElementById('cap-' + i);
+  if (!el) return;
+  const text = el.innerText || el.textContent || '';
+  const len  = text.length;
+  const countEl = document.getElementById('cap-count-' + i);
+  if (countEl) {
+    countEl.textContent = len + ' / 2200';
+    countEl.className = 'caption-char-count ' + (len > 2200 ? 'over' : len > 125 ? 'warn' : '');
+  }
+  // Actualizar preview si está abierto
+  const previewText = document.getElementById('cap-preview-text-' + i);
+  if (previewText) previewText.textContent = text.substring(0, 125);
+  // Mostrar botón guardar
+  const saveBtn = document.getElementById('cap-save-' + i);
+  if (saveBtn) saveBtn.style.opacity = '1';
+  // Actualizar en currentResults
+  if (currentResults?.captions) currentResults.captions[i] = text;
+}
+
+function saveCaption(i) {
+  const el = document.getElementById('cap-' + i);
+  if (!el) return;
+  const text = el.innerText || el.textContent || '';
+  if (currentResults?.captions) currentResults.captions[i] = text;
+  const saveBtn = document.getElementById('cap-save-' + i);
+  if (saveBtn) { saveBtn.textContent = '✅ Guardado'; setTimeout(() => { saveBtn.textContent = '💾 Guardar'; saveBtn.style.opacity = '0'; }, 1500); }
+  showNotification('Caption guardado', 'success');
+}
+
+function toggleMobilePreview(i) {
+  const wrap = document.getElementById('cap-preview-' + i);
+  if (!wrap) return;
+  const isVisible = wrap.classList.contains('visible');
+  wrap.classList.toggle('visible', !isVisible);
+  // Actualizar texto del preview con el caption actual
+  if (!isVisible) {
+    const el = document.getElementById('cap-' + i);
+    const text = (el ? (el.innerText || el.textContent) : currentResults?.captions?.[i]) || '';
+    const previewText = document.getElementById('cap-preview-text-' + i);
+    if (previewText) previewText.textContent = text.substring(0, 125);
+  }
+}
+
+/* ============================================================
+   ERROR STATE Y RETRY
+   ============================================================ */
+function showErrorState(msg) {
+  const el = document.getElementById('errorStateResults');
+  const msgEl = document.getElementById('errorStateMsg');
+  if (el) el.classList.add('visible');
+  if (msgEl) msgEl.textContent = msg || 'Error desconocido. Intenta de nuevo.';
+}
+function hideErrorState() {
+  const el = document.getElementById('errorStateResults');
+  if (el) el.classList.remove('visible');
+}
+function retryGenerate() {
+  hideErrorState();
+  const form = document.getElementById('contentForm');
+  if (form) {
+    const event = new Event('submit', { cancelable: true, bubbles: true });
+    form.dispatchEvent(event);
+  }
+}
+
+// Sobrescribir generateContent para manejar errores visualmente
+const _origGenerateWithError = window.generateContent;
+window.generateContent = async function(event) {
+  hideErrorState();
+  try {
+    await _origGenerateWithError(event);
+  } catch(e) {
+    if (e?.status !== 401) showErrorState(e?.message || 'Error generando contenido');
+  }
+};
+
+/* ============================================================
+   KEYBOARD SHORTCUTS
+   ============================================================ */
+document.addEventListener('keydown', (e) => {
+  // Ctrl/Cmd + Enter → Generar
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    const btn = document.getElementById('generateBtn');
+    if (btn && !btn.disabled && document.getElementById('mainApp')?.classList.contains('hidden') === false) {
+      e.preventDefault();
+      btn.click();
+    }
+  }
+  // Escape → cerrar modales/overlays abiertos
+  if (e.key === 'Escape') {
+    if (!document.getElementById('historySidebar')?.classList.contains('active') === false) closeSidebar();
+    if (!document.getElementById('dashboardScreen')?.classList.contains('hidden')) closeDashboard();
+    if (document.getElementById('postGenWizard')?.style.display !== 'none') closeWizard();
+  }
+  // Ctrl/Cmd + Shift + C → Copiar todo
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'C') {
+    if (currentResults) { e.preventDefault(); copyAllContent(); }
+  }
+  // Ctrl/Cmd + D → Dashboard
+  if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+    e.preventDefault();
+    if (currentUser) openDashboard();
+  }
+});
+
+/* ============================================================
+   TOOLTIP DE KEYBOARD SHORTCUTS (muestra al primer hover)
+   ============================================================ */
+(function(){
+  let shown = false;
+  document.addEventListener('mouseover', () => {
+    if (shown || sessionStorage.getItem('kbShown')) return;
+    const btn = document.getElementById('generateBtn');
+    if (!btn) return;
+    shown = true;
+    sessionStorage.setItem('kbShown','1');
+    const tip = document.createElement('div');
+    tip.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:8px 16px;border-radius:8px;font-size:12px;z-index:99999;opacity:0;transition:opacity .3s;white-space:nowrap;';
+    tip.textContent = '⌨️  Ctrl+Enter: Generar · Ctrl+Shift+C: Copiar todo · Ctrl+D: Dashboard';
+    document.body.appendChild(tip);
+    setTimeout(() => tip.style.opacity = '1', 100);
+    setTimeout(() => { tip.style.opacity = '0'; setTimeout(() => tip.remove(), 400); }, 4000);
+  }, { once: true });
+})();
 </script>
