@@ -6030,3 +6030,826 @@ async function cdndExport() {
   <script src="consent.js"></script>
 </body>
 </html>
+
+<!-- ============================================================
+     MEJORAS 10/10 — BLOQUE INYECTADO
+     ============================================================ -->
+
+<!-- PWA Manifest inline -->
+<script>
+(function(){
+  const manifest = {
+    name: 'Conteniza',
+    short_name: 'Conteniza',
+    description: 'Crea contenido para Instagram con IA',
+    start_url: '/',
+    display: 'standalone',
+    background_color: '#F8F7FF',
+    theme_color: '#7C3AED',
+    icons: [
+      { src: 'logo.jpg', sizes: '192x192', type: 'image/jpeg' },
+      { src: 'logo.jpg', sizes: '512x512', type: 'image/jpeg' }
+    ]
+  };
+  const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+  const url  = URL.createObjectURL(blob);
+  const link = document.createElement('link');
+  link.rel = 'manifest'; link.href = url;
+  document.head.appendChild(link);
+
+  // Service Worker para cache básico
+  if ('serviceWorker' in navigator) {
+    const swCode = `
+      const CACHE = 'conteniza-v1';
+      const OFFLINE = ['https://fonts.googleapis.com'];
+      self.addEventListener('install', e => self.skipWaiting());
+      self.addEventListener('activate', e => caches.keys().then(k => Promise.all(k.filter(n=>n!==CACHE).map(n=>caches.delete(n)))));
+      self.addEventListener('fetch', e => {
+        if (e.request.url.includes('/api/')) return;
+        e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).then(res => {
+          if (res.ok && e.request.method === 'GET') {
+            const c = res.clone();
+            caches.open(CACHE).then(cache => cache.put(e.request, c));
+          }
+          return res;
+        }).catch(() => r)));
+      });
+    `;
+    const swBlob = new Blob([swCode], {type:'text/javascript'});
+    const swUrl  = URL.createObjectURL(swBlob);
+    navigator.serviceWorker.register(swUrl).catch(()=>{});
+  }
+})();
+</script>
+
+<style>
+/* ── Dashboard de uso ───────────────────────────────────────── */
+#dashboardScreen {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 9000;
+  overflow-y: auto;
+  padding: 0;
+}
+#dashboardScreen:not(.hidden) { display: block !important; }
+
+.dash-header {
+  background: var(--grad-dark);
+  color: #fff;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  padding: 24px;
+}
+.dash-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  text-align: center;
+}
+.dash-card-num {
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--brand);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.dash-card-label {
+  font-size: 12px;
+  color: var(--text-3);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.dash-section {
+  padding: 0 24px 24px;
+}
+.dash-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dash-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.dash-bar-label {
+  font-size: 12px;
+  color: var(--text-2);
+  min-width: 90px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dash-bar-track {
+  flex: 1;
+  height: 8px;
+  background: var(--surface-2);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.dash-bar-fill {
+  height: 100%;
+  background: var(--grad-brand);
+  border-radius: 99px;
+  transition: width .6s ease;
+}
+.dash-bar-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-2);
+  min-width: 24px;
+  text-align: right;
+}
+.dash-week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-top: 8px;
+}
+.dash-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.dash-day-bar-wrap {
+  width: 100%;
+  height: 60px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.dash-day-bar {
+  width: 70%;
+  background: var(--brand-mid);
+  border-radius: 4px 4px 0 0;
+  min-height: 3px;
+  transition: height .5s ease;
+}
+.dash-day-label {
+  font-size: 10px;
+  color: var(--text-3);
+  font-weight: 600;
+}
+.dash-day-num {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-2);
+}
+
+/* ── Feedback thumbs ────────────────────────────────────────── */
+.feedback-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.feedback-label {
+  font-size: 11px;
+  color: var(--text-3);
+  flex: 1;
+}
+.feedback-btn {
+  background: none;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all .15s;
+  line-height: 1.4;
+}
+.feedback-btn:hover { background: var(--surface-2); }
+.feedback-btn.active-up   { background: var(--success-soft); border-color: var(--success); }
+.feedback-btn.active-down { background: var(--danger-soft);  border-color: var(--danger);  }
+
+/* ── Regenerar botón ────────────────────────────────────────── */
+.regen-btn {
+  background: none;
+  border: 1.5px solid var(--border-mid);
+  border-radius: 8px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--brand);
+  font-weight: 600;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.regen-btn:hover { background: var(--brand-light); border-color: var(--brand); }
+.regen-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ── Copiar todo ────────────────────────────────────────────── */
+.copy-all-btn {
+  background: var(--grad-brand);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: opacity .15s;
+}
+.copy-all-btn:hover { opacity: .88; }
+
+/* ── Historial con búsqueda ─────────────────────────────────── */
+.hist-search {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.hist-search input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  background: var(--surface-2);
+  color: var(--text);
+  box-sizing: border-box;
+}
+.hist-search input:focus {
+  outline: none;
+  border-color: var(--brand);
+}
+
+/* ── Post-gen wizard ────────────────────────────────────────── */
+#postGenWizard {
+  display: none;
+  background: var(--surface);
+  border: 2px solid var(--brand);
+  border-radius: var(--radius-xl);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  position: relative;
+}
+.wizard-steps {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.wizard-step {
+  flex: 1;
+  height: 4px;
+  background: var(--border);
+  border-radius: 99px;
+  transition: background .3s;
+}
+.wizard-step.done { background: var(--brand); }
+.wizard-step.active { background: var(--brand-mid); }
+.wizard-content {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.5;
+}
+.wizard-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--brand);
+}
+.wizard-btns {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+/* ── Skeleton loaders ───────────────────────────────────────── */
+.skeleton-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 0;
+}
+.skel {
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--border) 50%, var(--surface-2) 75%);
+  background-size: 200% 100%;
+  animation: skelAnim 1.4s infinite;
+  border-radius: 8px;
+}
+@keyframes skelAnim {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+</style>
+
+<!-- Dashboard screen -->
+<div id="dashboardScreen" class="hidden">
+  <div class="dash-header">
+    <div>
+      <div style="font-size:18px;font-weight:800;">📊 Mi Dashboard</div>
+      <div style="font-size:12px;opacity:.7;margin-top:2px;">Tu actividad en Conteniza</div>
+    </div>
+    <button onclick="closeDashboard()" style="background:rgba(255,255,255,.15);border:none;color:#fff;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:700;">✕ Cerrar</button>
+  </div>
+  <div class="dash-grid" id="dashCards"></div>
+  <div class="dash-section">
+    <div class="dash-section-title">📅 Actividad últimos 7 días</div>
+    <div class="dash-week-grid" id="dashWeek"></div>
+  </div>
+  <div class="dash-section">
+    <div class="dash-section-title">🎯 Top nichos</div>
+    <div id="dashNiches"></div>
+  </div>
+  <div class="dash-section">
+    <div class="dash-section-title">📱 Formatos usados</div>
+    <div id="dashFormats"></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
+async function openDashboard() {
+  document.getElementById('dashboardScreen').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  await loadDashboardData();
+}
+function closeDashboard() {
+  document.getElementById('dashboardScreen').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+async function loadDashboardData() {
+  try {
+    const planLimit = currentUser?.plan_type === 'free' ? 5 : currentUser?.plan_type === 'pro' ? 50 : 999;
+    const r = await apiFetch(`${API_URL}/user/analyses?limit=${planLimit}`);
+    const d = await r.json();
+    const analyses = d.analyses || [];
+
+    // Stats cards
+    const total = analyses.length;
+    const coherent = analyses.filter(a => a.is_coherent !== false).length;
+    const formats = {};
+    const niches = {};
+    const weekDays = {};
+    const now = new Date();
+
+    analyses.forEach(a => {
+      // Formatos
+      const f = a.publication_type || 'post';
+      formats[f] = (formats[f] || 0) + 1;
+      // Nichos
+      const n = (a.detected_niche || a.niche || '').substring(0, 20);
+      if (n) niches[n] = (niches[n] || 0) + 1;
+      // Semana
+      const d2 = new Date(a.created_at);
+      const diff = Math.floor((now - d2) / 86400000);
+      if (diff < 7) {
+        const key = d2.toLocaleDateString('es-ES', {weekday:'short'});
+        weekDays[key] = (weekDays[key] || 0) + 1;
+      }
+    });
+
+    // Credits
+    const credits = currentUser?.credits_remaining || 0;
+    const planCredits = currentUser?.plan_type === 'free' ? 5 : currentUser?.plan_type === 'pro' ? 100 : 300;
+
+    document.getElementById('dashCards').innerHTML = [
+      { num: total,   label: 'Análisis totales',  icon: '📊' },
+      { num: credits, label: 'Créditos restantes', icon: '💎' },
+      { num: coherent, label: 'Coherentes',        icon: '✅' },
+      { num: Object.keys(niches).length, label: 'Nichos explorados', icon: '🎯' },
+    ].map(c => `
+      <div class="dash-card">
+        <div style="font-size:28px;margin-bottom:6px;">${c.icon}</div>
+        <div class="dash-card-num">${c.num}</div>
+        <div class="dash-card-label">${c.label}</div>
+      </div>
+    `).join('');
+
+    // Week chart
+    const dias = ['lun','mar','mié','jue','vie','sáb','dom'];
+    const weekArr = [];
+    for (let i = 6; i >= 0; i--) {
+      const d2 = new Date(now); d2.setDate(now.getDate() - i);
+      const key = d2.toLocaleDateString('es-ES', {weekday:'short'});
+      const dayLabel = d2.toLocaleDateString('es-ES', {weekday:'short'}).substring(0,2);
+      weekArr.push({ key, label: dayLabel, count: weekDays[key] || 0 });
+    }
+    const maxDay = Math.max(...weekArr.map(d => d.count), 1);
+    document.getElementById('dashWeek').innerHTML = weekArr.map(d => `
+      <div class="dash-day">
+        <div class="dash-day-bar-wrap">
+          <div class="dash-day-bar" style="height:${Math.max(3, Math.round(d.count/maxDay*56))}px;opacity:${d.count>0?1:.25};"></div>
+        </div>
+        <div class="dash-day-num">${d.count||''}</div>
+        <div class="dash-day-label">${d.label}</div>
+      </div>
+    `).join('');
+
+    // Top nichos
+    const topNiches = Object.entries(niches).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    const maxN = topNiches[0]?.[1] || 1;
+    document.getElementById('dashNiches').innerHTML = topNiches.length
+      ? topNiches.map(([n,c]) => `
+        <div class="dash-bar-row">
+          <div class="dash-bar-label" title="${escapeHtml(n)}">${escapeHtml(n)}</div>
+          <div class="dash-bar-track"><div class="dash-bar-fill" style="width:${Math.round(c/maxN*100)}%"></div></div>
+          <div class="dash-bar-count">${c}</div>
+        </div>`).join('')
+      : '<p style="color:var(--text-3);font-size:13px;">Genera contenido para ver tus nichos más usados</p>';
+
+    // Formatos
+    const fmtLabels = {post:'📸 Post', carousel:'🎠 Carrusel', story:'📱 Story', reel:'🎬 Reel'};
+    const topFmts = Object.entries(formats).sort((a,b)=>b[1]-a[1]);
+    const maxF = topFmts[0]?.[1] || 1;
+    document.getElementById('dashFormats').innerHTML = topFmts.length
+      ? topFmts.map(([f,c]) => `
+        <div class="dash-bar-row">
+          <div class="dash-bar-label">${fmtLabels[f]||f}</div>
+          <div class="dash-bar-track"><div class="dash-bar-fill" style="width:${Math.round(c/maxF*100)}%;background:var(--grad-soft);filter:hue-rotate(${f==='carousel'?'60deg':f==='story'?'180deg':f==='reel'?'280deg':'0deg'})"></div></div>
+          <div class="dash-bar-count">${c}</div>
+        </div>`).join('')
+      : '<p style="color:var(--text-3);font-size:13px;">Sin datos aún</p>';
+
+  } catch(e) {
+    console.warn('Dashboard error:', e.message);
+  }
+}
+
+/* ============================================================
+   BÚSQUEDA EN HISTORIAL
+   ============================================================ */
+let _histAll = [];
+
+async function loadSidebarHistoryWithSearch() {
+  if (!currentUser) return;
+  const body = document.getElementById('sidebarContent');
+
+  // Añadir barra de búsqueda si no existe
+  if (!document.getElementById('histSearchInput')) {
+    const searchDiv = document.createElement('div');
+    searchDiv.className = 'hist-search';
+    searchDiv.innerHTML = '<input id="histSearchInput" type="text" placeholder="🔍 Buscar por nicho o tema…" oninput="filterHistory(this.value)">';
+    body.parentNode.insertBefore(searchDiv, body);
+  }
+
+  body.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⏳</div><p>Cargando…</p></div>';
+  try {
+    const planLimit = currentUser.plan_type === 'free' ? 5 : currentUser.plan_type === 'pro' ? 50 : 999;
+    const badge = document.getElementById('historyLimitBadge');
+    if (badge) badge.textContent = currentUser.plan_type === 'premium' ? '' : `(máx. ${planLimit})`;
+    const r = await apiFetch(`${API_URL}/user/analyses?limit=${planLimit}`);
+    const d = await r.json();
+    _histAll = d.analyses || [];
+    renderHistoryList(_histAll);
+  } catch(e) {
+    if (e.status !== 401)
+      body.innerHTML = '<div class="empty-state"><div class="empty-state-icon">❌</div><p>Error al cargar</p></div>';
+  }
+}
+
+function filterHistory(q) {
+  const filtered = q.trim()
+    ? _histAll.filter(a => {
+        const t = ((a.detected_niche||a.niche||'') + ' ' + (a.input_description||a.description||'')).toLowerCase();
+        return t.includes(q.toLowerCase());
+      })
+    : _histAll;
+  renderHistoryList(filtered);
+}
+
+function renderHistoryList(list) {
+  const body = document.getElementById('sidebarContent');
+  if (!list.length) {
+    body.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔭</div><p style="font-weight:600;color:var(--text);">Sin resultados</p></div>';
+    return;
+  }
+  const pubLabels = {post:'📸',carousel:'🎠',story:'📱',reel:'🎬'};
+  body.innerHTML = list.map(a=>`
+    <div class="hist-item" onclick="loadAnalysisById(${a.id})">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px;">
+        <div class="hist-date">📅 ${new Date(a.created_at).toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'})}</div>
+        ${a.publication_type ? `<span style="font-size:10px;background:var(--brand-light);color:var(--brand);padding:1px 7px;border-radius:999px;font-weight:700;">${pubLabels[a.publication_type]||''} ${a.publication_type}</span>` : ''}
+      </div>
+      <div class="hist-niche">🎯 ${escapeHtml(a.detected_niche||a.niche||'Sin nicho')}</div>
+      <div class="hist-desc">${escapeHtml((a.input_description||a.description||'').substring(0,80))}</div>
+      <span class="hist-badge ${a.is_coherent===false?'warn':'ok'}">${a.is_coherent===false?'⚠ Revisar':'✓ Coherente'}</span>
+    </div>
+  `).join('');
+}
+
+/* ============================================================
+   REGENERAR SECCIÓN INDIVIDUAL
+   ============================================================ */
+async function regenSection(section, btnEl) {
+  if (!currentResults) return;
+  const plan = currentUser?.plan_type;
+
+  // Free solo puede regenerar hooks
+  if (plan === 'free' && section !== 'hooks') {
+    showNotification('Regenerar secciones individuales es Pro y Premium. ¡Mejora tu plan!', 'error');
+    return;
+  }
+
+  btnEl.disabled = true;
+  btnEl.textContent = '⏳';
+
+  try {
+    const description = document.getElementById('description').value.trim();
+    const niche       = document.getElementById('niche')?.value?.trim() || '';
+    const tone        = document.getElementById('tone')?.value || 'Profesional';
+    const contentType = document.getElementById('contentType')?.value || 'general';
+    const pubType     = selectedPubType || 'post';
+
+    const r = await apiFetch(`${API_URL}/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        niche: niche || description.substring(0,60),
+        description: `Solo regenera la sección "${section}". Mantén el mismo tema: ${description}`,
+        tone, contentType,
+        publicationType: pubType,
+        files: []
+      })
+    }, 60000);
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Error');
+
+    // Actualizar solo la sección pedida en currentResults
+    const upd = d.analysis;
+    const sectionMap = {
+      hooks:    () => { currentResults.hooks    = upd.hooks;    renderChips('hooksContent', upd.hooks); },
+      ctas:     () => { currentResults.ctas     = upd.ctas;     renderChips('ctasContent', upd.ctas); },
+      hashtags: () => { currentResults.hashtags = upd.hashtags; renderChips('hashtagsContent', upd.hashtags); document.getElementById('emojisContent').innerHTML = (upd.emojis||[]).map(e=>`<span>${e}</span>`).join(''); },
+      captions: () => { currentResults.captions = upd.captions; renderResults({...currentResults, captions: upd.captions}, pubType); },
+      carousel: () => { currentResults.carousel_slides = upd.carousel_slides; renderCarousel(upd.carousel_slides); },
+      thumbnails:()=> { currentResults.thumbnails = upd.thumbnails; renderThumbnails(upd.thumbnails); },
+    };
+    sectionMap[section]?.();
+
+    userCredits = d.credits_remaining ?? userCredits - 1;
+    updateCreditIndicator();
+    showNotification(`✅ Sección "${section}" regenerada`, 'success');
+  } catch(e) {
+    if (e.status !== 401) showNotification(e.message, 'error');
+  } finally {
+    btnEl.disabled = false;
+    btnEl.textContent = '🔄 Regenerar';
+  }
+}
+
+/* ============================================================
+   FEEDBACK POR SECCIÓN
+   ============================================================ */
+const _feedback = {};
+function giveFeedback(section, value, upBtn, downBtn) {
+  _feedback[section] = value;
+  upBtn.classList.toggle('active-up', value === 1);
+  downBtn.classList.toggle('active-down', value === -1);
+  // Guardar feedback silenciosamente si hay análisis
+  if (currentResults?.id) {
+    apiFetch(`${API_URL}/analyze/${currentResults.id}/feedback`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ section, value })
+    }).catch(()=>{});
+  }
+  showNotification(value === 1 ? '👍 ¡Gracias por tu feedback!' : '👎 Anotado, mejoraremos esto', 'success');
+}
+
+function feedbackRow(section) {
+  const id = `fb_${section}`;
+  return `<div class="feedback-row">
+    <span class="feedback-label">¿Útil esta sección?</span>
+    <button class="feedback-btn" id="${id}_up"   onclick="giveFeedback('${section}',1,document.getElementById('${id}_up'),document.getElementById('${id}_down'))">👍</button>
+    <button class="feedback-btn" id="${id}_down" onclick="giveFeedback('${section}',-1,document.getElementById('${id}_up'),document.getElementById('${id}_down'))">👎</button>
+  </div>`;
+}
+
+/* ============================================================
+   COPIAR TODO DE UNA VEZ
+   ============================================================ */
+function copyAllContent() {
+  if (!currentResults) return;
+  const r = currentResults;
+  let text = '';
+  if (r.hooks?.length)    text += '🎣 HOOKS\n' + r.hooks.join('\n') + '\n\n';
+  if (r.captions?.length) text += '📝 CAPTIONS\n' + r.captions.join('\n\n---\n') + '\n\n';
+  if (r.ctas?.length)     text += '📢 CTAs\n' + r.ctas.join('\n') + '\n\n';
+  if (r.hashtags?.length) text += '🏷 HASHTAGS\n' + r.hashtags.join(' ') + '\n\n';
+  if (r.emojis?.length)   text += '😊 EMOJIS\n' + r.emojis.join(' ') + '\n\n';
+  if (r.seo_analysis)     text += '📈 SEO\n' + r.seo_analysis + '\n';
+  navigator.clipboard.writeText(text.trim()).then(() => {
+    showNotification('✅ Todo el contenido copiado al portapapeles', 'success');
+  }).catch(() => showNotification('Error al copiar', 'error'));
+}
+
+/* ============================================================
+   WIZARD POST-GENERACIÓN
+   ============================================================ */
+const WIZARD_STEPS = [
+  {
+    title: '1️⃣ Elige tu mejor hook',
+    content: 'Los hooks de arriba son tu primera línea en Instagram. Copia el que más resuene con tu audiencia — es lo primero que ven.',
+    action: 'Ver Hooks ↑',
+    target: 'sectionHooks'
+  },
+  {
+    title: '2️⃣ Personaliza tu caption',
+    content: 'Tienes 3 captions listos. Elige uno, personalízalo con tu voz y añade el hook al principio.',
+    action: 'Ver Captions ↑',
+    target: 'sectionCaptions'
+  },
+  {
+    title: '3️⃣ Exporta y publica',
+    content: '¡Todo listo! Exporta el PDF con todo el contenido, descarga las imágenes o publícalo directo en Instagram.',
+    action: 'Exportar PDF',
+    actionFn: 'generatePDF()'
+  }
+];
+let _wizardStep = 0;
+
+function showPostGenWizard() {
+  _wizardStep = 0;
+  const el = document.getElementById('postGenWizard');
+  if (!el) return;
+  el.style.display = 'block';
+  renderWizardStep();
+}
+
+function renderWizardStep() {
+  const step = WIZARD_STEPS[_wizardStep];
+  const stepsHtml = WIZARD_STEPS.map((_,i) =>
+    `<div class="wizard-step ${i < _wizardStep ? 'done' : i === _wizardStep ? 'active' : ''}"></div>`
+  ).join('');
+
+  document.getElementById('postGenWizard').innerHTML = `
+    <button onclick="closeWizard()" style="position:absolute;top:12px;right:12px;background:none;border:none;cursor:pointer;color:var(--text-3);font-size:16px;">✕</button>
+    <div class="wizard-steps">${stepsHtml}</div>
+    <div class="wizard-title">${step.title}</div>
+    <div class="wizard-content">${step.content}</div>
+    <div class="wizard-btns">
+      ${step.target ? `<button class="btn btn-outline btn-sm" onclick="document.getElementById('${step.target}').scrollIntoView({behavior:'smooth'});nextWizardStep()">${step.action}</button>` : ''}
+      ${step.actionFn ? `<button class="btn btn-outline btn-sm" onclick="${step.actionFn}">${step.action}</button>` : ''}
+      <button class="btn btn-sm" style="background:var(--brand);color:#fff;" onclick="nextWizardStep()">
+        ${_wizardStep < WIZARD_STEPS.length - 1 ? 'Siguiente →' : '¡Listo! 🎉'}
+      </button>
+    </div>
+  `;
+}
+
+function nextWizardStep() {
+  if (_wizardStep < WIZARD_STEPS.length - 1) {
+    _wizardStep++;
+    renderWizardStep();
+  } else {
+    closeWizard();
+  }
+}
+
+function closeWizard() {
+  const el = document.getElementById('postGenWizard');
+  if (el) el.style.display = 'none';
+}
+
+/* ============================================================
+   SKELETON LOADERS
+   ============================================================ */
+function showSkeletonResults() {
+  const sections = ['hooksContent','ctasContent','captionsContent','hashtagsContent'];
+  sections.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = `
+      <div class="skeleton-wrap">
+        <div class="skel" style="height:32px;width:80%;"></div>
+        <div class="skel" style="height:32px;width:65%;"></div>
+        <div class="skel" style="height:32px;width:72%;"></div>
+      </div>`;
+  });
+}
+
+/* ============================================================
+   INYECTAR MEJORAS EN SECCIONES EXISTENTES
+   ============================================================ */
+function injectSectionEnhancements() {
+  const plan = currentUser?.plan_type || 'free';
+  const canRegen = plan !== 'free';
+
+  // Añadir botones regenerar + feedback a cada sección
+  const sections = [
+    { head: document.querySelector('#sectionHooks .result-section-head'),    key: 'hooks',      always: true  },
+    { head: document.querySelector('#sectionCtas .result-section-head'),     key: 'ctas',       always: false },
+    { head: document.querySelector('#sectionTags .result-section-head'),     key: 'hashtags',   always: false },
+    { head: document.querySelector('#sectionCaptions .result-section-head'), key: 'captions',   always: false },
+    { head: document.querySelector('#sectionCarousel .result-section-head'), key: 'carousel',   always: false },
+    { head: document.querySelector('#sectionThumbs .result-section-head'),   key: 'thumbnails', always: false },
+  ];
+
+  sections.forEach(({ head, key, always }) => {
+    if (!head || head.dataset.enhanced) return;
+    head.dataset.enhanced = '1';
+
+    // Botón regenerar (free solo hooks, pro/premium todo)
+    const regenHtml = (always || canRegen)
+      ? `<button class="regen-btn" onclick="event.stopPropagation();regenSection('${key}',this)">🔄 Regenerar</button>`
+      : `<button class="regen-btn" onclick="event.stopPropagation();showNotification('Regenerar es Pro/Premium',\'error\')" style="opacity:.5;">🔄 Pro</button>`;
+
+    head.insertAdjacentHTML('beforeend', regenHtml);
+
+    // Feedback row al final del body
+    const bodyId = head.nextElementSibling?.id;
+    if (bodyId) {
+      const body = document.getElementById(bodyId);
+      if (body && !body.querySelector('.feedback-row')) {
+        body.insertAdjacentHTML('beforeend', feedbackRow(key));
+      }
+    }
+  });
+
+  // Botón "Copiar todo" en header de resultados
+  const resHeader = document.querySelector('.results-header > div:last-child');
+  if (resHeader && !document.getElementById('copyAllBtn')) {
+    resHeader.insertAdjacentHTML('afterbegin',
+      `<button class="copy-all-btn" id="copyAllBtn" onclick="copyAllContent()">📋 Copiar todo</button>`
+    );
+  }
+}
+
+/* ============================================================
+   SOBRESCRIBIR openSidebar PARA INCLUIR BÚSQUEDA
+   ============================================================ */
+const _origOpenSidebar = window.openSidebar;
+window.openSidebar = function() {
+  document.getElementById('historySidebar').classList.add('active');
+  document.getElementById('sidebarOverlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+  loadSidebarHistoryWithSearch();
+};
+
+/* ============================================================
+   HOOK EN generateContent PARA WIZARD + SKELETON
+   ============================================================ */
+const _origGenerate = window.generateContent;
+window.generateContent = async function(event) {
+  showSkeletonResults();
+  document.getElementById('resultsSection').classList.add('visible');
+  document.getElementById('emptyResults').style.display = 'none';
+  await _origGenerate(event);
+  // Mostrar wizard solo la primera vez por sesión
+  if (!sessionStorage.getItem('wizardShown')) {
+    sessionStorage.setItem('wizardShown', '1');
+    setTimeout(showPostGenWizard, 800);
+  }
+  injectSectionEnhancements();
+};
+
+/* ============================================================
+   AGREGAR DASHBOARD AL MENÚ DE USUARIO
+   ============================================================ */
+const _origUpdateUserPanel = window.updateUserPanel;
+window.updateUserPanel = function() {
+  _origUpdateUserPanel?.();
+  // Añadir botón dashboard si no existe
+  setTimeout(() => {
+    const userBar = document.getElementById('userBar');
+    if (userBar && !document.getElementById('dashBtn')) {
+      const btn = document.createElement('button');
+      btn.id = 'dashBtn';
+      btn.className = 'btn btn-outline btn-sm';
+      btn.style.cssText = 'font-size:11px;padding:5px 10px;';
+      btn.textContent = '📊 Dashboard';
+      btn.onclick = openDashboard;
+      // Insertar antes del último botón del userBar
+      const inner = userBar.querySelector('.user-bar-inner') || userBar;
+      inner.appendChild(btn);
+    }
+  }, 100);
+};
+
+/* Wizard placeholder en results -->*/
+document.addEventListener('DOMContentLoaded', () => {
+  const rs = document.getElementById('resultsSection');
+  if (rs) {
+    const wiz = document.createElement('div');
+    wiz.id = 'postGenWizard';
+    rs.insertAdjacentElement('afterbegin', wiz);
+  }
+});
+</script>
