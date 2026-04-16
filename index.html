@@ -6878,3 +6878,670 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 </script>
+
+<!-- ============================================================
+     NIVEL 1 — Templates, Compartir resultado, Onboarding nicho
+     ============================================================ -->
+
+<style>
+/* ── Templates de prompts ───────────────────────────────────── */
+.templates-btn {
+  background: none;
+  border: 1.5px dashed var(--border-mid);
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  font-size: 12px;
+  color: var(--brand);
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: all .2s;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.templates-btn:hover { background: var(--brand-light); border-color: var(--brand); }
+
+.templates-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 9500;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+}
+.templates-modal.open { display: flex; }
+.templates-sheet {
+  background: var(--surface);
+  border-radius: 24px 24px 0 0;
+  width: 100%;
+  max-width: 680px;
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp .25s ease;
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.templates-sheet-head {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.templates-sheet-title { font-size: 16px; font-weight: 800; color: var(--text); }
+.templates-close {
+  background: var(--surface-2);
+  border: none;
+  border-radius: 50%;
+  width: 32px; height: 32px;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--text-2);
+  display: flex; align-items: center; justify-content: center;
+}
+.templates-categories {
+  display: flex;
+  gap: 6px;
+  padding: 10px 20px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.tpl-cat-btn {
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  color: var(--text-2);
+  transition: all .15s;
+}
+.tpl-cat-btn.active, .tpl-cat-btn:hover {
+  background: var(--brand-light);
+  border-color: var(--brand);
+  color: var(--brand);
+}
+.templates-list {
+  overflow-y: auto;
+  padding: 12px 16px;
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  align-content: start;
+}
+@media(max-width:480px) { .templates-list { grid-template-columns: 1fr; } }
+.tpl-card {
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all .15s;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tpl-card:hover {
+  border-color: var(--brand);
+  background: var(--brand-light);
+  transform: translateY(-1px);
+}
+.tpl-card-icon { font-size: 20px; }
+.tpl-card-title { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.3; }
+.tpl-card-desc { font-size: 11px; color: var(--text-3); line-height: 1.4; }
+.tpl-card-format {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--brand);
+  background: var(--brand-light);
+  padding: 1px 6px;
+  border-radius: 99px;
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+/* ── Compartir resultado ────────────────────────────────────── */
+.share-btn {
+  background: linear-gradient(135deg, #7C3AED, #F43F5E);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: opacity .15s;
+  white-space: nowrap;
+}
+.share-btn:hover { opacity: .88; }
+
+.share-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.6);
+  z-index: 9600;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.share-modal.open { display: flex; }
+.share-card-wrap {
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.share-preview {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, #1E1B2E, #2D1F6E);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 24px;
+  position: relative;
+  overflow: hidden;
+}
+.share-preview::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 70%, rgba(124,58,237,.4), transparent 60%),
+              radial-gradient(circle at 80% 20%, rgba(244,63,94,.3), transparent 50%);
+}
+.share-hook-text {
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+  text-align: center;
+  line-height: 1.4;
+  position: relative;
+  z-index: 1;
+  margin-bottom: 20px;
+}
+.share-badge {
+  position: relative;
+  z-index: 1;
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.3);
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255,255,255,.9);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.share-actions { display: flex; gap: 8px; }
+.share-action-btn {
+  flex: 1;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1.5px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  transition: all .15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.share-action-btn:hover { background: var(--brand-light); border-color: var(--brand); color: var(--brand); }
+.share-action-btn.primary {
+  background: var(--grad-brand);
+  color: #fff;
+  border-color: transparent;
+}
+.share-action-btn.primary:hover { opacity: .88; }
+
+/* ── Onboarding nicho ───────────────────────────────────────── */
+.niche-onboarding {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.6);
+  z-index: 9700;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.niche-onboarding.open { display: flex; }
+.niche-onboarding-card {
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  padding: 28px 24px;
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: zoomIn .25s ease;
+}
+@keyframes zoomIn {
+  from { transform: scale(.92); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+.niche-ob-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.3;
+}
+.niche-ob-sub {
+  font-size: 13px;
+  color: var(--text-3);
+  text-align: center;
+  margin-top: -8px;
+}
+.niche-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.niche-opt {
+  background: var(--surface-2);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 10px;
+  cursor: pointer;
+  text-align: center;
+  transition: all .15s;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+}
+.niche-opt:hover, .niche-opt.selected {
+  border-color: var(--brand);
+  background: var(--brand-light);
+}
+.niche-opt-icon { font-size: 24px; }
+.niche-opt-label { font-size: 12px; font-weight: 700; color: var(--text); }
+.niche-opt-desc { font-size: 10px; color: var(--text-3); line-height: 1.3; }
+.niche-ob-skip {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-3);
+  cursor: pointer;
+  text-decoration: underline;
+}
+.niche-ob-skip:hover { color: var(--text-2); }
+</style>
+
+<!-- Templates modal -->
+<div class="templates-modal" id="templatesModal" onclick="if(event.target===this)closeTemplates()">
+  <div class="templates-sheet">
+    <div class="templates-sheet-head">
+      <div class="templates-title">⚡ Templates de contenido</div>
+      <button class="templates-close" onclick="closeTemplates()">✕</button>
+    </div>
+    <div class="templates-categories" id="tplCats"></div>
+    <div class="templates-list" id="tplList"></div>
+  </div>
+</div>
+
+<!-- Compartir resultado modal -->
+<div class="share-modal" id="shareModal" onclick="if(event.target===this)closeShareModal()">
+  <div class="share-card-wrap">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:16px;font-weight:800;color:var(--text);">🚀 Comparte tu resultado</div>
+      <button onclick="closeShareModal()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--text-3);">✕</button>
+    </div>
+    <div class="share-preview" id="sharePreview">
+      <div class="share-hook-text" id="shareHookText"></div>
+      <div class="share-badge">✨ Creado con Conteniza</div>
+    </div>
+    <div style="font-size:12px;color:var(--text-3);text-align:center;">Descarga la imagen y compártela en tus stories 📲</div>
+    <div class="share-actions">
+      <button class="share-action-btn" onclick="copyShareHook()">📋 Copiar hook</button>
+      <button class="share-action-btn primary" onclick="downloadShareImage()">⬇️ Descargar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Onboarding nicho modal -->
+<div class="niche-onboarding" id="nicheOnboarding">
+  <div class="niche-onboarding-card">
+    <div style="text-align:center;font-size:36px;">🎯</div>
+    <div class="niche-ob-title">¿En qué área eres coach o experto?</div>
+    <div class="niche-ob-sub">Personalizamos el contenido para tu nicho específico</div>
+    <div class="niche-grid" id="nicheGrid"></div>
+    <button class="btn btn-primary btn-full" id="nicheObContinue" onclick="applyNicheSelection()" disabled>
+      Empezar a crear contenido →
+    </button>
+    <div class="niche-ob-skip" onclick="skipNicheOnboarding()">Omitir, lo configuro después</div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   TEMPLATES DE PROMPTS
+   ============================================================ */
+const TEMPLATES = [
+  // Coaching de negocios
+  { cat: 'negocios', icon: '💼', title: '5 errores al escalar tu negocio', desc: 'Carrusel educativo', format: 'carousel', niche: 'coaching de negocios', desc_full: '5 errores que cometen los coaches al intentar escalar su negocio a 6 cifras sin un sistema probado' },
+  { cat: 'negocios', icon: '🚀', title: 'Cómo conseguir tus primeros clientes', desc: 'Post inspirador', format: 'post', niche: 'coaching de negocios', desc_full: 'Cómo conseguí mis primeros 5 clientes de coaching sin publicidad pagada, solo con contenido orgánico en Instagram' },
+  { cat: 'negocios', icon: '💰', title: 'De 0 a 3.000€/mes como coach', desc: 'Reel motivacional', format: 'reel', niche: 'coaching de negocios', desc_full: 'De 0 a 3000 euros al mes como coach: el sistema exacto que uso con mis clientes para conseguirlo en 90 días' },
+  { cat: 'negocios', icon: '📱', title: 'Instagram para coaches: lo que funciona', desc: 'Carrusel tips', format: 'carousel', niche: 'marketing para coaches', desc_full: '7 tipos de contenido que generan más clientes en Instagram para coaches y consultores en 2025' },
+  // Finanzas
+  { cat: 'finanzas', icon: '💎', title: '5 reglas del dinero que nadie enseña', desc: 'Carrusel viral', format: 'carousel', niche: 'finanzas personales', desc_full: '5 reglas del dinero que aprendí trabajando con personas de alto patrimonio y que nadie te enseña en la escuela' },
+  { cat: 'finanzas', icon: '📈', title: 'Cómo invertir tu primer sueldo', desc: 'Post educativo', format: 'post', niche: 'finanzas personales', desc_full: 'Cómo invertir cuando no tienes mucho dinero: la estrategia que uso con mis clientes que empiezan desde cero' },
+  { cat: 'finanzas', icon: '🏦', title: 'El error que arruina tus ahorros', desc: 'Reel impactante', format: 'reel', niche: 'finanzas personales', desc_full: 'El error número 1 que arruina los ahorros del 90% de las personas y nadie habla de él' },
+  { cat: 'finanzas', icon: '🎯', title: 'Libertad financiera en 5 pasos', desc: 'Carrusel guía', format: 'carousel', niche: 'finanzas personales', desc_full: '5 pasos concretos para alcanzar la libertad financiera aunque ahora mismo vivas de sueldo en sueldo' },
+  // Desarrollo personal
+  { cat: 'personal', icon: '🧠', title: 'Hábitos que cambiaron mi vida', desc: 'Carrusel personal', format: 'carousel', niche: 'desarrollo personal', desc_full: '5 hábitos que cambiaron completamente mi vida en 6 meses y que cualquiera puede implementar hoy mismo' },
+  { cat: 'personal', icon: '⚡', title: 'Cómo ser más productivo sin agotarte', desc: 'Post práctico', format: 'post', niche: 'productividad personal', desc_full: 'Cómo triplicar tu productividad sin trabajar más horas: el método que uso con mis clientes para lograrlo en 30 días' },
+  { cat: 'personal', icon: '🌅', title: 'La rutina matutina perfecta', desc: 'Reel motivacional', format: 'reel', niche: 'desarrollo personal', desc_full: 'Mi rutina matutina de 60 minutos que me permite rendir al máximo todo el día sin cafeína ni alarmas múltiples' },
+  { cat: 'personal', icon: '💪', title: 'Superar el síndrome del impostor', desc: 'Carrusel emocional', format: 'carousel', niche: 'desarrollo personal', desc_full: '5 estrategias reales para superar el síndrome del impostor cuando eres coach o emprendedor y sientes que no eres suficiente' },
+  // Salud y bienestar
+  { cat: 'salud', icon: '🥗', title: '5 cambios de alimentación fáciles', desc: 'Carrusel salud', format: 'carousel', niche: 'nutrición y salud', desc_full: '5 cambios de alimentación que puedes hacer esta semana sin dietas estrictas para sentirte con más energía' },
+  { cat: 'salud', icon: '🏃', title: 'Ejercicio en 20 minutos al día', desc: 'Reel fitness', format: 'reel', niche: 'fitness y entrenamiento', desc_full: 'Rutina de ejercicios de 20 minutos que puedes hacer en casa sin equipamiento para ponerte en forma en 8 semanas' },
+  { cat: 'salud', icon: '😴', title: 'Dormir mejor para rendir más', desc: 'Post bienestar', format: 'post', niche: 'salud y bienestar', desc_full: '7 estrategias respaldadas por la ciencia para mejorar la calidad del sueño y despertar con energía todos los días' },
+  { cat: 'salud', icon: '🧘', title: 'Manejo del estrés para profesionales', desc: 'Carrusel mindfulness', format: 'carousel', niche: 'mindfulness y bienestar', desc_full: '5 técnicas de manejo del estrés que uso con mis clientes de alto rendimiento para mantener la calma bajo presión' },
+  // Marketing
+  { cat: 'marketing', icon: '📊', title: 'Algoritmo de Instagram en 2025', desc: 'Carrusel educativo', format: 'carousel', niche: 'marketing digital', desc_full: 'Cómo funciona el algoritmo de Instagram en 2025 y qué tipo de contenido debes publicar para maximizar tu alcance' },
+  { cat: 'marketing', icon: '🎬', title: 'Reels que se viralizan', desc: 'Post tips', format: 'post', niche: 'creación de contenido', desc_full: '5 elementos que tienen en común los reels que se viralizan y cómo aplicarlos a tu contenido aunque tengas pocos seguidores' },
+  { cat: 'marketing', icon: '✍️', title: 'Copywriting para no copywriters', desc: 'Carrusel práctico', format: 'carousel', niche: 'copywriting y ventas', desc_full: '5 fórmulas de copywriting que usan los mejores marketers para escribir captions que venden aunque no seas escritor' },
+  { cat: 'marketing', icon: '🤝', title: 'Vender sin sentirte vendedor', desc: 'Post ventas', format: 'post', niche: 'ventas para coaches', desc_full: 'Cómo vender tus servicios de coaching en Instagram sin sentirte invasivo ni desesperado usando el método de valor primero' },
+];
+
+const TPL_CATEGORIES = [
+  { id: 'all',      label: '🔥 Todos' },
+  { id: 'negocios', label: '💼 Negocios' },
+  { id: 'finanzas', label: '💰 Finanzas' },
+  { id: 'personal', label: '🧠 Personal' },
+  { id: 'salud',    label: '💪 Salud' },
+  { id: 'marketing',label: '📱 Marketing' },
+];
+
+let _tplActiveCat = 'all';
+
+function openTemplates() {
+  document.getElementById('templatesModal').classList.add('open');
+  renderTemplateCategories();
+  renderTemplateList('all');
+}
+function closeTemplates() {
+  document.getElementById('templatesModal').classList.remove('open');
+}
+function renderTemplateCategories() {
+  document.getElementById('tplCats').innerHTML = TPL_CATEGORIES.map(c =>
+    `<button class="tpl-cat-btn${c.id===_tplActiveCat?' active':''}" onclick="filterTemplates('${c.id}')">${c.label}</button>`
+  ).join('');
+}
+function filterTemplates(cat) {
+  _tplActiveCat = cat;
+  renderTemplateCategories();
+  renderTemplateList(cat);
+}
+function renderTemplateList(cat) {
+  const list = cat === 'all' ? TEMPLATES : TEMPLATES.filter(t => t.cat === cat);
+  document.getElementById('tplList').innerHTML = list.map((t, i) => `
+    <div class="tpl-card" onclick="applyTemplate(${TEMPLATES.indexOf(t)})">
+      <div class="tpl-card-icon">${t.icon}</div>
+      <div class="tpl-card-title">${t.title}</div>
+      <div class="tpl-card-desc">${t.desc}</div>
+      <div class="tpl-card-format">${t.format.toUpperCase()}</div>
+    </div>
+  `).join('');
+}
+function applyTemplate(idx) {
+  const t = TEMPLATES[idx];
+  if (!t) return;
+
+  // Rellenar formulario
+  const descEl  = document.getElementById('description');
+  const nicheEl = document.getElementById('niche');
+  if (descEl)  descEl.value  = t.desc_full;
+  if (nicheEl) nicheEl.value = t.niche;
+
+  // Seleccionar formato
+  const pubBtn = document.querySelector(`.pub-btn[data-value="${t.format}"]`);
+  if (pubBtn) {
+    document.querySelectorAll('.pub-btn').forEach(b => b.classList.remove('active'));
+    pubBtn.classList.add('active');
+    document.getElementById('publicationType').value = t.format;
+    selectedPubType = t.format;
+  }
+
+  closeTemplates();
+  showNotification(`✅ Template "${t.title}" aplicado — pulsa Generar`, 'success');
+
+  // Scroll al formulario
+  setTimeout(() => {
+    document.getElementById('contentForm')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 300);
+}
+
+/* ============================================================
+   COMPARTIR RESULTADO
+   ============================================================ */
+function openShareModal() {
+  if (!currentResults?.hooks?.length) {
+    showNotification('Genera contenido primero para compartir', 'error');
+    return;
+  }
+  const hook = currentResults.hooks[0] || '';
+  document.getElementById('shareHookText').textContent = hook.length > 120
+    ? hook.substring(0, 120) + '...'
+    : hook;
+  document.getElementById('shareModal').classList.add('open');
+}
+function closeShareModal() {
+  document.getElementById('shareModal').classList.remove('open');
+}
+function copyShareHook() {
+  const hook = currentResults?.hooks?.[0] || '';
+  navigator.clipboard.writeText(hook).then(() => {
+    showNotification('✅ Hook copiado al portapapeles', 'success');
+    closeShareModal();
+  });
+}
+async function downloadShareImage() {
+  const preview = document.getElementById('sharePreview');
+  if (!preview) return;
+  try {
+    const btn = document.querySelector('.share-action-btn.primary');
+    btn.textContent = '⏳ Generando...';
+    btn.disabled = true;
+
+    const canvas  = await html2canvas(preview, {
+      scale: 3,
+      useCORS: true,
+      backgroundColor: null,
+      width: preview.offsetWidth,
+      height: preview.offsetHeight,
+    });
+    const url  = canvas.toDataURL('image/png');
+    const link = document.createElement('a');
+    link.href     = url;
+    link.download = 'conteniza-hook.png';
+    link.click();
+
+    btn.textContent = '⬇️ Descargar';
+    btn.disabled = false;
+    showNotification('✅ Imagen descargada — compártela en tus stories', 'success');
+    closeShareModal();
+  } catch(e) {
+    console.error('Error generando imagen:', e);
+    showNotification('Error generando imagen', 'error');
+  }
+}
+
+/* ============================================================
+   ONBOARDING POR NICHO
+   ============================================================ */
+const NICHE_OPTIONS = [
+  { id: 'negocios',  icon: '💼', label: 'Coach de Negocios',   desc: 'Estrategia, ventas, escalar',        niche: 'coaching de negocios', tono: 'Persuasivo/Ventas' },
+  { id: 'finanzas',  icon: '💰', label: 'Finanzas Personales', desc: 'Ahorro, inversión, libertad',         niche: 'finanzas personales',  tono: 'Educacional' },
+  { id: 'personal',  icon: '🧠', label: 'Desarrollo Personal', desc: 'Hábitos, mentalidad, propósito',      niche: 'desarrollo personal',  tono: 'Inspirador' },
+  { id: 'salud',     icon: '💪', label: 'Salud y Fitness',     desc: 'Nutrición, ejercicio, bienestar',     niche: 'salud y bienestar',    tono: 'Motivacional' },
+  { id: 'marketing', icon: '📱', label: 'Marketing Digital',   desc: 'Instagram, contenido, ventas online', niche: 'marketing digital',    tono: 'Educacional' },
+  { id: 'relaciones',icon: '❤️', label: 'Relaciones',          desc: 'Pareja, familia, comunicación',       niche: 'coaching de relaciones', tono: 'Emocional/Vulnerable' },
+  { id: 'liderazgo', icon: '👑', label: 'Liderazgo',           desc: 'Equipos, management, influencia',     niche: 'liderazgo y management', tono: 'Profesional' },
+  { id: 'otro',      icon: '✨', label: 'Otro nicho',          desc: 'Lo configuro yo mismo',               niche: '',                     tono: '' },
+];
+
+let _selectedNiche = null;
+
+function showNicheOnboarding() {
+  document.getElementById('nicheGrid').innerHTML = NICHE_OPTIONS.map(o => `
+    <div class="niche-opt" id="nopt-${o.id}" onclick="selectNicheOpt('${o.id}')">
+      <div class="niche-opt-icon">${o.icon}</div>
+      <div class="niche-opt-label">${o.label}</div>
+      <div class="niche-opt-desc">${o.desc}</div>
+    </div>
+  `).join('');
+  document.getElementById('nicheOnboarding').classList.add('open');
+}
+
+function selectNicheOpt(id) {
+  _selectedNiche = id;
+  document.querySelectorAll('.niche-opt').forEach(el => el.classList.remove('selected'));
+  document.getElementById('nopt-' + id)?.classList.add('selected');
+  document.getElementById('nicheObContinue').disabled = false;
+}
+
+function applyNicheSelection() {
+  if (!_selectedNiche) return;
+  const opt = NICHE_OPTIONS.find(o => o.id === _selectedNiche);
+  if (!opt) return;
+
+  // Guardar preferencia
+  localStorage.setItem('conteniza_niche', opt.niche);
+  localStorage.setItem('conteniza_tono', opt.tono);
+
+  // Aplicar al formulario si tiene valor
+  if (opt.niche) {
+    const nicheEl = document.getElementById('niche');
+    if (nicheEl && !nicheEl.value) nicheEl.value = opt.niche;
+  }
+  if (opt.tono) {
+    const toneEl = document.getElementById('tone');
+    if (toneEl) {
+      // Buscar opción que coincida
+      Array.from(toneEl.options).forEach(o => {
+        if (o.value === opt.tono) toneEl.value = opt.tono;
+      });
+    }
+  }
+
+  document.getElementById('nicheOnboarding').classList.remove('open');
+  showNotification(`✅ Perfil de ${opt.label} configurado`, 'success');
+}
+
+function skipNicheOnboarding() {
+  localStorage.setItem('conteniza_niche_skipped', '1');
+  document.getElementById('nicheOnboarding').classList.remove('open');
+}
+
+// Restaurar preferencias guardadas al cargar
+function restoreNichePreferences() {
+  const savedNiche = localStorage.getItem('conteniza_niche');
+  const savedTono  = localStorage.getItem('conteniza_tono');
+  if (savedNiche) {
+    const nicheEl = document.getElementById('niche');
+    if (nicheEl && !nicheEl.value) nicheEl.value = savedNiche;
+  }
+  if (savedTono) {
+    const toneEl = document.getElementById('tone');
+    if (toneEl) toneEl.value = savedTono;
+  }
+}
+
+/* ============================================================
+   INYECCIÓN EN LA UI EXISTENTE
+   ============================================================ */
+document.addEventListener('DOMContentLoaded', () => {
+
+  // 1. Añadir botón Templates antes del textarea de descripción
+  const descGroup = document.getElementById('description')?.closest('.form-group');
+  if (descGroup) {
+    const tplBtn = document.createElement('button');
+    tplBtn.type = 'button';
+    tplBtn.className = 'templates-btn';
+    tplBtn.innerHTML = '⚡ Usar un template de contenido';
+    tplBtn.onclick = openTemplates;
+    descGroup.parentNode.insertBefore(tplBtn, descGroup);
+  }
+
+  // 2. Añadir botón Compartir en el header de resultados
+  const resHeader = document.querySelector('.results-header > div:last-child');
+  if (resHeader && !document.getElementById('shareResultBtn')) {
+    const shareBtn = document.createElement('button');
+    shareBtn.id = 'shareResultBtn';
+    shareBtn.className = 'share-btn';
+    shareBtn.innerHTML = '🚀 Compartir';
+    shareBtn.onclick = openShareModal;
+    shareBtn.style.display = 'none'; // oculto hasta que haya resultados
+    resHeader.insertAdjacentElement('afterbegin', shareBtn);
+  }
+
+  // 3. Restaurar preferencias de nicho
+  restoreNichePreferences();
+});
+
+// Mostrar botón compartir cuando hay resultados
+const _origRenderResults = window.renderResults;
+if (_origRenderResults) {
+  window.renderResults = function(r, pubType) {
+    _origRenderResults(r, pubType);
+    const shareBtn = document.getElementById('shareResultBtn');
+    if (shareBtn) shareBtn.style.display = 'flex';
+  };
+}
+
+// Mostrar onboarding de nicho tras primer registro (hook en updateUserPanel)
+const _origUpdateUserPanelN1 = window.updateUserPanel;
+window.updateUserPanel = function() {
+  _origUpdateUserPanelN1?.();
+  // Mostrar onboarding solo la primera vez que el usuario entra (no tiene preferencia guardada)
+  setTimeout(() => {
+    const hasNiche   = localStorage.getItem('conteniza_niche');
+    const hasSkipped = localStorage.getItem('conteniza_niche_skipped');
+    const isNew      = !localStorage.getItem('conteniza_onboarding_done');
+    if (!hasNiche && !hasSkipped && isNew && currentUser) {
+      localStorage.setItem('conteniza_onboarding_done', '1');
+      showNicheOnboarding();
+    }
+  }, 1500);
+};
+
+// Keyboard: Escape cierra modales del Nivel 1
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeTemplates();
+    closeShareModal();
+    document.getElementById('nicheOnboarding')?.classList.remove('open');
+  }
+});
+</script>
