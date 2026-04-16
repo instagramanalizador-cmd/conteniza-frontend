@@ -163,7 +163,7 @@ const consentHTML = `
           <p style="font-size: 12px; color: #1e40af; margin: 0; line-height: 1.6;">
             ℹ️ <strong>Tus derechos:</strong> ${texts.rights}<br>
             <strong>Autoridad:</strong> ${texts.authority}<br>
-            <strong>Contacto:</strong> instagram.analizador@gmail.com
+            <strong>Contacto:</strong> hola@conteniza.com
           </p>
         </div>
       </div>
