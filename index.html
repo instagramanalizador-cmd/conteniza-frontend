@@ -2698,15 +2698,16 @@ function renderResults(r, pubType) {
   if (captionsBody) captionsBody.style.display = 'block';
   cDiv.innerHTML = (r.captions||[]).map((c,i)=>{
     if (isReel) {
+      // Secciones con metadata: color, label CON segundos
       const sectionMeta = {
-        '0-3s':   { color:'#F43F5E', label:'GANCHO'     },
-        '3-15s':  { color:'#8B5FBF', label:'DESARROLLO' },
-        '15-25s': { color:'#059669', label:'VALOR REAL'  },
-        '25-30s': { color:'#0891B2', label:'CTA'         },
-        'MUSICA': { color:'#D97706', label:'MÚSICA'      },
-        'CAPTION':{ color:'#6B7280', label:'CAPTION POST'},
+        '0-3s':    { color:'#F43F5E', label:'⏱️ 0-3s · GANCHO'      },
+        '3-15s':   { color:'#8B5FBF', label:'⏱️ 3-15s · DESARROLLO'  },
+        '15-25s':  { color:'#059669', label:'⏱️ 15-25s · VALOR REAL'  },
+        '25-30s':  { color:'#0891B2', label:'⏱️ 25-30s · CTA'         },
+        'MUSICA':  { color:'#D97706', label:'🎵 MÚSICA'                },
+        'CAPTION': { color:'#6B7280', label:'📝 CAPTION POST'          },
       };
-      // Compatibilidad: separar por \n\n o por | según formato
+      // Separar por \n\n o por | (compatibilidad ambos formatos)
       const rawParts = c.includes('\n\n') ? c.split('\n\n') : c.split('|');
       const parts = rawParts.map(p => p.trim()).filter(Boolean);
       const formatted = parts.map(p => {
@@ -2714,7 +2715,7 @@ function renderResults(r, pubType) {
         for (const [key, m] of Object.entries(sectionMeta)) {
           if (p.includes(key)) { meta = m; break; }
         }
-        // Extraer solo el contenido después del prefijo "⏱️ 0-3s (GANCHO):"
+        // Extraer contenido después del prefijo "⏱️ 0-3s (GANCHO):"
         let content = p;
         const colonIdx = p.indexOf(':');
         if (colonIdx !== -1 && colonIdx < 40) content = p.substring(colonIdx + 1).trim();
