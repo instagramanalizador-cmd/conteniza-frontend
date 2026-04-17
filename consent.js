@@ -38,38 +38,31 @@
   // ========================================
   
   async function detectRegion() {
+    // Detección por zona horaria del navegador — sin APIs externas, sin CORS
     try {
-      const response = await fetch('https://ipapi.co/json/', { 
-        method: 'GET',
-        headers: { 'Accept': 'application/json' }
-      });
-      
-      if (!response.ok) throw new Error('Error en detección de región');
-      
-      const data = await response.json();
-      const country = data.country_code;
-      
-      const euCountries = [
-        'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
-        'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
-        'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE'
-      ];
-      
-      const latamCountries = [
-        'AR', 'BO', 'BR', 'CL', 'CO', 'CR', 'CU', 'DO', 'EC', 'SV',
-        'GT', 'HN', 'MX', 'NI', 'PA', 'PY', 'PE', 'UY', 'VE'
-      ];
-      
-      if (euCountries.includes(country)) return 'EU';
-      if (country === 'MX') return 'MX';
-      if (latamCountries.includes(country)) return 'LATAM';
-      
-      return 'OTHER';
-      
-    } catch (error) {
-      console.warn('⚠️ Error detectando región, usando modo global:', error);
-      return 'EU'; // Por defecto el más estricto (RGPD)
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+      const tzLow = tz.toLowerCase();
+      const lang  = (navigator.language || navigator.languages?.[0] || 'es').toLowerCase();
+
+      if (tzLow.startsWith('europe/')) return 'EU';
+
+      const mxZones = ['mexico','monterrey','mazatlan','bahia_banderas','hermosillo'];
+      if (mxZones.some(z => tzLow.includes(z))) return 'MX';
+
+      const latamZones = ['argentina','bogota','santiago','lima','caracas','guayaquil',
+                          'asuncion','montevideo','la_paz','havana','santo_domingo','panama',
+                          'costa_rica','el_salvador','tegucigalpa','managua','guatemala','sao_paulo'];
+      if (latamZones.some(z => tzLow.includes(z))) return 'LATAM';
+
+      // Fallback por idioma
+      if (lang.includes('mx')) return 'MX';
+      if (lang.startsWith('es')) return 'LATAM';
+
+      return 'EU';
+    } catch(e) {
+      return 'EU';
     }
+  }
   }
   
   // ========================================
@@ -163,7 +156,7 @@ const consentHTML = `
           <p style="font-size: 12px; color: #1e40af; margin: 0; line-height: 1.6;">
             ℹ️ <strong>Tus derechos:</strong> ${texts.rights}<br>
             <strong>Autoridad:</strong> ${texts.authority}<br>
-            <strong>Contacto:</strong> hola@conteniza.com
+            <strong>Contacto:</strong> instagram.analizador@gmail.com
           </p>
         </div>
       </div>
