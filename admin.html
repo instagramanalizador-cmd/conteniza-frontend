@@ -2154,7 +2154,7 @@ async function confirmCourtesyAccess() {
   try {
     // 1. Cambiar plan
     const r0 = await fetch(`${API_URL}/admin/users/${_courtesyUserId}/plan`, {
-      method: 'PUT',
+      method: 'PATCH',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ plan: _courtesyPlan })
     });
