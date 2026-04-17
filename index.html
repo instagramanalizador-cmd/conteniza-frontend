@@ -2698,66 +2698,17 @@ function renderResults(r, pubType) {
   if (captionsBody) captionsBody.style.display = 'block';
   cDiv.innerHTML = (r.captions||[]).map((c,i)=>{
     if (isReel) {
-      // Formatear guión de reel — cada sección en su propio bloque visual
-      // El modelo separa secciones con \n\n
-      const sectionIcons = {
-        '0-3s':    { icon: '⏱️', color: '#F43F5E', label: 'GANCHO'      },
-        '3-15s':   { icon: '⏱️', color: '#8B5FBF', label: 'DESARROLLO'  },
-        '15-25s':  { icon: '⏱️', color: '#059669', label: 'VALOR REAL'  },
-        '25-30s':  { icon: '⏱️', color: '#0891B2', label: 'CTA'         },
-        'MUSICA':  { icon: '🎵', color: '#D97706', label: 'MÚSICA'       },
-        'CAPTION': { icon: '📝', color: '#6B7280', label: 'CAPTION POST' },
-      };
-
-      // Separar por \n\n o por | (compatibilidad con ambos formatos)
-      const rawParts = c.includes('\n\n') ? c.split('\n\n') : c.split('|');
-      const parts = rawParts.map(p => p.trim()).filter(Boolean);
-
-      const formatted = parts.map(p => {
-        // Detectar qué sección es
-        let sectionKey = null;
-        let sectionMeta = null;
-        for (const [key, meta] of Object.entries(sectionIcons)) {
-          if (p.includes(key)) { sectionKey = key; sectionMeta = meta; break; }
-        }
-
-        // Limpiar el prefijo del tiempo para mostrar solo el contenido
-        // Ej: "⏱️ 0-3s (GANCHO): texto..." → mostrar solo "texto..."
-        let content = p;
-        const colonIdx = p.indexOf(':');
-        if (colonIdx !== -1 && colonIdx < 40) {
-          content = p.substring(colonIdx + 1).trim();
-        }
-
-        if (sectionMeta) {
-          return `<div style="
-            background:${sectionMeta.color}14;
-            border-left:3px solid ${sectionMeta.color};
-            border-radius:0 8px 8px 0;
-            padding:10px 14px;
-            margin-bottom:8px;
-          ">
-            <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:${sectionMeta.color};margin-bottom:4px;">
-              ${sectionMeta.icon} ${sectionMeta.label}
-            </div>
-            <div style="font-size:13px;line-height:1.55;color:var(--text);">${escapeHtml(content)}</div>
-          </div>`;
-        }
-        // Sección no reconocida — mostrar normal
-        return `<div style="font-size:13px;line-height:1.55;color:var(--text);padding:6px 0;">${escapeHtml(p)}</div>`;
-      }).join('');
-
-      return `<div class="caption-item" style="padding:16px 16px 8px;">
-        <div style="font-size:12px;font-weight:800;color:var(--brand);margin-bottom:12px;display:flex;align-items:center;gap:6px;">
-          🎬 <span>GUIÓN REEL ${i+1}</span>
-        </div>
+      // Formatear guión de reel con secciones visuales
+      const parts = c.split('|').map(p => p.trim());
+      const formatted = parts.map(p => `<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;line-height:1.5;">${escapeHtml(p)}</div>`).join('');
+      return `<div class="caption-item" style="padding:16px;">
+        <div class="caption-num" style="color:var(--brand);margin-bottom:10px;">🎬 Guión Reel ${i+1}</div>
         ${formatted}
       </div>`;
     }
-    // Post / Carousel / Story — caption normal con saltos de línea respetados
     return `<div class="caption-item">
       <div class="caption-num">Caption ${i+1}</div>
-      <div style="white-space:pre-wrap;font-size:13px;line-height:1.6;">${escapeHtml(c)}</div>
+      ${escapeHtml(c)}
     </div>`;
   }).join('');
   // Thumbnails
@@ -6112,17 +6063,19 @@ async function cdndExport() {
 <!-- PWA Manifest inline -->
 <script>
 (function(){
+  const _origin = window.location.origin;
   const manifest = {
     name: 'Conteniza',
     short_name: 'Conteniza',
-    description: 'Crea contenido para Instagram con IA',
-    start_url: '/',
+    description: 'El copiloto de contenido para coaches y creadores',
+    start_url: _origin + '/index.html',
+    scope: _origin + '/',
     display: 'standalone',
     background_color: '#F8F7FF',
     theme_color: '#7C3AED',
     icons: [
-      { src: 'logo.jpg', sizes: '192x192', type: 'image/jpeg' },
-      { src: 'logo.jpg', sizes: '512x512', type: 'image/jpeg' }
+      { src: _origin + '/logo.jpg', sizes: '192x192', type: 'image/jpeg' },
+      { src: _origin + '/logo.jpg', sizes: '512x512', type: 'image/jpeg' }
     ]
   };
   const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
