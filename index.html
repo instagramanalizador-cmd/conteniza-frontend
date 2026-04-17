@@ -7545,3 +7545,745 @@ document.addEventListener('keydown', e => {
   }
 });
 </script>
+
+<!-- ============================================================
+     NIVEL 2 — Calendario de contenido + Historial de rendimiento
+     ============================================================ -->
+
+<style>
+/* ── Calendario ──────────────────────────────────────────────── */
+#calendarScreen {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 9100;
+  overflow-y: auto;
+}
+#calendarScreen:not(.hidden) { display: block !important; }
+
+.cal-header {
+  background: var(--grad-dark);
+  color: #fff;
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.cal-header-title { font-size: 17px; font-weight: 800; }
+.cal-header-sub   { font-size: 12px; opacity: .7; margin-top: 2px; }
+.cal-close-btn {
+  background: rgba(255,255,255,.15);
+  border: none;
+  color: #fff;
+  padding: 7px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+}
+.cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 64px;
+  z-index: 9;
+}
+.cal-nav-btn {
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-2);
+  transition: all .15s;
+}
+.cal-nav-btn:hover { background: var(--brand-light); color: var(--brand); border-color: var(--brand); }
+.cal-month-label { font-size: 16px; font-weight: 800; color: var(--text); }
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0;
+  padding: 0 16px 16px;
+}
+.cal-day-header {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-3);
+  padding: 10px 0 6px;
+  text-transform: uppercase;
+}
+.cal-day {
+  min-height: 80px;
+  border: 1px solid var(--border);
+  padding: 6px;
+  background: var(--surface);
+  position: relative;
+  cursor: pointer;
+  transition: background .15s;
+}
+.cal-day:hover { background: var(--surface-2); }
+.cal-day.other-month { opacity: .35; }
+.cal-day.today { background: var(--brand-light); border-color: var(--brand); }
+.cal-day.has-post { border-top: 3px solid var(--brand); }
+.cal-day-num {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-2);
+  margin-bottom: 4px;
+}
+.cal-day.today .cal-day-num { color: var(--brand); }
+.cal-post-chip {
+  background: var(--grad-brand);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 5px;
+  border-radius: 4px;
+  margin-bottom: 2px;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+  transition: opacity .15s;
+}
+.cal-post-chip:hover { opacity: .85; }
+.cal-add-btn {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  background: none;
+  border: 1px dashed var(--border-mid);
+  border-radius: 4px;
+  width: 18px; height: 18px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--text-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s;
+}
+.cal-add-btn:hover { background: var(--brand-light); color: var(--brand); border-color: var(--brand); }
+
+/* Modal añadir post al calendario */
+.cal-post-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 9200;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.cal-post-modal.open { display: flex; }
+.cal-post-form {
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.cal-post-form h3 { font-size: 16px; font-weight: 800; color: var(--text); margin: 0; }
+.cal-format-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.cal-fmt-btn {
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 4px;
+  cursor: pointer;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-2);
+  transition: all .15s;
+}
+.cal-fmt-btn.active, .cal-fmt-btn:hover {
+  background: var(--brand-light);
+  border-color: var(--brand);
+  color: var(--brand);
+}
+.cal-post-actions { display: flex; gap: 8px; }
+
+/* ── Historial de rendimiento ────────────────────────────────── */
+#performanceScreen {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 9100;
+  overflow-y: auto;
+}
+#performanceScreen:not(.hidden) { display: block !important; }
+
+.perf-header {
+  background: var(--grad-dark);
+  color: #fff;
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.perf-stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  padding: 16px 20px 0;
+}
+.perf-stat-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  text-align: center;
+}
+.perf-stat-num { font-size: 28px; font-weight: 800; color: var(--brand); }
+.perf-stat-label { font-size: 11px; color: var(--text-3); font-weight: 600; text-transform: uppercase; margin-top: 4px; }
+
+.perf-section { padding: 16px 20px; }
+.perf-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.perf-post-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color .15s;
+}
+.perf-post-card:hover { border-color: var(--brand-mid); }
+.perf-post-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.perf-post-hook {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.4;
+  flex: 1;
+}
+.perf-post-format {
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--brand-light);
+  color: var(--brand);
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.perf-metrics-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.perf-metric-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+.perf-metric-input span { color: var(--text-3); font-size: 14px; }
+.perf-metric-input input {
+  width: 60px;
+  border: none;
+  background: none;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  outline: none;
+}
+.perf-published-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.perf-published-toggle input { cursor: pointer; accent-color: var(--success); }
+.perf-star-row { display: flex; gap: 4px; }
+.perf-star {
+  font-size: 18px;
+  cursor: pointer;
+  opacity: .3;
+  transition: opacity .15s, transform .15s;
+}
+.perf-star.lit { opacity: 1; }
+.perf-star:hover { transform: scale(1.2); }
+.perf-insight-box {
+  background: linear-gradient(135deg, var(--brand-light), var(--accent-soft));
+  border: 1.5px solid var(--brand-mid);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+.perf-insight-title { font-size: 12px; font-weight: 700; color: var(--brand); margin-bottom: 6px; }
+.perf-insight-text  { font-size: 13px; color: var(--text); line-height: 1.5; }
+.perf-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-3);
+  font-size: 14px;
+}
+</style>
+
+<!-- CALENDARIO SCREEN -->
+<div id="calendarScreen" class="hidden">
+  <div class="cal-header">
+    <div>
+      <div class="cal-header-title">📅 Calendario de Contenido</div>
+      <div class="cal-header-sub">Organiza tu estrategia semanal</div>
+    </div>
+    <button class="cal-close-btn" onclick="closeCalendar()">✕ Cerrar</button>
+  </div>
+  <div class="cal-nav">
+    <button class="cal-nav-btn" onclick="calPrevMonth()">‹ Anterior</button>
+    <div class="cal-month-label" id="calMonthLabel"></div>
+    <button class="cal-nav-btn" onclick="calNextMonth()">Siguiente ›</button>
+  </div>
+  <div class="cal-grid" id="calGrid"></div>
+</div>
+
+<!-- Modal añadir/ver post en día -->
+<div class="cal-post-modal" id="calPostModal" onclick="if(event.target===this)closeCalPostModal()">
+  <div class="cal-post-form">
+    <h3 id="calPostModalTitle">📅 Añadir post</h3>
+    <div>
+      <div style="font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:6px;">Formato</div>
+      <div class="cal-format-grid">
+        <button class="cal-fmt-btn active" data-fmt="post"     onclick="calSelectFmt(this)">📸 Post</button>
+        <button class="cal-fmt-btn"         data-fmt="carousel" onclick="calSelectFmt(this)">🎠 Carrusel</button>
+        <button class="cal-fmt-btn"         data-fmt="story"    onclick="calSelectFmt(this)">📱 Story</button>
+        <button class="cal-fmt-btn"         data-fmt="reel"     onclick="calSelectFmt(this)">🎬 Reel</button>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:6px;">Tema del post</div>
+      <input id="calPostTopic" class="form-input" placeholder="Ej: 5 errores al vender coaching..." style="font-size:13px;">
+    </div>
+    <div>
+      <div style="font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:6px;">Mejor hora</div>
+      <select id="calPostTime" class="form-input" style="font-size:13px;">
+        <option value="07:00">🌅 7:00 — Mañana temprano</option>
+        <option value="09:00">☕ 9:00 — Inicio de jornada</option>
+        <option value="12:00">🌞 12:00 — Mediodía</option>
+        <option value="18:00" selected>🌆 18:00 — Tarde (mejor engagement)</option>
+        <option value="20:00">🌙 20:00 — Noche</option>
+        <option value="21:00">⭐ 21:00 — Prime time</option>
+      </select>
+    </div>
+    <div class="cal-post-actions">
+      <button class="btn btn-outline btn-sm" style="flex:1;" onclick="closeCalPostModal()">Cancelar</button>
+      <button class="btn btn-primary" style="flex:2;" onclick="saveCalPost()">💾 Guardar en calendario</button>
+    </div>
+  </div>
+</div>
+
+<!-- PERFORMANCE SCREEN -->
+<div id="performanceScreen" class="hidden">
+  <div class="perf-header">
+    <div>
+      <div style="font-size:17px;font-weight:800;">📈 Historial de Rendimiento</div>
+      <div style="font-size:12px;opacity:.7;margin-top:2px;">Registra métricas y descubre qué funciona</div>
+    </div>
+    <button class="cal-close-btn" onclick="closePerformance()">✕ Cerrar</button>
+  </div>
+  <div class="perf-stats-row" id="perfStatsRow"></div>
+  <div class="perf-section">
+    <div class="perf-section-title">💡 Insight de tu nicho</div>
+    <div id="perfInsight"></div>
+  </div>
+  <div class="perf-section">
+    <div class="perf-section-title">📋 Tus contenidos generados</div>
+    <div id="perfPostsList"></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CALENDARIO DE CONTENIDO
+   ============================================================ */
+let _calYear  = new Date().getFullYear();
+let _calMonth = new Date().getMonth(); // 0-11
+let _calPosts = JSON.parse(localStorage.getItem('cal_posts') || '{}');
+let _calEditDay = null;
+let _calEditFmt = 'post';
+
+function openCalendar() {
+  document.getElementById('calendarScreen').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  renderCalendar();
+}
+function closeCalendar() {
+  document.getElementById('calendarScreen').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+function calPrevMonth() {
+  _calMonth--;
+  if (_calMonth < 0) { _calMonth = 11; _calYear--; }
+  renderCalendar();
+}
+function calNextMonth() {
+  _calMonth++;
+  if (_calMonth > 11) { _calMonth = 0; _calYear++; }
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const DAYS   = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('calMonthLabel').textContent = MONTHS[_calMonth] + ' ' + _calYear;
+
+  const firstDay = new Date(_calYear, _calMonth, 1).getDay();
+  const daysInMonth = new Date(_calYear, _calMonth + 1, 0).getDate();
+  const daysInPrev  = new Date(_calYear, _calMonth, 0).getDate();
+  const today = new Date();
+
+  let html = DAYS.map(d => `<div class="cal-day-header">${d}</div>`).join('');
+
+  // Días del mes anterior
+  for (let i = firstDay - 1; i >= 0; i--) {
+    const d = daysInPrev - i;
+    html += `<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;
+  }
+
+  // Días del mes actual
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key  = `${_calYear}-${String(_calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const posts = _calPosts[key] || [];
+    const isToday = today.getFullYear()===_calYear && today.getMonth()===_calMonth && today.getDate()===d;
+    const fmtIcons = {post:'📸',carousel:'🎠',story:'📱',reel:'🎬'};
+
+    const postsHtml = posts.slice(0,2).map((p,i) =>
+      `<span class="cal-post-chip" title="${escapeHtml(p.topic)}" onclick="event.stopPropagation();viewCalPost('${key}',${i})">
+        ${fmtIcons[p.fmt]||'📝'} ${escapeHtml(p.topic.substring(0,18))}${p.topic.length>18?'…':''}
+      </span>`
+    ).join('');
+    const moreHtml = posts.length > 2 ? `<span style="font-size:9px;color:var(--text-3);">+${posts.length-2} más</span>` : '';
+
+    html += `<div class="cal-day${isToday?' today':''}${posts.length?' has-post':''}" onclick="openCalPostModal('${key}')">
+      <div class="cal-day-num">${d}</div>
+      ${postsHtml}${moreHtml}
+      <button class="cal-add-btn" onclick="event.stopPropagation();openCalPostModal('${key}')">+</button>
+    </div>`;
+  }
+
+  // Días del mes siguiente
+  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+  for (let d = 1; d <= totalCells - firstDay - daysInMonth; d++) {
+    html += `<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;
+  }
+
+  document.getElementById('calGrid').innerHTML = html;
+}
+
+function openCalPostModal(dateKey) {
+  _calEditDay = dateKey;
+  _calEditFmt = 'post';
+  const [y, m, d] = dateKey.split('-');
+  document.getElementById('calPostModalTitle').textContent = `📅 Añadir post — ${d}/${m}/${y}`;
+  document.getElementById('calPostTopic').value = '';
+  document.querySelectorAll('.cal-fmt-btn').forEach(b => b.classList.toggle('active', b.dataset.fmt === 'post'));
+  // Sugerir topic desde currentResults si existe
+  if (currentResults?.hooks?.[0]) {
+    document.getElementById('calPostTopic').placeholder = currentResults.hooks[0].substring(0, 60) + '...';
+  }
+  document.getElementById('calPostModal').classList.add('open');
+  setTimeout(() => document.getElementById('calPostTopic').focus(), 200);
+}
+function closeCalPostModal() {
+  document.getElementById('calPostModal').classList.remove('open');
+  _calEditDay = null;
+}
+function calSelectFmt(btn) {
+  _calEditFmt = btn.dataset.fmt;
+  document.querySelectorAll('.cal-fmt-btn').forEach(b => b.classList.toggle('active', b === btn));
+}
+function saveCalPost() {
+  if (!_calEditDay) return;
+  const topic = document.getElementById('calPostTopic').value.trim()
+    || document.getElementById('calPostTopic').placeholder.replace('...','');
+  if (!topic) { showNotification('Escribe el tema del post', 'error'); return; }
+  const time = document.getElementById('calPostTime').value;
+  if (!_calPosts[_calEditDay]) _calPosts[_calEditDay] = [];
+  _calPosts[_calEditDay].push({ fmt: _calEditFmt, topic, time, createdAt: Date.now() });
+  localStorage.setItem('cal_posts', JSON.stringify(_calPosts));
+  closeCalPostModal();
+  renderCalendar();
+  showNotification('✅ Post añadido al calendario', 'success');
+}
+function viewCalPost(dateKey, idx) {
+  const post = _calPosts[dateKey]?.[idx];
+  if (!post) return;
+  const fmtLabels = {post:'📸 Post',carousel:'🎠 Carrusel',story:'📱 Story',reel:'🎬 Reel'};
+  if (confirm(`${fmtLabels[post.fmt]} — ${post.time}\n\n"${post.topic}"\n\n¿Eliminar este post del calendario?`)) {
+    _calPosts[dateKey].splice(idx, 1);
+    if (!_calPosts[dateKey].length) delete _calPosts[dateKey];
+    localStorage.setItem('cal_posts', JSON.stringify(_calPosts));
+    renderCalendar();
+    showNotification('Post eliminado del calendario', 'success');
+  }
+}
+
+// Añadir al calendario desde los resultados — botón en results header
+function addCurrentToCalendar() {
+  if (!currentResults) { showNotification('Genera contenido primero', 'error'); return; }
+  const today = new Date();
+  const key = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  openCalPostModal(key);
+  // Pre-rellenar con el primer hook
+  setTimeout(() => {
+    const hook = currentResults.hooks?.[0] || currentResults.detected_niche || '';
+    if (hook) document.getElementById('calPostTopic').value = hook.substring(0, 80);
+    // Seleccionar formato actual
+    const fmt = document.getElementById('publicationType')?.value || 'post';
+    _calEditFmt = fmt;
+    document.querySelectorAll('.cal-fmt-btn').forEach(b => b.classList.toggle('active', b.dataset.fmt === fmt));
+  }, 200);
+}
+
+/* ============================================================
+   HISTORIAL DE RENDIMIENTO
+   ============================================================ */
+let _perfData = JSON.parse(localStorage.getItem('perf_data') || '{}');
+// _perfData[analysisId] = { published: bool, likes: n, comments: n, saves: n, stars: n }
+
+function openPerformance() {
+  document.getElementById('performanceScreen').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  loadPerformanceData();
+}
+function closePerformance() {
+  document.getElementById('performanceScreen').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+async function loadPerformanceData() {
+  // Cargar historial del backend
+  try {
+    const plan = currentUser?.plan_type || 'free';
+    const limit = plan === 'free' ? 5 : plan === 'pro' ? 50 : 999;
+    const r = await apiFetch(`${API_URL}/user/analyses?limit=${limit}`);
+    const d = await r.json();
+    const analyses = d.analyses || [];
+    renderPerformance(analyses);
+  } catch(e) {
+    document.getElementById('perfPostsList').innerHTML =
+      '<div class="perf-empty">❌ Error cargando historial</div>';
+  }
+}
+
+function renderPerformance(analyses) {
+  // Stats globales
+  const total     = analyses.length;
+  const published = Object.values(_perfData).filter(p => p.published).length;
+  const totalLikes = Object.values(_perfData).reduce((s, p) => s + (parseInt(p.likes)||0), 0);
+  const totalSaves = Object.values(_perfData).reduce((s, p) => s + (parseInt(p.saves)||0), 0);
+
+  document.getElementById('perfStatsRow').innerHTML = [
+    { num: total,     label: 'Contenidos generados', icon: '📊' },
+    { num: published, label: 'Publicados',            icon: '✅' },
+    { num: totalLikes,label: 'Likes registrados',     icon: '❤️' },
+    { num: totalSaves,label: 'Guardados registrados', icon: '🔖' },
+  ].map(c => `
+    <div class="perf-stat-card">
+      <div style="font-size:24px;margin-bottom:4px;">${c.icon}</div>
+      <div class="perf-stat-num">${c.num}</div>
+      <div class="perf-stat-label">${c.label}</div>
+    </div>`).join('');
+
+  // Insight automático
+  const bestPost = analyses
+    .filter(a => _perfData[a.id]?.likes > 0)
+    .sort((a, b) => (parseInt(_perfData[b.id]?.likes)||0) - (parseInt(_perfData[a.id]?.likes)||0))[0];
+
+  const publishedFormats = analyses
+    .filter(a => _perfData[a.id]?.published)
+    .reduce((acc, a) => { acc[a.publication_type] = (acc[a.publication_type]||0)+1; return acc; }, {});
+  const bestFormat = Object.entries(publishedFormats).sort((a,b)=>b[1]-a[1])[0];
+
+  let insightHtml = '';
+  if (bestPost) {
+    insightHtml += `<div class="perf-insight-box">
+      <div class="perf-insight-title">🏆 Tu contenido más exitoso</div>
+      <div class="perf-insight-text">"${escapeHtml((bestPost.input_description||'').substring(0,80))}" — <strong>${_perfData[bestPost.id]?.likes||0} likes</strong></div>
+    </div>`;
+  }
+  if (bestFormat) {
+    const fmtLabels = {post:'📸 Post',carousel:'🎠 Carrusel',story:'📱 Story',reel:'🎬 Reel'};
+    insightHtml += `<div class="perf-insight-box">
+      <div class="perf-insight-title">📱 Formato más publicado</div>
+      <div class="perf-insight-text">${fmtLabels[bestFormat[0]]||bestFormat[0]} — <strong>${bestFormat[1]} publicaciones</strong></div>
+    </div>`;
+  }
+  if (!insightHtml) {
+    insightHtml = `<div class="perf-insight-box">
+      <div class="perf-insight-title">💡 Cómo funciona</div>
+      <div class="perf-insight-text">Marca los contenidos que publicaste y añade sus métricas. Conteniza aprenderá qué funciona mejor en tu nicho.</div>
+    </div>`;
+  }
+  document.getElementById('perfInsight').innerHTML = insightHtml;
+
+  // Lista de posts
+  if (!analyses.length) {
+    document.getElementById('perfPostsList').innerHTML =
+      '<div class="perf-empty">🔭 Genera contenido para ver tu historial aquí</div>';
+    return;
+  }
+
+  const fmtLabels = {post:'📸 Post',carousel:'🎠 Carrusel',story:'📱 Story',reel:'🎬 Reel'};
+  document.getElementById('perfPostsList').innerHTML = analyses.map(a => {
+    const p     = _perfData[a.id] || {};
+    const stars = p.stars || 0;
+    const starsHtml = [1,2,3,4,5].map(s =>
+      `<span class="perf-star${s<=stars?' lit':''}" onclick="setPerfStars(${a.id},${s})">★</span>`
+    ).join('');
+
+    return `<div class="perf-post-card" id="perf-card-${a.id}">
+      <div class="perf-post-top">
+        <div class="perf-post-hook">${escapeHtml((a.input_description||a.niche||'Sin descripción').substring(0,90))}</div>
+        <span class="perf-post-format">${fmtLabels[a.publication_type]||a.publication_type}</span>
+      </div>
+      <div class="perf-metrics-row">
+        <div class="perf-metric-input">
+          <span>❤️</span>
+          <input type="number" min="0" placeholder="0" value="${p.likes||''}"
+            oninput="savePerfMetric(${a.id},'likes',this.value)" title="Likes">
+        </div>
+        <div class="perf-metric-input">
+          <span>💬</span>
+          <input type="number" min="0" placeholder="0" value="${p.comments||''}"
+            oninput="savePerfMetric(${a.id},'comments',this.value)" title="Comentarios">
+        </div>
+        <div class="perf-metric-input">
+          <span>🔖</span>
+          <input type="number" min="0" placeholder="0" value="${p.saves||''}"
+            oninput="savePerfMetric(${a.id},'saves',this.value)" title="Guardados">
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <label class="perf-published-toggle">
+          <input type="checkbox" ${p.published?'checked':''} onchange="savePerfMetric(${a.id},'published',this.checked)">
+          Publicado
+        </label>
+        <div class="perf-star-row" title="Valoración personal">${starsHtml}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function savePerfMetric(id, key, value) {
+  if (!_perfData[id]) _perfData[id] = {};
+  _perfData[id][key] = key === 'published' ? value : (parseInt(value) || 0);
+  localStorage.setItem('perf_data', JSON.stringify(_perfData));
+}
+function setPerfStars(id, stars) {
+  savePerfMetric(id, 'stars', stars);
+  // Re-render solo las estrellas de esa card
+  const card = document.getElementById('perf-card-' + id);
+  if (!card) return;
+  const starRow = card.querySelector('.perf-star-row');
+  if (starRow) {
+    starRow.innerHTML = [1,2,3,4,5].map(s =>
+      `<span class="perf-star${s<=stars?' lit':''}" onclick="setPerfStars(${id},${s})">★</span>`
+    ).join('');
+  }
+}
+
+/* ============================================================
+   INYECCIÓN EN LA UI — botones de acceso
+   ============================================================ */
+// Añadir botones Calendario y Rendimiento al userBar y al header de resultados
+const _origUpdateUserPanelN2 = window.updateUserPanel;
+window.updateUserPanel = function() {
+  _origUpdateUserPanelN2?.();
+  setTimeout(() => {
+    // Botón calendario en userBar
+    const inner = document.querySelector('.user-bar-inner') || document.getElementById('userBar');
+    if (inner && !document.getElementById('calBtn')) {
+      const calBtn = document.createElement('button');
+      calBtn.id = 'calBtn';
+      calBtn.className = 'btn btn-outline btn-sm';
+      calBtn.style.cssText = 'font-size:11px;padding:5px 10px;';
+      calBtn.innerHTML = '📅 Calendario';
+      calBtn.onclick = openCalendar;
+      inner.appendChild(calBtn);
+
+      const perfBtn = document.createElement('button');
+      perfBtn.id = 'perfBtn';
+      perfBtn.className = 'btn btn-outline btn-sm';
+      perfBtn.style.cssText = 'font-size:11px;padding:5px 10px;';
+      perfBtn.innerHTML = '📈 Rendimiento';
+      perfBtn.onclick = openPerformance;
+      inner.appendChild(perfBtn);
+    }
+  }, 200);
+};
+
+// Botón "Añadir al calendario" en header de resultados
+const _origRenderResultsN2 = window.renderResults;
+if (_origRenderResultsN2) {
+  window.renderResults = function(r, pubType) {
+    _origRenderResultsN2(r, pubType);
+    const resHeader = document.querySelector('.results-header > div:last-child');
+    if (resHeader && !document.getElementById('addToCalBtn')) {
+      const btn = document.createElement('button');
+      btn.id = 'addToCalBtn';
+      btn.className = 'btn btn-outline btn-sm';
+      btn.innerHTML = '📅 +Calendario';
+      btn.onclick = addCurrentToCalendar;
+      resHeader.insertAdjacentElement('afterbegin', btn);
+    }
+  };
+}
+
+// Escape cierra ambas pantallas
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeCalendar();
+    closePerformance();
+    document.getElementById('calPostModal')?.classList.remove('open');
+  }
+});
+</script>
