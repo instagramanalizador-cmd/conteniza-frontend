@@ -2814,20 +2814,12 @@ function renderThumbnails(thumbs) {
     const brandSubF = (currentUser?.plan_type==='premium' && currentBrand?.sub_font_name) ? currentBrand.sub_font_name : brandF;
     const brandFC   = (currentUser?.plan_type==='premium' && currentBrand?.font_color)     ? currentBrand.font_color   : (t.text_color || '#ffffff');
     const brandSFC  = (currentUser?.plan_type==='premium' && currentBrand?.sub_font_color) ? currentBrand.sub_font_color : '#cccccc';
-    // Font-size dinámico según largo del título
-    const titleLen = (t.text||'').length;
-    const titleFontSize = titleLen <= 15 ? '22px'
-                        : titleLen <= 25 ? '18px'
-                        : titleLen <= 35 ? '15px'
-                        : '13px';
-    const captionIdx = t.caption_index !== undefined ? t.caption_index : i;
     card.innerHTML = `
       <div class="thumb-num">${i+1}</div>
-      <div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,.45);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;color:#fff;letter-spacing:.04em;">📝 Caption ${captionIdx+1}</div>
       <button class="thumb-dl-btn" onclick="event.stopPropagation();downloadThumbnailImage(${i})">📥 PNG</button>
-      ${brandF && currentBrand?.logo_url ? `<img src="${currentBrand.logo_url}" style="width:56px;height:56px;border-radius:8px;object-fit:contain;margin-bottom:8px;background:rgba(255,255,255,.2);padding:4px;">` : ''}
-      <div class="thumb-main-text" style="font-size:${titleFontSize};${brandF?`font-family:'${brandF}',sans-serif;`:''}color:${brandFC};">${escapeHtml(t.text||'TEXTO')}</div>
-      ${t.secondary_text?`<div class="thumb-secondary" style="${brandSubF?`font-family:'${brandSubF}',sans-serif;`:''}color:${brandSFC};font-size:12px;">${escapeHtml(t.secondary_text)}</div>`:''}
+      ${brandF && currentBrand?.logo_url ? `<img src="${currentBrand.logo_url}" style="width:64px;height:64px;border-radius:8px;object-fit:contain;margin-bottom:10px;background:rgba(255,255,255,.2);padding:4px;">` : ''}
+      <div class="thumb-main-text" style="${brandF?`font-family:'${brandF}',sans-serif;`:''}color:${brandFC};">${escapeHtml(t.text||'TEXTO')}</div>
+      ${t.secondary_text?`<div class="thumb-secondary" style="${brandSubF?`font-family:'${brandSubF}',sans-serif;`:''}color:${brandSFC};">${escapeHtml(t.secondary_text)}</div>`:''}
     `;
     grid.appendChild(card);
   });
@@ -2838,25 +2830,6 @@ function selectThumbnail(i) {
   selectedThumbnailIndex = i;
   document.querySelectorAll('.thumb-card').forEach((c,idx)=>c.classList.toggle('selected',idx===i));
   renderThumbnailSpecs(i);
-  highlightLinkedCaption(i);
-}
-
-function highlightLinkedCaption(thumbIdx) {
-  document.querySelectorAll('.caption-item').forEach(el => {
-    el.style.outline = '';
-    el.style.borderLeft = '';
-  });
-  if (!currentThumbnails || !currentThumbnails[thumbIdx]) return;
-  const captionIdx = currentThumbnails[thumbIdx].caption_index !== undefined
-    ? currentThumbnails[thumbIdx].caption_index : thumbIdx;
-  const captionItems = document.querySelectorAll('.caption-item');
-  if (captionItems[captionIdx]) {
-    captionItems[captionIdx].style.outline     = '2px solid var(--brand)';
-    captionItems[captionIdx].style.borderLeft  = '4px solid var(--brand)';
-    captionItems[captionIdx].style.borderRadius = '8px';
-    captionItems[captionIdx].style.transition   = 'all .2s';
-    setTimeout(() => captionItems[captionIdx].scrollIntoView({ behavior:'smooth', block:'nearest' }), 150);
-  }
 }
 
 function renderThumbnailSpecs(i) {
@@ -3914,11 +3887,41 @@ const PLAN_FEATURES = {
 };
 const PLAN_BADGES = { pro: '🔥 Más popular', premium: '🎨 Mi Marca + Studio' };
 
+function renderFallbackPlans(grid) {
+  grid.innerHTML = `
+    <div class="plan-card">
+      <div class="plan-name">Free</div><div class="plan-price">0€</div><div class="plan-period">para siempre</div>
+      <ul class="plan-features"><li>5 análisis por mes</li><li>Solo formato Post</li><li>Hooks, captions y hashtags</li><li>Export PDF</li></ul>
+      <button class="btn btn-primary btn-full" onclick="selectPlan('free')">Comenzar gratis</button>
+    </div>
+    <div class="plan-card featured">
+      <div class="plan-featured-badge">🔥 Más popular</div>
+      <div class="plan-name">Pro</div><div class="plan-price">11€</div><div class="plan-period">/ mes</div>
+      <ul class="plan-features"><li><strong>100 análisis</strong> por mes</li><li>Todos los formatos</li><li>Regenerar secciones</li><li>📎 200MB archivos/mes</li><li>🤖 Copiloto IA</li><li>🔍 Análisis competencia</li></ul>
+      <button class="btn btn-primary btn-full" onclick="selectPlan('pro')">Contratar ahora</button>
+    </div>
+    <div class="plan-card">
+      <div class="plan-featured-badge" style="background:linear-gradient(135deg,#F59E0B,#EF4444);">🎨 Mi Marca + Studio</div>
+      <div class="plan-name">Premium</div><div class="plan-price">19€</div><div class="plan-period">/ mes</div>
+      <ul class="plan-features"><li><strong>300 análisis</strong> por mes</li><li>Todo lo de Pro</li><li>🎨 Mi Marca personalizada</li><li>🎬 Conteniza Studio</li><li>5GB almacenamiento</li></ul>
+      <button class="btn btn-primary btn-full" onclick="selectPlan('premium')">Contratar ahora</button>
+    </div>`;
+}
+
 async function loadPlans() {
   const grid = document.getElementById('plansGrid');
   if (!grid) return;
+
+  // Mostrar fallback inmediatamente — sin spinner
+  renderFallbackPlans(grid);
+
   try {
-    const r = await fetch(`${API_URL}/auth/plans`);
+    // Promise.race con timeout — sin AbortController (evita error de clonado en SW)
+    const fetchPromise    = fetch(`${API_URL}/auth/plans`);
+    const timeoutPromise  = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('timeout')), 3000)
+    );
+    const r = await Promise.race([fetchPromise, timeoutPromise]);
     const d = await r.json();
     if (!d.success || !d.plans) throw new Error('sin datos');
     grid.innerHTML = d.plans.map(plan => {
@@ -3941,25 +3944,8 @@ async function loadPlans() {
         </div>`;
     }).join('');
   } catch(e) {
-    // Fallback con planes hardcodeados en caso de error de red
-    grid.innerHTML = `
-      <div class="plan-card">
-        <div class="plan-name">Free</div><div class="plan-price">0€</div><div class="plan-period">para siempre</div>
-        <ul class="plan-features"><li>5 análisis por mes</li><li>Solo formato Post</li><li>Hooks, captions y hashtags</li><li>Export PDF</li></ul>
-        <button class="btn btn-primary btn-full" onclick="selectPlan('free')">Comenzar gratis</button>
-      </div>
-      <div class="plan-card featured">
-        <div class="plan-featured-badge">🔥 Más popular</div>
-        <div class="plan-name">Pro</div><div class="plan-price">11€</div><div class="plan-period">/ mes</div>
-        <ul class="plan-features"><li><strong>100 análisis</strong> por mes</li><li>Todos los formatos</li><li>Regenerar secciones</li><li>📎 200MB archivos/mes</li><li>Publicar en Instagram</li></ul>
-        <button class="btn btn-primary btn-full" onclick="selectPlan('pro')">Contratar ahora</button>
-      </div>
-      <div class="plan-card">
-        <div class="plan-featured-badge" style="background:linear-gradient(135deg,#F59E0B,#EF4444);">🎨 Mi Marca + Studio</div>
-        <div class="plan-name">Premium</div><div class="plan-price">19€</div><div class="plan-period">/ mes</div>
-        <ul class="plan-features"><li><strong>300 análisis</strong> por mes</li><li>Todo lo de Pro</li><li>🎨 Mi Marca personalizada</li><li>🎬 Conteniza Studio</li><li>5GB almacenamiento</li></ul>
-        <button class="btn btn-primary btn-full" onclick="selectPlan('premium')">Contratar ahora</button>
-      </div>`;
+    // Fallback ya visible — solo log si no es timeout esperado
+    if (e.message !== 'timeout') console.warn('loadPlans fallback activo:', e.message);
   }
 }
 
