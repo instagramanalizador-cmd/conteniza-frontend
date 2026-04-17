@@ -1162,6 +1162,10 @@ function renderUsers() {
                   class="btn btn-success" style="padding: 6px 12px; font-size: 12px;" title="Cambiar créditos">
             🔄
           </button>
+          <button onclick="grantCourtesyAccess(${user.id}, '${user.email}')" 
+                  class="btn btn-warning" style="padding: 6px 12px; font-size: 12px; background:#F59E0B; border-color:#F59E0B;" title="Acceso de cortesía">
+            🎁
+          </button>
           <button onclick="deleteUser(${user.id}, '${user.email}')" 
                   class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;" title="Eliminar">
             🗑️
@@ -2067,6 +2071,157 @@ async function resetAllAnalyses() {
     showNotification(`❌ ${error.message}`, 'error');
   }
 }
+
+// ── ACCESO DE CORTESÍA ──────────────────────────────────────────────────────
+let _courtesyUserId = null;
+let _courtesyEmail  = null;
+
+function grantCourtesyAccess(userId, email) {
+  _courtesyUserId = userId;
+  _courtesyEmail  = email;
+  document.getElementById('courtesyUserEmail').textContent = email;
+  // Reset a valores default
+  document.getElementById('courtesyCredits').value = '20';
+  document.getElementById('courtesyDaily').value   = '5';
+  document.getElementById('courtesyDays').value    = '7';
+  document.getElementById('courtesyNote').value    = '';
+  const modal = document.getElementById('courtesyModal');
+  modal.style.display = 'flex';
+}
+
+function closeCourtesyModal() {
+  document.getElementById('courtesyModal').style.display = 'none';
+  _courtesyUserId = null;
+  _courtesyEmail  = null;
+}
+
+function applyCourtesyPreset(credits, daily, days) {
+  document.getElementById('courtesyCredits').value = credits;
+  document.getElementById('courtesyDaily').value   = daily;
+  document.getElementById('courtesyDays').value    = days;
+}
+
+async function confirmCourtesyAccess() {
+  const credits = parseInt(document.getElementById('courtesyCredits').value);
+  const daily   = parseInt(document.getElementById('courtesyDaily').value);
+  const days    = parseInt(document.getElementById('courtesyDays').value);
+  const note    = document.getElementById('courtesyNote').value.trim();
+  const token   = localStorage.getItem('token');
+
+  if (!credits || credits < 1) { showNotification('Créditos inválidos', 'error'); return; }
+  if (!daily   || daily < 1)   { showNotification('Límite diario inválido', 'error'); return; }
+  if (!days    || days < 1)    { showNotification('Días inválidos', 'error'); return; }
+
+  const btn = document.querySelector('#courtesyModal button[onclick="confirmCourtesyAccess()"]');
+  btn.disabled = true;
+  btn.textContent = '⏳ Aplicando...';
+
+  try {
+    // 1. Actualizar créditos totales
+    const r1 = await fetch(`${API_URL}/admin/reset-credits`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: _courtesyUserId, credits })
+    });
+    if (!r1.ok) throw new Error('Error actualizando créditos');
+
+    // 2. Actualizar límite diario
+    const r2 = await fetch(`${API_URL}/admin/set-daily-limit`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: _courtesyUserId, daily_limit: daily, days, note })
+    });
+    if (!r2.ok) throw new Error('Error actualizando límite diario');
+
+    const expDate = new Date();
+    expDate.setDate(expDate.getDate() + days);
+    const expStr = expDate.toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' });
+
+    showNotification(`✅ Acceso de cortesía concedido a ${_courtesyEmail}: ${credits} créditos, ${daily}/día, hasta el ${expStr}`, 'success');
+    closeCourtesyModal();
+    await loadData();
+  } catch(e) {
+    showNotification('❌ ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🎁 Conceder acceso';
+  }
+}
+
+// Cerrar modal con Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeCourtesyModal();
+});
+
 </script>
+
+<!-- Modal Acceso de Cortesía -->
+<div id="courtesyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:16px;padding:28px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div>
+        <div style="font-size:18px;font-weight:800;color:#1a202c;">🎁 Acceso de Cortesía</div>
+        <div id="courtesyUserEmail" style="font-size:13px;color:#718096;margin-top:2px;"></div>
+      </div>
+      <button onclick="closeCourtesyModal()" style="background:#f7fafc;border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:14px;">✕</button>
+    </div>
+
+    <!-- Presets rápidos -->
+    <div style="margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:700;color:#4a5568;margin-bottom:8px;">⚡ Presets rápidos</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+        <button onclick="applyCourtesyPreset(20,5,7)" style="background:#EBF8FF;border:1.5px solid #BEE3F8;border-radius:8px;padding:10px 6px;cursor:pointer;text-align:center;">
+          <div style="font-size:16px;">🧪</div>
+          <div style="font-size:11px;font-weight:700;color:#2B6CB0;margin-top:2px;">Prueba</div>
+          <div style="font-size:10px;color:#4A5568;">20 cred · 5/día · 7d</div>
+        </button>
+        <button onclick="applyCourtesyPreset(50,10,30)" style="background:#F0FFF4;border:1.5px solid #C6F6D5;border-radius:8px;padding:10px 6px;cursor:pointer;text-align:center;">
+          <div style="font-size:16px;">🤝</div>
+          <div style="font-size:11px;font-weight:700;color:#276749;margin-top:2px;">Partner</div>
+          <div style="font-size:10px;color:#4A5568;">50 cred · 10/día · 30d</div>
+        </button>
+        <button onclick="applyCourtesyPreset(100,20,30)" style="background:#FAF5FF;border:1.5px solid #E9D8FD;border-radius:8px;padding:10px 6px;cursor:pointer;text-align:center;">
+          <div style="font-size:16px;">⭐</div>
+          <div style="font-size:11px;font-weight:700;color:#6B46C1;margin-top:2px;">VIP</div>
+          <div style="font-size:10px;color:#4A5568;">100 cred · 20/día · 30d</div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Configuración manual -->
+    <div style="background:#F7FAFC;border-radius:10px;padding:16px;margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:700;color:#4a5568;margin-bottom:12px;">⚙️ Configuración manual</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <label style="font-size:11px;font-weight:600;color:#718096;">Créditos totales</label>
+          <input id="courtesyCredits" type="number" min="1" max="500" value="20"
+            style="width:100%;border:1.5px solid #E2E8F0;border-radius:8px;padding:8px 12px;font-size:14px;font-weight:700;margin-top:4px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:600;color:#718096;">Análisis por día</label>
+          <input id="courtesyDaily" type="number" min="1" max="50" value="5"
+            style="width:100%;border:1.5px solid #E2E8F0;border-radius:8px;padding:8px 12px;font-size:14px;font-weight:700;margin-top:4px;box-sizing:border-box;">
+        </div>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:600;color:#718096;">Días de acceso</label>
+        <input id="courtesyDays" type="number" min="1" max="365" value="7"
+          style="width:100%;border:1.5px solid #E2E8F0;border-radius:8px;padding:8px 12px;font-size:14px;font-weight:700;margin-top:4px;box-sizing:border-box;">
+      </div>
+    </div>
+
+    <!-- Nota interna -->
+    <div style="margin-bottom:16px;">
+      <label style="font-size:11px;font-weight:600;color:#718096;">Nota interna (opcional)</label>
+      <input id="courtesyNote" type="text" placeholder="Ej: Coach referido por Ana García"
+        style="width:100%;border:1.5px solid #E2E8F0;border-radius:8px;padding:8px 12px;font-size:13px;margin-top:4px;box-sizing:border-box;">
+    </div>
+
+    <div style="display:flex;gap:10px;">
+      <button onclick="closeCourtesyModal()" style="flex:1;padding:11px;border:1.5px solid #E2E8F0;border-radius:10px;background:#fff;cursor:pointer;font-weight:600;font-size:13px;">Cancelar</button>
+      <button onclick="confirmCourtesyAccess()" style="flex:2;padding:11px;border:none;border-radius:10px;background:linear-gradient(135deg,#F59E0B,#EF4444);color:#fff;cursor:pointer;font-weight:700;font-size:13px;">🎁 Conceder acceso</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
