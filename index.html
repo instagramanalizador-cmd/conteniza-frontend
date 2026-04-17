@@ -193,84 +193,54 @@
       gap: 6px;
       backdrop-filter: blur(8px);
     }
-    .user-bar-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .user-bar-right { display: flex; align-items: center; gap: 5px; flex-shrink: 0; flex-wrap: nowrap; }
 
-    /* Avatar dropdown */
-    .ub-avatar-wrap {
-      position: relative;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
-    .ub-avatar {
-      width: 36px; height: 36px;
-      border-radius: 50%;
-      background: linear-gradient(135deg,#8B5FBF,#E91E8C);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 15px;
-      box-shadow: 0 2px 8px rgba(139,95,191,0.5);
-      border: 2px solid rgba(255,255,255,.25);
-      transition: border-color .2s;
-    }
-    .ub-avatar:hover { border-color: rgba(255,255,255,.6); }
-    .ub-dropdown {
-      display: none;
-      position: absolute;
-      top: calc(100% + 8px);
-      left: 0;
-      background: #1a1a2e;
-      border: 1px solid rgba(139,95,191,.4);
-      border-radius: 12px;
-      padding: 8px;
-      min-width: 200px;
-      box-shadow: 0 8px 32px rgba(0,0,0,.4);
-      z-index: 9000;
-    }
-    .ub-dropdown.open { display: block; }
-    .ub-dropdown-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 9px 12px;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 600;
-      color: rgba(255,255,255,.85);
-      cursor: pointer;
-      transition: background .15s;
-      border: none;
-      background: none;
-      width: 100%;
-      text-align: left;
-    }
-    .ub-dropdown-item:hover { background: rgba(255,255,255,.08); }
-    .ub-dropdown-item.danger { color: #FC8181; }
-    .ub-dropdown-item.danger:hover { background: rgba(252,129,129,.1); }
-    .ub-dropdown-divider {
-      border: none;
-      border-top: 1px solid rgba(255,255,255,.1);
-      margin: 4px 0;
-    }
-    /* Botones uniformes de la cinta */
+    /* Botón uniforme de la cinta */
     .ub-btn {
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 5px;
-      padding: 6px 13px;
-      border-radius: 8px;
+      padding: 5px 11px;
+      border-radius: 7px;
       font-size: 12px;
-      font-weight: 700;
-      border: 1.5px solid rgba(255,255,255,.18);
+      font-weight: 600;
+      border: 1px solid rgba(255,255,255,.15);
       background: rgba(255,255,255,.07);
-      color: rgba(255,255,255,.85);
+      color: rgba(255,255,255,.82);
       cursor: pointer;
-      transition: all .15s;
       white-space: nowrap;
+      transition: background .15s, border-color .15s, color .15s;
+      line-height: 1;
     }
-    .ub-btn:hover { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.35); color: #fff; }
-    .ub-btn.instagram { background: linear-gradient(135deg,rgba(131,58,180,.5),rgba(253,29,29,.4)); border-color: rgba(253,29,29,.4); }
-    .ub-btn.instagram:hover { background: linear-gradient(135deg,rgba(131,58,180,.8),rgba(253,29,29,.7)); }
-    .ub-btn.upgrade { background: linear-gradient(135deg,#8B5FBF,#E91E8C); border-color: transparent; color: #fff; }
+    .ub-btn:hover {
+      background: rgba(255,255,255,.14);
+      border-color: rgba(255,255,255,.3);
+      color: #fff;
+    }
+    /* Separador visual entre grupos */
+    .ub-sep {
+      width: 1px;
+      height: 22px;
+      background: rgba(255,255,255,.12);
+      margin: 0 3px;
+      flex-shrink: 0;
+    }
+    /* Variantes */
+    .ub-btn.ig  { background: linear-gradient(135deg,rgba(131,58,180,.45),rgba(253,29,29,.35)); border-color: rgba(253,29,29,.3); }
+    .ub-btn.ig:hover { background: linear-gradient(135deg,rgba(131,58,180,.75),rgba(253,29,29,.6)); }
+    .ub-btn.upgrade { background: linear-gradient(135deg,#7C3AED,#E91E8C); border-color: transparent; color: #fff; }
     .ub-btn.upgrade:hover { opacity: .88; }
+    .ub-btn.danger  { border-color: rgba(248,113,113,.3); color: #FCA5A5; }
+    .ub-btn.danger:hover  { background: rgba(248,113,113,.12); border-color: rgba(248,113,113,.5); color: #FCA5A5; }
+    .ub-btn.admin  { border-color: rgba(251,191,36,.3); color: #FCD34D; }
+    .ub-btn.admin:hover  { background: rgba(251,191,36,.1); }
+
+    /* Mobile — ocultar labels largos */
+    @media(max-width:768px) {
+      .ub-label { display: none; }
+      .ub-btn { padding: 6px 8px; }
+      .ub-sep { margin: 0 1px; }
+    }
 
     /* =============================================
        BUTTONS
@@ -1586,48 +1556,44 @@
 <div class="user-bar" id="userBar">
   <div class="user-bar-inner">
 
-    <!-- IZQUIERDA: Avatar + dropdown + info -->
+    <!-- IZQUIERDA: avatar + info -->
     <div class="user-bar-left">
-      <!-- Avatar con dropdown -->
-      <div class="ub-avatar-wrap" id="avatarWrap" onclick="toggleAvatarDropdown(event)">
-        <div class="ub-avatar">👤</div>
-        <div class="ub-dropdown" id="avatarDropdown">
-          <!-- Info usuario dentro del dropdown -->
-          <div style="padding:10px 12px 8px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:4px;">
-            <div id="dropEmail" style="font-size:12px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;"></div>
-            <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
-              <span id="dropPlan" style="font-size:10px;font-weight:700;color:rgba(255,255,255,.9);background:rgba(255,255,255,.15);padding:1px 8px;border-radius:10px;text-transform:uppercase;"></span>
-              <span style="font-size:11px;color:rgba(255,255,255,.5);">⚡ <span id="dropCredits" style="font-weight:700;color:rgba(255,255,255,.85);"></span> análisis</span>
-            </div>
-          </div>
-          <button class="ub-dropdown-item" onclick="openSidebar();closeAvatarDropdown()">📜 Historial</button>
-          <button class="ub-dropdown-item" id="dropBrandBtn" style="display:none;" onclick="showBrandScreen();closeAvatarDropdown()">🎨 Mi Marca</button>
-          <button class="ub-dropdown-item" id="dropUpgradeBtn" style="display:none;" onclick="showPlansScreen();closeAvatarDropdown()">⬆️ Mejorar plan</button>
-          <hr class="ub-dropdown-divider">
-          <button class="ub-dropdown-item" id="dropCancelBtn" style="display:none;" onclick="cancelSubscription();closeAvatarDropdown()">❌ Cancelar suscripción</button>
-          <button class="ub-dropdown-item" id="dropAdminBtn" style="display:none;" onclick="openAdmin();closeAvatarDropdown()">⚙️ Admin</button>
-          <button class="ub-dropdown-item danger" onclick="logout()">🚪 Cerrar sesión</button>
-        </div>
-      </div>
-      <!-- Info resumida visible siempre -->
-      <div style="display:flex;flex-direction:column;gap:1px;min-width:0;">
+      <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#8B5FBF,#E91E8C);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;box-shadow:0 2px 8px rgba(139,95,191,.45);border:2px solid rgba(255,255,255,.2);">👤</div>
+      <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
         <span id="userEmail" style="font-size:12px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;line-height:1.2;">–</span>
         <div style="display:flex;align-items:center;gap:5px;">
-          <span id="userPlan" style="font-size:9px;font-weight:700;color:rgba(255,255,255,.9);background:rgba(255,255,255,.15);padding:1px 7px;border-radius:10px;letter-spacing:.5px;text-transform:uppercase;">–</span>
-          <span style="font-size:10px;color:rgba(255,255,255,.5);">⚡ <span id="userCredits" style="font-weight:700;color:rgba(255,255,255,.85);">–</span></span>
+          <span id="userPlan" style="font-size:9px;font-weight:800;color:rgba(255,255,255,.95);background:rgba(255,255,255,.18);padding:1px 7px;border-radius:10px;letter-spacing:.6px;text-transform:uppercase;">–</span>
+          <span style="font-size:10px;color:rgba(255,255,255,.45);">⚡ <span id="userCredits" style="font-weight:700;color:rgba(255,255,255,.8);">–</span></span>
         </div>
       </div>
     </div>
 
-    <!-- DERECHA: Botones principales -->
+    <!-- DERECHA: todos los botones organizados en grupos -->
     <div class="user-bar-right">
-      <button id="openInstagramBtn" class="ub-btn instagram hidden" onclick="openInInstagram()" title="Publicar en Instagram">📱 Instagram</button>
-      <button id="ubDashBtn" class="ub-btn" onclick="showDashboard ? showDashboard() : openSidebar()">📊 Dashboard</button>
-      <button id="ubCalBtn" class="ub-btn" onclick="openCalendar()">📅 Calendario</button>
-      <button id="ubPerfBtn" class="ub-btn" onclick="openPerformance()">📈 Rendimiento</button>
-      <button class="ub-btn danger" style="border-color:rgba(252,129,129,.3);color:#FC8181;background:rgba(252,129,129,.08);" onclick="logout()">🚪 Salir</button>
-    </div>
 
+      <!-- Grupo 1: Mejorar plan (solo Free) -->
+      <button id="upgradePlanBtn" class="ub-btn upgrade hidden" onclick="showPlansScreen()">⬆️ <span class="ub-label">Mejorar plan</span></button>
+
+      <!-- Grupo 2: Contenido y herramientas -->
+      <button class="ub-btn" onclick="openSidebar()" title="Historial de análisis">📜 <span class="ub-label">Historial</span></button>
+      <button id="brandBtn" class="ub-btn hidden" onclick="showBrandScreen()" title="Mi Marca">🎨 <span class="ub-label">Mi Marca</span></button>
+      <button id="openInstagramBtn" class="ub-btn ig hidden" onclick="openInInstagram()" title="Publicar en Instagram">📱 <span class="ub-label">Instagram</span></button>
+
+      <div class="ub-sep"></div>
+
+      <!-- Grupo 3: Analítica -->
+      <button id="dashBtn" class="ub-btn" onclick="openDashboard ? openDashboard() : openSidebar()" title="Dashboard">📊 <span class="ub-label">Dashboard</span></button>
+      <button id="calBtn"  class="ub-btn" onclick="openCalendar()" title="Calendario de contenido">📅 <span class="ub-label">Calendario</span></button>
+      <button id="perfBtn" class="ub-btn" onclick="openPerformance()" title="Rendimiento">📈 <span class="ub-label">Rendimiento</span></button>
+
+      <div class="ub-sep"></div>
+
+      <!-- Grupo 4: Cuenta -->
+      <button id="cancelSubBtn" class="ub-btn hidden" onclick="cancelSubscription()" title="Cancelar suscripción" style="font-size:11px;color:rgba(255,255,255,.5);">⚙️</button>
+      <button id="adminBtn" class="ub-btn admin hidden" onclick="openAdmin()" title="Panel Admin">🛡️ <span class="ub-label">Admin</span></button>
+      <button class="ub-btn danger" onclick="logout()" title="Cerrar sesión">🚪 <span class="ub-label">Salir</span></button>
+
+    </div>
   </div>
 </div>
 
@@ -2437,57 +2403,40 @@ function updateTopbarActions() {
 }
 
 function updateUserPanel() {
-  if (!currentUser) return;
-  const plan    = currentUser.plan_type;
-  const isPrem  = plan === 'premium';
-  const isPro   = plan === 'pro';
-  const isFree  = plan === 'free';
-  const isAdmin = !!currentUser.is_admin;
-
-  // ── Info visible en la cinta ──────────────────────────────
-  const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-  setTxt('userEmail',   currentUser.email);
-  setTxt('userCredits', userCredits);
-  setTxt('userPlan',    plan.toUpperCase());
-  // Sincronizar dropdown
-  setTxt('dropEmail',   currentUser.email);
-  setTxt('dropCredits', userCredits);
-  setTxt('dropPlan',    plan.toUpperCase());
-
-  // ── Botones en la cinta ───────────────────────────────────
-  // Instagram — solo Pro y Premium
+  // Mostrar botones solo para Premium
+  const brandBtn = document.getElementById('brandBtn');
+  if (brandBtn) {
+    if (currentUser?.plan_type === 'premium') brandBtn.classList.remove('hidden');
+    else brandBtn.classList.add('hidden');
+  }
+  // Instagram btn también en updateSubscriptionUI
+  const igBtnS = document.getElementById('openInstagramBtn');
+  if (igBtnS) {
+    if (['pro','premium'].includes(currentUser?.plan_type)) igBtnS.classList.remove('hidden');
+    else igBtnS.classList.add('hidden');
+  }
   const igBtn = document.getElementById('openInstagramBtn');
-  if (igBtn) igBtn.classList.toggle('hidden', isFree);
-
-  // ── Dropdown items ────────────────────────────────────────
-  const show = (id, visible) => { const el = document.getElementById(id); if (el) el.style.display = visible ? '' : 'none'; };
-  show('dropBrandBtn',   isPrem);         // Mi Marca — solo Premium
-  show('dropUpgradeBtn', isFree);         // Mejorar plan — solo Free
-  show('dropCancelBtn',  !isFree);        // Cancelar — Pro y Premium
-  show('dropAdminBtn',   isAdmin);        // Admin — solo admin
-
-  // ── Badges PRO en formatos ────────────────────────────────
+  if (igBtn) {
+    if (['pro','premium'].includes(currentUser?.plan_type)) igBtn.classList.remove('hidden');
+    else igBtn.classList.add('hidden');
+  }
+  if (!currentUser) return;
+  document.getElementById('userEmail').textContent   = currentUser.email;
+  document.getElementById('userCredits').textContent = userCredits;
+  document.getElementById('userPlan').textContent    = currentUser.plan_type.toUpperCase();
+  const adminBtn = document.getElementById('adminBtn');
+  if (adminBtn) adminBtn.classList.toggle('hidden', !currentUser.is_admin);
+  // Mostrar botón Mejorar plan solo para usuarios Free
+  const upgradeBtn = document.getElementById('upgradePlanBtn');
+  if (upgradeBtn) upgradeBtn.classList.toggle('hidden', currentUser.plan_type !== 'free');
+  // Mostrar badge PRO en formatos para usuarios Free
+  const isFree = currentUser.plan_type === 'free';
   ['carousel','story','reel'].forEach(f => {
     const b = document.getElementById('badge-' + f);
     if (b) b.style.display = isFree ? 'inline' : 'none';
   });
-
   updateCreditIndicator();
 }
-
-// ── Dropdown del avatar ────────────────────────────────────
-function toggleAvatarDropdown(e) {
-  e.stopPropagation();
-  document.getElementById('avatarDropdown').classList.toggle('open');
-}
-function closeAvatarDropdown() {
-  document.getElementById('avatarDropdown')?.classList.remove('open');
-}
-// Cerrar al hacer clic fuera
-document.addEventListener('click', function(e) {
-  const wrap = document.getElementById('avatarWrap');
-  if (wrap && !wrap.contains(e.target)) closeAvatarDropdown();
-});
 
 function logout() {
   localStorage.removeItem('token');
@@ -3988,7 +3937,7 @@ const PLAN_FEATURES = {
     '✅ Historial últimos 50 análisis',
     '✅ Export PNG + ZIP + PDF',
     '✅ Publicar directo en Instagram',
-    '✅ 📧 Soporte 24-48h',
+    '✅ 📧 Soporte 24-48h (soporte@conteniza.com)',
     '❌ Mi Marca y Studio (Premium)',
   ],
   premium: [
@@ -3998,7 +3947,7 @@ const PLAN_FEATURES = {
     '✅ IA con contexto de tu marca',
     '✅ 📎 5GB almacenamiento/mes',
     '✅ Historial ilimitado',
-    '✅ 📧 Soporte prioritario',
+    '✅ 📧 Soporte prioritario (soporte@conteniza.com)',
   ]
 };
 const PLAN_BADGES = { pro: '🔥 Más popular', premium: '🎨 Mi Marca + Studio' };
@@ -4013,13 +3962,13 @@ function renderFallbackPlans(grid) {
     <div class="plan-card featured">
       <div class="plan-featured-badge">🔥 Más popular</div>
       <div class="plan-name">Pro</div><div class="plan-price">11€</div><div class="plan-period">/ mes</div>
-      <ul class="plan-features"><li><strong>100 análisis</strong> por mes</li><li>Todos los formatos</li><li>Regenerar secciones</li><li>📎 200MB archivos/mes</li><li>🤖 Copiloto IA</li><li>🔍 Análisis competencia</li></ul>
+      <ul class="plan-features"><li><strong>100 análisis</strong> por mes</li><li>Todos los formatos</li><li>Regenerar secciones</li><li>📎 200MB archivos/mes</li><li>🤖 Copiloto IA</li><li>🔍 Análisis competencia</li><li>📧 soporte@conteniza.com</li></ul>
       <button class="btn btn-primary btn-full" onclick="selectPlan('pro')">Contratar ahora</button>
     </div>
     <div class="plan-card">
       <div class="plan-featured-badge" style="background:linear-gradient(135deg,#F59E0B,#EF4444);">🎨 Mi Marca + Studio</div>
       <div class="plan-name">Premium</div><div class="plan-price">19€</div><div class="plan-period">/ mes</div>
-      <ul class="plan-features"><li><strong>300 análisis</strong> por mes</li><li>Todo lo de Pro</li><li>🎨 Mi Marca personalizada</li><li>🎬 Conteniza Studio</li><li>5GB almacenamiento</li></ul>
+      <ul class="plan-features"><li><strong>300 análisis</strong> por mes</li><li>Todo lo de Pro</li><li>🎨 Mi Marca personalizada</li><li>🎬 Conteniza Studio</li><li>5GB almacenamiento</li><li>📧 soporte@conteniza.com</li></ul>
       <button class="btn btn-primary btn-full" onclick="selectPlan('premium')">Contratar ahora</button>
     </div>`;
 }
@@ -7005,10 +6954,7 @@ window.generateContent = async function(event) {
 /* ============================================================
    AGREGAR DASHBOARD AL MENÚ DE USUARIO
    ============================================================ */
-const _origUpdateUserPanel = window.updateUserPanel;
-window.updateUserPanel = function() {
-  _origUpdateUserPanel?.();
-};
+// Dashboard ya está en la cinta fija — no inyectar dinámicamente
 
 /* Wizard placeholder en results -->*/
 document.addEventListener('DOMContentLoaded', () => {
