@@ -2698,17 +2698,42 @@ function renderResults(r, pubType) {
   if (captionsBody) captionsBody.style.display = 'block';
   cDiv.innerHTML = (r.captions||[]).map((c,i)=>{
     if (isReel) {
-      // Formatear guión de reel con secciones visuales
-      const parts = c.split('|').map(p => p.trim());
-      const formatted = parts.map(p => `<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;line-height:1.5;">${escapeHtml(p)}</div>`).join('');
-      return `<div class="caption-item" style="padding:16px;">
-        <div class="caption-num" style="color:var(--brand);margin-bottom:10px;">🎬 Guión Reel ${i+1}</div>
+      const sectionMeta = {
+        '0-3s':   { color:'#F43F5E', label:'GANCHO'     },
+        '3-15s':  { color:'#8B5FBF', label:'DESARROLLO' },
+        '15-25s': { color:'#059669', label:'VALOR REAL'  },
+        '25-30s': { color:'#0891B2', label:'CTA'         },
+        'MUSICA': { color:'#D97706', label:'MÚSICA'      },
+        'CAPTION':{ color:'#6B7280', label:'CAPTION POST'},
+      };
+      // Compatibilidad: separar por \n\n o por | según formato
+      const rawParts = c.includes('\n\n') ? c.split('\n\n') : c.split('|');
+      const parts = rawParts.map(p => p.trim()).filter(Boolean);
+      const formatted = parts.map(p => {
+        let meta = null;
+        for (const [key, m] of Object.entries(sectionMeta)) {
+          if (p.includes(key)) { meta = m; break; }
+        }
+        // Extraer solo el contenido después del prefijo "⏱️ 0-3s (GANCHO):"
+        let content = p;
+        const colonIdx = p.indexOf(':');
+        if (colonIdx !== -1 && colonIdx < 40) content = p.substring(colonIdx + 1).trim();
+        if (meta) {
+          return `<div style="background:${meta.color}18;border-left:3px solid ${meta.color};border-radius:0 8px 8px 0;padding:10px 14px;margin-bottom:8px;">
+            <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:${meta.color};margin-bottom:4px;">${meta.label}</div>
+            <div style="font-size:13px;line-height:1.55;color:var(--text);">${escapeHtml(content)}</div>
+          </div>`;
+        }
+        return `<div style="font-size:13px;line-height:1.55;padding:6px 0;color:var(--text);">${escapeHtml(p)}</div>`;
+      }).join('');
+      return `<div class="caption-item" style="padding:16px 16px 8px;">
+        <div style="font-size:12px;font-weight:800;color:var(--brand);margin-bottom:12px;">🎬 GUIÓN REEL ${i+1}</div>
         ${formatted}
       </div>`;
     }
     return `<div class="caption-item">
       <div class="caption-num">Caption ${i+1}</div>
-      ${escapeHtml(c)}
+      <div style="white-space:pre-wrap;font-size:13px;line-height:1.6;">${escapeHtml(c)}</div>
     </div>`;
   }).join('');
   // Thumbnails
