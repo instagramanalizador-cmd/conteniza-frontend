@@ -2794,6 +2794,7 @@ function renderThumbnails(thumbs) {
   if (!c) return;
   if (!thumbs||!thumbs.length) { c.innerHTML='<p style="color:var(--text-3);font-size:13px;">No hay miniaturas generadas</p>'; return; }
   currentThumbnails = thumbs;
+  // Solo resetear thumbAdjust si es nuevo contenido (más miniaturas = nueva generación)
   if (!window.thumbAdjust || Object.keys(window.thumbAdjust).length === 0 || Object.keys(window.thumbAdjust).length !== thumbs.length) {
     window.thumbAdjust = {};
   }
@@ -2813,21 +2814,24 @@ function renderThumbnails(thumbs) {
     const brandSubF = (currentUser?.plan_type==='premium' && currentBrand?.sub_font_name) ? currentBrand.sub_font_name : brandF;
     const brandFC   = (currentUser?.plan_type==='premium' && currentBrand?.font_color)     ? currentBrand.font_color   : (t.text_color || '#ffffff');
     const brandSFC  = (currentUser?.plan_type==='premium' && currentBrand?.sub_font_color) ? currentBrand.sub_font_color : '#cccccc';
-    // Badge de vínculo con caption
+    // Font-size dinámico según largo del título
+    const titleLen = (t.text||'').length;
+    const titleFontSize = titleLen <= 15 ? '22px'
+                        : titleLen <= 25 ? '18px'
+                        : titleLen <= 35 ? '15px'
+                        : '13px';
     const captionIdx = t.caption_index !== undefined ? t.caption_index : i;
     card.innerHTML = `
       <div class="thumb-num">${i+1}</div>
       <div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,.45);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;color:#fff;letter-spacing:.04em;">📝 Caption ${captionIdx+1}</div>
       <button class="thumb-dl-btn" onclick="event.stopPropagation();downloadThumbnailImage(${i})">📥 PNG</button>
-      ${brandF && currentBrand?.logo_url ? `<img src="${currentBrand.logo_url}" style="width:64px;height:64px;border-radius:8px;object-fit:contain;margin-bottom:10px;background:rgba(255,255,255,.2);padding:4px;">` : ''}
-      <div class="thumb-main-text" style="${brandF?`font-family:'${brandF}',sans-serif;`:''}color:${brandFC};">${escapeHtml(t.text||'TEXTO')}</div>
-      ${t.secondary_text?`<div class="thumb-secondary" style="${brandSubF?`font-family:'${brandSubF}',sans-serif;`:''}color:${brandSFC};">${escapeHtml(t.secondary_text)}</div>`:''}
+      ${brandF && currentBrand?.logo_url ? `<img src="${currentBrand.logo_url}" style="width:56px;height:56px;border-radius:8px;object-fit:contain;margin-bottom:8px;background:rgba(255,255,255,.2);padding:4px;">` : ''}
+      <div class="thumb-main-text" style="font-size:${titleFontSize};${brandF?`font-family:'${brandF}',sans-serif;`:''}color:${brandFC};">${escapeHtml(t.text||'TEXTO')}</div>
+      ${t.secondary_text?`<div class="thumb-secondary" style="${brandSubF?`font-family:'${brandSubF}',sans-serif;`:''}color:${brandSFC};font-size:12px;">${escapeHtml(t.secondary_text)}</div>`:''}
     `;
     grid.appendChild(card);
   });
   renderThumbnailSpecs(0);
-  // Destacar el caption vinculado al seleccionar miniatura
-  highlightLinkedCaption(0);
 }
 
 function selectThumbnail(i) {
@@ -2838,25 +2842,20 @@ function selectThumbnail(i) {
 }
 
 function highlightLinkedCaption(thumbIdx) {
-  // Quitar highlight previo
   document.querySelectorAll('.caption-item').forEach(el => {
     el.style.outline = '';
     el.style.borderLeft = '';
-    el.style.transition = 'all .2s';
   });
   if (!currentThumbnails || !currentThumbnails[thumbIdx]) return;
   const captionIdx = currentThumbnails[thumbIdx].caption_index !== undefined
-    ? currentThumbnails[thumbIdx].caption_index
-    : thumbIdx;
+    ? currentThumbnails[thumbIdx].caption_index : thumbIdx;
   const captionItems = document.querySelectorAll('.caption-item');
   if (captionItems[captionIdx]) {
-    captionItems[captionIdx].style.outline = '2px solid var(--brand)';
-    captionItems[captionIdx].style.borderLeft = '4px solid var(--brand)';
+    captionItems[captionIdx].style.outline     = '2px solid var(--brand)';
+    captionItems[captionIdx].style.borderLeft  = '4px solid var(--brand)';
     captionItems[captionIdx].style.borderRadius = '8px';
-    // Scroll suave al caption vinculado
-    setTimeout(() => {
-      captionItems[captionIdx].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 150);
+    captionItems[captionIdx].style.transition   = 'all .2s';
+    setTimeout(() => captionItems[captionIdx].scrollIntoView({ behavior:'smooth', block:'nearest' }), 150);
   }
 }
 
