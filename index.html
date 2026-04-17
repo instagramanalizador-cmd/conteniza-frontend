@@ -3872,7 +3872,7 @@ const PLAN_FEATURES = {
     '✅ Historial últimos 50 análisis',
     '✅ Export PNG + ZIP + PDF',
     '✅ Publicar directo en Instagram',
-    '✅ 📧 Soporte 24-48h',
+    '✅ 📧 Soporte 24-48h (soporte@conteniza.com)',
     '❌ Mi Marca y Studio (Premium)',
   ],
   premium: [
@@ -3882,7 +3882,7 @@ const PLAN_FEATURES = {
     '✅ IA con contexto de tu marca',
     '✅ 📎 5GB almacenamiento/mes',
     '✅ Historial ilimitado',
-    '✅ 📧 Soporte prioritario',
+    '✅ 📧 Soporte prioritario (soporte@conteniza.com)',
   ]
 };
 const PLAN_BADGES = { pro: '🔥 Más popular', premium: '🎨 Mi Marca + Studio' };
@@ -3897,13 +3897,13 @@ function renderFallbackPlans(grid) {
     <div class="plan-card featured">
       <div class="plan-featured-badge">🔥 Más popular</div>
       <div class="plan-name">Pro</div><div class="plan-price">11€</div><div class="plan-period">/ mes</div>
-      <ul class="plan-features"><li><strong>100 análisis</strong> por mes</li><li>Todos los formatos</li><li>Regenerar secciones</li><li>📎 200MB archivos/mes</li><li>🤖 Copiloto IA</li><li>🔍 Análisis competencia</li></ul>
+      <ul class="plan-features"><li><strong>100 análisis</strong> por mes</li><li>Todos los formatos</li><li>Regenerar secciones</li><li>📎 200MB archivos/mes</li><li>🤖 Copiloto IA</li><li>🔍 Análisis competencia</li><li>📧 soporte@conteniza.com</li></ul>
       <button class="btn btn-primary btn-full" onclick="selectPlan('pro')">Contratar ahora</button>
     </div>
     <div class="plan-card">
       <div class="plan-featured-badge" style="background:linear-gradient(135deg,#F59E0B,#EF4444);">🎨 Mi Marca + Studio</div>
       <div class="plan-name">Premium</div><div class="plan-price">19€</div><div class="plan-period">/ mes</div>
-      <ul class="plan-features"><li><strong>300 análisis</strong> por mes</li><li>Todo lo de Pro</li><li>🎨 Mi Marca personalizada</li><li>🎬 Conteniza Studio</li><li>5GB almacenamiento</li></ul>
+      <ul class="plan-features"><li><strong>300 análisis</strong> por mes</li><li>Todo lo de Pro</li><li>🎨 Mi Marca personalizada</li><li>🎬 Conteniza Studio</li><li>5GB almacenamiento</li><li>📧 soporte@conteniza.com</li></ul>
       <button class="btn btn-primary btn-full" onclick="selectPlan('premium')">Contratar ahora</button>
     </div>`;
 }
