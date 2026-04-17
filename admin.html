@@ -2085,6 +2085,8 @@ function grantCourtesyAccess(userId, email) {
   document.getElementById('courtesyDaily').value   = '5';
   document.getElementById('courtesyDays').value    = '7';
   document.getElementById('courtesyNote').value    = '';
+  // Default: Pro seleccionado
+  setTimeout(() => selectCourtesyPlan('pro'), 50);
   const modal = document.getElementById('courtesyModal');
   modal.style.display = 'flex';
 }
@@ -2095,10 +2097,43 @@ function closeCourtesyModal() {
   _courtesyEmail  = null;
 }
 
+let _courtesyPlan = 'pro'; // default Pro
+
+function selectCourtesyPlan(plan) {
+  _courtesyPlan = plan;
+  document.querySelectorAll('.plan-radio-btn').forEach(btn => {
+    const isSelected = btn.dataset.plan === plan;
+    const colors = {
+      free:    { bg:'#EBF8FF', border:'#4299E1' },
+      pro:     { bg:'#EBF8FF', border:'#4299E1' },
+      premium: { bg:'#FAF5FF', border:'#805AD5' },
+    };
+    const defaultColors = {
+      free:    { bg:'#F7FAFC', border:'#E2E8F0' },
+      pro:     { bg:'#EBF8FF', border:'#4299E1' },
+      premium: { bg:'#FAF5FF', border:'#E2E8F0' },
+    };
+    if (isSelected) {
+      btn.style.background   = colors[plan]?.bg     || '#EBF8FF';
+      btn.style.borderColor  = colors[plan]?.border || '#4299E1';
+      btn.style.transform    = 'scale(1.04)';
+      btn.style.boxShadow    = '0 2px 8px rgba(0,0,0,.12)';
+    } else {
+      btn.style.background   = defaultColors[btn.dataset.plan]?.bg     || '#F7FAFC';
+      btn.style.borderColor  = defaultColors[btn.dataset.plan]?.border || '#E2E8F0';
+      btn.style.transform    = '';
+      btn.style.boxShadow    = '';
+    }
+  });
+}
+
 function applyCourtesyPreset(credits, daily, days) {
   document.getElementById('courtesyCredits').value = credits;
   document.getElementById('courtesyDaily').value   = daily;
   document.getElementById('courtesyDays').value    = days;
+  // Presets: Prueba=Pro, Partner=Pro, VIP=Premium
+  if (credits >= 100) selectCourtesyPlan('premium');
+  else selectCourtesyPlan('pro');
 }
 
 async function confirmCourtesyAccess() {
@@ -2117,7 +2152,15 @@ async function confirmCourtesyAccess() {
   btn.textContent = '⏳ Aplicando...';
 
   try {
-    // 1. Actualizar créditos totales
+    // 1. Cambiar plan
+    const r0 = await fetch(`${API_URL}/admin/users/${_courtesyUserId}/plan`, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan: _courtesyPlan })
+    });
+    if (!r0.ok) throw new Error('Error cambiando plan');
+
+    // 2. Actualizar créditos totales
     const r1 = await fetch(`${API_URL}/admin/reset-credits`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -2125,7 +2168,7 @@ async function confirmCourtesyAccess() {
     });
     if (!r1.ok) throw new Error('Error actualizando créditos');
 
-    // 2. Actualizar límite diario
+    // 3. Actualizar límite diario y fecha de expiración
     const r2 = await fetch(`${API_URL}/admin/set-daily-limit`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -2135,9 +2178,10 @@ async function confirmCourtesyAccess() {
 
     const expDate = new Date();
     expDate.setDate(expDate.getDate() + days);
-    const expStr = expDate.toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' });
+    const expStr  = expDate.toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' });
+    const planLabels = { free:'Free+', pro:'Pro', premium:'Premium' };
 
-    showNotification(`✅ Acceso de cortesía concedido a ${_courtesyEmail}: ${credits} créditos, ${daily}/día, hasta el ${expStr}`, 'success');
+    showNotification(`✅ Acceso ${planLabels[_courtesyPlan]} concedido a ${_courtesyEmail}: ${credits} créditos, ${daily}/día, hasta el ${expStr}`, 'success');
     closeCourtesyModal();
     await loadData();
   } catch(e) {
@@ -2207,6 +2251,40 @@ document.addEventListener('keydown', e => {
         <label style="font-size:11px;font-weight:600;color:#718096;">Días de acceso</label>
         <input id="courtesyDays" type="number" min="1" max="365" value="7"
           style="width:100%;border:1.5px solid #E2E8F0;border-radius:8px;padding:8px 12px;font-size:14px;font-weight:700;margin-top:4px;box-sizing:border-box;">
+      </div>
+    </div>
+
+    <!-- Selector de plan -->
+    <div style="margin-bottom:16px;">
+      <label style="font-size:11px;font-weight:700;color:#4a5568;display:block;margin-bottom:8px;">🏷️ Plan a asignar</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+        <label style="cursor:pointer;">
+          <input type="radio" name="courtesyPlan" value="free" style="display:none;">
+          <div class="plan-radio-btn" data-plan="free" onclick="selectCourtesyPlan('free')"
+            style="background:#F7FAFC;border:2px solid #E2E8F0;border-radius:10px;padding:10px 8px;text-align:center;cursor:pointer;transition:all .15s;">
+            <div style="font-size:18px;">🆓</div>
+            <div style="font-size:11px;font-weight:700;color:#4A5568;margin-top:2px;">Free+</div>
+            <div style="font-size:9px;color:#718096;">Solo créditos extra</div>
+          </div>
+        </label>
+        <label style="cursor:pointer;">
+          <input type="radio" name="courtesyPlan" value="pro" checked style="display:none;">
+          <div class="plan-radio-btn" data-plan="pro" onclick="selectCourtesyPlan('pro')"
+            style="background:#EBF8FF;border:2px solid #4299E1;border-radius:10px;padding:10px 8px;text-align:center;cursor:pointer;transition:all .15s;">
+            <div style="font-size:18px;">🚀</div>
+            <div style="font-size:11px;font-weight:700;color:#2B6CB0;margin-top:2px;">Pro</div>
+            <div style="font-size:9px;color:#4A5568;">Todos los formatos</div>
+          </div>
+        </label>
+        <label style="cursor:pointer;">
+          <input type="radio" name="courtesyPlan" value="premium" style="display:none;">
+          <div class="plan-radio-btn" data-plan="premium" onclick="selectCourtesyPlan('premium')"
+            style="background:#FAF5FF;border:2px solid #E2E8F0;border-radius:10px;padding:10px 8px;text-align:center;cursor:pointer;transition:all .15s;">
+            <div style="font-size:18px;">👑</div>
+            <div style="font-size:11px;font-weight:700;color:#6B46C1;margin-top:2px;">Premium</div>
+            <div style="font-size:9px;color:#4A5568;">Mi Marca + Studio</div>
+          </div>
+        </label>
       </div>
     </div>
 
