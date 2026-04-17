@@ -7008,21 +7008,6 @@ window.generateContent = async function(event) {
 const _origUpdateUserPanel = window.updateUserPanel;
 window.updateUserPanel = function() {
   _origUpdateUserPanel?.();
-  // Añadir botón dashboard si no existe
-  setTimeout(() => {
-    const userBar = document.getElementById('userBar');
-    if (userBar && !document.getElementById('dashBtn')) {
-      const btn = document.createElement('button');
-      btn.id = 'dashBtn';
-      btn.className = 'btn btn-outline btn-sm';
-      btn.style.cssText = 'font-size:11px;padding:5px 10px;';
-      btn.textContent = '📊 Dashboard';
-      btn.onclick = openDashboard;
-      // Insertar antes del último botón del userBar
-      const inner = userBar.querySelector('.user-bar-inner') || userBar;
-      inner.appendChild(btn);
-    }
-  }, 100);
 };
 
 /* Wizard placeholder en results -->*/
@@ -8392,31 +8377,7 @@ function setPerfStars(id, stars) {
    INYECCIÓN EN LA UI — botones de acceso
    ============================================================ */
 // Añadir botones Calendario y Rendimiento al userBar y al header de resultados
-const _origUpdateUserPanelN2 = window.updateUserPanel;
-window.updateUserPanel = function() {
-  _origUpdateUserPanelN2?.();
-  setTimeout(() => {
-    // Botón calendario en userBar
-    const inner = document.querySelector('.user-bar-inner') || document.getElementById('userBar');
-    if (inner && !document.getElementById('calBtn')) {
-      const calBtn = document.createElement('button');
-      calBtn.id = 'calBtn';
-      calBtn.className = 'btn btn-outline btn-sm';
-      calBtn.style.cssText = 'font-size:11px;padding:5px 10px;';
-      calBtn.innerHTML = '📅 Calendario';
-      calBtn.onclick = openCalendar;
-      inner.appendChild(calBtn);
-
-      const perfBtn = document.createElement('button');
-      perfBtn.id = 'perfBtn';
-      perfBtn.className = 'btn btn-outline btn-sm';
-      perfBtn.style.cssText = 'font-size:11px;padding:5px 10px;';
-      perfBtn.innerHTML = '📈 Rendimiento';
-      perfBtn.onclick = openPerformance;
-      inner.appendChild(perfBtn);
-    }
-  }, 200);
-};
+// Calendario y Rendimiento ya están en la cinta fija — no inyectar dinámicamente
 
 // Botón "Añadir al calendario" en header de resultados
 const _origRenderResultsN2 = window.renderResults;
