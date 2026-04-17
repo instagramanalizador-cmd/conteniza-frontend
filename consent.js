@@ -38,11 +38,11 @@
   // ========================================
   
   async function detectRegion() {
-    // Detección por zona horaria del navegador — sin APIs externas, sin CORS
+    // Detección por zona horaria — sin APIs externas, sin CORS
     try {
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
-      const tzLow = tz.toLowerCase();
-      const lang  = (navigator.language || navigator.languages?.[0] || 'es').toLowerCase();
+      const tz     = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+      const tzLow  = tz.toLowerCase();
+      const lang   = (navigator.language || navigator.languages?.[0] || 'es').toLowerCase();
 
       if (tzLow.startsWith('europe/')) return 'EU';
 
@@ -50,12 +50,12 @@
       if (mxZones.some(z => tzLow.includes(z))) return 'MX';
 
       const latamZones = ['argentina','bogota','santiago','lima','caracas','guayaquil',
-                          'asuncion','montevideo','la_paz','havana','santo_domingo','panama',
-                          'costa_rica','el_salvador','tegucigalpa','managua','guatemala','sao_paulo'];
+                          'asuncion','montevideo','la_paz','havana','santo_domingo',
+                          'panama','costa_rica','el_salvador','tegucigalpa','managua',
+                          'guatemala','sao_paulo','recife','fortaleza','manaus'];
       if (latamZones.some(z => tzLow.includes(z))) return 'LATAM';
 
-      // Fallback por idioma
-      if (lang.includes('mx')) return 'MX';
+      if (lang.includes('-mx') || lang === 'es-mx') return 'MX';
       if (lang.startsWith('es')) return 'LATAM';
 
       return 'EU';
@@ -63,9 +63,8 @@
       return 'EU';
     }
   }
-  }
   
-  // ========================================
+    // ========================================
   // INYECTAR UI DE CONSENTIMIENTOS
   // ========================================
   
