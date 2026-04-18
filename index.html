@@ -193,7 +193,12 @@
       gap: 6px;
       backdrop-filter: blur(8px);
     }
-    .user-bar-right { display: flex; align-items: center; gap: 5px; flex-shrink: 0; flex-wrap: nowrap; }
+    .user-bar-right {
+      display: flex; align-items: center; gap: 5px; flex-shrink: 0; flex-wrap: nowrap;
+      overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch;
+      scrollbar-width: none; max-width: calc(100vw - 200px);
+    }
+    .user-bar-right::-webkit-scrollbar { display: none; }
 
     /* Botón uniforme de la cinta */
     .ub-btn {
@@ -533,6 +538,9 @@
       padding: 24px 16px;
       max-width: 1100px;
       margin: 0 auto;
+      box-sizing: border-box;
+      width: 100%;
+      overflow: hidden;
     }
     @media(min-width:900px) {
       .app-grid {
@@ -776,7 +784,7 @@
     }
 
     /* Result sections */
-    .result-section { margin-bottom: 20px; overflow: hidden; }
+    .result-section { margin-bottom: 20px; overflow: hidden; max-width: 100%; box-sizing: border-box; }
     .result-section-head {
       display: flex;
       align-items: center;
@@ -1274,7 +1282,8 @@
 
       /* FAB botones */
       .fab { width: 48px; height: 48px; font-size: 18px; bottom: 16px; right: 16px; }
-      #sidebarFab { bottom: 72px; }
+      #sidebarFab { display: none !important; }
+      #goHomeFab  { bottom: 16px; right: 16px; }
     }
 
 
@@ -1982,7 +1991,7 @@
             </div>
           </div>
           <div id="carouselBody" class="result-section-body">
-            <div id="carouselContent" style="overflow:hidden;width:100%;">
+            <div id="carouselContent" style="overflow:hidden;width:100%;max-width:100%;box-sizing:border-box;">
               <div class="carousel-scroll" id="carouselSlides"></div>
               <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;flex-wrap:wrap;gap:8px;">
         <div class="slide-controls" style="display:flex;align-items:center;gap:8px;">
@@ -8362,4 +8371,339 @@ document.addEventListener('keydown', e => {
     document.getElementById('calPostModal')?.classList.remove('open');
   }
 });
+</script>
+
+<script>
+/* ============================================================
+   RENDERER REEL — Secciones con color
+   ============================================================ */
+(function() {
+  const _origRender = window.renderResults;
+  if (!_origRender) return;
+  window.renderResults = function(r, pubType) {
+    _origRender(r, pubType);
+    if (pubType !== 'reel') return;
+    const cDiv = document.getElementById('captionsContent');
+    if (!cDiv || !r.captions?.length) return;
+    const sectionMeta = {
+      '0-3s':   { color:'#F43F5E', label:'⏱️ 0-3s · GANCHO'     },
+      '3-15s':  { color:'#8B5FBF', label:'⏱️ 3-15s · DESARROLLO' },
+      '15-25s': { color:'#059669', label:'⏱️ 15-25s · VALOR REAL' },
+      '25-30s': { color:'#0891B2', label:'⏱️ 25-30s · CTA'        },
+      'MUSICA': { color:'#D97706', label:'🎵 MÚSICA'               },
+      'CAPTION':{ color:'#6B7280', label:'📝 CAPTION POST'         },
+    };
+    cDiv.innerHTML = r.captions.map((c,i) => {
+      const rawParts = c.includes('\n\n') ? c.split('\n\n') : c.split('|');
+      const parts = rawParts.map(p => p.trim()).filter(Boolean);
+      const formatted = parts.map(p => {
+        let meta = null;
+        for (const [key, m] of Object.entries(sectionMeta)) {
+          if (p.includes(key)) { meta = m; break; }
+        }
+        let content = p;
+        const ci = p.indexOf(':');
+        if (ci !== -1 && ci < 40) content = p.substring(ci + 1).trim();
+        if (meta) return `<div style="background:${meta.color}18;border-left:3px solid ${meta.color};border-radius:0 8px 8px 0;padding:10px 14px;margin-bottom:8px;">
+          <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:${meta.color};margin-bottom:4px;">${meta.label}</div>
+          <div style="font-size:13px;line-height:1.55;color:var(--text);">${escapeHtml(content)}</div></div>`;
+        return `<div style="font-size:13px;line-height:1.55;padding:6px 0;color:var(--text);">${escapeHtml(p)}</div>`;
+      }).join('');
+      return `<div class="caption-item" style="padding:16px 16px 8px;">
+        <div style="font-size:12px;font-weight:800;color:var(--brand);margin-bottom:12px;">🎬 GUIÓN REEL ${i+1}</div>${formatted}</div>`;
+    }).join('');
+  };
+})();
+
+/* ============================================================
+   VÍNCULO MINIATURA — CAPTION (highlight al seleccionar)
+   ============================================================ */
+(function() {
+  const _orig = window.selectThumbnail;
+  window.selectThumbnail = function(i) {
+    if (_orig) _orig(i);
+    // Quitar highlights previos
+    document.querySelectorAll('.caption-item').forEach(el => {
+      el.style.outline = ''; el.style.borderLeft = ''; el.style.borderRadius = '';
+    });
+    if (!currentThumbnails?.[i]) return;
+    const captionIdx = currentThumbnails[i].caption_index !== undefined ? currentThumbnails[i].caption_index : i;
+    const items = document.querySelectorAll('.caption-item');
+    if (items[captionIdx]) {
+      items[captionIdx].style.outline = '2px solid var(--brand)';
+      items[captionIdx].style.borderLeft = '4px solid var(--brand)';
+      items[captionIdx].style.borderRadius = '8px';
+      setTimeout(() => items[captionIdx].scrollIntoView({ behavior:'smooth', block:'nearest' }), 150);
+    }
+  };
+
+  // Badge caption en miniatura
+  const _origRenderThumbs = window.renderThumbnails;
+  if (_origRenderThumbs) {
+    window.renderThumbnails = function(thumbs) {
+      _origRenderThumbs(thumbs);
+      if (!thumbs?.length) return;
+      thumbs.forEach((t, i) => {
+        const card = document.getElementById('thumb-' + i);
+        if (!card || card.querySelector('.thumb-caption-badge')) return;
+        const captionIdx = t.caption_index !== undefined ? t.caption_index : i;
+        const badge = document.createElement('div');
+        badge.className = 'thumb-caption-badge';
+        badge.style.cssText = 'position:absolute;top:8px;left:8px;background:rgba(0,0,0,.45);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;color:#fff;letter-spacing:.04em;';
+        badge.textContent = '📝 Caption ' + (captionIdx + 1);
+        card.appendChild(badge);
+      });
+      // Font-size dinámico por largo del título
+      thumbs.forEach((t, i) => {
+        const card = document.getElementById('thumb-' + i);
+        if (!card) return;
+        const mainText = card.querySelector('.thumb-main-text');
+        if (!mainText) return;
+        const len = (t.text || '').length;
+        mainText.style.fontSize = len <= 15 ? '22px' : len <= 25 ? '18px' : len <= 35 ? '15px' : '13px';
+      });
+    };
+  }
+})();
+
+/* ============================================================
+   COPILOTO IA — Chat refinamiento post-generación
+   ============================================================ */
+(function() {
+  if (document.getElementById('refinePanel')) return; // ya existe
+
+  // CSS
+  const style = document.createElement('style');
+  style.textContent = `
+    #refinePanel { display:none; margin-top:16px; border:1.5px solid var(--brand-mid); border-radius:var(--radius-lg); overflow:hidden; background:var(--surface); }
+    #refinePanel.visible { display:block; }
+    .refine-head { background:var(--grad-brand); color:#fff; padding:10px 16px; display:flex; align-items:center; justify-content:space-between; font-size:13px; font-weight:700; }
+    .refine-close { background:rgba(255,255,255,.2); border:none; color:#fff; border-radius:6px; padding:3px 8px; cursor:pointer; font-size:12px; font-weight:700; }
+    .refine-messages { max-height:280px; overflow-y:auto; padding:12px 14px; display:flex; flex-direction:column; gap:10px; }
+    .refine-msg { max-width:88%; padding:10px 14px; border-radius:12px; font-size:13px; line-height:1.55; white-space:pre-wrap; word-break:break-word; }
+    .refine-msg.user { align-self:flex-end; background:var(--grad-brand); color:#fff; border-radius:12px 12px 2px 12px; }
+    .refine-msg.assistant { align-self:flex-start; background:var(--surface-2); color:var(--text); border:1px solid var(--border); border-radius:12px 12px 12px 2px; }
+    .refine-msg.typing { align-self:flex-start; background:var(--surface-2); border:1px solid var(--border); border-radius:12px 12px 12px 2px; color:var(--text-3); font-style:italic; padding:10px 14px; }
+    .refine-suggestions { padding:8px 14px; display:flex; gap:6px; flex-wrap:wrap; border-top:1px solid var(--border); background:var(--surface-2); }
+    .refine-suggestion { background:var(--surface); border:1.5px solid var(--border); border-radius:999px; padding:4px 12px; font-size:11px; font-weight:600; color:var(--text-2); cursor:pointer; white-space:nowrap; transition:all .15s; }
+    .refine-suggestion:hover { background:var(--brand-light); border-color:var(--brand); color:var(--brand); }
+    .refine-input-row { display:flex; gap:8px; padding:10px 14px; border-top:1px solid var(--border); }
+    .refine-input { flex:1; border:1.5px solid var(--border); border-radius:10px; padding:9px 14px; font-size:13px; color:var(--text); background:var(--surface-2); outline:none; resize:none; max-height:80px; font-family:inherit; }
+    .refine-input:focus { border-color:var(--brand); }
+    .refine-send { background:var(--grad-brand); border:none; border-radius:10px; color:#fff; font-size:18px; width:40px; cursor:pointer; transition:opacity .15s; flex-shrink:0; }
+    .refine-send:hover { opacity:.85; } .refine-send:disabled { opacity:.4; cursor:not-allowed; }
+  `;
+  document.head.appendChild(style);
+
+  // HTML
+  const panel = document.createElement('div');
+  panel.id = 'refinePanel';
+  panel.innerHTML = `
+    <div class="refine-head"><div>🤖 Copiloto IA — refina tu contenido</div><button class="refine-close" onclick="closeRefinePanel()">✕</button></div>
+    <div class="refine-messages" id="refineMessages"><div class="refine-msg assistant">¡Hola! Soy tu copiloto. ¿Qué quieres cambiar del contenido generado?</div></div>
+    <div class="refine-suggestions">
+      <span class="refine-suggestion" onclick="sendRefineSuggestion(this)">Hazlo más corto</span>
+      <span class="refine-suggestion" onclick="sendRefineSuggestion(this)">Hazlo más viral</span>
+      <span class="refine-suggestion" onclick="sendRefineSuggestion(this)">Cambia el tono a humor</span>
+      <span class="refine-suggestion" onclick="sendRefineSuggestion(this)">Dame 3 hooks nuevos</span>
+      <span class="refine-suggestion" onclick="sendRefineSuggestion(this)">Mejora el primer caption</span>
+      <span class="refine-suggestion" onclick="sendRefineSuggestion(this)">Más formal</span>
+    </div>
+    <div class="refine-input-row">
+      <textarea class="refine-input" id="refineInput" rows="1" placeholder="Ej: Hazlo más corto, cambia el tono..."
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendRefineMessage()}"
+        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,80)+'px'"></textarea>
+      <button class="refine-send" id="refineSendBtn" onclick="sendRefineMessage()">➤</button>
+    </div>`;
+
+  let _refineHistory = [], _refineAnalysisId = null, _refineBusy = false;
+
+  window.openRefinePanel = function() {
+    if (!currentUser || currentUser.plan_type === 'free') {
+      showNotification('🤖 El Copiloto IA es exclusivo de Pro (11€/mes) y Premium (19€/mes)', 'error');
+      return;
+    }
+    if (!currentResults) { showNotification('Genera contenido primero', 'error'); return; }
+    _refineAnalysisId = currentResults.id || currentResults.analysis_id;
+    if (!_refineAnalysisId) { showNotification('Análisis no disponible para refinar', 'error'); return; }
+    const rs = document.getElementById('resultsSection');
+    if (rs && panel.parentNode !== rs) rs.appendChild(panel);
+    panel.classList.add('visible');
+    setTimeout(() => { document.getElementById('refineInput')?.focus(); scrollRefMsgs(); }, 300);
+  };
+  window.closeRefinePanel = function() { panel.classList.remove('visible'); };
+
+  function scrollRefMsgs() { const m = document.getElementById('refineMessages'); if (m) m.scrollTop = m.scrollHeight; }
+  function addRefMsg(role, text) {
+    const msgs = document.getElementById('refineMessages'); if (!msgs) return;
+    const d = document.createElement('div'); d.className = 'refine-msg ' + role; d.textContent = text;
+    msgs.appendChild(d); scrollRefMsgs(); return d;
+  }
+  window.sendRefineSuggestion = function(el) { document.getElementById('refineInput').value = el.textContent; sendRefineMessage(); };
+  window.sendRefineMessage = async function() {
+    if (_refineBusy) return;
+    const input = document.getElementById('refineInput');
+    const msg = input?.value.trim(); if (!msg || !_refineAnalysisId) return;
+    _refineBusy = true; input.value = ''; input.style.height = 'auto';
+    document.getElementById('refineSendBtn').disabled = true;
+    addRefMsg('user', msg); _refineHistory.push({ role:'user', content:msg });
+    const typing = addRefMsg('typing', '✍️ Escribiendo...');
+    try {
+      const r = await apiFetch(`${API_URL}/analyze/refine`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ analysis_id:_refineAnalysisId, message:msg, history:_refineHistory.slice(-8) }) }, 35000);
+      const d = await r.json(); typing.remove();
+      if (!r.ok || !d.success) throw new Error(d.error || 'Error');
+      addRefMsg('assistant', d.reply); _refineHistory.push({ role:'assistant', content:d.reply });
+      if (_refineHistory.length > 16) _refineHistory = _refineHistory.slice(-16);
+    } catch(e) { typing.remove(); addRefMsg('assistant', '❌ ' + (e.message || 'Error. Intenta de nuevo.')); }
+    finally { _refineBusy = false; document.getElementById('refineSendBtn').disabled = false; document.getElementById('refineInput')?.focus(); }
+  };
+
+  // Reset al generar nuevo contenido
+  const _origRR = window.renderResults;
+  if (_origRR) window.renderResults = function(r, pt) {
+    _origRR(r, pt);
+    _refineHistory = []; _refineAnalysisId = r?.id || r?.analysis_id || null;
+    const msgs = document.getElementById('refineMessages');
+    if (msgs) msgs.innerHTML = '<div class="refine-msg assistant">¡Hola! Soy tu copiloto. ¿Qué quieres cambiar del contenido generado?</div>';
+    panel.classList.remove('visible');
+    // Botón copiloto en header resultados
+    const resHeader = document.querySelector('.results-header > div:last-child');
+    if (resHeader && !document.getElementById('refinePanelBtn')) {
+      const btn = document.createElement('button');
+      btn.id = 'refinePanelBtn'; btn.className = 'btn btn-sm';
+      btn.style.cssText = 'background:var(--grad-brand);color:#fff;border:none;font-weight:700;font-size:12px;padding:6px 12px;border-radius:8px;cursor:pointer;';
+      btn.innerHTML = (currentUser?.plan_type === 'free') ? '🤖 Copiloto <span style="font-size:9px;background:rgba(255,255,255,.25);padding:1px 5px;border-radius:4px;">PRO</span>' : '🤖 Copiloto';
+      btn.onclick = openRefinePanel;
+      resHeader.insertAdjacentElement('afterbegin', btn);
+    }
+  };
+})();
+
+/* ============================================================
+   ANÁLISIS DE COMPETENCIA
+   ============================================================ */
+(function() {
+  if (document.getElementById('competitorModal')) return;
+
+  const style = document.createElement('style');
+  style.textContent = `
+    .competitor-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:9400; align-items:center; justify-content:center; padding:16px; }
+    .competitor-modal.open { display:flex; }
+    .competitor-card { background:var(--surface); border-radius:var(--radius-xl); width:100%; max-width:560px; max-height:90vh; overflow-y:auto; display:flex; flex-direction:column; }
+    .comp-result-section { display:flex; flex-direction:column; gap:6px; margin-bottom:12px; }
+    .comp-result-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-3); }
+    .comp-result-value { font-size:13px; color:var(--text); line-height:1.5; }
+    .comp-badge { display:inline-block; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:700; }
+    .comp-badge.fuerte { background:#d1fae5; color:#065f46; } .comp-badge.medio { background:#fef3c7; color:#92400e; } .comp-badge.débil,.comp-badge.debil { background:#fee2e2; color:#991b1b; }
+    .comp-chip-list { display:flex; flex-wrap:wrap; gap:6px; }
+    .comp-chip { background:var(--brand-light); color:var(--brand); border:1px solid var(--brand-mid); border-radius:8px; padding:4px 10px; font-size:12px; font-weight:600; }
+    .comp-steal-item { background:var(--surface-2); border:1.5px solid var(--border); border-left:3px solid var(--brand); border-radius:8px; padding:8px 12px; font-size:12px; color:var(--text); line-height:1.4; margin-bottom:6px; }
+    .comp-hook-box { background:var(--grad-brand); border-radius:10px; padding:14px 16px; color:#fff; font-size:14px; font-weight:700; line-height:1.5; cursor:pointer; transition:opacity .15s; }
+    .comp-hook-box:hover { opacity:.9; }
+  `;
+  document.head.appendChild(style);
+
+  const modal = document.createElement('div');
+  modal.id = 'competitorModal';
+  modal.className = 'competitor-modal';
+  modal.onclick = function(e) { if (e.target === this) closeCompetitorModal(); };
+  modal.innerHTML = `<div class="competitor-card">
+    <div style="background:var(--grad-dark);color:#fff;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;border-radius:var(--radius-xl) var(--radius-xl) 0 0;position:sticky;top:0;z-index:2;">
+      <div><div style="font-size:16px;font-weight:800;">🔍 Análisis de Competencia</div><div style="font-size:12px;opacity:.7;margin-top:2px;">Pega el texto de un post y descubre qué funciona</div></div>
+      <button onclick="closeCompetitorModal()" style="background:rgba(255,255,255,.15);border:none;color:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font-weight:700;">✕</button>
+    </div>
+    <div style="padding:20px;display:flex;flex-direction:column;gap:12px;" id="competitorBody">
+      <div id="compForm">
+        <input id="compUsername" class="form-input" placeholder="@usuario (opcional)" style="font-size:13px;margin-bottom:10px;">
+        <input id="compNiche"    class="form-input" placeholder="Tu nicho (opcional)" style="font-size:13px;margin-bottom:10px;">
+        <textarea id="compText" class="form-input" rows="5" placeholder="Pega aquí el caption del post a analizar..." style="font-size:13px;resize:vertical;min-height:100px;"></textarea>
+        <button class="btn btn-primary btn-full" style="margin-top:10px;" onclick="runCompetitorAnalysis()">🔍 Analizar post</button>
+      </div>
+      <div id="compResult" style="display:none;"></div>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+
+  window.openCompetitorModal = function() {
+    if (!currentUser || currentUser.plan_type === 'free') {
+      showNotification('🔍 El Análisis de Competencia es exclusivo de Pro (11€/mes) y Premium (19€/mes)', 'error'); return;
+    }
+    document.getElementById('compForm').style.display = 'block';
+    document.getElementById('compResult').style.display = 'none';
+    document.getElementById('compResult').innerHTML = '';
+    document.getElementById('compText').value = '';
+    document.getElementById('compUsername').value = '';
+    document.getElementById('compNiche').value = localStorage.getItem('conteniza_niche') || '';
+    modal.classList.add('open');
+    setTimeout(() => document.getElementById('compText')?.focus(), 200);
+  };
+  window.closeCompetitorModal = function() { modal.classList.remove('open'); };
+
+  window.runCompetitorAnalysis = async function() {
+    const text = document.getElementById('compText').value.trim();
+    const username = document.getElementById('compUsername').value.trim().replace('@','');
+    const niche = document.getElementById('compNiche').value.trim();
+    if (!text) { showNotification('Pega el texto del post primero', 'error'); return; }
+    const btn = document.querySelector('#compForm .btn-primary');
+    btn.disabled = true; btn.innerHTML = '⏳ Analizando...';
+    try {
+      const r = await apiFetch(`${API_URL}/analyze/competitor`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({text, username, niche}) }, 35000);
+      const d = await r.json();
+      btn.disabled = false; btn.innerHTML = '🔍 Analizar post';
+      if (!r.ok || !d.success) throw new Error(d.error || 'Error');
+      renderCompResult(d.analysis, username);
+    } catch(e) { btn.disabled = false; btn.innerHTML = '🔍 Analizar post'; showNotification(e.message || 'Error analizando', 'error'); }
+  };
+
+  function renderCompResult(a, username) {
+    const sc = (a.hook_strength||'').toLowerCase();
+    const steal = (a.what_to_steal||[]).map(s => `<div class="comp-steal-item">💡 ${escapeHtml(s)}</div>`).join('');
+    const pains = (a.pain_points||[]).map(p => `<span class="comp-chip">${escapeHtml(p)}</span>`).join('');
+    const hooks2 = a.your_version_hook ? `<div class="comp-result-section"><div class="comp-result-label">✨ Tu versión del hook — clic para copiar</div>
+      <div class="comp-hook-box" onclick="navigator.clipboard.writeText('${escapeHtml(a.your_version_hook).replace(/'/g,"\\'")}');showNotification('✅ Hook copiado','success')">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;opacity:.75;margin-bottom:6px;">Hook adaptado</div>${escapeHtml(a.your_version_hook)}</div></div>` : '';
+    document.getElementById('compResult').innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="font-size:15px;font-weight:800;color:var(--text);">${username ? 'Análisis de @'+escapeHtml(username) : 'Análisis del post'}</div>
+        <button onclick="document.getElementById('compForm').style.display='block';document.getElementById('compResult').style.display='none';" style="background:none;border:1.5px solid var(--border);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text-2);">← Nuevo</button>
+      </div>
+      <div class="comp-result-section"><div class="comp-result-label">🎣 Hook</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span class="comp-result-value">${escapeHtml(a.hook_type||'N/A')}</span>
+          <span class="comp-badge ${sc}">${escapeHtml(a.hook_strength||'N/A')}</span>
+        </div>
+        <div style="color:var(--text-3);font-size:12px;">${escapeHtml(a.hook_why||'')}</div></div>
+      ${pains ? `<div class="comp-result-section"><div class="comp-result-label">💔 Dolores</div><div class="comp-chip-list">${pains}</div></div>` : ''}
+      <div class="comp-result-section"><div class="comp-result-label">✅ Qué funciona</div><div class="comp-result-value">${escapeHtml(a.what_works||'')}</div></div>
+      ${steal ? `<div class="comp-result-section"><div class="comp-result-label">🎯 Qué adaptar</div>${steal}</div>` : ''}
+      ${hooks2}`;
+    document.getElementById('compResult').style.display = 'block';
+    document.getElementById('compForm').style.display = 'none';
+  }
+
+  // Botón Competencia en updateUserPanel
+  const _origUP = window.updateUserPanel;
+  window.updateUserPanel = function() {
+    if (_origUP) _origUP();
+    setTimeout(() => {
+      const inner = document.querySelector('.user-bar-right');
+      if (inner && !document.getElementById('competitorBtn')) {
+        const btn = document.createElement('button');
+        btn.id = 'competitorBtn';
+        btn.className = 'ub-btn';
+        btn.title = 'Análisis de Competencia';
+        btn.innerHTML = currentUser?.plan_type === 'free'
+          ? '🔍 <span class="ub-label">Competencia <span style="font-size:9px;background:var(--brand-light);color:var(--brand);padding:1px 4px;border-radius:4px;">PRO</span></span>'
+          : '🔍 <span class="ub-label">Competencia</span>';
+        btn.onclick = openCompetitorModal;
+        // Insertar antes del separador final o al final
+        const salirBtn = Array.from(inner.querySelectorAll('.ub-btn.danger')).pop();
+        if (salirBtn) inner.insertBefore(btn, salirBtn);
+        else inner.appendChild(btn);
+      }
+    }, 300);
+  };
+
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCompetitorModal(); });
+})();
 </script>
