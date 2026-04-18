@@ -224,37 +224,12 @@
     }
     /* Separador visual entre grupos */
     .ub-sep {
-      width: 1px; height: 22px;
+      width: 1px;
+      height: 22px;
       background: rgba(255,255,255,.12);
-      margin: 0 3px; flex-shrink: 0;
+      margin: 0 3px;
+      flex-shrink: 0;
     }
-    .ub-avatar-wrap { position: relative; cursor: pointer; flex-shrink: 0; }
-    .ub-avatar {
-      width: 34px; height: 34px; border-radius: 50%;
-      background: linear-gradient(135deg,#8B5FBF,#E91E8C);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 15px; box-shadow: 0 2px 8px rgba(139,95,191,.45);
-      border: 2px solid rgba(255,255,255,.2); transition: border-color .2s;
-    }
-    .ub-avatar:hover { border-color: rgba(255,255,255,.6); }
-    .ub-dropdown {
-      display: none; position: absolute; top: calc(100% + 8px); right: 0;
-      background: #1a1a2e; border: 1px solid rgba(139,95,191,.4);
-      border-radius: 12px; padding: 8px; min-width: 210px;
-      box-shadow: 0 8px 32px rgba(0,0,0,.45); z-index: 9000;
-    }
-    .ub-dropdown.open { display: block; }
-    .ub-dropdown-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 9px 12px; border-radius: 8px; font-size: 13px; font-weight: 600;
-      color: rgba(255,255,255,.85); cursor: pointer; transition: background .15s;
-      border: none; background: none; width: 100%; text-align: left;
-    }
-    .ub-dropdown-item:hover { background: rgba(255,255,255,.08); }
-    .ub-dropdown-item.danger { color: #FC8181; }
-    .ub-dropdown-item.danger:hover { background: rgba(252,129,129,.1); }
-    .ub-dropdown-divider { border: none; border-top: 1px solid rgba(255,255,255,.1); margin: 4px 0; }
-    .ub-dropdown-info { padding: 10px 12px 8px; border-bottom: 1px solid rgba(255,255,255,.1); margin-bottom: 4px; }
     /* Variantes */
     .ub-btn.ig  { background: linear-gradient(135deg,rgba(131,58,180,.45),rgba(253,29,29,.35)); border-color: rgba(253,29,29,.3); }
     .ub-btn.ig:hover { background: linear-gradient(135deg,rgba(131,58,180,.75),rgba(253,29,29,.6)); }
@@ -1619,28 +1594,33 @@
 <div class="user-bar" id="userBar">
   <div class="user-bar-inner">
 
-    <!-- IZQUIERDA: avatar dropdown + info -->
+    <!-- IZQUIERDA: avatar + info -->
     <div class="user-bar-left">
-      <div class="ub-avatar-wrap" id="ubAvatarWrap" onclick="toggleUbDropdown(event)">
-        <div class="ub-avatar">👤</div>
-        <div class="ub-dropdown" id="ubDropdown">
-          <div class="ub-dropdown-info">
-            <div id="dropEmail" style="font-size:12px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:176px;"></div>
+      <!-- Avatar con dropdown -->
+      <div id="ubAvatarWrap" style="position:relative;cursor:pointer;flex-shrink:0;" onclick="toggleUbDropdown(event)">
+        <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#8B5FBF,#E91E8C);display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 2px 8px rgba(139,95,191,.45);border:2px solid rgba(255,255,255,.2);transition:border-color .2s;">👤</div>
+        <!-- Dropdown -->
+        <div id="ubDropdown" style="display:none;position:absolute;top:calc(100% + 8px);left:0;background:#1a1a2e;border:1px solid rgba(139,95,191,.4);border-radius:12px;padding:8px;min-width:210px;box-shadow:0 8px 32px rgba(0,0,0,.45);z-index:9000;">
+          <!-- Info usuario -->
+          <div style="padding:10px 12px 8px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:4px;">
+            <div id="dropEmail" style="font-size:12px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:186px;"></div>
             <div style="display:flex;align-items:center;gap:5px;margin-top:4px;">
               <span id="dropPlan" style="font-size:9px;font-weight:800;color:rgba(255,255,255,.9);background:rgba(255,255,255,.15);padding:1px 7px;border-radius:10px;text-transform:uppercase;"></span>
               <span style="font-size:10px;color:rgba(255,255,255,.45);">⚡ <span id="dropCredits" style="font-weight:700;color:rgba(255,255,255,.8);"></span></span>
             </div>
           </div>
-          <button class="ub-dropdown-item" onclick="openSidebar();closeUbDropdown()">📜 Historial</button>
-          <button class="ub-dropdown-item" id="dropBrandBtn" style="display:none" onclick="showBrandScreen();closeUbDropdown()">🎨 Mi Marca</button>
-          <button class="ub-dropdown-item" id="dropCompBtn" onclick="if(typeof openCompetitorModal==='function')openCompetitorModal();closeUbDropdown()">🔍 Análisis competencia</button>
-          <button class="ub-dropdown-item" id="dropUpgradeBtn" style="display:none" onclick="showPlansScreen();closeUbDropdown()">⬆️ Mejorar plan</button>
-          <hr class="ub-dropdown-divider">
-          <button class="ub-dropdown-item" id="dropCancelBtn" style="display:none" onclick="cancelSubscription();closeUbDropdown()">⚙️ Cancelar suscripción</button>
-          <button class="ub-dropdown-item" id="dropAdminBtn" style="display:none" onclick="openAdmin();closeUbDropdown()">🛡️ Admin</button>
-          <button class="ub-dropdown-item danger" onclick="logout()">🚪 Cerrar sesión</button>
+          <button onclick="openSidebar();closeUbDropdown()" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">📜 Historial</button>
+          <button id="dropBrandBtn" onclick="showBrandScreen();closeUbDropdown()" style="display:none;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">🎨 Mi Marca</button>
+          <button id="dropCompBtn" onclick="if(typeof openCompetitorModal==='function')openCompetitorModal();closeUbDropdown()" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">🔍 Competencia</button>
+          <hr style="border:none;border-top:1px solid rgba(255,255,255,.1);margin:4px 0;">
+          <button id="dropUpgradeBtn" onclick="showPlansScreen();closeUbDropdown()" style="display:none;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">⬆️ Mejorar plan</button>
+          <button id="dropCancelBtn" onclick="cancelSubscription();closeUbDropdown()" style="display:none;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">⚙️ Cancelar suscripción</button>
+          <button id="dropAdminBtn" onclick="openAdmin();closeUbDropdown()" style="display:none;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:#FCD34D;cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">🛡️ Admin</button>
+          <hr style="border:none;border-top:1px solid rgba(255,255,255,.1);margin:4px 0;">
+          <button onclick="logout()" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:#FCA5A5;cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(252,129,129,.1)'" onmouseout="this.style.background='none'">🚪 Cerrar sesión</button>
         </div>
       </div>
+      <!-- Info visible -->
       <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
         <span id="userEmail" style="font-size:12px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px;line-height:1.2;">–</span>
         <div style="display:flex;align-items:center;gap:5px;">
@@ -1652,26 +1632,15 @@
 
     <!-- DERECHA: todos los botones organizados en grupos -->
     <div class="user-bar-right">
-
-      <!-- Grupo 1: Mejorar plan (solo Free) -->
-      <button id="upgradePlanBtn" class="ub-btn upgrade hidden" onclick="showPlansScreen()">⬆️ <span class="ub-label">Mejorar plan</span></button>
-
-      <!-- Grupo 2: Contenido y herramientas -->
-      <button class="ub-btn" onclick="openSidebar()" title="Historial de análisis">📜 <span class="ub-label">Historial</span></button>
-      <button id="brandBtn" class="ub-btn hidden" onclick="showBrandScreen()" title="Mi Marca">🎨 <span class="ub-label">Mi Marca</span></button>
-      <button id="openInstagramBtn" class="ub-btn ig hidden" onclick="openInInstagram()" title="Publicar en Instagram">📱 <span class="ub-label">Instagram</span></button>
-
+      <!-- Solo esenciales en cinta — el resto en dropdown del avatar -->
+      <button id="upgradePlanBtn" class="ub-btn upgrade hidden" onclick="showPlansScreen()">⬆️ <span class="ub-label">Mejorar</span></button>
+      <button id="openInstagramBtn" class="ub-btn ig hidden" onclick="openInInstagram()" title="Instagram">📱 <span class="ub-label">Instagram</span></button>
       <div class="ub-sep"></div>
-
-      <!-- Grupo 3: Analítica -->
-      <button id="dashBtn" class="ub-btn" onclick="openDashboard ? openDashboard() : openSidebar()" title="Dashboard">📊 <span class="ub-label">Dashboard</span></button>
-      <button id="calBtn"  class="ub-btn" onclick="openCalendar()" title="Calendario de contenido">📅 <span class="ub-label">Calendario</span></button>
-      <button id="perfBtn" class="ub-btn" onclick="openPerformance()" title="Rendimiento">📈 <span class="ub-label">Rendimiento</span></button>
-
+      <button id="dashBtn"  class="ub-btn" onclick="typeof openDashboard==='function'?openDashboard():openSidebar()" title="Dashboard">📊 <span class="ub-label">Dashboard</span></button>
+      <button id="calBtn"   class="ub-btn" onclick="openCalendar()"    title="Calendario">📅 <span class="ub-label">Calendario</span></button>
+      <button id="perfBtn"  class="ub-btn" onclick="openPerformance()" title="Rendimiento">📈 <span class="ub-label">Rendimiento</span></button>
       <div class="ub-sep"></div>
-
-      <!-- Grupo 4: Cuenta -->
-      <button id="cancelSubBtn" class="ub-btn hidden" onclick="cancelSubscription()" title="Cancelar suscripción" style="font-size:11px;color:rgba(255,255,255,.5);">⚙️</button>
+      <button id="tourHelpBtn" class="ub-btn" onclick="startTour()" title="Ayuda / Tour">❓</button>
       <button id="adminBtn" class="ub-btn admin hidden" onclick="openAdmin()" title="Panel Admin">🛡️ <span class="ub-label">Admin</span></button>
       <button class="ub-btn danger" onclick="logout()" title="Cerrar sesión">🚪 <span class="ub-label">Salir</span></button>
 
@@ -2491,12 +2460,12 @@ function updateUserPanel() {
   const isFree  = plan === 'free';
   const isAdmin = !!currentUser.is_admin;
 
-  // Info cinta
+  // Info en cinta
   const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v || ''; };
   setTxt('userEmail',   currentUser.email);
   setTxt('userCredits', userCredits);
   setTxt('userPlan',    plan.toUpperCase());
-  // Info dropdown
+  // Info en dropdown
   setTxt('dropEmail',   currentUser.email);
   setTxt('dropCredits', userCredits);
   setTxt('dropPlan',    plan.toUpperCase());
@@ -2508,7 +2477,7 @@ function updateUserPanel() {
   if (upgradeBtn) upgradeBtn.classList.toggle('hidden', !isFree);
 
   // Items dropdown
-  const showDrop = (id, v) => { const el = document.getElementById(id); if (el) el.style.display = v ? '' : 'none'; };
+  const showDrop = (id, v) => { const el = document.getElementById(id); if (el) el.style.display = v ? 'flex' : 'none'; };
   showDrop('dropBrandBtn',   isPrem);
   showDrop('dropUpgradeBtn', isFree);
   showDrop('dropCancelBtn',  !isFree);
@@ -2536,7 +2505,7 @@ function logout() {
   document.getElementById('emptyResults').style.display = '';
   document.getElementById('plansScreen').classList.remove('hidden');
   document.getElementById('sidebarFab').classList.remove('visible');
-  const _adEl = document.getElementById('dropAdminBtn'); if (_adEl) _adEl.style.display = 'none';
+  document.getElementById('adminBtn').classList.add('hidden');
   // Restaurar botones del topbar
   document.getElementById('topbarActions').innerHTML = `
     <button class="btn btn-outline btn-sm" onclick="showPlansFromTopbar()">Ver planes</button>
@@ -4648,6 +4617,15 @@ async function loadBrandConfig() {
         document.getElementById('previewLogo').style.display = 'block';
         document.getElementById('previewLogoImg').src = currentBrand.logo_url;
       }
+      // Imagen de fondo
+      if (currentBrand.bg_image_url) {
+        const bgPrev = document.getElementById('bgImgPreview');
+        if (bgPrev) {
+          bgPrev.style.backgroundImage = `url('${currentBrand.bg_image_url}')`;
+          bgPrev.textContent = '';
+        }
+        document.getElementById('removeBgImgBtn')?.classList.remove('hidden');
+      }
       renderFontGrid();
       updateBrandPreview();
     }
@@ -4758,7 +4736,14 @@ function updateBrandPreview() {
   const card  = document.getElementById('brandPreviewCard');
   const title = document.getElementById('previewTitle');
   const sub   = document.getElementById('previewSub');
-  if (card)  card.style.background  = `linear-gradient(135deg,${cp},${cs})`;
+  // Fondo: imagen si existe, sino gradiente de colores
+  if (card) {
+    if (currentBrand?.bg_image_url) {
+      card.style.background = `url('${currentBrand.bg_image_url}') center/cover no-repeat`;
+    } else {
+      card.style.background = `linear-gradient(135deg,${cp},${cs})`;
+    }
+  }
   if (title) {
     title.style.fontFamily  = `'${selectedFont}',sans-serif`;
     title.style.color       = fc;
@@ -4794,6 +4779,66 @@ async function handleLogoUpload(event) {
       showNotification('✅ Logo subido correctamente', 'success');
     } else throw new Error(d.error);
   } catch(e) { showNotification('Error subiendo logo: ' + e.message, 'error'); }
+}
+
+// ── Imagen de fondo en Mi Marca ──────────────────────────────────────────────
+async function handleBgImageUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) { showNotification('La imagen debe ser menor de 10MB', 'error'); return; }
+
+  const btn = document.querySelector('label[for="bgImgInput"]') || document.getElementById('bgImgInput').parentElement;
+  showNotification('⏳ Subiendo imagen de fondo…', 'success');
+
+  try {
+    const formData = new FormData();
+    formData.append('bg_image', file);
+    const token = localStorage.getItem('token');
+    const r = await fetch(`${API_URL}/brand/bg-image`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: formData
+    });
+    const d = await r.json();
+    if (!r.ok || !d.success) throw new Error(d.error || 'Error subiendo imagen');
+
+    currentBrand = currentBrand || {};
+    currentBrand.bg_image_url = d.bg_image_url;
+
+    // Preview
+    const bgPrev = document.getElementById('bgImgPreview');
+    if (bgPrev) {
+      bgPrev.style.backgroundImage = `url('${d.bg_image_url}')`;
+      bgPrev.textContent = '';
+    }
+    document.getElementById('removeBgImgBtn')?.classList.remove('hidden');
+    updateBrandPreview();
+    showNotification('✅ Imagen de fondo guardada', 'success');
+  } catch(e) {
+    showNotification('❌ ' + e.message, 'error');
+  }
+  event.target.value = '';
+}
+
+async function removeBgImage() {
+  if (!confirm('¿Eliminar la imagen de fondo?')) return;
+  try {
+    const token = localStorage.getItem('token');
+    const r = await fetch(`${API_URL}/brand/bg-image`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const d = await r.json();
+    if (!r.ok || !d.success) throw new Error(d.error || 'Error eliminando imagen');
+    if (currentBrand) currentBrand.bg_image_url = null;
+    const bgPrev = document.getElementById('bgImgPreview');
+    if (bgPrev) { bgPrev.style.backgroundImage = ''; bgPrev.textContent = '🌄'; }
+    document.getElementById('removeBgImgBtn')?.classList.add('hidden');
+    updateBrandPreview();
+    showNotification('✅ Imagen de fondo eliminada', 'success');
+  } catch(e) {
+    showNotification('❌ ' + e.message, 'error');
+  }
 }
 
 async function removeLogo() {
@@ -5189,15 +5234,16 @@ let cdnd = {
     subSize:20,   subColor:'#cccccc',   subAlign:'center',
     subBold:false, subItalic:false,
     logoSize:60,
+  bgImageUrl: null,
   },
   content: { title:'', sub:'', logoUrl:null },
 };
 
 // ── Abrir Studio ──
 function openCdndEditor(type, index) {
-  // Solo Premium
-  if (!['premium'].includes(currentUser?.plan_type)) {
-    showNotification('Conteniza Studio es exclusivo Premium','error');
+  // Pro y Premium
+  if (!['pro','premium'].includes(currentUser?.plan_type)) {
+    showNotification('Conteniza Studio es exclusivo de los planes Pro y Premium 🚀','error');
     return;
   }
   cdnd.type  = type;
@@ -5283,6 +5329,155 @@ function openCdndEditor(type, index) {
   cdndSelectBlock('title');
 }
 
+// ── Imágenes en Studio ────────────────────────────────────────────────────────
+function cdndSyncBgThumb() {
+  const thumb = document.getElementById('cdndBgImgThumb');
+  if (!thumb) return;
+  const bgUrl = cdnd.style.bgImageUrl;
+  if (bgUrl) {
+    thumb.style.backgroundImage = `url('${bgUrl}')`;
+    thumb.textContent = '';
+  } else {
+    thumb.style.backgroundImage = '';
+    thumb.textContent = '🌄';
+  }
+}
+
+function cdndHandleBgUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 15 * 1024 * 1024) { showNotification('Imagen muy grande (máx 15MB)', 'error'); return; }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    cdnd.style.bgImageUrl = dataUrl;
+    // Aplicar al fondo del canvas
+    const bg = document.getElementById('cdndBg');
+    if (bg) {
+      bg.style.background    = `url('${dataUrl}') center/cover no-repeat`;
+      bg.style.backgroundSize = 'cover';
+    }
+    cdndSyncBgThumb();
+    showNotification('✅ Fondo aplicado', 'success');
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+
+function cdndRemoveBg() {
+  cdnd.style.bgImageUrl = null;
+  const bg = document.getElementById('cdndBg');
+  if (bg) {
+    bg.style.background = `linear-gradient(135deg, ${cdnd.style.bg1}, ${cdnd.style.bg2})`;
+    bg.style.backgroundSize = '';
+  }
+  cdndSyncBgThumb();
+}
+
+function cdndHandleImgUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) { showNotification('Imagen muy grande (máx 10MB)', 'error'); return; }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    const imgId   = 'cdndImg_' + Date.now();
+    // Añadir bloque imagen al canvas
+    const canvas = document.getElementById('cdndCanvas');
+    if (!canvas) return;
+    const block = document.createElement('div');
+    block.className    = 'cdnd-block';
+    block.id           = imgId;
+    block.dataset.block = imgId;
+    block.style.cssText = 'left:20%;top:20%;width:40%;cursor:grab;';
+    block.innerHTML = `
+      <div class="cdnd-block-label">Imagen</div>
+      <img src="${dataUrl}" style="width:100%;display:block;border-radius:4px;pointer-events:none;">
+      <div class="cdnd-resize-handle" id="${imgId}Handle"></div>`;
+    canvas.appendChild(block);
+    // Hacer arrastrable
+    cdndMakeBlockDraggable(block);
+    cdndMakeBlockResizable(block, document.getElementById(imgId+'Handle'));
+    // Seleccionar
+    cdndSelectBlock(imgId);
+    // Añadir a lista del panel
+    cdndAddImgToList(imgId, file.name, dataUrl);
+    showNotification('✅ Imagen añadida al diseño', 'success');
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+
+function cdndAddImgToList(imgId, name, dataUrl) {
+  const list = document.getElementById('cdndImgList');
+  if (!list) return;
+  const item = document.createElement('div');
+  item.style.cssText = 'display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.06);border-radius:8px;padding:6px 8px;';
+  item.innerHTML = `
+    <img src="${dataUrl}" style="width:32px;height:32px;border-radius:4px;object-fit:cover;flex-shrink:0;">
+    <span style="flex:1;font-size:11px;color:rgba(255,255,255,.7);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${name}</span>
+    <button onclick="cdndRemoveImg('${imgId}',this.closest('div'))" style="background:rgba(248,113,113,.15);border:none;border-radius:6px;padding:3px 7px;color:#FCA5A5;cursor:pointer;font-size:11px;">🗑️</button>`;
+  list.appendChild(item);
+}
+
+function cdndRemoveImg(imgId, listItem) {
+  document.getElementById(imgId)?.remove();
+  listItem?.remove();
+}
+
+// Hacer arrastrables los bloques de imagen
+function cdndMakeBlockDraggable(block) {
+  // Reutilizar lógica de drag existente
+  block.addEventListener('mousedown', (e) => {
+    if (e.target.classList.contains('cdnd-resize-handle')) return;
+    e.preventDefault();
+    cdndSelectBlock(block.dataset.block);
+    const canvas  = document.getElementById('cdndCanvas');
+    const cRect   = canvas.getBoundingClientRect();
+    const bRect   = block.getBoundingClientRect();
+    const offX    = e.clientX - bRect.left;
+    const offY    = e.clientY - bRect.top;
+    block.classList.add('dragging');
+    const onMove = (ev) => {
+      const x = ((ev.clientX - offX - cRect.left) / cRect.width)  * 100;
+      const y = ((ev.clientY - offY - cRect.top)  / cRect.height) * 100;
+      block.style.left = Math.max(0, Math.min(90, x)) + '%';
+      block.style.top  = Math.max(0, Math.min(90, y)) + '%';
+    };
+    const onUp = () => {
+      block.classList.remove('dragging');
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup',   onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup',   onUp);
+  });
+}
+
+function cdndMakeBlockResizable(block, handle) {
+  if (!handle) return;
+  handle.addEventListener('mousedown', (e) => {
+    e.preventDefault(); e.stopPropagation();
+    const canvas = document.getElementById('cdndCanvas');
+    const cRect  = canvas.getBoundingClientRect();
+    const startW = block.getBoundingClientRect().width;
+    const startX = e.clientX;
+    const onMove = (ev) => {
+      const newW = Math.max(80, startW + (ev.clientX - startX));
+      block.style.width = (newW / cRect.width * 100) + '%';
+    };
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+}
+
+// ── Actualizar cdndRenderAll para aplicar bgImageUrl ─────────────────────────
+const _origCdndRenderAll = window.cdndRenderAll;
+
 function cdndClose() {
   document.getElementById('cdndOverlay').classList.remove('open');
   cdnd.open = false;
@@ -5355,7 +5550,15 @@ function cdndRenderAll() {
   const s = cdnd.style, c = cdnd.content, b = cdnd.blocks;
 
   // Fondo
-  document.getElementById('cdndBg').style.background = `linear-gradient(135deg,${s.bg1},${s.bg2})`;
+  // Fondo: imagen si existe, sino gradiente
+  const cdndBgEl = document.getElementById('cdndBg');
+  if (cdndBgEl) {
+    if (s.bgImageUrl) {
+      cdndBgEl.style.cssText = `position:absolute;inset:0;background:url('${s.bgImageUrl}') center/cover no-repeat;`;
+    } else {
+      cdndBgEl.style.cssText = `position:absolute;inset:0;background:linear-gradient(135deg,${s.bg1},${s.bg2});`;
+    }
+  }
   document.getElementById('cdndBg1').value = s.bg1;
   document.getElementById('cdndBg2').value = s.bg2;
   document.getElementById('cdndGrid').classList.toggle('visible', cdnd.gridOn);
@@ -5602,11 +5805,14 @@ function cdndToggleGrid() {
 }
 
 function cdndTab(tab) {
-  ['bloques','estilo','layouts'].forEach(t => {
+  ['bloques','imagenes','estilo','layouts'].forEach(t => {
     const cap = t.charAt(0).toUpperCase()+t.slice(1);
-    document.getElementById('cdndTab'+cap).style.display    = t===tab?'flex':'none';
-    document.getElementById('cdndTabBtn'+cap).classList.toggle('active', t===tab);
+    const panel = document.getElementById('cdndTab'+cap);
+    const btn   = document.getElementById('cdndTabBtn'+cap);
+    if (panel) panel.style.display = t===tab ? 'flex' : 'none';
+    if (btn)   btn.classList.toggle('active', t===tab);
   });
+  if (tab === 'imagenes') cdndSyncBgThumb();
 }
 
 function cdndUpdateBg() {
@@ -5944,6 +6150,23 @@ async function cdndExport() {
             </div>
           </div>
 
+          <!-- Imagen de fondo -->
+          <div style="background:var(--surface-2);border-radius:12px;padding:16px;margin-top:16px;">
+            <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">🖼️ Imagen de fondo</div>
+            <div style="display:flex;align-items:flex-start;gap:12px;">
+              <!-- Preview fondo -->
+              <div id="bgImgPreview" style="width:72px;height:72px;border-radius:10px;background:var(--surface);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;overflow:hidden;flex-shrink:0;background-size:cover;background-position:center;">🌄</div>
+              <div style="flex:1;">
+                <label style="display:inline-block;background:var(--brand-light);color:var(--brand);padding:7px 14px;border-radius:var(--radius-md);cursor:pointer;font-weight:600;font-size:12px;">
+                  📁 Subir imagen
+                  <input type="file" id="bgImgInput" accept="image/*" style="display:none;" onchange="handleBgImageUpload(event)">
+                </label>
+                <p style="font-size:10px;color:var(--text-3);margin:4px 0 0;">JPG, PNG, WebP · Máx 10MB · Se usará como fondo en Studio y miniaturas</p>
+                <button id="removeBgImgBtn" onclick="removeBgImage()" class="hidden" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:11px;margin-top:4px;padding:0;">🗑️ Eliminar fondo</button>
+              </div>
+            </div>
+          </div>
+
           <!-- Separador vertical -->
           <div style="width:1px;background:var(--border);align-self:stretch;flex-shrink:0;"></div>
 
@@ -6097,9 +6320,10 @@ async function cdndExport() {
     <!-- Panel -->
     <div class="cdnd-panel">
       <div class="cdnd-tabs">
-        <button class="cdnd-tab active" onclick="cdndTab('bloques')" id="cdndTabBtnBloques">Bloques</button>
-        <button class="cdnd-tab" onclick="cdndTab('estilo')" id="cdndTabBtnEstilo">Estilo</button>
-        <button class="cdnd-tab" onclick="cdndTab('layouts')" id="cdndTabBtnLayouts">Layouts</button>
+        <button class="cdnd-tab active" onclick="cdndTab('bloques')"  id="cdndTabBtnBloques">Bloques</button>
+        <button class="cdnd-tab" onclick="cdndTab('imagenes')" id="cdndTabBtnImagenes">🖼️</button>
+        <button class="cdnd-tab" onclick="cdndTab('estilo')"   id="cdndTabBtnEstilo">Estilo</button>
+        <button class="cdnd-tab" onclick="cdndTab('layouts')"  id="cdndTabBtnLayouts">Layouts</button>
       </div>
 
       <!-- Tab Bloques -->
@@ -6159,6 +6383,31 @@ async function cdndExport() {
         </div>
         <div class="cdnd-no-sel" id="cdndNoSel">Selecciona un bloque</div>
       </div>
+
+      <!-- Tab Imágenes -->
+      <div class="cdnd-panel-body" id="cdndTabImagenes" style="display:none;">
+        <!-- Fondo de imagen -->
+        <div class="cdnd-section">
+          <div class="cdnd-section-label">Fondo de imagen</div>
+          <div id="cdndBgImgThumb" style="width:100%;height:56px;border-radius:8px;background:var(--surface);border:1.5px dashed rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden;background-size:cover;background-position:center;margin-bottom:8px;">🌄</div>
+          <label style="display:flex;align-items:center;justify-content:center;gap:6px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:8px;padding:7px;cursor:pointer;font-size:11px;font-weight:700;color:rgba(255,255,255,.8);margin-bottom:6px;">
+            📁 Subir fondo
+            <input type="file" id="cdndBgUpload" accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="cdndHandleBgUpload(event)">
+          </label>
+          <button onclick="cdndRemoveBg()" style="width:100%;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.25);border-radius:8px;padding:6px;font-size:11px;color:#FCA5A5;cursor:pointer;font-weight:600;">🗑️ Quitar fondo imagen</button>
+        </div>
+        <div class="cdnd-divider"></div>
+        <!-- Elementos imagen -->
+        <div class="cdnd-section">
+          <div class="cdnd-section-label">Imágenes en el diseño</div>
+          <p style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:8px;line-height:1.5;">Sube fotos o iconos que quieras colocar sobre el diseño. Son arrastrables y redimensionables.</p>
+          <label style="display:flex;align-items:center;justify-content:center;gap:6px;background:rgba(139,95,191,.2);border:1.5px solid rgba(139,95,191,.4);border-radius:8px;padding:7px;cursor:pointer;font-size:11px;font-weight:700;color:rgba(255,255,255,.8);margin-bottom:6px;">
+            🖼️ Añadir imagen
+            <input type="file" id="cdndImgUpload" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none;" onchange="cdndHandleImgUpload(event)">
+          </label>
+          <div id="cdndImgList" style="display:flex;flex-direction:column;gap:5px;"></div>
+        </div>
+      </div><!-- /cdndTabImagenes -->
 
       <!-- Tab Estilo -->
       <div class="cdnd-panel-body" id="cdndTabEstilo" style="display:none;">
