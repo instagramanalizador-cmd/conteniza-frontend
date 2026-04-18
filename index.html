@@ -1610,12 +1610,12 @@
             </div>
           </div>
           <button onclick="openSidebar();closeUbDropdown()" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">📜 Historial</button>
-          <button id="dropBrandBtn" onclick="showBrandScreen();closeUbDropdown()" style="display:none;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">🎨 Mi Marca</button>
+          <button id="dropBrandBtn" onclick="showBrandScreen();closeUbDropdown()" style="display:none;width:100%;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">🎨 Mi Marca</button>
           <button id="dropCompBtn" onclick="if(typeof openCompetitorModal==='function')openCompetitorModal();closeUbDropdown()" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">🔍 Competencia</button>
           <hr style="border:none;border-top:1px solid rgba(255,255,255,.1);margin:4px 0;">
-          <button id="dropUpgradeBtn" onclick="showPlansScreen();closeUbDropdown()" style="display:none;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">⬆️ Mejorar plan</button>
-          <button id="dropCancelBtn" onclick="cancelSubscription();closeUbDropdown()" style="display:none;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">⚙️ Cancelar suscripción</button>
-          <button id="dropAdminBtn" onclick="openAdmin();closeUbDropdown()" style="display:none;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:#FCD34D;cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">🛡️ Admin</button>
+          <button id="dropUpgradeBtn" onclick="showPlansScreen();closeUbDropdown()" style="display:none;width:100%;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">⬆️ Mejorar plan</button>
+          <button id="dropCancelBtn" onclick="cancelSubscription();closeUbDropdown()" style="display:none;width:100%;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">⚙️ Cancelar suscripción</button>
+          <button id="dropAdminBtn" onclick="openAdmin();closeUbDropdown()" style="display:none;width:100%;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:#FCD34D;cursor:pointer;border:none;background:none;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">🛡️ Admin</button>
           <hr style="border:none;border-top:1px solid rgba(255,255,255,.1);margin:4px 0;">
           <button onclick="logout()" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:#FCA5A5;cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(252,129,129,.1)'" onmouseout="this.style.background='none'">🚪 Cerrar sesión</button>
         </div>
@@ -2477,7 +2477,7 @@ function updateUserPanel() {
   if (upgradeBtn) upgradeBtn.classList.toggle('hidden', !isFree);
 
   // Items dropdown
-  const showDrop = (id, v) => { const el = document.getElementById(id); if (el) el.style.display = v ? 'flex' : 'none'; };
+  const showDrop = (id, v) => { const el = document.getElementById(id); if (el) el.style.display = v ? 'block' : 'none'; };
   showDrop('dropBrandBtn',   isPrem);
   showDrop('dropUpgradeBtn', isFree);
   showDrop('dropCancelBtn',  !isFree);
@@ -2490,6 +2490,27 @@ function updateUserPanel() {
   });
   updateCreditIndicator();
 }
+
+// ── Dropdown del avatar ───────────────────────────────────────────────────────
+function toggleUbDropdown(e) {
+  e.stopPropagation();
+  const dd = document.getElementById('ubDropdown');
+  if (!dd) return;
+  const isOpen = dd.style.display !== 'none' && dd.style.display !== '';
+  dd.style.display = isOpen ? 'none' : 'block';
+}
+function closeUbDropdown() {
+  const dd = document.getElementById('ubDropdown');
+  if (dd) dd.style.display = 'none';
+}
+// Cerrar al clic fuera y con Escape
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('ubAvatarWrap');
+  if (wrap && !wrap.contains(e.target)) closeUbDropdown();
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeUbDropdown();
+});
 
 function logout() {
   localStorage.removeItem('token');
