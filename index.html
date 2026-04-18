@@ -1960,7 +1960,7 @@
         <!-- Hooks -->
         <div class="result-section" id="sectionHooks">
           <div class="result-section-head" onclick="toggleSection('hooksBody')">
-            <h3>🎣 Hooks magnéticos</h3>
+            <h3>🎣 Hooks alternativos <span style="font-size:11px;font-weight:400;color:var(--text-3);">— prueba uno en lugar del hook de tu caption</span></h3>
             <button class="copy-btn" onclick="event.stopPropagation();copyToClipboard('hooksContent')">📋 Copiar</button>
           </div>
           <div id="hooksBody" class="result-section-body">
@@ -1971,7 +1971,7 @@
         <!-- CTAs -->
         <div class="result-section" id="sectionCtas">
           <div class="result-section-head" onclick="toggleSection('ctasBody')">
-            <h3>📢 Call-to-actions</h3>
+            <h3>📢 CTAs alternativos <span style="font-size:11px;font-weight:400;color:var(--text-3);">— sustituye el CTA de tu caption por uno de estos</span></h3>
             <button class="copy-btn" onclick="event.stopPropagation();copyToClipboard('ctasContent')">📋 Copiar</button>
           </div>
           <div id="ctasBody" class="result-section-body">
@@ -3318,7 +3318,7 @@ function renderCarousel(slides) {
     : null;
   const brandFont = (isPremium && currentBrand?.font_name) ? currentBrand.font_name : null;
   container.innerHTML = slides.map((s,i)=>`
-    <div class="slide-card${i===0?' active':''}" id="cs-${i}"
+    <div class="slide-card${i===0?' active':''}" id="cs-${i}" data-index="${i}"
       style="background:${brandBg || SLIDE_GRADIENTS[i%SLIDE_GRADIENTS.length]};${brandFont ? `font-family:'${brandFont}',sans-serif;` : ''}"
       onclick="selectCarouselSlide(${i})"
     >
