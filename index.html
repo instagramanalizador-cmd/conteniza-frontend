@@ -2906,9 +2906,27 @@ function renderResults(r, pubType) {
         ${formatted}
       </div>`;
     }
+    // Caption Post con sección DM
     return `<div class="caption-item">
       <div class="caption-num">Caption ${i+1}</div>
-      <div style="white-space:pre-wrap;font-size:13px;line-height:1.6;">${escapeHtml(c)}</div>
+      <div id="captionText_${i}" style="white-space:pre-wrap;font-size:13px;line-height:1.6;">${escapeHtml(c)}</div>
+      <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px;">
+        <div style="font-size:11px;font-weight:700;color:var(--text-3);margin-bottom:8px;">
+          💬 Añadir palabra clave para DM
+          <span style="font-size:10px;font-weight:400;opacity:.7;"> — "Comenta X y te mando Y"</span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <input id="dmWord_${i}" type="text" placeholder="Ej: DIETA, GUÍA, KETO..." maxlength="20"
+            style="flex:1;min-width:120px;border:1.5px solid var(--border);border-radius:8px;padding:7px 12px;font-size:13px;background:var(--surface-2);color:var(--text);outline:none;"
+            onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='var(--border)'"
+            onkeydown="if(event.key==='Enter')generateDMCaption(${i})">
+          <button onclick="generateDMCaption(${i})"
+            style="background:var(--grad-brand);border:none;border-radius:8px;padding:7px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">
+            ✨ Generar variantes
+          </button>
+        </div>
+        <div id="dmResult_${i}" style="display:none;margin-top:10px;"></div>
+      </div>
     </div>`;
   }).join('');
   // Thumbnails
@@ -7047,6 +7065,58 @@ window.updateUserPanel = function() {
 document.getElementById('tourOverlay').addEventListener('click', endTour);
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && _tourActive) endTour(); });
 window.addEventListener('resize', () => { if (_tourActive) renderTourStep(); });
+</script>
+<script>
+/* ── Generador de palabra clave DM ───────────────────────────────────────── */
+function generateDMCaption(captionIndex) {
+  const wordEl   = document.getElementById('dmWord_' + captionIndex);
+  const resultEl = document.getElementById('dmResult_' + captionIndex);
+  const word     = (wordEl && wordEl.value) ? wordEl.value.trim().toUpperCase() : '';
+
+  if (!word) { wordEl && wordEl.focus(); showNotification('Escribe la palabra clave primero', 'error'); return; }
+  if (!currentResults || !currentResults.captions || !currentResults.captions[captionIndex]) {
+    showNotification('Genera contenido primero', 'error'); return;
+  }
+
+  resultEl.style.display = 'block';
+  resultEl.innerHTML = '<div style="font-size:12px;color:var(--text-3);padding:8px 0;">✨ Generando variantes...</div>';
+
+  const variants = [
+    'Comenta ' + word + ' abajo \u{1F447} y te lo mando por DM ahora mismo',
+    'Escribe ' + word + ' en los comentarios y te env\u00EDo todo por DM \u{1F4E9}',
+    '\u00BFLo quieres? Comenta ' + word + ' y te lo mando directo',
+    'Deja un ' + word + ' en los comentarios y te llega por DM en minutos',
+    'Comenta ' + word + ' y en menos de 24h tienes todo en tu DM \u{1F680}',
+  ];
+
+  const selected = variants.sort(function() { return Math.random() - 0.5; }).slice(0, 3);
+  
+  var html = '<div style="font-size:11px;font-weight:700;color:var(--text-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;">3 variantes de CTA con palabra clave</div>';
+  
+  for (var j = 0; j < selected.length; j++) {
+    var v = selected[j];
+    html += '<div style="background:var(--surface-2);border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px;">';
+    html += '<div style="flex:1;font-size:13px;line-height:1.55;color:var(--text);">' + escapeHtml(v) + '</div>';
+    html += '<button class="dm-copy-btn" data-text="' + escapeHtml(v).split('"').join('&quot;') + '" onclick="copyDMVariant(this)" ';
+    html += 'style="background:var(--brand-light);border:1.5px solid var(--brand-mid);border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;color:var(--brand);cursor:pointer;white-space:nowrap;flex-shrink:0;">\u{1F4CB} Copiar</button>';
+    html += '</div>';
+  }
+  html += '<div style="font-size:11px;color:var(--text-3);margin-top:4px;">\u{1F4A1} A\u00F1ade esta l\u00EDnea al final de tu caption antes de los hashtags.</div>';
+  
+  resultEl.innerHTML = html;
+}
+
+function copyDMVariant(btn) {
+  var text = btn.getAttribute('data-text') || '';
+  text = text.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&#39;/g,"'").replace(/&quot;/g,'"');
+  navigator.clipboard.writeText(text).then(function() {
+    var orig = btn.innerHTML;
+    btn.innerHTML = '\u2705 Copiado';
+    btn.style.background = '#d1fae5';
+    btn.style.color = '#065f46';
+    setTimeout(function() { btn.innerHTML = orig; btn.style.background = ''; btn.style.color = ''; }, 1500);
+  }).catch(function() { showNotification('No se pudo copiar', 'error'); });
+}
 </script>
 </body>
 </html>
