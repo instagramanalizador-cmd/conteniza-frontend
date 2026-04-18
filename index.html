@@ -3207,9 +3207,35 @@ function renderThumbnailSpecs(i) {
 }
 
 function thumbAdjustText(i, prop, val) {
-  if (!window.thumbAdjust || !window.thumbAdjust[i]) return;
+  if (!window.thumbAdjust) window.thumbAdjust = {};
+  if (!window.thumbAdjust[i]) window.thumbAdjust[i] = {};
   window.thumbAdjust[i][prop] = val;
-  renderThumbnailSpecs(i);
+  // Solo actualizar la miniatura visual — NO re-renderizar el panel (pierde foco)
+  _updateThumbCardText(i, prop, val);
+}
+
+function _updateThumbCardText(i, prop, val) {
+  const card = document.getElementById('thumb-' + i);
+  if (!card) return;
+  if (prop === 'titleText') {
+    const el = card.querySelector('.thumb-main-text');
+    if (el) el.textContent = val;
+  } else if (prop === 'subText') {
+    const el = card.querySelector('.thumb-secondary');
+    if (el) el.textContent = val;
+  }
+  // Si Studio está abierto y es esta miniatura, actualizar también el canvas
+  if (window.cdnd?.open && window.cdnd?.type === 'thumb' && window.cdnd?.index === i) {
+    if (prop === 'titleText') {
+      cdnd.content.title = val;
+      const el = document.getElementById('cdndTitleEl');
+      if (el) el.textContent = val;
+    } else if (prop === 'subText') {
+      cdnd.content.sub = val;
+      const el = document.getElementById('cdndSubEl');
+      if (el) el.textContent = val;
+    }
+  }
 }
 
 function thumbAdjustColor(i, prop, val) {
@@ -3535,10 +3561,37 @@ function slideAdjustFn(i, prop, val) {
 }
 
 function slideAdjustText(i, prop, val) {
-  if (!window.slideAdjust || !window.slideAdjust[i]) return;
+  if (!window.slideAdjust) window.slideAdjust = {};
+  if (!window.slideAdjust[i]) window.slideAdjust[i] = {};
   window.slideAdjust[i][prop] = val;
-  // Re-renderizar la vista previa vertical (igual que thumbAdjustText)
-  renderCarouselSpecs(i);
+  // Solo actualizar vista previa del slide — NO re-renderizar panel (pierde foco)
+  _updateSlideCardText(i, prop, val);
+}
+
+function _updateSlideCardText(i, prop, val) {
+  // Actualizar la card visual del carrusel
+  const card = document.querySelector(`.slide-card[data-index="${i}"]`);
+  if (card) {
+    if (prop === 'titleText') {
+      const el = card.querySelector('.slide-title');
+      if (el) el.textContent = val;
+    } else if (prop === 'contentText') {
+      const el = card.querySelector('.slide-content');
+      if (el) el.textContent = val;
+    }
+  }
+  // Si Studio está abierto con este slide, actualizar canvas
+  if (window.cdnd?.open && window.cdnd?.type === 'slide' && window.cdnd?.index === i) {
+    if (prop === 'titleText') {
+      cdnd.content.title = val;
+      const el = document.getElementById('cdndTitleEl');
+      if (el) el.textContent = val;
+    } else if (prop === 'contentText') {
+      cdnd.content.sub = val;
+      const el = document.getElementById('cdndSubEl');
+      if (el) el.textContent = val;
+    }
+  }
 }
 
 function slideAdjustColor(i, prop, val) {
@@ -5348,6 +5401,8 @@ function openCdndEditor(type, index) {
   cdndInitDrag();
   cdndBuildFonts();
   cdndSelectBlock('title');
+  // Activar edición inline con doble clic
+  setTimeout(cdndInitInlineEdit, 50);
 }
 
 // ── Imágenes en Studio ────────────────────────────────────────────────────────
@@ -5498,6 +5553,129 @@ function cdndMakeBlockResizable(block, handle) {
 
 // ── Actualizar cdndRenderAll para aplicar bgImageUrl ─────────────────────────
 const _origCdndRenderAll = window.cdndRenderAll;
+
+// ── Edición directa en canvas (doble clic) ───────────────────────────────────
+function cdndInitInlineEdit() {
+  ['cdndTitleEl','cdndSubEl'].forEach(elId => {
+    const el = document.getElementById(elId);
+    if (!el || el._cdndEditBound) return;
+    el._cdndEditBound = true;
+    el.addEventListener('dblclick', function(e) {
+      e.stopPropagation();
+      // Activar edición inline
+      this.contentEditable = 'true';
+      this.style.outline   = '2px solid var(--brand)';
+      this.style.minWidth  = '40px';
+      this.style.cursor    = 'text';
+      this.focus();
+      // Seleccionar todo el texto
+      const range = document.createRange();
+      range.selectNodeContents(this);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    });
+    el.addEventListener('blur', function() {
+      this.contentEditable = 'false';
+      this.style.outline   = '';
+      this.style.cursor    = '';
+      // Guardar el valor editado
+      const val = this.textContent;
+      if (elId === 'cdndTitleEl') {
+        cdnd.content.title = val;
+        if (cdnd.type === 'slide' && cdnd.index !== null) {
+          if (!window.slideAdjust) window.slideAdjust = {};
+          if (!window.slideAdjust[cdnd.index]) window.slideAdjust[cdnd.index] = {};
+          window.slideAdjust[cdnd.index].titleText = val;
+          const inp = document.querySelector('#thumbSpecs input[data-prop="titleText"], #carouselSpecsPanel input[data-prop="titleText"]');
+          if (inp) inp.value = val;
+        } else if (cdnd.type === 'thumb') {
+          if (!window.thumbAdjust) window.thumbAdjust = {};
+          if (!window.thumbAdjust[cdnd.index]) window.thumbAdjust[cdnd.index] = {};
+          window.thumbAdjust[cdnd.index].titleText = val;
+        }
+      } else {
+        cdnd.content.sub = val;
+        if (cdnd.type === 'slide' && cdnd.index !== null) {
+          if (!window.slideAdjust) window.slideAdjust = {};
+          if (!window.slideAdjust[cdnd.index]) window.slideAdjust[cdnd.index] = {};
+          window.slideAdjust[cdnd.index].contentText = val;
+        } else if (cdnd.type === 'thumb') {
+          if (!window.thumbAdjust) window.thumbAdjust = {};
+          if (!window.thumbAdjust[cdnd.index]) window.thumbAdjust[cdnd.index] = {};
+          window.thumbAdjust[cdnd.index].subText = val;
+        }
+      }
+    });
+    el.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') { this.blur(); }
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.blur(); }
+    });
+  });
+  // También para bloques de imagen custom
+  document.querySelectorAll('[id^="cdndImg_"]').forEach(block => {
+    if (!block._cdndEditBound) cdndMakeBlockDraggable(block);
+  });
+}
+
+// ── Añadir bloque de texto extra ──────────────────────────────────────────────
+function cdndAddTextBlock() {
+  const canvas = document.getElementById('cdndCanvas');
+  if (!canvas) return;
+  const blockId = 'cdndExtra_' + Date.now();
+  const block   = document.createElement('div');
+  block.className    = 'cdnd-block';
+  block.id           = blockId;
+  block.dataset.block = blockId;
+  block.style.cssText = 'left:10%;top:80%;width:80%;cursor:grab;';
+  const textEl = document.createElement('div');
+  textEl.id          = blockId + '_text';
+  textEl.style.cssText = 'color:#fff;font-size:16px;font-weight:600;line-height:1.4;text-align:center;word-break:break-word;text-shadow:0 1px 4px rgba(0,0,0,.4);';
+  textEl.textContent  = 'Texto adicional';
+  const label = document.createElement('div');
+  label.className = 'cdnd-block-label';
+  label.textContent = 'Texto extra';
+  const handle = document.createElement('div');
+  handle.className = 'cdnd-resize-handle';
+  handle.id = blockId + 'Handle';
+  block.appendChild(label);
+  block.appendChild(textEl);
+  block.appendChild(handle);
+  canvas.appendChild(block);
+  // Edición inline
+  textEl.contentEditable = 'false';
+  textEl.addEventListener('dblclick', function(e) {
+    e.stopPropagation();
+    this.contentEditable = 'true';
+    this.style.outline   = '2px solid var(--brand)';
+    this.style.cursor    = 'text';
+    this.focus();
+    const range = document.createRange();
+    range.selectNodeContents(this);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+  });
+  textEl.addEventListener('blur', function() {
+    this.contentEditable = 'false';
+    this.style.outline   = '';
+    this.style.cursor    = '';
+  });
+  textEl.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' || (e.key === 'Enter' && !e.shiftKey)) { e.preventDefault(); this.blur(); }
+  });
+  cdndMakeBlockDraggable(block);
+  cdndMakeBlockResizable(block, handle);
+  cdndSelectBlock(blockId);
+  // Añadir a lista de bloques
+  const list = document.getElementById('cdndExtraBlockList');
+  if (list) {
+    const item = document.createElement('div');
+    item.style.cssText = 'display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.06);border-radius:8px;padding:6px 8px;margin-top:5px;';
+    item.innerHTML = `<span style="flex:1;font-size:11px;color:rgba(255,255,255,.7);">✏️ Texto extra</span>
+      <button onclick="document.getElementById('${blockId}')?.remove();this.closest('div').remove()" style="background:rgba(248,113,113,.15);border:none;border-radius:6px;padding:3px 7px;color:#FCA5A5;cursor:pointer;font-size:11px;">🗑️</button>`;
+    list.appendChild(item);
+  }
+}
 
 function cdndClose() {
   document.getElementById('cdndOverlay').classList.remove('open');
@@ -6362,18 +6540,23 @@ async function cdndExport() {
             <div class="cdnd-block-item active" id="cdndItemTitle" onclick="cdndSelectBlock('title')">
               <div style="display:flex;align-items:center;gap:7px;">
                 <span style="font-size:14px;">✏️</span>
-                <span style="font-size:11px;color:rgba(255,255,255,.7);font-weight:600;">Título</span>
+                <span style="font-size:11px;color:rgba(255,255,255,.7);font-weight:600;">Título <span style="font-size:9px;opacity:.5">· doble clic para editar</span></span>
               </div>
               <button class="cdnd-eye-btn" id="cdndEyeTitle" onclick="event.stopPropagation();cdndToggleVisible('title')">👁</button>
             </div>
             <div class="cdnd-block-item" id="cdndItemSub" onclick="cdndSelectBlock('sub')">
               <div style="display:flex;align-items:center;gap:7px;">
                 <span style="font-size:14px;">💬</span>
-                <span style="font-size:11px;color:rgba(255,255,255,.7);font-weight:600;">Subtítulo</span>
+                <span style="font-size:11px;color:rgba(255,255,255,.7);font-weight:600;">Subtítulo <span style="font-size:9px;opacity:.5">· doble clic</span></span>
               </div>
               <button class="cdnd-eye-btn" id="cdndEyeSub" onclick="event.stopPropagation();cdndToggleVisible('sub')">👁</button>
             </div>
           </div>
+          <!-- Añadir texto extra -->
+          <button onclick="cdndAddTextBlock()" style="width:100%;margin-top:8px;background:rgba(139,95,191,.2);border:1.5px dashed rgba(139,95,191,.5);border-radius:8px;padding:8px;cursor:pointer;font-size:11px;font-weight:700;color:rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;gap:6px;">
+            ✚ Añadir texto
+          </button>
+          <div id="cdndExtraBlockList"></div>
         </div>
         <div class="cdnd-divider"></div>
         <!-- Posición del bloque seleccionado -->
