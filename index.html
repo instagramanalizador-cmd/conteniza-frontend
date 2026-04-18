@@ -224,12 +224,37 @@
     }
     /* Separador visual entre grupos */
     .ub-sep {
-      width: 1px;
-      height: 22px;
+      width: 1px; height: 22px;
       background: rgba(255,255,255,.12);
-      margin: 0 3px;
-      flex-shrink: 0;
+      margin: 0 3px; flex-shrink: 0;
     }
+    .ub-avatar-wrap { position: relative; cursor: pointer; flex-shrink: 0; }
+    .ub-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: linear-gradient(135deg,#8B5FBF,#E91E8C);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; box-shadow: 0 2px 8px rgba(139,95,191,.45);
+      border: 2px solid rgba(255,255,255,.2); transition: border-color .2s;
+    }
+    .ub-avatar:hover { border-color: rgba(255,255,255,.6); }
+    .ub-dropdown {
+      display: none; position: absolute; top: calc(100% + 8px); right: 0;
+      background: #1a1a2e; border: 1px solid rgba(139,95,191,.4);
+      border-radius: 12px; padding: 8px; min-width: 210px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.45); z-index: 9000;
+    }
+    .ub-dropdown.open { display: block; }
+    .ub-dropdown-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px; border-radius: 8px; font-size: 13px; font-weight: 600;
+      color: rgba(255,255,255,.85); cursor: pointer; transition: background .15s;
+      border: none; background: none; width: 100%; text-align: left;
+    }
+    .ub-dropdown-item:hover { background: rgba(255,255,255,.08); }
+    .ub-dropdown-item.danger { color: #FC8181; }
+    .ub-dropdown-item.danger:hover { background: rgba(252,129,129,.1); }
+    .ub-dropdown-divider { border: none; border-top: 1px solid rgba(255,255,255,.1); margin: 4px 0; }
+    .ub-dropdown-info { padding: 10px 12px 8px; border-bottom: 1px solid rgba(255,255,255,.1); margin-bottom: 4px; }
     /* Variantes */
     .ub-btn.ig  { background: linear-gradient(135deg,rgba(131,58,180,.45),rgba(253,29,29,.35)); border-color: rgba(253,29,29,.3); }
     .ub-btn.ig:hover { background: linear-gradient(135deg,rgba(131,58,180,.75),rgba(253,29,29,.6)); }
@@ -808,6 +833,8 @@
     .result-section-body {
       padding: 18px;
       overflow: hidden;
+      max-width: 100%;
+      box-sizing: border-box;
       background: var(--surface);
       border: 1.5px solid var(--border);
       border-top: none;
@@ -889,7 +916,8 @@
     .carousel-scroll::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 2px; }
 
     .slide-card {
-      min-width: 100%;
+      min-width: 0;
+      width: 100%;
       max-width: 100%;
       flex-shrink: 0;
       box-sizing: border-box;
@@ -1284,6 +1312,20 @@
       .fab { width: 48px; height: 48px; font-size: 18px; bottom: 16px; right: 16px; }
       #sidebarFab { display: none !important; }
       #goHomeFab  { bottom: 16px; right: 16px; }
+
+      /* Overflow estricto en resultados */
+      .result-section-body { padding: 10px; overflow: hidden; }
+      .result-section      { overflow: hidden; max-width: 100vw; }
+      #carouselContent     { overflow: hidden; max-width: 100%; }
+      .carousel-scroll     { overflow: hidden; max-width: 100%; }
+      .slide-card          { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; }
+      .thumb-grid          { grid-template-columns: 1fr 1fr; }
+      #thumbSpecs          { overflow: hidden; max-width: 100%; }
+      #thumbSpecs input, #thumbSpecs select { max-width: 100%; box-sizing: border-box; }
+      .pub-grid            { grid-template-columns: 1fr 1fr; gap: 6px; }
+      .pub-btn             { padding: 10px 6px; font-size: 11px; }
+      #sectionThumbs .result-section-body { overflow-x: hidden; }
+      #sectionCarousel .result-section-body { overflow-x: hidden; }
     }
 
 
@@ -1577,11 +1619,30 @@
 <div class="user-bar" id="userBar">
   <div class="user-bar-inner">
 
-    <!-- IZQUIERDA: avatar + info -->
+    <!-- IZQUIERDA: avatar dropdown + info -->
     <div class="user-bar-left">
-      <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#8B5FBF,#E91E8C);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;box-shadow:0 2px 8px rgba(139,95,191,.45);border:2px solid rgba(255,255,255,.2);">👤</div>
+      <div class="ub-avatar-wrap" id="ubAvatarWrap" onclick="toggleUbDropdown(event)">
+        <div class="ub-avatar">👤</div>
+        <div class="ub-dropdown" id="ubDropdown">
+          <div class="ub-dropdown-info">
+            <div id="dropEmail" style="font-size:12px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:176px;"></div>
+            <div style="display:flex;align-items:center;gap:5px;margin-top:4px;">
+              <span id="dropPlan" style="font-size:9px;font-weight:800;color:rgba(255,255,255,.9);background:rgba(255,255,255,.15);padding:1px 7px;border-radius:10px;text-transform:uppercase;"></span>
+              <span style="font-size:10px;color:rgba(255,255,255,.45);">⚡ <span id="dropCredits" style="font-weight:700;color:rgba(255,255,255,.8);"></span></span>
+            </div>
+          </div>
+          <button class="ub-dropdown-item" onclick="openSidebar();closeUbDropdown()">📜 Historial</button>
+          <button class="ub-dropdown-item" id="dropBrandBtn" style="display:none" onclick="showBrandScreen();closeUbDropdown()">🎨 Mi Marca</button>
+          <button class="ub-dropdown-item" id="dropCompBtn" onclick="if(typeof openCompetitorModal==='function')openCompetitorModal();closeUbDropdown()">🔍 Análisis competencia</button>
+          <button class="ub-dropdown-item" id="dropUpgradeBtn" style="display:none" onclick="showPlansScreen();closeUbDropdown()">⬆️ Mejorar plan</button>
+          <hr class="ub-dropdown-divider">
+          <button class="ub-dropdown-item" id="dropCancelBtn" style="display:none" onclick="cancelSubscription();closeUbDropdown()">⚙️ Cancelar suscripción</button>
+          <button class="ub-dropdown-item" id="dropAdminBtn" style="display:none" onclick="openAdmin();closeUbDropdown()">🛡️ Admin</button>
+          <button class="ub-dropdown-item danger" onclick="logout()">🚪 Cerrar sesión</button>
+        </div>
+      </div>
       <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
-        <span id="userEmail" style="font-size:12px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;line-height:1.2;">–</span>
+        <span id="userEmail" style="font-size:12px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px;line-height:1.2;">–</span>
         <div style="display:flex;align-items:center;gap:5px;">
           <span id="userPlan" style="font-size:9px;font-weight:800;color:rgba(255,255,255,.95);background:rgba(255,255,255,.18);padding:1px 7px;border-radius:10px;letter-spacing:.6px;text-transform:uppercase;">–</span>
           <span style="font-size:10px;color:rgba(255,255,255,.45);">⚡ <span id="userCredits" style="font-weight:700;color:rgba(255,255,255,.8);">–</span></span>
@@ -2424,34 +2485,36 @@ function updateTopbarActions() {
 }
 
 function updateUserPanel() {
-  // Mostrar botones solo para Premium
-  const brandBtn = document.getElementById('brandBtn');
-  if (brandBtn) {
-    if (currentUser?.plan_type === 'premium') brandBtn.classList.remove('hidden');
-    else brandBtn.classList.add('hidden');
-  }
-  // Instagram btn también en updateSubscriptionUI
-  const igBtnS = document.getElementById('openInstagramBtn');
-  if (igBtnS) {
-    if (['pro','premium'].includes(currentUser?.plan_type)) igBtnS.classList.remove('hidden');
-    else igBtnS.classList.add('hidden');
-  }
-  const igBtn = document.getElementById('openInstagramBtn');
-  if (igBtn) {
-    if (['pro','premium'].includes(currentUser?.plan_type)) igBtn.classList.remove('hidden');
-    else igBtn.classList.add('hidden');
-  }
   if (!currentUser) return;
-  document.getElementById('userEmail').textContent   = currentUser.email;
-  document.getElementById('userCredits').textContent = userCredits;
-  document.getElementById('userPlan').textContent    = currentUser.plan_type.toUpperCase();
-  const adminBtn = document.getElementById('adminBtn');
-  if (adminBtn) adminBtn.classList.toggle('hidden', !currentUser.is_admin);
-  // Mostrar botón Mejorar plan solo para usuarios Free
+  const plan    = currentUser.plan_type;
+  const isPrem  = plan === 'premium';
+  const isFree  = plan === 'free';
+  const isAdmin = !!currentUser.is_admin;
+
+  // Info cinta
+  const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v || ''; };
+  setTxt('userEmail',   currentUser.email);
+  setTxt('userCredits', userCredits);
+  setTxt('userPlan',    plan.toUpperCase());
+  // Info dropdown
+  setTxt('dropEmail',   currentUser.email);
+  setTxt('dropCredits', userCredits);
+  setTxt('dropPlan',    plan.toUpperCase());
+
+  // Botones cinta
+  const igBtn = document.getElementById('openInstagramBtn');
+  if (igBtn) igBtn.classList.toggle('hidden', isFree);
   const upgradeBtn = document.getElementById('upgradePlanBtn');
-  if (upgradeBtn) upgradeBtn.classList.toggle('hidden', currentUser.plan_type !== 'free');
-  // Mostrar badge PRO en formatos para usuarios Free
-  const isFree = currentUser.plan_type === 'free';
+  if (upgradeBtn) upgradeBtn.classList.toggle('hidden', !isFree);
+
+  // Items dropdown
+  const showDrop = (id, v) => { const el = document.getElementById(id); if (el) el.style.display = v ? '' : 'none'; };
+  showDrop('dropBrandBtn',   isPrem);
+  showDrop('dropUpgradeBtn', isFree);
+  showDrop('dropCancelBtn',  !isFree);
+  showDrop('dropAdminBtn',   isAdmin);
+
+  // Badges PRO en formatos
   ['carousel','story','reel'].forEach(f => {
     const b = document.getElementById('badge-' + f);
     if (b) b.style.display = isFree ? 'inline' : 'none';
@@ -2473,7 +2536,7 @@ function logout() {
   document.getElementById('emptyResults').style.display = '';
   document.getElementById('plansScreen').classList.remove('hidden');
   document.getElementById('sidebarFab').classList.remove('visible');
-  document.getElementById('adminBtn').classList.add('hidden');
+  const _adEl = document.getElementById('dropAdminBtn'); if (_adEl) _adEl.style.display = 'none';
   // Restaurar botones del topbar
   document.getElementById('topbarActions').innerHTML = `
     <button class="btn btn-outline btn-sm" onclick="showPlansFromTopbar()">Ver planes</button>
@@ -2672,11 +2735,42 @@ function validateInputs() {
 /* ============================================================
    GENERATE
    ============================================================ */
+// ── Detectar si el tema no coincide con el nicho ──────────────────────────────
+function detectNicheMismatch(description, savedNiche) {
+  if (!savedNiche || !description) return false;
+  const desc = description.toLowerCase();
+  const niche = savedNiche.toLowerCase();
+  // Palabras clave del nicho
+  const nicheWords = niche.split(/\s+/).filter(w => w.length > 3);
+  // Si el tema contiene palabras del nicho, no hay conflicto
+  const nicheInDesc = nicheWords.some(w => desc.includes(w));
+  if (nicheInDesc) return false;
+  // Palabras que sugieren tema ajeno al nicho
+  const externalTopics = ['hombres','mujeres','ricos','famosos','celebridades','presidentes',
+    'países','ciudades','historia','ciencia','tecnología','política','deportes','películas',
+    'canciones','artistas','actores','futbol','animals','recetas','cocina','viajes'];
+  const hasExternalTopic = externalTopics.some(t => desc.includes(t));
+  if (!hasExternalTopic) return false;
+  return true;
+}
+
+let _pendingGenerateNicheMode = null; // 'adapt' | 'exact' | null
+
 async function generateContent(event) {
   event.preventDefault();
   if (!currentUser) { showNotification('Inicia sesión primero', 'error'); return; }
   if (!checkCredits()) return;
   if (!validateInputs()) return;
+
+  // ── Aviso nicho vs tema ───────────────────────────────────
+  const _descVal   = document.getElementById('description').value.trim();
+  const _nicheVal  = document.getElementById('niche')?.value?.trim() || localStorage.getItem('conteniza_niche') || '';
+  if (_pendingGenerateNicheMode === null && detectNicheMismatch(_descVal, _nicheVal)) {
+    showNicheMismatchModal(_descVal, _nicheVal);
+    return;
+  }
+  const _nicheMode = _pendingGenerateNicheMode || 'adapt';
+  _pendingGenerateNicheMode = null;
 
   const btn        = document.getElementById('generateBtn');
   const btnContent = document.getElementById('generateBtnContent');
@@ -2685,8 +2779,8 @@ async function generateContent(event) {
   showProgress(true, 'Iniciando generación…', 10);
 
   try {
-    const description = document.getElementById('description').value.trim();
-    const niche       = document.getElementById('niche')?.value?.trim() || '';
+    const description = _descVal;
+    const niche       = _nicheMode === 'exact' ? '' : (document.getElementById('niche')?.value?.trim() || '');
     const title       = document.getElementById('title')?.value?.trim() || '';
     const tone        = document.getElementById('tone')?.value || '';
     const contentType = document.getElementById('contentType')?.value || 'general';
@@ -2714,6 +2808,10 @@ async function generateContent(event) {
     if (!r.ok) throw new Error(d.error || 'Error generando contenido');
 
     currentResults = d.analysis;
+    // Asegurar que el ID queda guardado para el Copiloto IA
+    if (currentResults && !currentResults.id) {
+      currentResults.id = d.id || d.analysis_id || d.analysis?.id || null;
+    }
     userCredits    = d.credits_remaining ?? userCredits - 1;
     updateCreditIndicator();
 
@@ -6178,6 +6276,289 @@ async function cdndExport() {
 </div>
 
   <script src="consent.js"></script>
+
+<!-- ═══════════════════════════════════════════════════
+     MODAL AVISO NICHO vs TEMA
+     ═══════════════════════════════════════════════════ -->
+<div id="nicheMismatchModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9800;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--surface);border-radius:16px;width:100%;max-width:420px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.25);">
+    <!-- Header -->
+    <div style="background:var(--grad-brand);padding:20px 24px;">
+      <div style="font-size:22px;margin-bottom:4px;">🤔</div>
+      <div style="font-size:17px;font-weight:800;color:#fff;">Tu tema parece diferente a tu nicho</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.8);margin-top:4px;" id="nicheMismatchSubtitle"></div>
+    </div>
+    <!-- Body -->
+    <div style="padding:20px 24px;">
+      <p style="font-size:13px;color:var(--text-2);line-height:1.6;margin-bottom:16px;">
+        ¿Cómo quieres que genere el contenido?
+      </p>
+      <!-- Opción A -->
+      <button onclick="confirmNicheMode('adapt')" style="width:100%;text-align:left;background:var(--surface-2);border:2px solid var(--brand);border-radius:12px;padding:14px 16px;cursor:pointer;margin-bottom:10px;transition:all .15s;">
+        <div style="font-size:14px;font-weight:800;color:var(--brand);">🎯 Adaptar a mi nicho</div>
+        <div style="font-size:12px;color:var(--text-3);margin-top:3px;" id="nicheMismatchAdaptDesc"></div>
+      </button>
+      <!-- Opción B -->
+      <button onclick="confirmNicheMode('exact')" style="width:100%;text-align:left;background:var(--surface-2);border:2px solid var(--border);border-radius:12px;padding:14px 16px;cursor:pointer;transition:all .15s;">
+        <div style="font-size:14px;font-weight:800;color:var(--text);">📋 Usar el tema exacto</div>
+        <div style="font-size:12px;color:var(--text-3);margin-top:3px;" id="nicheMismatchExactDesc"></div>
+      </button>
+      <button onclick="closeNicheMismatchModal()" style="width:100%;margin-top:10px;background:none;border:none;color:var(--text-3);font-size:13px;cursor:pointer;padding:8px;">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     TOUR INICIAL — guía de la interfaz
+     ═══════════════════════════════════════════════════ -->
+<div id="tourOverlay" style="display:none;position:fixed;inset:0;z-index:9900;pointer-events:none;">
+  <div id="tourHighlight" style="position:absolute;border:3px solid var(--brand);border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.55);pointer-events:none;transition:all .35s ease;"></div>
+</div>
+<div id="tourCard" style="display:none;position:fixed;z-index:9901;background:var(--surface);border-radius:14px;padding:18px 20px;max-width:300px;box-shadow:0 8px 32px rgba(0,0,0,.3);border:1.5px solid var(--brand-mid);">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px;">
+    <div>
+      <div style="font-size:20px;" id="tourStepIcon"></div>
+      <div style="font-size:15px;font-weight:800;color:var(--text);margin-top:4px;" id="tourStepTitle"></div>
+    </div>
+    <button onclick="endTour()" style="background:var(--surface-2);border:none;border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12px;color:var(--text-3);flex-shrink:0;">✕ Saltar</button>
+  </div>
+  <p style="font-size:13px;color:var(--text-2);line-height:1.55;margin-bottom:14px;" id="tourStepDesc"></p>
+  <div style="display:flex;align-items:center;justify-content:space-between;">
+    <div style="font-size:11px;color:var(--text-3);" id="tourStepCounter"></div>
+    <div style="display:flex;gap:8px;">
+      <button id="tourPrevBtn" onclick="tourPrev()" style="background:var(--surface-2);border:1.5px solid var(--border);border-radius:8px;padding:6px 14px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text-2);">← Anterior</button>
+      <button id="tourNextBtn" onclick="tourNext()" style="background:var(--grad-brand);border:none;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:13px;font-weight:700;color:#fff;">Siguiente →</button>
+    </div>
+  </div>
+  <!-- Dots -->
+  <div style="display:flex;justify-content:center;gap:5px;margin-top:12px;" id="tourDots"></div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════
+   MODAL NICHO vs TEMA
+   ════════════════════════════════════════════════════════ */
+function showNicheMismatchModal(desc, niche) {
+  const modal    = document.getElementById('nicheMismatchModal');
+  const subtitle = document.getElementById('nicheMismatchSubtitle');
+  const adaptEl  = document.getElementById('nicheMismatchAdaptDesc');
+  const exactEl  = document.getElementById('nicheMismatchExactDesc');
+  const shortDesc = desc.length > 50 ? desc.substring(0,50)+'…' : desc;
+  subtitle.textContent = 'Nicho: ' + niche + '  ·  Tema: ' + shortDesc;
+  adaptEl.textContent  = 'Hooks y captions en tono de ' + niche + ', pero hablando del tema que pediste.';
+  exactEl.textContent  = 'Genera sobre "' + shortDesc + '" sin considerar tu nicho.';
+  modal.style.display  = 'flex';
+}
+function closeNicheMismatchModal() {
+  document.getElementById('nicheMismatchModal').style.display = 'none';
+  _pendingGenerateNicheMode = null;
+}
+function confirmNicheMode(mode) {
+  document.getElementById('nicheMismatchModal').style.display = 'none';
+  _pendingGenerateNicheMode = mode;
+  // Simular click en generar
+  const btn = document.getElementById('generateBtn');
+  if (btn) btn.click();
+}
+
+/* ════════════════════════════════════════════════════════
+   TOUR INICIAL
+   ════════════════════════════════════════════════════════ */
+const TOUR_STEPS = [
+  {
+    icon: '👤',
+    title: 'Tu perfil y menú',
+    desc: 'Pulsa el avatar para acceder a Historial, Mi Marca, Análisis de Competencia, Cancelar plan y Cerrar sesión.',
+    target: '#ubAvatarWrap',
+    pos: 'bottom-right',
+  },
+  {
+    icon: '✍️',
+    title: 'Describe tu contenido',
+    desc: 'Escribe el tema de tu publicación. Sé específico: "5 errores que cometen mis clientes al invertir" funciona mejor que "inversión".',
+    target: '#description',
+    pos: 'bottom',
+  },
+  {
+    icon: '📋',
+    title: 'Elige el formato',
+    desc: 'Post = caption + miniaturas. Carrusel = slides listos para Canva. Story = 5 ideas interactivas. Reel = guión con tiempos.',
+    target: '.pub-grid',
+    pos: 'bottom',
+  },
+  {
+    icon: '⚡',
+    title: 'Genera con IA',
+    desc: 'Pulsa Generar y en segundos tendrás hooks, captions, hashtags y miniaturas. Si el tema no coincide con tu nicho, te avisamos.',
+    target: '#generateBtn',
+    pos: 'top',
+  },
+  {
+    icon: '📊',
+    title: 'Dashboard y analítica',
+    desc: 'Revisa tu rendimiento, calendario de contenido y estadísticas de uso desde los botones de la barra superior.',
+    target: '#dashBtn',
+    pos: 'bottom',
+  },
+  {
+    icon: '🤖',
+    title: 'Copiloto IA',
+    desc: 'Después de generar, el botón "🤖 Copiloto" aparece en los resultados. Úsalo para refinar, acortar o cambiar el tono del contenido.',
+    target: '#resultsSection',
+    pos: 'top',
+    skipIfHidden: true,
+  },
+];
+
+let _tourStep = 0;
+let _tourActive = false;
+
+function startTour() {
+  _tourStep = 0;
+  _tourActive = true;
+  document.getElementById('tourOverlay').style.display = 'block';
+  renderTourStep();
+}
+
+function endTour() {
+  _tourActive = false;
+  document.getElementById('tourOverlay').style.display = 'none';
+  document.getElementById('tourCard').style.display = 'none';
+  document.getElementById('tourHighlight').style.cssText = 'position:absolute;';
+  localStorage.setItem('conteniza_tour_done', '1');
+}
+
+function tourNext() {
+  if (_tourStep < TOUR_STEPS.length - 1) { _tourStep++; renderTourStep(); }
+  else endTour();
+}
+
+function tourPrev() {
+  if (_tourStep > 0) { _tourStep--; renderTourStep(); }
+}
+
+function renderTourStep() {
+  const step = TOUR_STEPS[_tourStep];
+  const card = document.getElementById('tourCard');
+  const hl   = document.getElementById('tourHighlight');
+
+  // Encontrar el elemento target
+  let target = document.querySelector(step.target);
+  if (!target || (step.skipIfHidden && target.getBoundingClientRect().width === 0)) {
+    // Saltar paso si el elemento no está visible
+    if (_tourStep < TOUR_STEPS.length - 1) { _tourStep++; renderTourStep(); return; }
+    else { endTour(); return; }
+  }
+
+  // Actualizar contenido
+  document.getElementById('tourStepIcon').textContent    = step.icon;
+  document.getElementById('tourStepTitle').textContent   = step.title;
+  document.getElementById('tourStepDesc').textContent    = step.desc;
+  document.getElementById('tourStepCounter').textContent = 'Paso ' + (_tourStep + 1) + ' de ' + TOUR_STEPS.length;
+  document.getElementById('tourPrevBtn').style.display   = _tourStep === 0 ? 'none' : '';
+  document.getElementById('tourNextBtn').textContent     = _tourStep === TOUR_STEPS.length - 1 ? '✅ Listo' : 'Siguiente →';
+
+  // Dots
+  document.getElementById('tourDots').innerHTML = TOUR_STEPS.map((_, i) =>
+    `<div style="width:7px;height:7px;border-radius:50%;background:${i===_tourStep?'var(--brand)':'var(--border)'};transition:background .2s;"></div>`
+  ).join('');
+
+  // Highlight
+  const rect = target.getBoundingClientRect();
+  const pad  = 6;
+  hl.style.cssText = `
+    position: fixed;
+    top:    ${rect.top    - pad}px;
+    left:   ${rect.left   - pad}px;
+    width:  ${rect.width  + pad*2}px;
+    height: ${rect.height + pad*2}px;
+    border: 3px solid var(--brand);
+    border-radius: 12px;
+    box-shadow: 0 0 0 9999px rgba(0,0,0,.55);
+    pointer-events: none;
+    transition: all .35s ease;
+    z-index: 9900;
+  `;
+
+  // Posicionar card
+  card.style.display = 'block';
+  const pos   = step.pos || 'bottom';
+  const cardW = 300;
+  const cardH = 200; // estimado
+  const vw    = window.innerWidth;
+  const vh    = window.innerHeight;
+  let top, left;
+
+  if (pos === 'bottom' || pos === 'bottom-right') {
+    top  = rect.bottom + pad + 12;
+    left = pos === 'bottom-right' ? Math.min(rect.right - cardW, vw - cardW - 12) : rect.left;
+  } else if (pos === 'top') {
+    top  = rect.top - cardH - pad - 12;
+    left = rect.left;
+  }
+
+  // Clamp para que no salga de pantalla
+  left = Math.max(12, Math.min(left, vw - cardW - 12));
+  top  = Math.max(12, Math.min(top, vh - cardH - 12));
+
+  card.style.top  = top  + 'px';
+  card.style.left = left + 'px';
+  card.style.width = Math.min(cardW, vw - 24) + 'px';
+}
+
+// Lanzar tour automáticamente al primer login si no se ha hecho
+function checkAutoTour() {
+  const done    = localStorage.getItem('conteniza_tour_done');
+  const loggedIn = !!currentUser;
+  if (loggedIn && !done) {
+    setTimeout(startTour, 1200);
+  }
+}
+
+// Botón de ayuda en topbar
+(function addHelpBtn() {
+  document.addEventListener('DOMContentLoaded', () => {
+    const actions = document.getElementById('topbarActions');
+    if (!actions) return;
+    // Añadir botón tour en la cinta de usuario cuando esté visible
+    const ubRight = document.querySelector('.user-bar-right');
+    if (ubRight && !document.getElementById('tourHelpBtn')) {
+      const btn = document.createElement('button');
+      btn.id = 'tourHelpBtn';
+      btn.className = 'ub-btn';
+      btn.title = 'Tour / Ayuda';
+      btn.innerHTML = '❓';
+      btn.onclick = startTour;
+      ubRight.appendChild(btn);
+    }
+  });
+})();
+
+// Añadir botón tour cuando se muestre la userbar
+const _origShowUserBar = window.updateUserPanel;
+window.updateUserPanel = function() {
+  if (_origShowUserBar) _origShowUserBar();
+  setTimeout(() => {
+    const ubRight = document.querySelector('.user-bar-right');
+    if (ubRight && !document.getElementById('tourHelpBtn')) {
+      const btn = document.createElement('button');
+      btn.id = 'tourHelpBtn';
+      btn.className = 'ub-btn';
+      btn.title = 'Tour / Ayuda';
+      btn.innerHTML = '❓';
+      btn.style.cssText = 'margin-left:4px;';
+      btn.onclick = startTour;
+      ubRight.appendChild(btn);
+    }
+    checkAutoTour();
+  }, 400);
+};
+
+// Cerrar tour con Escape o click en overlay
+document.getElementById('tourOverlay').addEventListener('click', endTour);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && _tourActive) endTour(); });
+window.addEventListener('resize', () => { if (_tourActive) renderTourStep(); });
+</script>
 </body>
 </html>
 
@@ -8647,7 +9028,7 @@ document.addEventListener('keydown', e => {
     const btn = document.querySelector('#compForm .btn-primary');
     btn.disabled = true; btn.innerHTML = '⏳ Analizando...';
     try {
-      const r = await apiFetch(`${API_URL}/analyze/competitor`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({text, username, niche}) }, 35000);
+      const r = await apiFetch(`${API_URL}/analyze/competitor`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({text, username, niche}) }, 45000);
       const d = await r.json();
       btn.disabled = false; btn.innerHTML = '🔍 Analizar post';
       if (!r.ok || !d.success) throw new Error(d.error || 'Error');
