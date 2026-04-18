@@ -5309,6 +5309,7 @@ let cdnd = {
     subBold:false, subItalic:false,
     logoSize:60,
   bgImageUrl: null,
+  bgOpacity: 1,
   },
   content: { title:'', sub:'', logoUrl:null },
 };
@@ -5440,14 +5441,27 @@ function cdndHandleBgUpload(event) {
   event.target.value = '';
 }
 
+function cdndSetBgOpacity(val) {
+  cdnd.style.bgOpacity = parseInt(val) / 100;
+  document.getElementById('cdndBgOpacityVal').textContent = val + '%';
+  const bg = document.getElementById('cdndBg');
+  if (bg && cdnd.style.bgImageUrl) {
+    bg.style.opacity = cdnd.style.bgOpacity;
+  }
+}
+
 function cdndRemoveBg() {
   cdnd.style.bgImageUrl = null;
+  cdnd.style.bgOpacity  = 1;
   const bg = document.getElementById('cdndBg');
   if (bg) {
-    bg.style.background = `linear-gradient(135deg, ${cdnd.style.bg1}, ${cdnd.style.bg2})`;
+    bg.style.background  = `linear-gradient(135deg, ${cdnd.style.bg1}, ${cdnd.style.bg2})`;
     bg.style.backgroundSize = '';
+    bg.style.opacity = 1;
   }
   cdndSyncBgThumb();
+  const slider = document.getElementById('cdndBgOpacity');
+  if (slider) { slider.value = 100; document.getElementById('cdndBgOpacityVal').textContent = '100%'; }
 }
 
 function cdndHandleImgUpload(event) {
@@ -5634,7 +5648,18 @@ function cdndAddTextBlock() {
   textEl.textContent  = 'Texto adicional';
   const label = document.createElement('div');
   label.className = 'cdnd-block-label';
-  label.textContent = 'Texto extra';
+  label.style.cssText = 'display:flex;align-items:center;justify-content:space-between;';
+  label.innerHTML = '<span>Texto extra</span>';
+  const delBtn = document.createElement('button');
+  delBtn.textContent = '✕';
+  delBtn.style.cssText = 'background:rgba(248,113,113,.3);border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:10px;padding:1px 5px;margin-left:4px;';
+  delBtn.onclick = (e) => {
+    e.stopPropagation();
+    block.remove();
+    const listItem = document.querySelector(`[data-for="${blockId}"]`);
+    if (listItem) listItem.remove();
+  };
+  label.appendChild(delBtn);
   const handle = document.createElement('div');
   handle.className = 'cdnd-resize-handle';
   handle.id = blockId + 'Handle';
@@ -5671,8 +5696,9 @@ function cdndAddTextBlock() {
   if (list) {
     const item = document.createElement('div');
     item.style.cssText = 'display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.06);border-radius:8px;padding:6px 8px;margin-top:5px;';
+    item.dataset.for = blockId;
     item.innerHTML = `<span style="flex:1;font-size:11px;color:rgba(255,255,255,.7);">✏️ Texto extra</span>
-      <button onclick="document.getElementById('${blockId}')?.remove();this.closest('div').remove()" style="background:rgba(248,113,113,.15);border:none;border-radius:6px;padding:3px 7px;color:#FCA5A5;cursor:pointer;font-size:11px;">🗑️</button>`;
+      <button onclick="document.getElementById('${blockId}')?.remove();document.querySelector('[data-for=\'${blockId}\']')?.remove()" style="background:rgba(248,113,113,.15);border:none;border-radius:6px;padding:3px 7px;color:#FCA5A5;cursor:pointer;font-size:11px;">🗑️</button>`;
     list.appendChild(item);
   }
 }
@@ -6598,7 +6624,17 @@ async function cdndExport() {
             📁 Subir fondo
             <input type="file" id="cdndBgUpload" accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="cdndHandleBgUpload(event)">
           </label>
-          <button onclick="cdndRemoveBg()" style="width:100%;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.25);border-radius:8px;padding:6px;font-size:11px;color:#FCA5A5;cursor:pointer;font-weight:600;">🗑️ Quitar fondo imagen</button>
+          <!-- Opacidad del fondo -->
+          <div style="margin-top:8px;">
+            <div class="cdnd-section-label" style="margin-bottom:4px;">Opacidad fondo</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="range" id="cdndBgOpacity" min="10" max="100" value="100"
+                style="flex:1;accent-color:var(--brand);"
+                oninput="cdndSetBgOpacity(this.value)">
+              <span id="cdndBgOpacityVal" style="font-size:11px;color:rgba(255,255,255,.6);min-width:30px;">100%</span>
+            </div>
+          </div>
+          <button onclick="cdndRemoveBg()" style="width:100%;margin-top:8px;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.25);border-radius:8px;padding:6px;font-size:11px;color:#FCA5A5;cursor:pointer;font-weight:600;">🗑️ Quitar fondo imagen</button>
         </div>
         <div class="cdnd-divider"></div>
         <!-- Elementos imagen -->
