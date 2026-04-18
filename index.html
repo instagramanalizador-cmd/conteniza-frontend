@@ -2735,12 +2735,40 @@ function detectNicheMismatch(description, savedNiche) {
   // Si el tema contiene palabras del nicho, no hay conflicto
   const nicheInDesc = nicheWords.some(w => desc.includes(w));
   if (nicheInDesc) return false;
-  // Palabras que sugieren tema ajeno al nicho
-  const externalTopics = ['hombres','mujeres','ricos','famosos','celebridades','presidentes',
-    'países','ciudades','historia','ciencia','tecnología','política','deportes','películas',
-    'canciones','artistas','actores','futbol','animals','recetas','cocina','viajes'];
+  // Lista ampliada de temas ajenos al nicho
+  const externalTopics = [
+    // Personas/famosos
+    'hombres','mujeres','ricos','famosos','celebridades','presidentes','millonarios',
+    'billonarios','empresarios','celebridad','famoso','famosa','rico','rica',
+    // Vehículos
+    'carros','autos','coches','vehículos','deportivos','ferrari','lamborghini',
+    'porsche','bugatti','mclaren','mercedes','bmw','audi','tesla',
+    // Entretenimiento
+    'películas','canciones','artistas','actores','actrices','músicos','series',
+    'netflix','spotify','youtube','tiktok',
+    // Geografía/historia
+    'países','ciudades','historia','civilizaciones','imperios','guerras',
+    // Tecnología/ciencia
+    'tecnología','ciencia','robots','inteligencia artificial','física','química',
+    // Deportes
+    'fútbol','futbol','deportes','jugadores','equipos','champions','mundial',
+    'nba','nfl','olympics','olimpiadas',
+    // Finanzas (si nicho no es finanzas)
+    'bolsa','acciones','criptomonedas','bitcoin','inversiones',
+    // Comida (si nicho no es nutrición)
+    'recetas','cocina','restaurantes','chefs','gastronomía',
+    // Viajes
+    'viajes','destinos','hoteles','turismo','vuelos',
+    // Animales
+    'animales','mascotas','perros','gatos','fauna',
+  ];
   const hasExternalTopic = externalTopics.some(t => desc.includes(t));
   if (!hasExternalTopic) return false;
+  // Verificar que el tema externo no sea parte del nicho
+  const nicheStr = niche.toLowerCase();
+  if (desc.includes('carro') && nicheStr.includes('venta')) return false;
+  if (desc.includes('receta') && nicheStr.includes('nutri')) return false;
+  if (desc.includes('invers') && nicheStr.includes('finanz')) return false;
   return true;
 }
 
@@ -2770,7 +2798,20 @@ async function generateContent(event) {
 
   try {
     const description = _descVal;
-    const niche       = _nicheMode === 'exact' ? '' : (document.getElementById('niche')?.value?.trim() || '');
+    // 'exact' = SÍ (solo el tema, sin nicho)
+    // 'mix'   = NO (mezclar nicho con tema)
+    // 'adapt' = sin conflicto (usar nicho normal)
+    let niche = document.getElementById('niche')?.value?.trim() || '';
+    if (_nicheMode === 'exact') {
+      niche = ''; // Ignorar nicho — generar solo sobre el tema
+    } else if (_nicheMode === 'mix') {
+      // Mezclar: el nicho se mantiene pero la descripción lleva instrucción de mezcla
+      // El groqService usará el nicho para el tono pero el tema como contenido
+      // Añadimos contexto de mezcla a la descripción
+      const _mixNiche = niche;
+      niche = _mixNiche; // mantener nicho para tono
+      // La instrucción de mezcla va en el payload como campo especial
+    }
     const title       = document.getElementById('title')?.value?.trim() || '';
     const tone        = document.getElementById('tone')?.value || '';
     const contentType = document.getElementById('contentType')?.value || 'general';
@@ -2779,14 +2820,20 @@ async function generateContent(event) {
 
     showProgress(true, 'Analizando con IA…', 55, `Creando contenido tipo ${pubType}…`);
 
+    // Si modo mix: añadir instrucción especial para mezclar nicho con tema
+    const mixInstruction = (_nicheMode === 'mix' && niche)
+      ? 'IMPORTANTE: Mezcla creativamente el tema "' + description.substring(0,80) + '" con el nicho de ' + niche + '. Conecta ambos de forma natural y creativa en hooks, captions y CTAs. El resultado debe ser contenido único que hable del tema pero desde la perspectiva del nicho.'
+      : '';
+
     const payload = {
       niche:           niche || description.substring(0,60),
       title,
-      description,
+      description:     mixInstruction ? (mixInstruction + ' TEMA BASE: ' + description) : description,
       tone:            tone || 'Profesional',
       contentType:     contentType || 'general',
       publicationType: pubType,
-      files:           fileIds
+      files:           fileIds,
+      _mixMode:        _nicheMode === 'mix'
     };
 
     const r = await apiFetch(`${API_URL}/analyze`, {
@@ -2799,8 +2846,9 @@ async function generateContent(event) {
 
     currentResults = d.analysis;
     // Asegurar que el ID queda guardado para el Copiloto IA
-    if (currentResults && !currentResults.id) {
-      currentResults.id = d.id || d.analysis_id || d.analysis?.id || null;
+    // Forzar ID siempre — el copiloto lo necesita
+    if (currentResults) {
+      currentResults.id = d.id || d.analysis_id || d.analysis?.id || currentResults.id || null;
     }
     userCredits    = d.credits_remaining ?? userCredits - 1;
     updateCreditIndicator();
@@ -2851,7 +2899,15 @@ function renderResults(r, pubType) {
     banner.innerHTML = `<div class="coherence-warn">⚠️ <div><strong>Incoherencia detectada</strong><br>El nicho indicado no coincide del todo con el contenido. Se generó para el nicho real detectado.</div></div>`;
   } else {
     banner.style.display = 'block';
-    banner.innerHTML = `<div class="coherence-ok">✅ Nicho verificado — contenido coherente</div>`;
+    // Solo mostrar "nicho verificado" si realmente el nicho coincide con la solicitud
+  const _lastDesc  = document.getElementById('description')?.value?.trim() || '';
+  const _lastNiche = document.getElementById('niche')?.value?.trim() || localStorage.getItem('conteniza_niche') || '';
+  const _hadMismatch = detectNicheMismatch(_lastDesc, _lastNiche);
+  if (_hadMismatch) {
+    banner.innerHTML = '<div class="coherence-ok" style="background:#FEF9C3;color:#854D0E;border-color:#FDE047;">⚠️ Contenido generado — el tema difiere de tu nicho configurado</div>';
+  } else {
+    banner.innerHTML = '<div class="coherence-ok">✅ Nicho verificado — contenido coherente</div>';
+  }
   }
 
   // Hooks
@@ -6785,32 +6841,53 @@ async function cdndExport() {
   <script src="consent.js"></script>
 
 <!-- ═══════════════════════════════════════════════════
-     MODAL AVISO NICHO vs TEMA
+     MODAL AVISO NICHO vs TEMA — Flujo SI/NO
      ═══════════════════════════════════════════════════ -->
-<div id="nicheMismatchModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9800;align-items:center;justify-content:center;padding:20px;">
-  <div style="background:var(--surface);border-radius:16px;width:100%;max-width:420px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.25);">
-    <!-- Header -->
-    <div style="background:var(--grad-brand);padding:20px 24px;">
-      <div style="font-size:22px;margin-bottom:4px;">🤔</div>
-      <div style="font-size:17px;font-weight:800;color:#fff;">Tu tema parece diferente a tu nicho</div>
-      <div style="font-size:13px;color:rgba(255,255,255,.8);margin-top:4px;" id="nicheMismatchSubtitle"></div>
+<div id="nicheMismatchModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9800;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--surface);border-radius:20px;width:100%;max-width:400px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.3);">
+    <!-- Header warning -->
+    <div style="background:linear-gradient(135deg,#F59E0B,#EF4444);padding:20px 24px 16px;">
+      <div style="font-size:28px;margin-bottom:6px;">⚠️</div>
+      <div style="font-size:16px;font-weight:800;color:#fff;line-height:1.3;">
+        Nicho no se corresponde con el tema a publicar
+      </div>
     </div>
-    <!-- Body -->
-    <div style="padding:20px 24px;">
-      <p style="font-size:13px;color:var(--text-2);line-height:1.6;margin-bottom:16px;">
-        ¿Cómo quieres que genere el contenido?
-      </p>
-      <!-- Opción A -->
-      <button onclick="confirmNicheMode('adapt')" style="width:100%;text-align:left;background:var(--surface-2);border:2px solid var(--brand);border-radius:12px;padding:14px 16px;cursor:pointer;margin-bottom:10px;transition:all .15s;">
-        <div style="font-size:14px;font-weight:800;color:var(--brand);">🎯 Adaptar a mi nicho</div>
-        <div style="font-size:12px;color:var(--text-3);margin-top:3px;" id="nicheMismatchAdaptDesc"></div>
+    <!-- Info -->
+    <div style="padding:18px 24px 0;">
+      <div style="background:var(--surface-2);border-radius:10px;padding:12px 14px;margin-bottom:16px;">
+        <div style="display:flex;gap:10px;margin-bottom:6px;">
+          <span style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;min-width:44px;">Nicho</span>
+          <span id="nmNiche" style="font-size:13px;font-weight:700;color:var(--brand);"></span>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <span style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;min-width:44px;">Tema</span>
+          <span id="nmTopic" style="font-size:13px;color:var(--text);"></span>
+        </div>
+      </div>
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;text-align:center;">
+        ¿Deseas cambiar de nicho?
+      </div>
+    </div>
+    <!-- Botones SI / NO -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 24px 24px;">
+      <!-- SÍ — usar tema exacto sin nicho -->
+      <button onclick="confirmNicheMode('exact')"
+        style="background:var(--grad-brand);border:none;border-radius:12px;padding:14px 10px;cursor:pointer;color:#fff;transition:opacity .15s;">
+        <div style="font-size:22px;margin-bottom:4px;">✅</div>
+        <div style="font-size:14px;font-weight:800;">SÍ</div>
+        <div style="font-size:10px;opacity:.85;margin-top:2px;line-height:1.3;">Generar solo sobre el tema</div>
       </button>
-      <!-- Opción B -->
-      <button onclick="confirmNicheMode('exact')" style="width:100%;text-align:left;background:var(--surface-2);border:2px solid var(--border);border-radius:12px;padding:14px 16px;cursor:pointer;transition:all .15s;">
-        <div style="font-size:14px;font-weight:800;color:var(--text);">📋 Usar el tema exacto</div>
-        <div style="font-size:12px;color:var(--text-3);margin-top:3px;" id="nicheMismatchExactDesc"></div>
+      <!-- NO — mezclar nicho con tema -->
+      <button onclick="confirmNicheMode('mix')"
+        style="background:var(--surface-2);border:2px solid var(--border);border-radius:12px;padding:14px 10px;cursor:pointer;color:var(--text);transition:all .15s;"
+        onmouseover="this.style.borderColor='var(--brand)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="font-size:22px;margin-bottom:4px;">🔀</div>
+        <div style="font-size:14px;font-weight:800;">NO</div>
+        <div style="font-size:10px;color:var(--text-3);margin-top:2px;line-height:1.3;">Mezclar tema con mi nicho</div>
       </button>
-      <button onclick="closeNicheMismatchModal()" style="width:100%;margin-top:10px;background:none;border:none;color:var(--text-3);font-size:13px;cursor:pointer;padding:8px;">Cancelar</button>
+    </div>
+    <div style="padding:0 24px 16px;text-align:center;">
+      <button onclick="closeNicheMismatchModal()" style="background:none;border:none;color:var(--text-3);font-size:12px;cursor:pointer;padding:4px 12px;">Cancelar</button>
     </div>
   </div>
 </div>
@@ -6847,14 +6924,11 @@ async function cdndExport() {
    ════════════════════════════════════════════════════════ */
 function showNicheMismatchModal(desc, niche) {
   const modal    = document.getElementById('nicheMismatchModal');
-  const subtitle = document.getElementById('nicheMismatchSubtitle');
-  const adaptEl  = document.getElementById('nicheMismatchAdaptDesc');
-  const exactEl  = document.getElementById('nicheMismatchExactDesc');
-  const shortDesc = desc.length > 50 ? desc.substring(0,50)+'…' : desc;
-  subtitle.textContent = 'Nicho: ' + niche + '  ·  Tema: ' + shortDesc;
-  adaptEl.textContent  = 'Hooks y captions en tono de ' + niche + ', pero hablando del tema que pediste.';
-  exactEl.textContent  = 'Genera sobre "' + shortDesc + '" sin considerar tu nicho.';
-  modal.style.display  = 'flex';
+  const shortDesc = desc.length > 45 ? desc.substring(0,45)+'…' : desc;
+  const shortNiche = niche.length > 30 ? niche.substring(0,30)+'…' : niche;
+  document.getElementById('nmNiche').textContent = shortNiche;
+  document.getElementById('nmTopic').textContent = shortDesc;
+  modal.style.display = 'flex';
 }
 function closeNicheMismatchModal() {
   document.getElementById('nicheMismatchModal').style.display = 'none';
@@ -6863,7 +6937,6 @@ function closeNicheMismatchModal() {
 function confirmNicheMode(mode) {
   document.getElementById('nicheMismatchModal').style.display = 'none';
   _pendingGenerateNicheMode = mode;
-  // Simular click en generar
   const btn = document.getElementById('generateBtn');
   if (btn) btn.click();
 }
