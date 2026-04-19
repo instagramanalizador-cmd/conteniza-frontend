@@ -1307,6 +1307,20 @@
 /* ═══════════════════════════════════════════════════════
    CONTENIZA STUDIO v32 — Editor Drag & Drop Premium
    ═══════════════════════════════════════════════════════ */
+/* Studio tema claro */
+.cdnd-overlay.light-theme { background:rgba(248,248,252,0.98); }
+.cdnd-overlay.light-theme .cdnd-panel,
+.cdnd-overlay.light-theme .cdnd-top-bar { background:#f0f0f8; border-color:rgba(0,0,0,.1); }
+.cdnd-overlay.light-theme .cdnd-section-label,
+.cdnd-overlay.light-theme .cdnd-lbl { color:rgba(0,0,0,.5); }
+.cdnd-overlay.light-theme .cdnd-block-item { background:rgba(0,0,0,.04); color:#333; border-color:rgba(0,0,0,.08); }
+.cdnd-overlay.light-theme .cdnd-font-btn { background:rgba(0,0,0,.05); color:#333; }
+.cdnd-overlay.light-theme .cdnd-canvas { box-shadow:0 8px 32px rgba(0,0,0,.15); }
+.cdnd-overlay.light-theme .cdnd-adj-btn,
+.cdnd-overlay.light-theme .cdnd-top-btn { background:rgba(0,0,0,.07); color:#333; border-color:rgba(0,0,0,.12); }
+.cdnd-overlay.light-theme .cdnd-tab { color:rgba(0,0,0,.5); }
+.cdnd-overlay.light-theme .cdnd-tab.active { color:var(--brand); }
+
 .cdnd-overlay {
   position:fixed;inset:0;z-index:10000;
   background:rgba(0,0,0,0.88);backdrop-filter:blur(10px);
@@ -1314,6 +1328,15 @@
   padding:16px;box-sizing:border-box;
   opacity:0;pointer-events:none;transition:opacity .25s;
 }
+.cdnd-overlay.light-mode { background: #e8e8f0; }
+.cdnd-overlay.light-mode .cdnd-panel { background: #ffffff; border-color: rgba(0,0,0,.1); }
+.cdnd-overlay.light-mode .cdnd-topbar { background: #ffffff; border-color: rgba(0,0,0,.1); }
+.cdnd-overlay.light-mode .cdnd-section-label { color: rgba(0,0,0,.5); }
+.cdnd-overlay.light-mode .cdnd-tab { color: rgba(0,0,0,.4); }
+.cdnd-overlay.light-mode .cdnd-tab.active { color: var(--brand); border-bottom-color: var(--brand); }
+.cdnd-overlay.light-mode .cdnd-block-item { background: rgba(0,0,0,.04); color: #1a1a2e; }
+.cdnd-overlay.light-mode .cdnd-block-item.active { background: rgba(139,95,191,.15); }
+.cdnd-overlay.light-mode .cdnd-lbl { color: rgba(0,0,0,.6); }
 .cdnd-overlay.open{opacity:1;pointer-events:all;}
 .cdnd-studio {
   display:grid;grid-template-columns:1fr 300px;grid-template-rows:52px 1fr;
@@ -5506,11 +5529,11 @@ function openCdndEditor(type, index) {
 
   cdnd.open = true;
   document.getElementById('cdndOverlay').classList.add('open');
+  cdndRestoreTheme();
   cdndRenderAll();
   cdndInitDrag();
   cdndBuildFonts();
   cdndSelectBlock('title');
-  // Activar edición inline con doble clic
   setTimeout(cdndInitInlineEdit, 50);
 }
 
@@ -5749,7 +5772,7 @@ function cdndAddTextBlock() {
   block.className    = 'cdnd-block';
   block.id           = blockId;
   block.dataset.block = blockId;
-  block.style.cssText = 'left:10%;top:75%;width:80%;cursor:grab;';
+  block.style.cssText = 'position:absolute;left:10%;top:60%;width:80%;cursor:grab;';
 
   // Texto editable
   const textEl = document.createElement('div');
@@ -5841,6 +5864,40 @@ function cdndAddTextBlock() {
     item.appendChild(delLi);
     list.appendChild(item);
   }
+}
+
+function cdndToggleTheme() {
+  const overlay = document.getElementById('cdndOverlay');
+  const btn     = document.getElementById('cdndThemeBtn');
+  if (!overlay) return;
+  const isLight = overlay.classList.toggle('light-theme');
+  if (btn) btn.textContent = isLight ? '☀️' : '🌙';
+  if (btn) btn.title = isLight ? 'Cambiar a oscuro' : 'Cambiar a claro';
+}
+
+// ── Tema claro/oscuro Studio ──────────────────────────────────────────────
+function cdndToggleTheme() {
+  const overlay = document.getElementById('cdndOverlay');
+  const isLight = overlay.classList.toggle('light-mode');
+  const btn = document.getElementById('cdndThemeBtn');
+  if (btn) btn.textContent = isLight ? '🌙' : '☀️';
+  try { localStorage.setItem('cdnd_theme', isLight ? 'light' : 'dark'); } catch(e) {}
+}
+
+// Restaurar tema guardado al abrir Studio
+function cdndRestoreTheme() {
+  try {
+    const t = localStorage.getItem('cdnd_theme');
+    const overlay = document.getElementById('cdndOverlay');
+    const btn = document.getElementById('cdndThemeBtn');
+    if (t === 'light') {
+      overlay.classList.add('light-mode');
+      if (btn) btn.textContent = '🌙';
+    } else {
+      overlay.classList.remove('light-mode');
+      if (btn) btn.textContent = '☀️';
+    }
+  } catch(e) {}
 }
 
 function cdndClose() {
@@ -6147,31 +6204,94 @@ function cdndSelectBlock(id) {
   document.querySelectorAll('.cdnd-block').forEach(el => el.classList.remove('selected'));
   document.querySelectorAll('.cdnd-block-item').forEach(el => el.classList.remove('active'));
 
+  // Elementos del panel
+  const badge     = document.getElementById('cdndActiveBlockBadge');
+  const badgeIcon = document.getElementById('cdndActiveBlockIcon');
+  const badgeName = document.getElementById('cdndActiveBlockName');
+  const bgSection   = document.getElementById('cdndBgSection');
+  const bgDivider   = document.getElementById('cdndBgDivider');
+  const subSection  = document.getElementById('cdndSubSection');
+  const subDivider  = document.getElementById('cdndSubDivider');
+  const delSection  = document.getElementById('cdndDeleteExtraSection');
+  const fontBtns    = document.getElementById('cdndFontTargetBtns');
+  const fontLabel   = document.getElementById('cdndFontTargetLabel');
+
   if (!id) {
     document.getElementById('cdndPosPanel').style.display = 'none';
     document.getElementById('cdndNoSel').style.display   = 'block';
+    if (badge) badge.style.display = 'none';
     return;
   }
 
+  if (badge) badge.style.display = 'flex';
   const isExtra = id.startsWith('cdndExtra_') || id.startsWith('cdndImg_');
-  const cap     = id.charAt(0).toUpperCase() + id.slice(1);
 
   if (isExtra) {
-    document.getElementById(id)?.classList.add('selected');
+    // ── Bloque extra ──────────────────────────────────────────────
     cdnd._selectedType = 'extra';
+    document.getElementById(id)?.classList.add('selected');
+
     const textEl = document.getElementById(id + '_text') ||
-                   document.querySelector('#' + id + ' [contenteditable]');
+                   document.querySelector('#' + id + ' [contenteditable]') ||
+                   document.querySelector('#' + id + ' .eblock-text');
     if (textEl) {
       cdnd._extraBlockEl = textEl;
       cdndSyncPanelFromBlock(textEl);
     }
+
+    // Badge
+    if (badgeIcon) badgeIcon.textContent = '✏️';
+    if (badgeName) badgeName.textContent = 'Texto extra';
+
+    // Mostrar/ocultar secciones
+    if (bgSection) bgSection.style.display = 'none';
+    if (bgDivider) bgDivider.style.display = 'none';
+    if (subSection) subSection.style.display = 'none';
+    if (subDivider) subDivider.style.display = 'none';
+    if (delSection) delSection.style.display = 'block';
+    if (fontBtns)   fontBtns.style.display   = 'none';
+    if (fontLabel)  fontLabel.textContent = 'bloque extra';
+
     cdndTab('estilo');
     document.getElementById('cdndPosPanel').style.display = 'none';
     document.getElementById('cdndNoSel').style.display   = 'none';
+
   } else {
+    // ── Bloque estándar (title, sub, logo) ────────────────────────
     cdnd._selectedType = id;
+    const cap = id.charAt(0).toUpperCase() + id.slice(1);
     document.getElementById('cdndBlock' + cap)?.classList.add('selected');
     document.getElementById('cdndItem'  + cap)?.classList.add('active');
+
+    // Badge
+    const icons = { title: '✏️', sub: '💬', logo: '🖼️' };
+    const names = { title: 'Título', sub: 'Subtítulo', logo: 'Logo' };
+    if (badgeIcon) badgeIcon.textContent = icons[id] || '✏️';
+    if (badgeName) badgeName.textContent = names[id] || id;
+
+    // Mostrar/ocultar secciones
+    if (bgSection) bgSection.style.display = '';
+    if (bgDivider) bgDivider.style.display = '';
+    if (subSection) subSection.style.display = id === 'title' ? '' : 'none';
+    if (subDivider) subDivider.style.display = id === 'title' ? '' : 'none';
+    if (delSection) delSection.style.display = 'none';
+    if (fontBtns)   fontBtns.style.display   = '';
+    if (fontLabel)  fontLabel.textContent = names[id] || id;
+
+    // Sync controles con los valores actuales del bloque
+    const s = cdnd.style;
+    if (id === 'title') {
+      const sv = document.getElementById('cdndTitleSizeVal');
+      if (sv) sv.textContent = s.titleSize || 40;
+      const cv = document.getElementById('cdndTitleColor');
+      if (cv) cv.value = s.titleColor || '#ffffff';
+    } else if (id === 'sub') {
+      const sv = document.getElementById('cdndSubSizeVal');
+      if (sv) sv.textContent = s.subSize || 20;
+      const cv = document.getElementById('cdndSubColor');
+      if (cv) cv.value = s.subColor || '#cccccc';
+    }
+
     document.getElementById('cdndPosPanel').style.display = 'block';
     document.getElementById('cdndNoSel').style.display   = 'none';
     const label = id==='logo'?'Logo':id==='title'?'Título':'Subtítulo';
@@ -6181,6 +6301,79 @@ function cdndSelectBlock(id) {
       document.getElementById('cdndInputY').value = Math.round(cdnd.blocks[id].y);
     }
   }
+}
+
+// Sincronizar panel con el bloque extra seleccionado
+function cdndSyncPanelFromBlock(textEl) {
+  if (!textEl) return;
+  const fs  = parseFloat(textEl.style.fontSize) || 18;
+  const col = textEl.style.color || '#ffffff';
+  const ff  = (textEl.style.fontFamily || 'DM Sans').replace(/['"]/g,'').split(',')[0].trim();
+  const isBold   = textEl.style.fontWeight === '700' || textEl.style.fontWeight === 'bold';
+  const isItalic = textEl.style.fontStyle === 'italic';
+
+  const sizeEl = document.getElementById('cdndTitleSizeVal');
+  if (sizeEl) sizeEl.textContent = Math.round(fs);
+
+  const colorEl = document.getElementById('cdndTitleColor');
+  if (colorEl) {
+    if (col.startsWith('rgb')) {
+      const m = col.match(/(\d+),\s*(\d+),\s*(\d+)/);
+      if (m) colorEl.value = '#' + [m[1],m[2],m[3]].map(x=>parseInt(x).toString(16).padStart(2,'0')).join('');
+    } else if (col) colorEl.value = col;
+  }
+
+  document.querySelectorAll('.cdnd-font-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.textContent.trim() === ff);
+  });
+
+  const boldBtn   = document.getElementById('cdndTitleBoldBtn');
+  const italicBtn = document.getElementById('cdndTitleItalicBtn');
+  if (boldBtn)   boldBtn.style.background   = isBold   ? 'var(--brand)' : 'rgba(255,255,255,0.1)';
+  if (italicBtn) italicBtn.style.background = isItalic ? 'var(--brand)' : 'rgba(255,255,255,0.1)';
+}
+
+// Eliminar bloque extra seleccionado
+function cdndDeleteSelectedExtra() {
+  const id = cdnd.selectedBlock;
+  if (!id || !id.startsWith('cdndExtra_')) return;
+  document.getElementById(id)?.remove();
+  document.querySelector('[data-extra-id="' + id + '"]')?.remove();
+  cdnd.selectedBlock = null;
+  cdnd._extraBlockEl = null;
+  document.getElementById('cdndNoSel').style.display = 'block';
+  document.getElementById('cdndActiveBlockBadge').style.display = 'none';
+}
+
+function cdndSyncPanelFromStd(id) {
+  // Mostrar en el panel los valores del bloque estándar seleccionado
+  const s = cdnd.style;
+  const isTitle = id === 'title';
+  const isSub   = id === 'sub';
+  if (!isTitle && !isSub) return;
+  const size  = isTitle ? s.titleSize  : s.subSize;
+  const color = isTitle ? s.titleColor : s.subColor;
+  const font  = isTitle ? s.titleFont  : s.subFont;
+  const bold  = isTitle ? s.titleBold  : s.subBold;
+  const ital  = isTitle ? s.titleItalic: s.subItalic;
+  // Sync tamaño
+  const sizeEl = document.getElementById('cdndTitleSizeVal');
+  if (sizeEl) sizeEl.textContent = Math.round(size || 36);
+  // Sync color
+  const colorEl = document.getElementById('cdndTitleColor');
+  if (colorEl && color) colorEl.value = color;
+  // Sync fuente
+  document.querySelectorAll('.cdnd-font-btn').forEach(btn =>
+    btn.classList.toggle('active', btn.textContent.trim() === font)
+  );
+  // Sync bold/italic
+  const boldBtn   = document.getElementById('cdndTitleBoldBtn');
+  const italicBtn = document.getElementById('cdndTitleItalicBtn');
+  if (boldBtn)   boldBtn.style.background   = bold ? 'var(--brand)' : 'rgba(255,255,255,0.1)';
+  if (italicBtn) italicBtn.style.background = ital ? 'var(--brand)' : 'rgba(255,255,255,0.1)';
+  // Actualizar target de fuente automáticamente
+  cdndFontTarget = isTitle ? 'title' : 'sub';
+  cdndBuildFonts();
 }
 
 function cdndSyncPanelFromBlock(textEl) {
@@ -6702,8 +6895,10 @@ async function cdndExport() {
       </div>
       <div class="cdnd-actions">
         <button class="cdnd-btn cdnd-btn-ghost" onclick="cdndToggleGrid()" id="cdndGridBtn">⊞ Cuadrícula</button>
+        <button class="cdnd-top-btn" id="cdndThemeBtn" onclick="cdndToggleTheme()" style="min-width:36px;" title="Claro/Oscuro">🌙</button>
         <button class="cdnd-btn cdnd-btn-ghost" onclick="cdndResetPositions()">↺ Resetear</button>
         <button class="cdnd-btn cdnd-btn-success" onclick="cdndExport()">📥 Exportar PNG</button>
+        <button id="cdndThemeBtn" class="cdnd-btn cdnd-btn-ghost" onclick="cdndToggleTheme()" title="Claro / Oscuro">☀️</button>
         <button class="cdnd-btn cdnd-btn-ghost" onclick="cdndClose()">✕ Cerrar</button>
       </div>
     </div>
@@ -6754,7 +6949,7 @@ async function cdndExport() {
     <div class="cdnd-panel">
       <div class="cdnd-tabs">
         <button class="cdnd-tab active" onclick="cdndTab('bloques')"  id="cdndTabBtnBloques">Bloques</button>
-        <button class="cdnd-tab" onclick="cdndTab('imagenes')" id="cdndTabBtnImagenes">🖼️</button>
+        <button class="cdnd-tab" onclick="cdndTab('imagenes')" id="cdndTabBtnImagenes">🖼 Imgs</button>
         <button class="cdnd-tab" onclick="cdndTab('estilo')"   id="cdndTabBtnEstilo">Estilo</button>
         <button class="cdnd-tab" onclick="cdndTab('layouts')"  id="cdndTabBtnLayouts">Layouts</button>
       </div>
@@ -6859,17 +7054,26 @@ async function cdndExport() {
 
       <!-- Tab Estilo -->
       <div class="cdnd-panel-body" id="cdndTabEstilo" style="display:none;">
-        <!-- Fondo -->
-        <div class="cdnd-section">
-          <div class="cdnd-section-label">Fondo</div>
+
+        <!-- Indicador del bloque activo -->
+        <div id="cdndActiveBlockBadge" style="background:var(--brand-light);border:1px solid var(--brand-mid);border-radius:8px;padding:6px 10px;margin-bottom:10px;font-size:11px;font-weight:700;color:var(--brand);display:flex;align-items:center;gap:6px;">
+          <span id="cdndActiveBlockIcon">✏️</span>
+          <span id="cdndActiveBlockName">Título seleccionado</span>
+          <span style="font-size:10px;font-weight:400;opacity:.7;margin-left:auto;">· Edita las propiedades abajo</span>
+        </div>
+
+        <!-- Fondo (solo visible para título/sub, oculto para extra) -->
+        <div class="cdnd-section" id="cdndBgSection">
+          <div class="cdnd-section-label">Fondo del slide</div>
           <div class="cdnd-row"><span class="cdnd-lbl">Color 1</span><input type="color" class="cdnd-color-inp" id="cdndBg1" oninput="cdndUpdateBg()"></div>
           <div class="cdnd-row"><span class="cdnd-lbl">Color 2</span><input type="color" class="cdnd-color-inp" id="cdndBg2" oninput="cdndUpdateBg()"></div>
         </div>
-        <div class="cdnd-divider"></div>
-        <!-- Fuente — selector de destino -->
+        <div class="cdnd-divider" id="cdndBgDivider"></div>
+
+        <!-- Fuente del bloque activo -->
         <div class="cdnd-section">
-          <div class="cdnd-section-label">Fuente — aplica a</div>
-          <div style="display:flex;gap:4px;margin-bottom:8px;">
+          <div class="cdnd-section-label">Fuente — <span id="cdndFontTargetLabel" style="color:var(--brand);">bloque seleccionado</span></div>
+          <div id="cdndFontTargetBtns" style="display:flex;gap:4px;margin-bottom:8px;">
             <button class="cdnd-align-btn active" id="cdndFontTargetTitle" onclick="cdndSetFontTarget('title')" style="font-size:10px;">✏️ Título</button>
             <button class="cdnd-align-btn" id="cdndFontTargetSub" onclick="cdndSetFontTarget('sub')" style="font-size:10px;">💬 Sub</button>
             <button class="cdnd-align-btn" id="cdndFontTargetBoth" onclick="cdndSetFontTarget('both')" style="font-size:10px;">⊕ Ambos</button>
@@ -6877,76 +7081,64 @@ async function cdndExport() {
           <div class="cdnd-font-grid" id="cdndFontGrid"></div>
         </div>
         <div class="cdnd-divider"></div>
-        <!-- Título -->
+
+        <!-- Controles del bloque activo -->
         <div class="cdnd-section">
-          <div class="cdnd-section-label">Título</div>
-          <div class="cdnd-row">
+          <div class="cdnd-section-label">Texto</div>
+          <!-- Tamaño -->
+          <div class="cdnd-row" style="margin-bottom:8px;">
             <span class="cdnd-lbl">Tamaño</span>
-            <div class="cdnd-stepper">
-              <button class="cdnd-step-btn" onclick="cdndAdjVal('titleSize',-2)">−</button>
-              <span class="cdnd-step-val" id="cdndTitleSizeVal">40</span>
-              <button class="cdnd-step-btn" onclick="cdndAdjVal('titleSize',2)">+</button>
-            </div>
+            <button class="cdnd-adj-btn" onclick="cdndAdjVal('titleSize',-2)">−</button>
+            <span id="cdndTitleSizeVal" style="min-width:28px;text-align:center;font-size:13px;font-weight:700;">40</span>
+            <button class="cdnd-adj-btn" onclick="cdndAdjVal('titleSize',2)">+</button>
           </div>
-          <div class="cdnd-row"><span class="cdnd-lbl">Color</span><input type="color" class="cdnd-color-inp" id="cdndTitleColor" value="#ffffff" oninput="cdndUpdateColor('title')"></div>
-          <div class="cdnd-row">
+          <!-- Color -->
+          <div class="cdnd-row" style="margin-bottom:8px;">
+            <span class="cdnd-lbl">Color</span>
+            <input type="color" class="cdnd-color-inp" id="cdndTitleColor" value="#ffffff" oninput="cdndUpdateColor('title')">
+          </div>
+          <!-- Bold / Italic -->
+          <div class="cdnd-row" style="margin-bottom:8px;">
             <span class="cdnd-lbl">Estilo</span>
-            <div style="display:flex;gap:4px;">
-              <button id="cdndTitleBoldBtn" onclick="cdndToggleStyle('titleBold')" style="width:28px;height:24px;border-radius:5px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);cursor:pointer;font-weight:900;font-size:13px;color:#fff;display:flex;align-items:center;justify-content:center;" title="Negrita">B</button>
-              <button id="cdndTitleItalicBtn" onclick="cdndToggleStyle('titleItalic')" style="width:28px;height:24px;border-radius:5px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);cursor:pointer;font-style:italic;font-size:13px;color:#fff;display:flex;align-items:center;justify-content:center;" title="Cursiva">I</button>
-            </div>
+            <button id="cdndTitleBoldBtn" class="cdnd-style-btn" onclick="cdndToggleStyle('titleBold')" style="font-weight:700;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:4px 10px;color:#fff;cursor:pointer;font-size:13px;">B</button>
+            <button id="cdndTitleItalicBtn" class="cdnd-style-btn" onclick="cdndToggleStyle('titleItalic')" style="font-style:italic;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:4px 10px;color:#fff;cursor:pointer;font-size:13px;">I</button>
           </div>
+          <!-- Alineación -->
           <div class="cdnd-row">
-            <span class="cdnd-lbl">Alineación</span>
-            <div class="cdnd-align-group">
-              <button class="cdnd-align-btn" onclick="cdndSetAlign('title','left')">◀</button>
-              <button class="cdnd-align-btn active" onclick="cdndSetAlign('title','center')">■</button>
-              <button class="cdnd-align-btn" onclick="cdndSetAlign('title','right')">▶</button>
-            </div>
+            <span class="cdnd-lbl">Alinear</span>
+            <button class="cdnd-align-btn" onclick="cdndSetAlign('left')">◀</button>
+            <button class="cdnd-align-btn" onclick="cdndSetAlign('center')">■</button>
+            <button class="cdnd-align-btn" onclick="cdndSetAlign('right')">▶</button>
           </div>
         </div>
         <div class="cdnd-divider"></div>
-        <!-- Subtítulo -->
-        <div class="cdnd-section">
+
+        <!-- Subtítulo (solo para bloques estándar) -->
+        <div class="cdnd-section" id="cdndSubSection">
           <div class="cdnd-section-label">Subtítulo</div>
-          <div class="cdnd-row">
+          <div class="cdnd-row" style="margin-bottom:8px;">
             <span class="cdnd-lbl">Tamaño</span>
-            <div class="cdnd-stepper">
-              <button class="cdnd-step-btn" onclick="cdndAdjVal('subSize',-2)">−</button>
-              <span class="cdnd-step-val" id="cdndSubSizeVal">20</span>
-              <button class="cdnd-step-btn" onclick="cdndAdjVal('subSize',2)">+</button>
-            </div>
+            <button class="cdnd-adj-btn" onclick="cdndAdjVal('subSize',-2)">−</button>
+            <span id="cdndSubSizeVal" style="min-width:28px;text-align:center;font-size:13px;font-weight:700;">20</span>
+            <button class="cdnd-adj-btn" onclick="cdndAdjVal('subSize',2)">+</button>
           </div>
-          <div class="cdnd-row"><span class="cdnd-lbl">Color</span><input type="color" class="cdnd-color-inp" id="cdndSubColor" value="#cccccc" oninput="cdndUpdateColor('sub')"></div>
+          <div class="cdnd-row" style="margin-bottom:8px;">
+            <span class="cdnd-lbl">Color</span>
+            <input type="color" class="cdnd-color-inp" id="cdndSubColor" value="#cccccc" oninput="cdndUpdateColor('sub')">
+          </div>
           <div class="cdnd-row">
             <span class="cdnd-lbl">Estilo</span>
-            <div style="display:flex;gap:4px;">
-              <button id="cdndSubBoldBtn" onclick="cdndToggleStyle('subBold')" style="width:28px;height:24px;border-radius:5px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);cursor:pointer;font-weight:900;font-size:13px;color:#fff;display:flex;align-items:center;justify-content:center;" title="Negrita">B</button>
-              <button id="cdndSubItalicBtn" onclick="cdndToggleStyle('subItalic')" style="width:28px;height:24px;border-radius:5px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);cursor:pointer;font-style:italic;font-size:13px;color:#fff;display:flex;align-items:center;justify-content:center;" title="Cursiva">I</button>
-            </div>
-          </div>
-          <div class="cdnd-row">
-            <span class="cdnd-lbl">Alineación</span>
-            <div class="cdnd-align-group">
-              <button class="cdnd-align-btn" onclick="cdndSetAlign('sub','left')">◀</button>
-              <button class="cdnd-align-btn active" onclick="cdndSetAlign('sub','center')">■</button>
-              <button class="cdnd-align-btn" onclick="cdndSetAlign('sub','right')">▶</button>
-            </div>
+            <button id="cdndSubBoldBtn" class="cdnd-style-btn" onclick="cdndToggleStyle('subBold')" style="font-weight:700;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:4px 10px;color:#fff;cursor:pointer;font-size:13px;">B</button>
+            <button id="cdndSubItalicBtn" class="cdnd-style-btn" onclick="cdndToggleStyle('subItalic')" style="font-style:italic;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:4px 10px;color:#fff;cursor:pointer;font-size:13px;">I</button>
           </div>
         </div>
-        <!-- Logo size -->
-        <div class="cdnd-section" id="cdndLogoStylePanel" style="display:none;">
-          <div class="cdnd-divider"></div>
-          <div class="cdnd-section-label">Logo</div>
-          <div class="cdnd-row">
-            <span class="cdnd-lbl">Tamaño</span>
-            <div class="cdnd-stepper">
-              <button class="cdnd-step-btn" onclick="cdndAdjVal('logoSize',-5)">−</button>
-              <span class="cdnd-step-val" id="cdndLogoSizeVal">60</span>
-              <button class="cdnd-step-btn" onclick="cdndAdjVal('logoSize',5)">+</button>
-            </div>
-          </div>
+        <div class="cdnd-divider" id="cdndSubDivider"></div>
+
+        <!-- Eliminar bloque extra -->
+        <div id="cdndDeleteExtraSection" style="display:none;padding:8px 0;">
+          <button onclick="cdndDeleteSelectedExtra()" style="width:100%;background:rgba(248,113,113,.15);border:1.5px solid rgba(248,113,113,.3);border-radius:8px;padding:8px;color:#FCA5A5;font-size:12px;font-weight:700;cursor:pointer;">🗑️ Eliminar este bloque</button>
         </div>
+
       </div>
 
       <!-- Tab Layouts -->
