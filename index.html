@@ -5981,8 +5981,8 @@ function cdndRenderAll() {
       cdndBgEl.style.cssText = `position:absolute;inset:0;background:linear-gradient(135deg,${s.bg1},${s.bg2});`;
     }
   }
-  document.getElementById('cdndBg1').value = s.bg1;
-  document.getElementById('cdndBg2').value = s.bg2;
+  if (document.getElementById('cdndBg1')) document.getElementById('cdndBg1').value = s.bg1 || '#7C3AED';
+  if (document.getElementById('cdndBg2')) document.getElementById('cdndBg2').value = s.bg2 || '#F43F5E';
   document.getElementById('cdndGrid').classList.toggle('visible', cdnd.gridOn);
 
   // Logo
@@ -5990,7 +5990,8 @@ function cdndRenderAll() {
   const logoImg = document.getElementById('cdndLogoImg');
   const hasLogo = !!c.logoUrl;
   document.getElementById('cdndItemLogo').style.opacity = hasLogo ? '1' : '0.3';
-  document.getElementById('cdndLogoStylePanel').style.display = hasLogo ? 'block' : 'none';
+  if (document.getElementById('cdndLogoStylePanel'))
+    document.getElementById('cdndLogoStylePanel').style.display = hasLogo ? 'block' : 'none';
 
   if (hasLogo) {
     // Panel usa: imagen de logoSize px + padding 10px, todo escalado por scale(0.37037)
@@ -6050,12 +6051,15 @@ function cdndRenderAll() {
     }
   });
 
-  // Panel estilo
-  document.getElementById('cdndTitleSizeVal').textContent = s.titleSize;
-  document.getElementById('cdndSubSizeVal').textContent   = s.subSize;
-  document.getElementById('cdndLogoSizeVal').textContent  = s.logoSize;
-  document.getElementById('cdndTitleColor').value = s.titleColor;
-  document.getElementById('cdndSubColor').value   = s.subColor;
+  // Panel estilo — null-safe
+  const _el = id => document.getElementById(id);
+  if (_el('cdndTitleSizeVal')) _el('cdndTitleSizeVal').textContent = s.titleSize;
+  if (_el('cdndSubSizeVal'))   _el('cdndSubSizeVal').textContent   = s.subSize;
+  if (_el('cdndLogoSizeVal'))  _el('cdndLogoSizeVal').textContent  = s.logoSize;
+  if (_el('cdndTitleColor'))   _el('cdndTitleColor').value = s.titleColor || '#ffffff';
+  if (_el('cdndSubColor'))     _el('cdndSubColor').value   = s.subColor   || '#cccccc';
+  if (_el('cdndBg1'))          _el('cdndBg1').value = s.bg1 || '#7C3AED';
+  if (_el('cdndBg2'))          _el('cdndBg2').value = s.bg2 || '#F43F5E';
 
   // Align buttons título
   ['left','center','right'].forEach(a => {
@@ -6455,6 +6459,19 @@ function cdndUpdateColor(which) {
 }
 
 function cdndSetAlign(which, align) {
+  // Llamada con 1 argumento: cdndSetAlign('left') → aplica al bloque activo
+  if (align === undefined) {
+    align = which; // el primer arg ES el align
+    if (cdnd._extraBlockEl) {
+      cdnd._extraBlockEl.style.textAlign = align;
+      return;
+    }
+    which = cdnd._selectedType || 'title';
+  }
+  // Llamada con 2 argumentos: cdndSetAlign('title','left')
+  if (cdnd._extraBlockEl && (which==='title'||which==='sub')) {
+    cdnd._extraBlockEl.style.textAlign = align; return;
+  }
   if(which==='title') cdnd.style.titleAlign = align;
   else                cdnd.style.subAlign   = align;
   cdndRenderAll(); cdndSaveBack();
