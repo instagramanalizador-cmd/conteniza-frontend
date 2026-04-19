@@ -2844,11 +2844,13 @@ async function generateContent(event) {
     const d = await r.json();
     if (!r.ok) throw new Error(d.error || 'Error generando contenido');
 
-    currentResults = d.analysis;
-    // Asegurar que el ID queda guardado para el Copiloto IA
-    // Forzar ID siempre — el copiloto lo necesita
+    currentResults = d.analysis || d;
+    // Forzar ID — el Copiloto lo necesita obligatoriamente
     if (currentResults) {
-      currentResults.id = d.id || d.analysis_id || d.analysis?.id || currentResults.id || null;
+      // El backend devuelve el ID en d.analysis_id (root) o dentro de d.analysis.id
+      currentResults.id = d.analysis_id || d.id || d.analysis?.id || currentResults.id || currentResults.analysis_id || null;
+      if (!currentResults.id) console.warn('⚠️ No se encontró analysis_id en la respuesta');
+      else console.log('✅ analysis_id guardado:', currentResults.id);
     }
     userCredits    = d.credits_remaining ?? userCredits - 1;
     updateCreditIndicator();
@@ -3360,7 +3362,10 @@ function thumbAdjustFn(i, prop, val) {
       Math.min(prop === 'fontSize' ? 120 : prop === 'subFontSize' ? 60 : 300, window.thumbAdjust[i][prop] + val)
     );
   }
+  const focusedT = document.activeElement;
+  const focusedTId = focusedT?.id;
   renderThumbnailSpecs(i);
+  if (focusedTId) { const el = document.getElementById(focusedTId); if (el) el.focus(); }
 }
 
 /* ============================================================
@@ -3637,8 +3642,37 @@ function slideAdjustFn(i, prop, val) {
     const max = prop === 'titleSize' ? 80 : prop === 'logoSize' ? 300 : 50;
     window.slideAdjust[i][prop] = Math.max(min, Math.min(max, window.slideAdjust[i][prop] + val));
   }
-  renderCarouselSpecs(i);
-  // NO actualizar la tarjeta horizontal del carrusel — solo la vista previa vertical
+  // Para cambios de texto/posición: actualizar solo los elementos del preview
+  // Para cambios de estilo (fuente, tamaño, color, bold): re-renderizar es necesario
+  const textOnlyProps = ['titleY','contentY','logoY','titleX','contentX','logoX'];
+  if (textOnlyProps.includes(prop)) {
+    // Solo actualizar posición en el preview — no re-renderizar el panel
+    const titlePrev = document.getElementById('slidePreviewTitle_' + i);
+    const contentPrev = document.getElementById('slidePreviewContent_' + i);
+    if (titlePrev && window.slideAdjust[i]) {
+      titlePrev.style.top = (window.slideAdjust[i].titleY || 38) + '%';
+    }
+    if (contentPrev && window.slideAdjust[i]) {
+      contentPrev.style.top = (window.slideAdjust[i].contentY || 60) + '%';
+    }
+  } else {
+    // Guardar foco antes de re-renderizar
+    const focused = document.activeElement;
+    const focusedId = focused?.id;
+    const focusedVal = focused?.value;
+    const selStart = focused?.selectionStart;
+    renderCarouselSpecs(i);
+    // Restaurar foco
+    if (focusedId) {
+      const el = document.getElementById(focusedId);
+      if (el) {
+        el.focus();
+        if (focusedVal !== undefined && el.value !== undefined) {
+          try { el.setSelectionRange(selStart, selStart); } catch(e) {}
+        }
+      }
+    }
+  }
 }
 
 function slideAdjustText(i, prop, val) {
@@ -5780,6 +5814,8 @@ function cdndAddTextBlock() {
   cdndMakeBlockDraggable(block);
   cdndMakeBlockResizable(block, handle);
   cdndSelectBlock(blockId);
+  // Abrir tab Estilo automáticamente para editar el bloque recién creado
+  cdndTab('estilo');
   // Añadir a lista de bloques
   const list = document.getElementById('cdndExtraBlockList');
   if (list) {
@@ -6093,16 +6129,51 @@ function cdndSelectBlock(id) {
   document.querySelectorAll('.cdnd-block').forEach(el => el.classList.remove('selected'));
   document.querySelectorAll('.cdnd-block-item').forEach(el => el.classList.remove('active'));
   if (id) {
-    document.getElementById('cdndBlock'+id.charAt(0).toUpperCase()+id.slice(1))?.classList.add('selected');
-    document.getElementById('cdndItem'+id.charAt(0).toUpperCase()+id.slice(1))?.classList.add('active');
-    document.getElementById('cdndPosPanel').style.display = 'block';
-    document.getElementById('cdndNoSel').style.display   = 'none';
-    document.getElementById('cdndPosLabel').textContent  = 'Posición — '+(id==='logo'?'Logo':id==='title'?'Título':'Subtítulo');
-    document.getElementById('cdndInputX').value = Math.round(cdnd.blocks[id].x);
-    document.getElementById('cdndInputY').value = Math.round(cdnd.blocks[id].y);
+    // Standard blocks (logo, title, sub)
+    const cap = id.charAt(0).toUpperCase() + id.slice(1);
+    document.getElementById('cdndBlock' + cap)?.classList.add('selected');
+    document.getElementById('cdndItem'  + cap)?.classList.add('active');
+    // Extra blocks (cdndExtra_...)
+    if (id.startsWith('cdndExtra_')) {
+      document.getElementById(id)?.classList.add('selected');
+      // Sync estilo tab with this extra block
+      const textEl = document.getElementById(id + '_text');
+      if (textEl) {
+        cdnd._extraBlockEl = textEl;
+        // Sync font size into title size control
+        const fs = parseFloat(textEl.style.fontSize) || 16;
+        const sizeEl = document.getElementById('cdndTitleSizeVal');
+        if (sizeEl) sizeEl.textContent = Math.round(fs);
+        // Sync color
+        const colorEl = document.getElementById('cdndTitleColor');
+        if (colorEl) {
+          const rgb = textEl.style.color;
+          if (rgb && !rgb.startsWith('#')) {
+            const m = rgb.match(/(\d+),\s*(\d+),\s*(\d+)/);
+            if (m) colorEl.value = '#' + [m[1],m[2],m[3]].map(x=>parseInt(x).toString(16).padStart(2,'0')).join('');
+          } else if (rgb) colorEl.value = rgb;
+        }
+        // Switch to Estilo tab automatically
+        cdndTab('estilo');
+      }
+      // Show pos panel without X/Y (extra blocks use CSS %)
+      document.getElementById('cdndPosPanel').style.display = 'none';
+      document.getElementById('cdndNoSel').style.display   = 'none';
+    } else {
+      document.getElementById('cdndPosPanel').style.display = 'block';
+      document.getElementById('cdndNoSel').style.display   = 'none';
+      const label = id==='logo'?'Logo':id==='title'?'Título':'Subtítulo';
+      document.getElementById('cdndPosLabel').textContent  = 'Posición — ' + label;
+      if (cdnd.blocks[id]) {
+        document.getElementById('cdndInputX').value = Math.round(cdnd.blocks[id].x);
+        document.getElementById('cdndInputY').value = Math.round(cdnd.blocks[id].y);
+      }
+      cdnd._extraBlockEl = null;
+    }
   } else {
     document.getElementById('cdndPosPanel').style.display = 'none';
     document.getElementById('cdndNoSel').style.display   = 'block';
+    cdnd._extraBlockEl = null;
   }
 }
 
@@ -6136,6 +6207,15 @@ function cdndUpdateBg() {
 }
 
 function cdndAdjVal(key, delta) {
+  // If an extra block is selected, adjust its font size
+  if (cdnd._extraBlockEl && (key === 'titleSize' || key === 'subSize')) {
+    const current = parseFloat(cdnd._extraBlockEl.style.fontSize) || 16;
+    const newSize = Math.max(8, Math.min(120, current + delta));
+    cdnd._extraBlockEl.style.fontSize = newSize + 'px';
+    const sizeEl = document.getElementById('cdndTitleSizeVal');
+    if (sizeEl) sizeEl.textContent = newSize;
+    return;
+  }
   const mins = {titleSize:12, subSize:8, logoSize:30};
   const maxs = {titleSize:120, subSize:60, logoSize:300};
   cdnd.style[key] = Math.max(mins[key]||0, Math.min(maxs[key]||999, cdnd.style[key]+delta));
@@ -6143,6 +6223,12 @@ function cdndAdjVal(key, delta) {
 }
 
 function cdndUpdateColor(which) {
+  // Si hay un bloque extra seleccionado, aplicar color a ese bloque
+  if (cdnd._extraBlockEl && which === 'title') {
+    const val = document.getElementById('cdndTitleColor')?.value;
+    if (val) cdnd._extraBlockEl.style.color = val;
+    return;
+  }
   if(which==='title') cdnd.style.titleColor = document.getElementById('cdndTitleColor').value;
   else                cdnd.style.subColor   = document.getElementById('cdndSubColor').value;
   cdndRenderAll(); cdndSaveBack();
@@ -6155,6 +6241,15 @@ function cdndSetAlign(which, align) {
 }
 
 function cdndToggleStyle(key) {
+  // Si hay un bloque extra seleccionado, aplicar estilo a ese bloque
+  if (cdnd._extraBlockEl) {
+    if (key === 'titleBold' || key === 'subBold') {
+      cdnd._extraBlockEl.style.fontWeight = cdnd._extraBlockEl.style.fontWeight === '700' ? '400' : '700';
+    } else if (key === 'titleItalic' || key === 'subItalic') {
+      cdnd._extraBlockEl.style.fontStyle = cdnd._extraBlockEl.style.fontStyle === 'italic' ? 'normal' : 'italic';
+    }
+    return;
+  }
   cdnd.style[key] = !cdnd.style[key];
   // Actualizar visual del botón
   const btnId = { titleBold:'cdndTitleBoldBtn', titleItalic:'cdndTitleItalicBtn', subBold:'cdndSubBoldBtn', subItalic:'cdndSubItalicBtn' }[key];
@@ -6268,6 +6363,20 @@ function cdndSetFontTarget(target) {
   cdndBuildFonts();
 }
 
+function cdndApplyFont(fontName) {
+  // Apply font to extra block if selected, else to title/sub via cdnd.style
+  if (cdnd._extraBlockEl) {
+    cdnd._extraBlockEl.style.fontFamily = "'" + fontName + "',sans-serif";
+    cdndRenderAll();
+    return;
+  }
+  // Default: apply to whichever target is active in the Estilo tab
+  const target = document.querySelector('#cdndTabEstilo .cdnd-font-target.active')?.dataset?.target || 'title';
+  if (target === 'title' || target === 'both') { cdnd.style.titleFont = fontName; }
+  if (target === 'sub'   || target === 'both') { cdnd.style.subFont   = fontName; }
+  cdndRenderAll();
+}
+
 function cdndBuildFonts() {
   const grid = document.getElementById('cdndFontGrid');
   if (!grid) return;
@@ -6280,6 +6389,12 @@ function cdndBuildFonts() {
 }
 
 function cdndSetFont(font) {
+  // Si hay un bloque extra seleccionado, aplicar la fuente a ese bloque
+  if (cdnd._extraBlockEl) {
+    cdnd._extraBlockEl.style.fontFamily = "'" + font + "',sans-serif";
+    cdndBuildFonts();
+    return;
+  }
   if(cdndFontTarget==='title'||cdndFontTarget==='both') cdnd.style.titleFont=font;
   if(cdndFontTarget==='sub'  ||cdndFontTarget==='both') cdnd.style.subFont  =font;
   cdndBuildFonts(); cdndRenderAll(); cdndSaveBack();
@@ -9552,8 +9667,13 @@ document.addEventListener('keydown', e => {
       return;
     }
     if (!currentResults) { showNotification('Genera contenido primero', 'error'); return; }
-    _refineAnalysisId = currentResults.id || currentResults.analysis_id;
-    if (!_refineAnalysisId) { showNotification('Análisis no disponible para refinar', 'error'); return; }
+    _refineAnalysisId = currentResults.id || currentResults.analysis_id || currentResults._id;
+    if (!_refineAnalysisId) {
+      // Último intento: buscar en la respuesta del backend guardada
+      console.warn('⚠️ Sin analysis_id, intentando abrir copiloto sin ID');
+      showNotification('⚠️ El copiloto puede tener funcionalidad limitada', 'info');
+      // No bloquear — el backend puede manejar el historial sin ID
+    }
     const rs = document.getElementById('resultsSection');
     if (rs && panel.parentNode !== rs) rs.appendChild(panel);
     panel.classList.add('visible');
