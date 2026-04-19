@@ -6022,9 +6022,12 @@ function cdndRenderAll() {
   titleTx.style.fontSize    = Math.round(s.titleSize * 0.37037) + 'px';
   titleTx.style.color       = s.titleColor;
   titleTx.style.textAlign   = s.titleAlign;
-  titleTx.style.fontWeight  = s.titleBold   ? '800' : '400';
-  titleTx.style.fontStyle   = s.titleItalic ? 'italic' : 'normal';
-  titleTx.textContent       = c.title || 'Título';
+  titleTx.style.fontWeight      = s.titleBold   ? '800' : '400';
+  titleTx.style.fontStyle       = s.titleItalic ? 'italic' : 'normal';
+  titleTx.style.textDecoration  = (s.titleUnder ? 'underline ' : '') + (s.titleStrike ? 'line-through' : '') || 'none';
+  titleTx.style.textTransform   = s.titleUpper  ? 'uppercase' : 'none';
+  titleTx.style.lineHeight      = s.lineHeight  || 1.3;
+  titleTx.textContent           = c.title || 'Título';
 
   // Subtítulo — siempre left:8%, solo Y es arrastrable
   const subEl = document.getElementById('cdndBlockSub');
@@ -6037,9 +6040,11 @@ function cdndRenderAll() {
   subTx.style.fontSize    = Math.round(s.subSize * 0.37037) + 'px';
   subTx.style.color       = s.subColor;
   subTx.style.textAlign   = s.subAlign;
-  subTx.style.fontWeight  = s.subBold   ? '700' : '400';
-  subTx.style.fontStyle   = s.subItalic ? 'italic' : 'normal';
-  subTx.textContent       = c.sub || 'Subtítulo / contenido';
+  subTx.style.fontWeight     = s.subBold   ? '700' : '400';
+  subTx.style.fontStyle      = s.subItalic ? 'italic' : 'normal';
+  subTx.style.textDecoration = (s.subUnder ? 'underline ' : '') + (s.subStrike ? 'line-through' : '') || 'none';
+  subTx.style.lineHeight     = s.lineHeight || 1.3;
+  subTx.textContent          = c.sub || 'Subtítulo / contenido';
 
   // Sincronizar botones B/I del Studio
   ['titleBold','titleItalic','subBold','subItalic'].forEach(key => {
@@ -6478,20 +6483,58 @@ function cdndSetAlign(which, align) {
 }
 
 function cdndToggleStyle(key) {
+  // Bloque extra seleccionado
   if (cdnd._extraBlockEl) {
-    if(key==='titleBold'||key==='subBold') cdnd._extraBlockEl.style.fontWeight = cdnd._extraBlockEl.style.fontWeight==='700'?'400':'700';
-    if(key==='titleItalic'||key==='subItalic') cdnd._extraBlockEl.style.fontStyle = cdnd._extraBlockEl.style.fontStyle==='italic'?'normal':'italic';
-    cdndSyncPanelFromBlock(cdnd._extraBlockEl); return;
+    const el = cdnd._extraBlockEl;
+    if (key.endsWith('Bold'))   el.style.fontWeight     = el.style.fontWeight === '700' ? '400' : '700';
+    if (key.endsWith('Italic')) el.style.fontStyle      = el.style.fontStyle  === 'italic' ? 'normal' : 'italic';
+    if (key.endsWith('Under'))  el.style.textDecoration = el.style.textDecoration.includes('underline') ? 'none' : 'underline';
+    if (key.endsWith('Strike')) el.style.textDecoration = el.style.textDecoration.includes('line-through') ? 'none' : 'line-through';
+    if (key.endsWith('Upper'))  el.style.textTransform  = el.style.textTransform === 'uppercase' ? 'none' : 'uppercase';
+    cdndSyncPanelFromBlock(el);
+    return;
   }
+  // Bloque estándar
   cdnd.style[key] = !cdnd.style[key];
-  // Actualizar visual del botón
-  const btnId = { titleBold:'cdndTitleBoldBtn', titleItalic:'cdndTitleItalicBtn', subBold:'cdndSubBoldBtn', subItalic:'cdndSubItalicBtn' }[key];
-  const btn = document.getElementById(btnId);
+  const btnMap = {
+    titleBold:'cdndTitleBoldBtn', titleItalic:'cdndTitleItalicBtn',
+    titleUnder:'cdndTitleUnderBtn', titleStrike:'cdndTitleStrikeBtn', titleUpper:'cdndTitleUpperBtn',
+    subBold:'cdndSubBoldBtn', subItalic:'cdndSubItalicBtn',
+    subUnder:'cdndSubUnderBtn', subStrike:'cdndSubStrikeBtn'
+  };
+  const btn = document.getElementById(btnMap[key]);
   if (btn) {
-    btn.style.background = cdnd.style[key] ? 'var(--brand)' : 'rgba(255,255,255,0.1)';
+    btn.style.background  = cdnd.style[key] ? 'var(--brand)' : 'rgba(255,255,255,0.1)';
     btn.style.borderColor = cdnd.style[key] ? 'var(--brand)' : 'rgba(255,255,255,0.2)';
   }
   cdndRenderAll(); cdndSaveBack();
+}
+
+function cdndAdjLineHeight(delta) {
+  const cur = parseFloat((cdnd._extraBlockEl ? cdnd._extraBlockEl.style.lineHeight : null) || cdnd.style.lineHeight || 1.3);
+  const nv  = Math.max(0.8, Math.min(3.0, Math.round((cur + delta) * 10) / 10));
+  if (cdnd._extraBlockEl) {
+    cdnd._extraBlockEl.style.lineHeight = nv;
+  } else {
+    cdnd.style.lineHeight = nv;
+    cdndRenderAll();
+  }
+  const el = document.getElementById('cdndLineHeightVal');
+  if (el) el.textContent = nv.toFixed(1);
+}
+
+function cdndAdjOpacity(delta) {
+  const blockId = cdnd.selectedBlock;
+  if (!blockId) return;
+  const isExtra = blockId.startsWith('cdndExtra_');
+  const cap = blockId.charAt(0).toUpperCase() + blockId.slice(1);
+  const blockEl = isExtra ? document.getElementById(blockId) : document.getElementById('cdndBlock' + cap);
+  if (!blockEl) return;
+  const cur = Math.round((parseFloat(blockEl.style.opacity) || 1) * 100);
+  const nv  = Math.max(10, Math.min(100, cur + delta));
+  blockEl.style.opacity = nv / 100;
+  const el = document.getElementById('cdndOpacityVal');
+  if (el) el.textContent = nv;
 }
 
 function cdndPosInput(axis, val) {
@@ -7099,33 +7142,54 @@ async function cdndExport() {
         </div>
         <div class="cdnd-divider"></div>
 
-        <!-- Controles del bloque activo -->
+        <!-- Controles del bloque activo — toolbar compacta tipo Canva -->
         <div class="cdnd-section">
           <div class="cdnd-section-label">Texto</div>
-          <!-- Tamaño -->
-          <div class="cdnd-row" style="margin-bottom:8px;">
-            <span class="cdnd-lbl">Tamaño</span>
-            <button class="cdnd-adj-btn" onclick="cdndAdjVal('titleSize',-2)">−</button>
-            <span id="cdndTitleSizeVal" style="min-width:28px;text-align:center;font-size:13px;font-weight:700;">40</span>
-            <button class="cdnd-adj-btn" onclick="cdndAdjVal('titleSize',2)">+</button>
+
+          <!-- Fila 1: Tamaño + Color juntos -->
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+            <span class="cdnd-lbl" style="min-width:32px;">Tam.</span>
+            <div style="display:flex;align-items:center;background:rgba(255,255,255,.08);border-radius:7px;overflow:hidden;border:1px solid rgba(255,255,255,.12);">
+              <button onclick="cdndAdjVal('titleSize',-2)" style="background:none;border:none;color:#fff;cursor:pointer;padding:4px 8px;font-size:14px;line-height:1;">−</button>
+              <span id="cdndTitleSizeVal" style="min-width:28px;text-align:center;font-size:12px;font-weight:700;color:#fff;">40</span>
+              <button onclick="cdndAdjVal('titleSize',2)" style="background:none;border:none;color:#fff;cursor:pointer;padding:4px 8px;font-size:14px;line-height:1;">+</button>
+            </div>
+            <span class="cdnd-lbl" style="min-width:32px;margin-left:4px;">Color</span>
+            <input type="color" class="cdnd-color-inp" id="cdndTitleColor" value="#ffffff" oninput="cdndUpdateColor('title')" style="width:32px;height:28px;border-radius:6px;cursor:pointer;">
           </div>
-          <!-- Color -->
-          <div class="cdnd-row" style="margin-bottom:8px;">
-            <span class="cdnd-lbl">Color</span>
-            <input type="color" class="cdnd-color-inp" id="cdndTitleColor" value="#ffffff" oninput="cdndUpdateColor('title')">
+
+          <!-- Fila 2: Estilos B I U S + Alineación -->
+          <div style="display:flex;align-items:center;gap:4px;margin-bottom:8px;flex-wrap:wrap;">
+            <button id="cdndTitleBoldBtn" onclick="cdndToggleStyle('titleBold')"
+              title="Negrita" style="min-width:30px;height:30px;font-weight:800;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:#fff;cursor:pointer;font-size:13px;">B</button>
+            <button id="cdndTitleItalicBtn" onclick="cdndToggleStyle('titleItalic')"
+              title="Cursiva" style="min-width:30px;height:30px;font-style:italic;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:#fff;cursor:pointer;font-size:13px;">I</button>
+            <button id="cdndTitleUnderBtn" onclick="cdndToggleStyle('titleUnder')"
+              title="Subrayado" style="min-width:30px;height:30px;text-decoration:underline;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:#fff;cursor:pointer;font-size:13px;">U</button>
+            <button id="cdndTitleStrikeBtn" onclick="cdndToggleStyle('titleStrike')"
+              title="Tachado" style="min-width:30px;height:30px;text-decoration:line-through;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:#fff;cursor:pointer;font-size:13px;">S</button>
+            <button id="cdndTitleUpperBtn" onclick="cdndToggleStyle('titleUpper')"
+              title="Mayúsculas" style="min-width:30px;height:30px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:#fff;cursor:pointer;font-size:10px;font-weight:700;">AA</button>
+            <div style="width:1px;height:22px;background:rgba(255,255,255,.15);margin:0 2px;"></div>
+            <button onclick="cdndSetAlign('left')"   title="Izquierda" style="min-width:30px;height:30px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:#fff;cursor:pointer;font-size:13px;">⬅</button>
+            <button onclick="cdndSetAlign('center')" title="Centro"    style="min-width:30px;height:30px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:#fff;cursor:pointer;font-size:13px;">☰</button>
+            <button onclick="cdndSetAlign('right')"  title="Derecha"   style="min-width:30px;height:30px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:#fff;cursor:pointer;font-size:13px;">➡</button>
           </div>
-          <!-- Bold / Italic -->
-          <div class="cdnd-row" style="margin-bottom:8px;">
-            <span class="cdnd-lbl">Estilo</span>
-            <button id="cdndTitleBoldBtn" class="cdnd-style-btn" onclick="cdndToggleStyle('titleBold')" style="font-weight:700;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:4px 10px;color:#fff;cursor:pointer;font-size:13px;">B</button>
-            <button id="cdndTitleItalicBtn" class="cdnd-style-btn" onclick="cdndToggleStyle('titleItalic')" style="font-style:italic;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:4px 10px;color:#fff;cursor:pointer;font-size:13px;">I</button>
-          </div>
-          <!-- Alineación -->
-          <div class="cdnd-row">
-            <span class="cdnd-lbl">Alinear</span>
-            <button class="cdnd-align-btn" onclick="cdndSetAlign('left')">◀</button>
-            <button class="cdnd-align-btn" onclick="cdndSetAlign('center')">■</button>
-            <button class="cdnd-align-btn" onclick="cdndSetAlign('right')">▶</button>
+
+          <!-- Fila 3: Espaciado de línea -->
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span class="cdnd-lbl" style="min-width:32px;">Interl.</span>
+            <div style="display:flex;align-items:center;background:rgba(255,255,255,.08);border-radius:7px;border:1px solid rgba(255,255,255,.12);">
+              <button onclick="cdndAdjLineHeight(-0.1)" style="background:none;border:none;color:#fff;cursor:pointer;padding:4px 8px;font-size:14px;">−</button>
+              <span id="cdndLineHeightVal" style="min-width:28px;text-align:center;font-size:12px;font-weight:700;color:#fff;">1.3</span>
+              <button onclick="cdndAdjLineHeight(0.1)" style="background:none;border:none;color:#fff;cursor:pointer;padding:4px 8px;font-size:14px;">+</button>
+            </div>
+            <span class="cdnd-lbl" style="min-width:32px;margin-left:4px;">Opac.</span>
+            <div style="display:flex;align-items:center;background:rgba(255,255,255,.08);border-radius:7px;border:1px solid rgba(255,255,255,.12);">
+              <button onclick="cdndAdjOpacity(-10)" style="background:none;border:none;color:#fff;cursor:pointer;padding:4px 8px;font-size:14px;">−</button>
+              <span id="cdndOpacityVal" style="min-width:28px;text-align:center;font-size:12px;font-weight:700;color:#fff;">100</span>
+              <button onclick="cdndAdjOpacity(10)" style="background:none;border:none;color:#fff;cursor:pointer;padding:4px 8px;font-size:14px;">+</button>
+            </div>
           </div>
         </div>
         <div class="cdnd-divider"></div>
@@ -7133,20 +7197,21 @@ async function cdndExport() {
         <!-- Subtítulo (solo para bloques estándar) -->
         <div class="cdnd-section" id="cdndSubSection">
           <div class="cdnd-section-label">Subtítulo</div>
-          <div class="cdnd-row" style="margin-bottom:8px;">
-            <span class="cdnd-lbl">Tamaño</span>
-            <button class="cdnd-adj-btn" onclick="cdndAdjVal('subSize',-2)">−</button>
-            <span id="cdndSubSizeVal" style="min-width:28px;text-align:center;font-size:13px;font-weight:700;">20</span>
-            <button class="cdnd-adj-btn" onclick="cdndAdjVal('subSize',2)">+</button>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+            <span class="cdnd-lbl" style="min-width:32px;">Tam.</span>
+            <div style="display:flex;align-items:center;background:rgba(255,255,255,.08);border-radius:7px;border:1px solid rgba(255,255,255,.12);">
+              <button onclick="cdndAdjVal('subSize',-2)" style="background:none;border:none;color:#fff;cursor:pointer;padding:4px 8px;font-size:14px;">−</button>
+              <span id="cdndSubSizeVal" style="min-width:28px;text-align:center;font-size:12px;font-weight:700;color:#fff;">20</span>
+              <button onclick="cdndAdjVal('subSize',2)" style="background:none;border:none;color:#fff;cursor:pointer;padding:4px 8px;font-size:14px;">+</button>
+            </div>
+            <span class="cdnd-lbl" style="min-width:32px;margin-left:4px;">Color</span>
+            <input type="color" class="cdnd-color-inp" id="cdndSubColor" value="#cccccc" oninput="cdndUpdateColor('sub')" style="width:32px;height:28px;border-radius:6px;">
           </div>
-          <div class="cdnd-row" style="margin-bottom:8px;">
-            <span class="cdnd-lbl">Color</span>
-            <input type="color" class="cdnd-color-inp" id="cdndSubColor" value="#cccccc" oninput="cdndUpdateColor('sub')">
-          </div>
-          <div class="cdnd-row">
-            <span class="cdnd-lbl">Estilo</span>
-            <button id="cdndSubBoldBtn" class="cdnd-style-btn" onclick="cdndToggleStyle('subBold')" style="font-weight:700;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:4px 10px;color:#fff;cursor:pointer;font-size:13px;">B</button>
-            <button id="cdndSubItalicBtn" class="cdnd-style-btn" onclick="cdndToggleStyle('subItalic')" style="font-style:italic;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:4px 10px;color:#fff;cursor:pointer;font-size:13px;">I</button>
+          <div style="display:flex;gap:4px;">
+            <button id="cdndSubBoldBtn"   onclick="cdndToggleStyle('subBold')"   title="Negrita" style="min-width:30px;height:30px;font-weight:800;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:#fff;cursor:pointer;font-size:13px;">B</button>
+            <button id="cdndSubItalicBtn" onclick="cdndToggleStyle('subItalic')" title="Cursiva" style="min-width:30px;height:30px;font-style:italic;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:#fff;cursor:pointer;font-size:13px;">I</button>
+            <button id="cdndSubUnderBtn"  onclick="cdndToggleStyle('subUnder')"  title="Subrayado" style="min-width:30px;height:30px;text-decoration:underline;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:#fff;cursor:pointer;font-size:13px;">U</button>
+            <button id="cdndSubStrikeBtn" onclick="cdndToggleStyle('subStrike')" title="Tachado" style="min-width:30px;height:30px;text-decoration:line-through;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:#fff;cursor:pointer;font-size:13px;">S</button>
           </div>
         </div>
         <div class="cdnd-divider" id="cdndSubDivider"></div>
