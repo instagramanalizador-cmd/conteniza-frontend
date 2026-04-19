@@ -5651,6 +5651,7 @@ function cdndMakeBlockDraggable(block) {
   // Reutilizar lógica de drag existente
   block.addEventListener('mousedown', (e) => {
     if (e.target.classList.contains('cdnd-resize-handle')) return;
+    if (e.target.tagName === 'BUTTON') return; // no bloquear clicks en botones
     e.preventDefault();
     cdndSelectBlock(block.dataset.block);
     const canvas  = document.getElementById('cdndCanvas');
@@ -5767,27 +5768,63 @@ function cdndInitInlineEdit() {
 function cdndAddTextBlock() {
   const canvas = document.getElementById('cdndCanvas');
   if (!canvas) return;
+
   const blockId = 'cdndExtra_' + Date.now();
-  const block   = document.createElement('div');
-  block.className    = 'cdnd-block';
-  block.id           = blockId;
+
+  // ── Función de eliminación compartida ─────────────────────────────────
+  function doDelete() {
+    block.remove();
+    const li = document.querySelector('[data-extra-id="' + blockId + '"]');
+    if (li) li.remove();
+    if (cdnd.selectedBlock === blockId) {
+      cdnd.selectedBlock  = null;
+      cdnd._extraBlockEl  = null;
+      const nosel = document.getElementById('cdndNoSel');
+      const badge = document.getElementById('cdndActiveBlockBadge');
+      if (nosel) nosel.style.display = 'block';
+      if (badge) badge.style.display = 'none';
+    }
+  }
+
+  // ── Bloque contenedor ─────────────────────────────────────────────────
+  const block = document.createElement('div');
+  block.className     = 'cdnd-block';
+  block.id            = blockId;
   block.dataset.block = blockId;
   block.style.cssText = 'position:absolute;left:10%;top:60%;width:80%;cursor:grab;';
 
-  // Texto editable
-  const textEl = document.createElement('div');
-  textEl.id          = blockId + '_text';
-  textEl.className   = 'eblock-text';
-  textEl.contentEditable = 'false';
-  textEl.style.cssText = 'color:#fff;font-size:18px;font-weight:600;line-height:1.4;text-align:center;word-break:break-word;text-shadow:0 1px 4px rgba(0,0,0,.4);min-width:40px;';
-  textEl.textContent = 'Texto adicional';
+  // ── Botón X flotante (esquina superior derecha del bloque) ────────────
+  const delBtn = document.createElement('button');
+  delBtn.textContent = '✕';
+  delBtn.className   = 'eblock-del';
+  delBtn.style.cssText = [
+    'position:absolute;top:-10px;right:-10px;z-index:10;',
+    'width:20px;height:20px;border-radius:50%;',
+    'background:#EF4444;border:2px solid #fff;',
+    'color:#fff;font-size:11px;line-height:1;',
+    'cursor:pointer;display:flex;align-items:center;justify-content:center;',
+    'box-shadow:0 2px 6px rgba(0,0,0,.4);',
+    'opacity:0;transition:opacity .15s;pointer-events:auto;'
+  ].join('');
+  // Mostrar X al hover del bloque
+  block.addEventListener('mouseenter', () => delBtn.style.opacity = '1');
+  block.addEventListener('mouseleave', () => delBtn.style.opacity = '0');
+  delBtn.addEventListener('mousedown', (e) => { e.stopPropagation(); e.preventDefault(); });
+  delBtn.addEventListener('click',     (e) => { e.stopPropagation(); doDelete(); });
 
-  // Edición inline al doble clic
+  // ── Texto editable ────────────────────────────────────────────────────
+  const textEl = document.createElement('div');
+  textEl.id              = blockId + '_text';
+  textEl.className       = 'eblock-text';
+  textEl.contentEditable = 'false';
+  textEl.style.cssText   = 'color:#fff;font-size:18px;font-weight:600;line-height:1.4;text-align:center;word-break:break-word;text-shadow:0 1px 4px rgba(0,0,0,.4);padding:4px;';
+  textEl.textContent     = 'Texto adicional';
+
   textEl.addEventListener('dblclick', function(e) {
     e.stopPropagation();
     this.contentEditable = 'true';
-    this.style.outline = '2px solid var(--brand)';
-    this.style.cursor  = 'text';
+    this.style.outline   = '2px solid var(--brand)';
+    this.style.cursor    = 'text';
     this.focus();
     const r = document.createRange();
     r.selectNodeContents(this);
@@ -5806,62 +5843,49 @@ function cdndAddTextBlock() {
     }
   });
 
-  // Label
+  // ── Label ─────────────────────────────────────────────────────────────
   const label = document.createElement('div');
-  label.className = 'cdnd-block-label';
-  label.style.cssText = 'display:flex;align-items:center;justify-content:space-between;';
-  label.innerHTML = '<span>Texto extra · doble clic</span>';
+  label.className     = 'cdnd-block-label';
+  label.style.cssText = 'font-size:9px;opacity:.5;text-align:center;padding:2px 0;';
+  label.textContent   = 'doble clic para editar';
 
-  // Botón X para eliminar — en el label
-  const delBtn = document.createElement('button');
-  delBtn.textContent = '✕';
-  delBtn.style.cssText = 'background:rgba(248,113,113,.4);border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:10px;padding:1px 6px;margin-left:4px;line-height:1.4;';
-  delBtn.addEventListener('click', function(e) {
-    e.stopPropagation();
-    block.remove();
-    const li = document.querySelector('[data-extra-id="' + blockId + '"]');
-    if (li) li.remove();
-    if (cdnd.selectedBlock === blockId) {
-      cdnd.selectedBlock = null;
-      cdnd._extraBlockEl = null;
-      document.getElementById('cdndNoSel').style.display = 'block';
-    }
-  });
-  label.appendChild(delBtn);
-
-  // Resize handle
+  // ── Handle de resize ──────────────────────────────────────────────────
   const handle = document.createElement('div');
   handle.className = 'cdnd-resize-handle';
-  handle.id = blockId + 'Handle';
+  handle.id        = blockId + 'Handle';
 
-  block.appendChild(label);
+  block.appendChild(delBtn);
   block.appendChild(textEl);
+  block.appendChild(label);
   block.appendChild(handle);
   canvas.appendChild(block);
 
-  // Hacer arrastrable y redimensionable
+  // ── Drag & resize ─────────────────────────────────────────────────────
   cdndMakeBlockDraggable(block);
   cdndMakeBlockResizable(block, handle);
 
-  // Seleccionar y abrir tab estilo
+  // ── Seleccionar y abrir estilo ────────────────────────────────────────
   cdndSelectBlock(blockId);
 
-  // Añadir a lista del panel
+  // ── Añadir entrada en lista del panel ─────────────────────────────────
   const list = document.getElementById('cdndExtraBlockList');
   if (list) {
     const item = document.createElement('div');
     item.dataset.extraId = blockId;
-    item.style.cssText = 'display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.06);border-radius:8px;padding:6px 8px;margin-top:5px;cursor:pointer;';
+    item.style.cssText   = 'display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.06);border-radius:8px;padding:6px 8px;margin-top:5px;cursor:pointer;';
+
+    const spanLabel = document.createElement('span');
+    spanLabel.style.cssText = 'flex:1;font-size:11px;color:rgba(255,255,255,.7);';
+    spanLabel.textContent   = '✏️ Texto extra';
+
     const delLi = document.createElement('button');
-    delLi.textContent = '🗑️';
-    delLi.style.cssText = 'background:rgba(248,113,113,.15);border:none;border-radius:6px;padding:3px 7px;color:#FCA5A5;cursor:pointer;font-size:11px;';
-    delLi.addEventListener('click', function(e) {
-      e.stopPropagation();
-      document.getElementById(blockId)?.remove();
-      item.remove();
-    });
-    item.innerHTML = '<span style="flex:1;font-size:11px;color:rgba(255,255,255,.7);">✏️ Texto extra</span>';
+    delLi.textContent    = '🗑️';
+    delLi.style.cssText  = 'background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);border-radius:6px;padding:3px 7px;color:#FCA5A5;cursor:pointer;font-size:11px;';
+    delLi.addEventListener('click', (e) => { e.stopPropagation(); doDelete(); });
+
+    item.appendChild(spanLabel);
     item.appendChild(delLi);
+    item.addEventListener('click', () => cdndSelectBlock(blockId));
     list.appendChild(item);
   }
 }
