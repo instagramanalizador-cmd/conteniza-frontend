@@ -3066,7 +3066,7 @@ function renderThumbnails(thumbs) {
       <div class="thumb-num">${i+1}</div>
       <button class="thumb-dl-btn" onclick="event.stopPropagation();downloadThumbnailImage(${i})">📥 PNG</button>
       ${brandF && currentBrand?.logo_url ? `<img src="${currentBrand.logo_url}" style="width:64px;height:64px;border-radius:8px;object-fit:contain;margin-bottom:10px;background:rgba(255,255,255,.2);padding:4px;">` : ''}
-      <div class="thumb-main-text" style="${brandF?`font-family:'${brandF}',sans-serif;`:''}color:${brandFC};">${escapeHtml(t.text||'TEXTO')}</div>
+      <div class="thumb-main-text" style="${brandF?`font-family:'${brandF}',sans-serif;`:''}color:${brandFC};" id="thumbPreviewTitle_${i}">${escapeHtml(t.text||'TEXTO')}</div>
       ${t.secondary_text?`<div class="thumb-secondary" style="${brandSubF?`font-family:'${brandSubF}',sans-serif;`:''}color:${brandSFC};">${escapeHtml(t.secondary_text)}</div>`:''}
     `;
     grid.appendChild(card);
@@ -3157,7 +3157,7 @@ function renderThumbnailSpecs(i) {
             <div style="width:540px;height:675px;transform:scale(0.37037);transform-origin:top left;background:linear-gradient(135deg,${gc1},${gc2});overflow:hidden;position:relative;">
               <div style="position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 2px,transparent 2px);background-size:40px 40px;pointer-events:none;"></div>
               ${hasLogo ? `<div style="position:absolute;top:${adj.logoY||8}%;left:${adj.logoX??50}%;transform:translateX(-50%);"><div style="background:rgba(255,255,255,.18);border-radius:14px;padding:10px;display:inline-flex;"><img src="${currentBrand.logo_url}" style="width:${adj.logoSize||80}px;height:${adj.logoSize||80}px;object-fit:contain;border-radius:8px;display:block;"></div></div>` : ''}
-              <div style="position:absolute;top:${adj.titleY||42}%;left:8%;width:84%;text-align:${adj.titleAlign||'center'};font-family:'${adj.titleFont||font}',sans-serif;font-size:${adj.fontSize}px;font-weight:${titleFW};font-style:${titleFS};color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);">${escapeHtml(adj.titleText)}</div>
+              <div style="position:absolute;top:${adj.titleY||42}%;left:8%;width:84%;text-align:${adj.titleAlign||'center'};font-family:'${adj.titleFont||font}',sans-serif;font-size:${adj.fontSize}px;font-weight:${titleFW};font-style:${titleFS};color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);" id="slidePreviewTitle_${i}">${escapeHtml(adj.titleText)}</div>
               ${adj.subText ? `<div style="position:absolute;top:${adj.subY||62}%;left:8%;width:84%;text-align:${adj.subAlign||'center'};font-family:'${adj.subFontFamily||subFont}',sans-serif;font-size:${adj.subFontSize||Math.round(adj.fontSize*0.5)}px;font-weight:${subFW};font-style:${subFS_s};color:${adj.subColor||'rgba(255,255,255,.85)'};line-height:1.5;">${escapeHtml(adj.subText)}</div>` : ''}
             </div>
           </div>
@@ -3294,9 +3294,16 @@ function _updateThumbCardText(i, prop, val) {
   if (prop === 'titleText') {
     const el = card.querySelector('.thumb-main-text');
     if (el) el.textContent = val;
+    // Actualizar también el input del panel de specs
+    const inp = document.querySelector('#thumbSpecs input[oninput*="titleText"]');
+    // Y el preview title en el panel
+    const prev = document.getElementById('thumbPreviewTitle_' + i);
+    if (prev) prev.textContent = val;
   } else if (prop === 'subText') {
     const el = card.querySelector('.thumb-secondary');
     if (el) el.textContent = val;
+    const prev = document.getElementById('thumbPreviewSub_' + i);
+    if (prev) prev.textContent = val;
   }
   // Si Studio está abierto y es esta miniatura, actualizar también el canvas
   if (window.cdnd?.open && window.cdnd?.type === 'thumb' && window.cdnd?.index === i) {
@@ -3475,8 +3482,8 @@ function renderCarouselSpecs(i) {
             <div style="width:540px;height:675px;transform:scale(0.37037);transform-origin:top left;background:${bgStyle};overflow:hidden;position:relative;">
               <div style="position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 2px,transparent 2px);background-size:40px 40px;pointer-events:none;"></div>
               ${isPremium && currentBrand?.logo_url ? `<div style="position:absolute;top:${adj.logoY||8}%;left:${adj.logoX??50}%;transform:translateX(-50%);"><div style="background:rgba(255,255,255,.18);border-radius:14px;padding:10px;display:inline-flex;"><img src="${currentBrand.logo_url}" style="width:${adj.logoSize||80}px;height:${adj.logoSize||80}px;object-fit:contain;border-radius:8px;display:block;"></div></div>` : ''}
-              <div style="position:absolute;top:${adj.titleY||38}%;left:8%;width:84%;text-align:${adj.titleAlign||adj.align||'center'};font-family:'${adj.font}',sans-serif;font-size:${adj.titleSize}px;font-weight:${sTitleFW};font-style:${sTitleFS};color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);">${escapeHtml(adj.titleText)}</div>
-              <div style="position:absolute;top:${adj.contentY||60}%;left:8%;width:84%;text-align:${adj.contentAlign||adj.align||'center'};font-family:'${adjSubFont}',sans-serif;font-size:${adj.contentSize}px;font-weight:${sSubFW};font-style:${sSubFS};color:${adj.contentColor||'rgba(255,255,255,.85)'};line-height:1.5;word-break:break-word;">${escapeHtml(adj.contentText)}</div>
+              <div style="position:absolute;top:${adj.titleY||38}%;left:8%;width:84%;text-align:${adj.titleAlign||adj.align||'center'};font-family:'${adj.font}',sans-serif;font-size:${adj.titleSize}px;font-weight:${sTitleFW};font-style:${sTitleFS};color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);" id="slidePreviewTitle_${i}">${escapeHtml(adj.titleText)}</div>
+              <div style="position:absolute;top:${adj.contentY||60}%;left:8%;width:84%;text-align:${adj.contentAlign||adj.align||'center'};font-family:'${adjSubFont}',sans-serif;font-size:${adj.contentSize}px;font-weight:${sSubFW};font-style:${sSubFS};color:${adj.contentColor||'rgba(255,255,255,.85)'};line-height:1.5;word-break:break-word;" id="slidePreviewContent_${i}">${escapeHtml(adj.contentText)}</div>
             </div>
           </div>
           <!-- Controles de posición Y y alineación -->
@@ -3643,7 +3650,7 @@ function slideAdjustText(i, prop, val) {
 }
 
 function _updateSlideCardText(i, prop, val) {
-  // Actualizar la card visual del carrusel
+  // 1. Actualizar la card visual del carrusel
   const card = document.querySelector(`.slide-card[data-index="${i}"]`);
   if (card) {
     if (prop === 'titleText') {
@@ -3654,7 +3661,15 @@ function _updateSlideCardText(i, prop, val) {
       if (el) el.textContent = val;
     }
   }
-  // Si Studio está abierto con este slide, actualizar canvas
+  // 2. Actualizar vista previa en el panel de edición (la mini card)
+  if (prop === 'titleText') {
+    const prev = document.getElementById('slidePreviewTitle_' + i);
+    if (prev) prev.textContent = val;
+  } else if (prop === 'contentText') {
+    const prev = document.getElementById('slidePreviewContent_' + i);
+    if (prev) prev.textContent = val;
+  }
+  // 3. Si Studio está abierto con este slide, actualizar canvas
   if (window.cdnd?.open && window.cdnd?.type === 'slide' && window.cdnd?.index === i) {
     if (prop === 'titleText') {
       cdnd.content.title = val;
