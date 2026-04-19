@@ -6,7 +6,7 @@
   <title>Conteniza — El copiloto de contenido para Instagram de coaches y creadores</title>
   <link rel="icon" type="image/jpeg" href="logo.jpg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&family=Montserrat:wght@400;600;700&family=Poppins:wght@400;600;700&family=Playfair+Display:wght@400;700&family=Raleway:wght@400;600;700&family=Oswald:wght@400;600&family=Lato:wght@400;700&family=Roboto:wght@400;700&family=Inter:wght@400;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&family=Montserrat:wght@400;600;700&family=Poppins:wght@400;600;700&family=Playfair+Display:wght@400;700&family=Raleway:wght@400;600;700&family=Oswald:wght@400;600&family=Lato:wght@400;700&family=Roboto:wght@400;700&family=Inter:wght@400;600;700&family=Nunito:wght@400;600;700&family=Bebas+Neue&family=Abril+Fatface&family=Josefin+Sans:wght@400;600;700&family=Archivo+Black&family=Barlow+Condensed:wght@400;600;700&family=Space+Grotesk:wght@400;600;700&family=Syne:wght@400;600;700;800&family=Unbounded:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -2844,13 +2844,11 @@ async function generateContent(event) {
     const d = await r.json();
     if (!r.ok) throw new Error(d.error || 'Error generando contenido');
 
-    currentResults = d.analysis || d;
-    // Forzar ID — el Copiloto lo necesita obligatoriamente
+    currentResults = d.analysis;
+    // Asegurar que el ID queda guardado para el Copiloto IA
+    // Forzar ID siempre — el copiloto lo necesita
     if (currentResults) {
-      // El backend devuelve el ID en d.analysis_id (root) o dentro de d.analysis.id
-      currentResults.id = d.analysis_id || d.id || d.analysis?.id || currentResults.id || currentResults.analysis_id || null;
-      if (!currentResults.id) console.warn('⚠️ No se encontró analysis_id en la respuesta');
-      else console.log('✅ analysis_id guardado:', currentResults.id);
+      currentResults.id = d.id || d.analysis_id || d.analysis?.id || currentResults.id || null;
     }
     userCredits    = d.credits_remaining ?? userCredits - 1;
     updateCreditIndicator();
@@ -3159,7 +3157,7 @@ function renderThumbnailSpecs(i) {
             <div style="width:540px;height:675px;transform:scale(0.37037);transform-origin:top left;background:linear-gradient(135deg,${gc1},${gc2});overflow:hidden;position:relative;">
               <div style="position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle,#fff 2px,transparent 2px);background-size:40px 40px;pointer-events:none;"></div>
               ${hasLogo ? `<div style="position:absolute;top:${adj.logoY||8}%;left:${adj.logoX??50}%;transform:translateX(-50%);"><div style="background:rgba(255,255,255,.18);border-radius:14px;padding:10px;display:inline-flex;"><img src="${currentBrand.logo_url}" style="width:${adj.logoSize||80}px;height:${adj.logoSize||80}px;object-fit:contain;border-radius:8px;display:block;"></div></div>` : ''}
-              <div style="position:absolute;top:${adj.titleY||42}%;left:8%;width:84%;text-align:${adj.titleAlign||'center'};font-family:'${adj.titleFont||font}',sans-serif;font-size:${adj.fontSize}px;font-weight:${titleFW};font-style:${titleFS};color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);" id="slidePreviewTitle_${i}">${escapeHtml(adj.titleText)}</div>
+              <div style="position:absolute;top:${adj.titleY||42}%;left:8%;width:84%;text-align:${adj.titleAlign||'center'};font-family:'${adj.titleFont||font}',sans-serif;font-size:${adj.fontSize}px;font-weight:${titleFW};font-style:${titleFS};color:${adj.titleColor||'#fff'};line-height:1.2;word-break:break-word;text-shadow:0 2px 12px rgba(0,0,0,0.3);" id="thumbPreviewTitle_${i}">${escapeHtml(adj.titleText)}</div>
               ${adj.subText ? `<div style="position:absolute;top:${adj.subY||62}%;left:8%;width:84%;text-align:${adj.subAlign||'center'};font-family:'${adj.subFontFamily||subFont}',sans-serif;font-size:${adj.subFontSize||Math.round(adj.fontSize*0.5)}px;font-weight:${subFW};font-style:${subFS_s};color:${adj.subColor||'rgba(255,255,255,.85)'};line-height:1.5;">${escapeHtml(adj.subText)}</div>` : ''}
             </div>
           </div>
@@ -3362,10 +3360,7 @@ function thumbAdjustFn(i, prop, val) {
       Math.min(prop === 'fontSize' ? 120 : prop === 'subFontSize' ? 60 : 300, window.thumbAdjust[i][prop] + val)
     );
   }
-  const focusedT = document.activeElement;
-  const focusedTId = focusedT?.id;
   renderThumbnailSpecs(i);
-  if (focusedTId) { const el = document.getElementById(focusedTId); if (el) el.focus(); }
 }
 
 /* ============================================================
@@ -3642,37 +3637,24 @@ function slideAdjustFn(i, prop, val) {
     const max = prop === 'titleSize' ? 80 : prop === 'logoSize' ? 300 : 50;
     window.slideAdjust[i][prop] = Math.max(min, Math.min(max, window.slideAdjust[i][prop] + val));
   }
-  // Para cambios de texto/posición: actualizar solo los elementos del preview
-  // Para cambios de estilo (fuente, tamaño, color, bold): re-renderizar es necesario
-  const textOnlyProps = ['titleY','contentY','logoY','titleX','contentX','logoX'];
-  if (textOnlyProps.includes(prop)) {
-    // Solo actualizar posición en el preview — no re-renderizar el panel
-    const titlePrev = document.getElementById('slidePreviewTitle_' + i);
-    const contentPrev = document.getElementById('slidePreviewContent_' + i);
-    if (titlePrev && window.slideAdjust[i]) {
-      titlePrev.style.top = (window.slideAdjust[i].titleY || 38) + '%';
-    }
-    if (contentPrev && window.slideAdjust[i]) {
-      contentPrev.style.top = (window.slideAdjust[i].contentY || 60) + '%';
-    }
-  } else {
-    // Guardar foco antes de re-renderizar
-    const focused = document.activeElement;
-    const focusedId = focused?.id;
-    const focusedVal = focused?.value;
-    const selStart = focused?.selectionStart;
-    renderCarouselSpecs(i);
-    // Restaurar foco
-    if (focusedId) {
-      const el = document.getElementById(focusedId);
-      if (el) {
-        el.focus();
-        if (focusedVal !== undefined && el.value !== undefined) {
-          try { el.setSelectionRange(selStart, selStart); } catch(e) {}
-        }
+  // Guardar foco antes de re-renderizar
+  const _fEl  = document.activeElement;
+  const _fId  = _fEl?.id;
+  const _fVal = (_fEl?.tagName === 'INPUT' || _fEl?.tagName === 'TEXTAREA') ? _fEl.value : null;
+  const _fSel = _fVal !== null ? _fEl.selectionStart : null;
+  renderCarouselSpecs(i);
+  // Restaurar foco y valor
+  if (_fId) {
+    const _rEl = document.getElementById(_fId);
+    if (_rEl) {
+      _rEl.focus();
+      if (_fVal !== null && _rEl.value !== undefined) {
+        _rEl.value = _fVal;
+        try { _rEl.setSelectionRange(_fSel, _fSel); } catch(e) {}
       }
     }
   }
+  // NO actualizar la tarjeta horizontal del carrusel — solo la vista previa vertical
 }
 
 function slideAdjustText(i, prop, val) {
@@ -5408,7 +5390,7 @@ async function igModalExport() {
 
 const CDND_W  = 200;   // canvas preview width px — igual que panel (540×0.37037)
 const CDND_H  = 250;   // canvas preview height px — igual que panel (675×0.37037)
-const CDND_FONTS = ['DM Sans','Montserrat','Poppins','Playfair Display','Raleway','Oswald','Lato','Roboto','Inter','Nunito'];
+const CDND_FONTS = ['DM Sans','Montserrat','Poppins','Playfair Display','Raleway','Oswald','Lato','Roboto','Inter','Nunito','Bebas Neue','Abril Fatface','Josefin Sans','Archivo Black','Barlow Condensed','Space Grotesk','Syne','Unbounded'];
 
 let cdnd = {
   open: false,
@@ -5435,6 +5417,9 @@ let cdnd = {
   bgOpacity: 1,
   },
   content: { title:'', sub:'', logoUrl:null },
+  // Bloque seleccionado (unificado: funciona para título, sub, logo Y bloques extra)
+  _selectedType: null,   // 'title'|'sub'|'logo'|'extra'
+  _extraBlockEl: null,   // referencia al div contentEditable del bloque extra
 };
 
 // ── Abrir Studio ──
@@ -5764,44 +5749,28 @@ function cdndAddTextBlock() {
   block.className    = 'cdnd-block';
   block.id           = blockId;
   block.dataset.block = blockId;
-  block.style.cssText = 'left:10%;top:80%;width:80%;cursor:grab;';
+  block.style.cssText = 'left:10%;top:75%;width:80%;cursor:grab;';
+
+  // Texto editable
   const textEl = document.createElement('div');
   textEl.id          = blockId + '_text';
-  textEl.style.cssText = 'color:#fff;font-size:16px;font-weight:600;line-height:1.4;text-align:center;word-break:break-word;text-shadow:0 1px 4px rgba(0,0,0,.4);';
-  textEl.textContent  = 'Texto adicional';
-  const label = document.createElement('div');
-  label.className = 'cdnd-block-label';
-  label.style.cssText = 'display:flex;align-items:center;justify-content:space-between;';
-  label.innerHTML = '<span>Texto extra</span>';
-  const delBtn = document.createElement('button');
-  delBtn.textContent = '✕';
-  delBtn.style.cssText = 'background:rgba(248,113,113,.3);border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:10px;padding:1px 5px;margin-left:4px;';
-  delBtn.onclick = (e) => {
-    e.stopPropagation();
-    block.remove();
-    const listItem = document.querySelector(`[data-for="${blockId}"]`);
-    if (listItem) listItem.remove();
-  };
-  label.appendChild(delBtn);
-  const handle = document.createElement('div');
-  handle.className = 'cdnd-resize-handle';
-  handle.id = blockId + 'Handle';
-  block.appendChild(label);
-  block.appendChild(textEl);
-  block.appendChild(handle);
-  canvas.appendChild(block);
-  // Edición inline
+  textEl.className   = 'eblock-text';
   textEl.contentEditable = 'false';
+  textEl.style.cssText = 'color:#fff;font-size:18px;font-weight:600;line-height:1.4;text-align:center;word-break:break-word;text-shadow:0 1px 4px rgba(0,0,0,.4);min-width:40px;';
+  textEl.textContent = 'Texto adicional';
+
+  // Edición inline al doble clic
   textEl.addEventListener('dblclick', function(e) {
     e.stopPropagation();
     this.contentEditable = 'true';
-    this.style.outline   = '2px solid var(--brand)';
-    this.style.cursor    = 'text';
+    this.style.outline = '2px solid var(--brand)';
+    this.style.cursor  = 'text';
     this.focus();
-    const range = document.createRange();
-    range.selectNodeContents(this);
-    window.getSelection().removeAllRanges();
-    window.getSelection().addRange(range);
+    const r = document.createRange();
+    r.selectNodeContents(this);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(r);
   });
   textEl.addEventListener('blur', function() {
     this.contentEditable = 'false';
@@ -5809,21 +5778,67 @@ function cdndAddTextBlock() {
     this.style.cursor    = '';
   });
   textEl.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' || (e.key === 'Enter' && !e.shiftKey)) { e.preventDefault(); this.blur(); }
+    if (e.key === 'Escape' || (e.key === 'Enter' && !e.shiftKey)) {
+      e.preventDefault(); this.blur();
+    }
   });
+
+  // Label
+  const label = document.createElement('div');
+  label.className = 'cdnd-block-label';
+  label.style.cssText = 'display:flex;align-items:center;justify-content:space-between;';
+  label.innerHTML = '<span>Texto extra · doble clic</span>';
+
+  // Botón X para eliminar — en el label
+  const delBtn = document.createElement('button');
+  delBtn.textContent = '✕';
+  delBtn.style.cssText = 'background:rgba(248,113,113,.4);border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:10px;padding:1px 6px;margin-left:4px;line-height:1.4;';
+  delBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    block.remove();
+    const li = document.querySelector('[data-extra-id="' + blockId + '"]');
+    if (li) li.remove();
+    if (cdnd.selectedBlock === blockId) {
+      cdnd.selectedBlock = null;
+      cdnd._extraBlockEl = null;
+      document.getElementById('cdndNoSel').style.display = 'block';
+    }
+  });
+  label.appendChild(delBtn);
+
+  // Resize handle
+  const handle = document.createElement('div');
+  handle.className = 'cdnd-resize-handle';
+  handle.id = blockId + 'Handle';
+
+  block.appendChild(label);
+  block.appendChild(textEl);
+  block.appendChild(handle);
+  canvas.appendChild(block);
+
+  // Hacer arrastrable y redimensionable
   cdndMakeBlockDraggable(block);
   cdndMakeBlockResizable(block, handle);
+
+  // Seleccionar y abrir tab estilo
   cdndSelectBlock(blockId);
-  // Abrir tab Estilo automáticamente para editar el bloque recién creado
-  cdndTab('estilo');
-  // Añadir a lista de bloques
+
+  // Añadir a lista del panel
   const list = document.getElementById('cdndExtraBlockList');
   if (list) {
     const item = document.createElement('div');
-    item.style.cssText = 'display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.06);border-radius:8px;padding:6px 8px;margin-top:5px;';
-    item.dataset.for = blockId;
-    item.innerHTML = `<span style="flex:1;font-size:11px;color:rgba(255,255,255,.7);">✏️ Texto extra</span>
-      <button onclick="document.getElementById('${blockId}')?.remove();document.querySelector('[data-for=\'${blockId}\']')?.remove()" style="background:rgba(248,113,113,.15);border:none;border-radius:6px;padding:3px 7px;color:#FCA5A5;cursor:pointer;font-size:11px;">🗑️</button>`;
+    item.dataset.extraId = blockId;
+    item.style.cssText = 'display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.06);border-radius:8px;padding:6px 8px;margin-top:5px;cursor:pointer;';
+    const delLi = document.createElement('button');
+    delLi.textContent = '🗑️';
+    delLi.style.cssText = 'background:rgba(248,113,113,.15);border:none;border-radius:6px;padding:3px 7px;color:#FCA5A5;cursor:pointer;font-size:11px;';
+    delLi.addEventListener('click', function(e) {
+      e.stopPropagation();
+      document.getElementById(blockId)?.remove();
+      item.remove();
+    });
+    item.innerHTML = '<span style="flex:1;font-size:11px;color:rgba(255,255,255,.7);">✏️ Texto extra</span>';
+    item.appendChild(delLi);
     list.appendChild(item);
   }
 }
@@ -6126,55 +6141,71 @@ function _cdndRU() {
 // ── Controles ──
 function cdndSelectBlock(id) {
   cdnd.selectedBlock = id;
+  cdnd._extraBlockEl = null;
+  cdnd._selectedType = null;
+
   document.querySelectorAll('.cdnd-block').forEach(el => el.classList.remove('selected'));
   document.querySelectorAll('.cdnd-block-item').forEach(el => el.classList.remove('active'));
-  if (id) {
-    // Standard blocks (logo, title, sub)
-    const cap = id.charAt(0).toUpperCase() + id.slice(1);
-    document.getElementById('cdndBlock' + cap)?.classList.add('selected');
-    document.getElementById('cdndItem'  + cap)?.classList.add('active');
-    // Extra blocks (cdndExtra_...)
-    if (id.startsWith('cdndExtra_')) {
-      document.getElementById(id)?.classList.add('selected');
-      // Sync estilo tab with this extra block
-      const textEl = document.getElementById(id + '_text');
-      if (textEl) {
-        cdnd._extraBlockEl = textEl;
-        // Sync font size into title size control
-        const fs = parseFloat(textEl.style.fontSize) || 16;
-        const sizeEl = document.getElementById('cdndTitleSizeVal');
-        if (sizeEl) sizeEl.textContent = Math.round(fs);
-        // Sync color
-        const colorEl = document.getElementById('cdndTitleColor');
-        if (colorEl) {
-          const rgb = textEl.style.color;
-          if (rgb && !rgb.startsWith('#')) {
-            const m = rgb.match(/(\d+),\s*(\d+),\s*(\d+)/);
-            if (m) colorEl.value = '#' + [m[1],m[2],m[3]].map(x=>parseInt(x).toString(16).padStart(2,'0')).join('');
-          } else if (rgb) colorEl.value = rgb;
-        }
-        // Switch to Estilo tab automatically
-        cdndTab('estilo');
-      }
-      // Show pos panel without X/Y (extra blocks use CSS %)
-      document.getElementById('cdndPosPanel').style.display = 'none';
-      document.getElementById('cdndNoSel').style.display   = 'none';
-    } else {
-      document.getElementById('cdndPosPanel').style.display = 'block';
-      document.getElementById('cdndNoSel').style.display   = 'none';
-      const label = id==='logo'?'Logo':id==='title'?'Título':'Subtítulo';
-      document.getElementById('cdndPosLabel').textContent  = 'Posición — ' + label;
-      if (cdnd.blocks[id]) {
-        document.getElementById('cdndInputX').value = Math.round(cdnd.blocks[id].x);
-        document.getElementById('cdndInputY').value = Math.round(cdnd.blocks[id].y);
-      }
-      cdnd._extraBlockEl = null;
-    }
-  } else {
+
+  if (!id) {
     document.getElementById('cdndPosPanel').style.display = 'none';
     document.getElementById('cdndNoSel').style.display   = 'block';
-    cdnd._extraBlockEl = null;
+    return;
   }
+
+  const isExtra = id.startsWith('cdndExtra_') || id.startsWith('cdndImg_');
+  const cap     = id.charAt(0).toUpperCase() + id.slice(1);
+
+  if (isExtra) {
+    document.getElementById(id)?.classList.add('selected');
+    cdnd._selectedType = 'extra';
+    const textEl = document.getElementById(id + '_text') ||
+                   document.querySelector('#' + id + ' [contenteditable]');
+    if (textEl) {
+      cdnd._extraBlockEl = textEl;
+      cdndSyncPanelFromBlock(textEl);
+    }
+    cdndTab('estilo');
+    document.getElementById('cdndPosPanel').style.display = 'none';
+    document.getElementById('cdndNoSel').style.display   = 'none';
+  } else {
+    cdnd._selectedType = id;
+    document.getElementById('cdndBlock' + cap)?.classList.add('selected');
+    document.getElementById('cdndItem'  + cap)?.classList.add('active');
+    document.getElementById('cdndPosPanel').style.display = 'block';
+    document.getElementById('cdndNoSel').style.display   = 'none';
+    const label = id==='logo'?'Logo':id==='title'?'Título':'Subtítulo';
+    document.getElementById('cdndPosLabel').textContent = 'Posición — ' + label;
+    if (cdnd.blocks[id]) {
+      document.getElementById('cdndInputX').value = Math.round(cdnd.blocks[id].x);
+      document.getElementById('cdndInputY').value = Math.round(cdnd.blocks[id].y);
+    }
+  }
+}
+
+function cdndSyncPanelFromBlock(textEl) {
+  if (!textEl) return;
+  const fs  = parseFloat(textEl.style.fontSize) || 16;
+  const col = textEl.style.color || '#ffffff';
+  const ff  = (textEl.style.fontFamily || 'DM Sans').replace(/['"]/g,'').split(',')[0].trim();
+  const isBold   = textEl.style.fontWeight === '700' || textEl.style.fontWeight === 'bold';
+  const isItalic = textEl.style.fontStyle  === 'italic';
+  const sizeEl = document.getElementById('cdndTitleSizeVal');
+  if (sizeEl) sizeEl.textContent = Math.round(fs);
+  const colorEl = document.getElementById('cdndTitleColor');
+  if (colorEl) {
+    if (col.startsWith('rgb')) {
+      const m = col.match(/(\d+),\s*(\d+),\s*(\d+)/);
+      if (m) colorEl.value = '#' + [m[1],m[2],m[3]].map(x=>parseInt(x).toString(16).padStart(2,'0')).join('');
+    } else colorEl.value = col;
+  }
+  document.querySelectorAll('.cdnd-font-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.textContent.trim() === ff);
+  });
+  const boldBtn   = document.getElementById('cdndTitleBoldBtn');
+  const italicBtn = document.getElementById('cdndTitleItalicBtn');
+  if (boldBtn)   boldBtn.style.background   = isBold   ? 'var(--brand)' : 'rgba(255,255,255,0.1)';
+  if (italicBtn) italicBtn.style.background = isItalic ? 'var(--brand)' : 'rgba(255,255,255,0.1)';
 }
 
 function cdndToggleVisible(id) {
@@ -6207,13 +6238,11 @@ function cdndUpdateBg() {
 }
 
 function cdndAdjVal(key, delta) {
-  // If an extra block is selected, adjust its font size
-  if (cdnd._extraBlockEl && (key === 'titleSize' || key === 'subSize')) {
-    const current = parseFloat(cdnd._extraBlockEl.style.fontSize) || 16;
-    const newSize = Math.max(8, Math.min(120, current + delta));
-    cdnd._extraBlockEl.style.fontSize = newSize + 'px';
-    const sizeEl = document.getElementById('cdndTitleSizeVal');
-    if (sizeEl) sizeEl.textContent = newSize;
+  if (cdnd._extraBlockEl && (key==='titleSize'||key==='subSize')) {
+    const cur = parseFloat(cdnd._extraBlockEl.style.fontSize)||16;
+    const nv  = Math.max(8, Math.min(120, cur + delta));
+    cdnd._extraBlockEl.style.fontSize = nv + 'px';
+    const sv = document.getElementById('cdndTitleSizeVal'); if(sv) sv.textContent=nv;
     return;
   }
   const mins = {titleSize:12, subSize:8, logoSize:30};
@@ -6223,11 +6252,9 @@ function cdndAdjVal(key, delta) {
 }
 
 function cdndUpdateColor(which) {
-  // Si hay un bloque extra seleccionado, aplicar color a ese bloque
-  if (cdnd._extraBlockEl && which === 'title') {
-    const val = document.getElementById('cdndTitleColor')?.value;
-    if (val) cdnd._extraBlockEl.style.color = val;
-    return;
+  if (cdnd._extraBlockEl && which==='title') {
+    const v = document.getElementById('cdndTitleColor')?.value;
+    if(v) { cdnd._extraBlockEl.style.color = v; } return;
   }
   if(which==='title') cdnd.style.titleColor = document.getElementById('cdndTitleColor').value;
   else                cdnd.style.subColor   = document.getElementById('cdndSubColor').value;
@@ -6241,14 +6268,10 @@ function cdndSetAlign(which, align) {
 }
 
 function cdndToggleStyle(key) {
-  // Si hay un bloque extra seleccionado, aplicar estilo a ese bloque
   if (cdnd._extraBlockEl) {
-    if (key === 'titleBold' || key === 'subBold') {
-      cdnd._extraBlockEl.style.fontWeight = cdnd._extraBlockEl.style.fontWeight === '700' ? '400' : '700';
-    } else if (key === 'titleItalic' || key === 'subItalic') {
-      cdnd._extraBlockEl.style.fontStyle = cdnd._extraBlockEl.style.fontStyle === 'italic' ? 'normal' : 'italic';
-    }
-    return;
+    if(key==='titleBold'||key==='subBold') cdnd._extraBlockEl.style.fontWeight = cdnd._extraBlockEl.style.fontWeight==='700'?'400':'700';
+    if(key==='titleItalic'||key==='subItalic') cdnd._extraBlockEl.style.fontStyle = cdnd._extraBlockEl.style.fontStyle==='italic'?'normal':'italic';
+    cdndSyncPanelFromBlock(cdnd._extraBlockEl); return;
   }
   cdnd.style[key] = !cdnd.style[key];
   // Actualizar visual del botón
@@ -6363,20 +6386,6 @@ function cdndSetFontTarget(target) {
   cdndBuildFonts();
 }
 
-function cdndApplyFont(fontName) {
-  // Apply font to extra block if selected, else to title/sub via cdnd.style
-  if (cdnd._extraBlockEl) {
-    cdnd._extraBlockEl.style.fontFamily = "'" + fontName + "',sans-serif";
-    cdndRenderAll();
-    return;
-  }
-  // Default: apply to whichever target is active in the Estilo tab
-  const target = document.querySelector('#cdndTabEstilo .cdnd-font-target.active')?.dataset?.target || 'title';
-  if (target === 'title' || target === 'both') { cdnd.style.titleFont = fontName; }
-  if (target === 'sub'   || target === 'both') { cdnd.style.subFont   = fontName; }
-  cdndRenderAll();
-}
-
 function cdndBuildFonts() {
   const grid = document.getElementById('cdndFontGrid');
   if (!grid) return;
@@ -6389,12 +6398,7 @@ function cdndBuildFonts() {
 }
 
 function cdndSetFont(font) {
-  // Si hay un bloque extra seleccionado, aplicar la fuente a ese bloque
-  if (cdnd._extraBlockEl) {
-    cdnd._extraBlockEl.style.fontFamily = "'" + font + "',sans-serif";
-    cdndBuildFonts();
-    return;
-  }
+  if (cdnd._extraBlockEl) { cdnd._extraBlockEl.style.fontFamily = "'" + font + "',sans-serif"; cdndBuildFonts(); return; }
   if(cdndFontTarget==='title'||cdndFontTarget==='both') cdnd.style.titleFont=font;
   if(cdndFontTarget==='sub'  ||cdndFontTarget==='both') cdnd.style.subFont  =font;
   cdndBuildFonts(); cdndRenderAll(); cdndSaveBack();
@@ -6770,16 +6774,16 @@ async function cdndExport() {
             <div class="cdnd-block-item active" id="cdndItemTitle" onclick="cdndSelectBlock('title')">
               <div style="display:flex;align-items:center;gap:7px;">
                 <span style="font-size:14px;">✏️</span>
-                <span style="font-size:11px;color:rgba(255,255,255,.7);font-weight:600;">Título <span style="font-size:9px;opacity:.5">· doble clic para editar</span></span>
+                <span style="font-size:11px;color:rgba(255,255,255,.7);font-weight:600;">Título</span>
               </div>
-              <button class="cdnd-eye-btn" id="cdndEyeTitle" onclick="event.stopPropagation();cdndToggleVisible('title')">👁</button>
+              <button class="cdnd-eye-btn" id="cdndEyeTitle" onclick="event.stopPropagation();cdndToggleVisible('title')" title="Ocultar/mostrar">👁</button>
             </div>
             <div class="cdnd-block-item" id="cdndItemSub" onclick="cdndSelectBlock('sub')">
               <div style="display:flex;align-items:center;gap:7px;">
                 <span style="font-size:14px;">💬</span>
-                <span style="font-size:11px;color:rgba(255,255,255,.7);font-weight:600;">Subtítulo <span style="font-size:9px;opacity:.5">· doble clic</span></span>
+                <span style="font-size:11px;color:rgba(255,255,255,.7);font-weight:600;">Subtítulo</span>
               </div>
-              <button class="cdnd-eye-btn" id="cdndEyeSub" onclick="event.stopPropagation();cdndToggleVisible('sub')">👁</button>
+              <button class="cdnd-eye-btn" id="cdndEyeSub" onclick="event.stopPropagation();cdndToggleVisible('sub')" title="Ocultar/mostrar">👁</button>
             </div>
           </div>
           <!-- Añadir texto extra -->
@@ -9667,13 +9671,8 @@ document.addEventListener('keydown', e => {
       return;
     }
     if (!currentResults) { showNotification('Genera contenido primero', 'error'); return; }
-    _refineAnalysisId = currentResults.id || currentResults.analysis_id || currentResults._id;
-    if (!_refineAnalysisId) {
-      // Último intento: buscar en la respuesta del backend guardada
-      console.warn('⚠️ Sin analysis_id, intentando abrir copiloto sin ID');
-      showNotification('⚠️ El copiloto puede tener funcionalidad limitada', 'info');
-      // No bloquear — el backend puede manejar el historial sin ID
-    }
+    _refineAnalysisId = currentResults.id || currentResults.analysis_id;
+    if (!_refineAnalysisId) { showNotification('Análisis no disponible para refinar', 'error'); return; }
     const rs = document.getElementById('resultsSection');
     if (rs && panel.parentNode !== rs) rs.appendChild(panel);
     panel.classList.add('visible');
