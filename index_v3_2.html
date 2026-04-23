@@ -1,0 +1,1846 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Conteniza — Crea contenido para Instagram con IA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand:       #7C3AED;
+      --brand-mid:   #9D5CF6;
+      --brand-light: #EDE9FE;
+      --brand-dark:  #5B21B6;
+      --accent:      #F43F5E;
+      --success:     #10B981;
+      --warning:     #F59E0B;
+      --danger:      #EF4444;
+      --bg:          #F8F7FF;
+      --surface:     #FFFFFF;
+      --surface-2:   #F3F2FA;
+      --border:      #E5E0F9;
+      --border-mid:  #C4B5FD;
+      --text:        #1E1B2E;
+      --text-2:      #6B6583;
+      --text-3:      #A89EC9;
+      --radius-sm:   8px;
+      --radius-md:   14px;
+      --radius-lg:   20px;
+      --radius-xl:   28px;
+      --radius-full: 999px;
+      --shadow-sm:   0 1px 3px rgba(124,58,237,.08);
+      --shadow-md:   0 4px 16px rgba(124,58,237,.12);
+      --shadow-lg:   0 12px 40px rgba(124,58,237,.16);
+      --grad-brand:  linear-gradient(135deg, #7C3AED 0%, #F43F5E 100%);
+      --grad-dark:   linear-gradient(135deg, #1E1B2E 0%, #2D1F6E 100%);
+    }
+
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    html, body { overflow-x:hidden; max-width:100%; }
+    body {
+      font-family:'DM Sans', -apple-system, sans-serif;
+      background:var(--bg); color:var(--text);
+      min-height:100vh; line-height:1.6;
+      -webkit-font-smoothing:antialiased;
+    }
+    .hidden { display:none !important; }
+
+    /* ── TOAST ── */
+    .toast {
+      position:fixed; top:24px; right:24px; max-width:380px;
+      padding:14px 20px; border-radius:var(--radius-md);
+      box-shadow:var(--shadow-lg); z-index:10000; display:none;
+      font-size:14px; font-weight:500; align-items:center; gap:10px;
+      animation:toastIn .3s cubic-bezier(.22,1,.36,1);
+    }
+    .toast.visible { display:flex; }
+    .toast.success { background:#ECFDF5; color:#065F46; border-left:4px solid var(--success); }
+    .toast.error   { background:#FEF2F2; color:#991B1B; border-left:4px solid var(--danger); }
+    .toast.info    { background:var(--brand-light); color:var(--brand-dark); border-left:4px solid var(--brand); }
+    @keyframes toastIn { from { transform:translateX(40px); opacity:0; } to { transform:translateX(0); opacity:1; } }
+
+    /* ── SPINNER ── */
+    .spinner {
+      width:18px; height:18px; border:2.5px solid rgba(255,255,255,.35);
+      border-top-color:#fff; border-radius:50%;
+      animation:spin .7s linear infinite; flex-shrink:0;
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* ── PROGRESS BAR ── */
+    #progressBar {
+      position:fixed; top:0; left:0; right:0; z-index:9999;
+      height:3px; background:rgba(124,58,237,.15); display:none;
+    }
+    #progressBar.visible { display:block; }
+    #progressFill {
+      height:100%; background:var(--grad-brand);
+      transition:width .4s ease; border-radius:0 2px 2px 0;
+    }
+
+    /* ── USER BAR ── */
+    .user-bar {
+      display:none; background:var(--grad-dark);
+      position:sticky; top:0; z-index:100;
+      box-shadow:0 2px 12px rgba(0,0,0,.2);
+    }
+    .user-bar.visible { display:block; }
+    .user-bar-inner {
+      max-width:1100px; margin:0 auto; padding:10px 20px;
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px; min-height:54px;
+    }
+    .user-bar-left  { display:flex; align-items:center; gap:10px; min-width:0; }
+    .user-bar-right { display:flex; align-items:center; gap:6px; flex-wrap:nowrap; overflow-x:auto; }
+    .user-bar-right::-webkit-scrollbar { display:none; }
+    .ub-btn {
+      display:flex; align-items:center; gap:5px;
+      padding:7px 12px; border-radius:var(--radius-sm);
+      border:1px solid rgba(255,255,255,.15); background:rgba(255,255,255,.08);
+      color:rgba(255,255,255,.85); font-size:12px; font-weight:600;
+      cursor:pointer; white-space:nowrap; transition:all .15s;
+    }
+    .ub-btn:hover { background:rgba(255,255,255,.16); border-color:rgba(255,255,255,.3); }
+    .ub-btn.upgrade { background:var(--grad-brand); border-color:transparent; color:#fff; }
+    .ub-btn.danger  { color:#FCA5A5; border-color:rgba(252,165,165,.25); }
+    .ub-btn.danger:hover { background:rgba(252,129,129,.15); }
+    .ub-btn.admin   { color:#FCD34D; border-color:rgba(252,211,77,.25); }
+    .ub-sep { width:1px; height:20px; background:rgba(255,255,255,.12); flex-shrink:0; }
+
+    /* ── PLANS HERO ── */
+    .hero-bg {
+      background:var(--grad-dark); padding:80px 20px 60px;
+      text-align:center; position:relative; overflow:hidden;
+    }
+    .hero-bg::before {
+      content:''; position:absolute; inset:0;
+      background:radial-gradient(ellipse 70% 60% at 50% 0%, rgba(124,58,237,.4) 0%, transparent 70%);
+    }
+    .hero-badge {
+      display:inline-block; background:rgba(255,255,255,.1);
+      border:1px solid rgba(255,255,255,.2); color:rgba(255,255,255,.9);
+      padding:6px 18px; border-radius:var(--radius-full);
+      font-size:13px; font-weight:600; margin-bottom:20px;
+    }
+    .hero-title {
+      font-family:'Syne', sans-serif; font-size:clamp(32px,5vw,52px);
+      font-weight:800; color:#fff; line-height:1.15; margin-bottom:16px; position:relative;
+    }
+    .hero-title span { color:#F43F5E; }
+    .hero-sub {
+      font-size:clamp(14px,2vw,17px); color:rgba(255,255,255,.7);
+      max-width:540px; margin:0 auto; line-height:1.6; position:relative;
+    }
+
+    /* ── PLANS GRID ── */
+    .plans-grid {
+      display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+      gap:20px; max-width:900px; margin:0 auto; padding:0 20px;
+    }
+    .plan-card {
+      background:var(--surface); border:2px solid var(--border);
+      border-radius:var(--radius-xl); padding:28px 24px;
+      transition:all .2s; cursor:pointer; position:relative;
+      display:flex; flex-direction:column;
+    }
+    .plan-card:hover { border-color:var(--brand-mid); box-shadow:var(--shadow-md); transform:translateY(-2px); }
+    .plan-card.featured { border-color:var(--brand); box-shadow:0 0 0 1px var(--brand), var(--shadow-lg); }
+    .plan-badge {
+      position:absolute; top:-12px; left:50%; transform:translateX(-50%);
+      background:var(--grad-brand); color:#fff; font-size:11px; font-weight:800;
+      padding:4px 14px; border-radius:var(--radius-full); white-space:nowrap;
+    }
+    .plan-name  { font-family:'Syne',sans-serif; font-size:20px; font-weight:800; margin-bottom:4px; }
+    .plan-price { font-size:32px; font-weight:800; color:var(--brand); margin:12px 0 4px; }
+    .plan-price span { font-size:14px; font-weight:500; color:var(--text-2); }
+    .plan-credits { font-size:13px; color:var(--text-2); margin-bottom:20px; }
+    .plan-features { list-style:none; display:flex; flex-direction:column; gap:8px; margin-bottom:24px; }
+    .plan-features li { font-size:13px; display:flex; align-items:flex-start; gap:8px; }
+    .plan-features li::before { content:'✓'; color:var(--success); font-weight:700; flex-shrink:0; }
+    .btn {
+      display:inline-flex; align-items:center; justify-content:center; gap:8px;
+      padding:10px 20px; border-radius:var(--radius-md); font-size:14px;
+      font-weight:700; cursor:pointer; border:none; transition:all .15s; text-decoration:none;
+    }
+    .btn-primary { background:var(--grad-brand); color:#fff; }
+    .btn-primary:hover { opacity:.9; transform:translateY(-1px); box-shadow:var(--shadow-md); }
+    .btn-outline { background:transparent; border:2px solid var(--border-mid); color:var(--brand); }
+    .btn-outline:hover { border-color:var(--brand); background:var(--brand-light); }
+    .btn-lg { padding:14px 28px; font-size:15px; border-radius:var(--radius-lg); width:100%; }
+    .btn-full { width:100%; }
+
+    /* ── AUTH SCREEN ── */
+    #authScreen {
+      min-height:100vh; display:flex; align-items:center; justify-content:center;
+      padding:20px; background:var(--bg);
+    }
+    .auth-card {
+      background:var(--surface); border-radius:var(--radius-xl);
+      box-shadow:var(--shadow-lg); padding:36px 32px;
+      width:100%; max-width:420px;
+    }
+    .auth-logo { text-align:center; margin-bottom:24px; }
+    .auth-logo-text {
+      font-family:'Syne',sans-serif; font-size:26px; font-weight:800;
+      background:var(--grad-brand); -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    }
+    .auth-title { font-size:20px; font-weight:800; text-align:center; margin-bottom:6px; }
+    .auth-sub   { font-size:13px; color:var(--text-2); text-align:center; margin-bottom:24px; }
+    .form-group { margin-bottom:16px; }
+    .form-label { display:block; font-size:13px; font-weight:600; color:var(--text-2); margin-bottom:6px; }
+    .form-input, .form-select, .form-textarea {
+      width:100%; padding:11px 14px; border:1.5px solid var(--border);
+      border-radius:var(--radius-md); font-size:14px; color:var(--text);
+      background:var(--surface-2); font-family:inherit; outline:none; transition:border-color .15s;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color:var(--brand); background:#fff; }
+    .form-textarea { resize:vertical; min-height:96px; line-height:1.6; }
+    .form-hint { font-size:11px; color:var(--text-3); margin-top:5px; }
+    .auth-toggle { text-align:center; margin-top:16px; font-size:13px; color:var(--text-2); }
+    .auth-toggle a { color:var(--brand); font-weight:700; cursor:pointer; text-decoration:none; }
+    .auth-toggle a:hover { text-decoration:underline; }
+
+    /* ── MAIN APP ── */
+    #mainApp { max-width:620px; margin:0 auto; padding:24px 20px 80px; }
+
+    .gen-card {
+      background:var(--surface); border-radius:var(--radius-xl);
+      box-shadow:var(--shadow-md); overflow:hidden;
+    }
+    .gen-card-header {
+      padding:24px 24px 0;
+    }
+    .gen-card-header h2 {
+      font-family:'Syne',sans-serif; font-size:20px; font-weight:800; margin-bottom:4px;
+    }
+    .gen-card-header p { font-size:13px; color:var(--text-2); }
+    .gen-card-body { padding:20px 24px 24px; }
+
+    /* Format buttons */
+    .pub-grid {
+      display:grid; grid-template-columns:repeat(4,1fr); gap:8px;
+    }
+    .pub-btn {
+      display:flex; flex-direction:column; align-items:center;
+      padding:14px 8px; border-radius:var(--radius-md);
+      border:2px solid var(--border); background:var(--surface-2);
+      cursor:pointer; transition:all .15s; gap:4px; text-align:center;
+    }
+    .pub-btn:hover { border-color:var(--brand-mid); background:var(--brand-light); }
+    .pub-btn.active { border-color:var(--brand); background:var(--brand-light); }
+    .pub-btn-icon { font-size:22px; }
+    .pub-btn-label { font-size:12px; font-weight:700; color:var(--text); }
+    .pub-btn.active .pub-btn-label { color:var(--brand); }
+    .pub-btn-desc { font-size:10px; color:var(--text-3); line-height:1.3; }
+
+    /* Collapse */
+    .collapse-trigger {
+      width:100%; display:flex; align-items:center; justify-content:space-between;
+      padding:11px 14px; border:1.5px solid var(--border); border-radius:var(--radius-md);
+      background:var(--surface-2); font-size:13px; font-weight:600;
+      color:var(--text-2); cursor:pointer; transition:all .15s;
+    }
+    .collapse-trigger:hover { border-color:var(--brand-mid); color:var(--brand); }
+    .collapse-chevron { font-style:normal; font-size:16px; transition:transform .2s; }
+    .collapse-body { padding-top:12px; }
+
+    /* File upload */
+    .upload-zone {
+      border:2px dashed var(--border-mid); border-radius:var(--radius-md);
+      padding:24px; text-align:center; cursor:pointer; transition:all .2s;
+      background:var(--surface-2);
+    }
+    .upload-zone:hover { border-color:var(--brand); background:var(--brand-light); }
+    .upload-zone input[type=file] { display:none; }
+    .upload-zone-icon { font-size:28px; margin-bottom:8px; }
+    .upload-zone-label { font-size:13px; font-weight:600; color:var(--text-2); margin-bottom:4px; }
+    .upload-zone-hint  { font-size:11px; color:var(--text-3); }
+    .file-preview { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+    .file-chip {
+      display:flex; align-items:center; gap:6px; padding:6px 10px;
+      background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm);
+      font-size:12px; font-weight:500;
+    }
+    .file-chip-remove { background:none; border:none; cursor:pointer; color:var(--text-3); font-size:14px; padding:0 2px; }
+
+    /* Generate button */
+    #generateBtn {
+      background:var(--grad-brand); color:#fff; border:none;
+      border-radius:var(--radius-lg); padding:16px; font-size:15px;
+      font-weight:800; cursor:pointer; width:100%; display:flex;
+      align-items:center; justify-content:center; gap:10px;
+      transition:all .2s; box-shadow:0 4px 20px rgba(124,58,237,.35);
+      letter-spacing:.3px;
+    }
+    #generateBtn:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 8px 28px rgba(124,58,237,.45); }
+    #generateBtn:disabled { opacity:.6; cursor:not-allowed; transform:none; }
+
+    /* Credits bar */
+    .credits-bar {
+      display:flex; align-items:center; justify-content:space-between;
+      font-size:12px; color:var(--text-3); margin-top:12px; padding:0 2px;
+    }
+    .credits-bar strong { color:var(--brand); }
+
+    /* Adv grid */
+    .adv-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+    /* ── MI MARCA SCREEN ── */
+    #brandScreen{display:none;position:fixed;inset:0;background:var(--bg);z-index:9999;overflow-y:auto;}
+    #brandScreen.open{display:block;}
+    .brand-header{
+      background:var(--grad-dark);padding:16px 20px;
+      display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:2;
+    }
+    .brand-back{
+      width:36px;height:36px;border-radius:var(--radius-md);border:1px solid rgba(255,255,255,.2);
+      background:rgba(255,255,255,.08);color:#fff;font-size:16px;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    }
+    .brand-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:#fff;}
+    .brand-save-btn{
+      margin-left:auto;padding:8px 18px;border-radius:var(--radius-md);
+      background:var(--grad-brand);border:none;color:#fff;font-size:13px;
+      font-weight:700;cursor:pointer;font-family:inherit;
+    }
+    .brand-body{max-width:540px;margin:0 auto;padding:24px 20px 80px;}
+    .brand-section{background:var(--surface);border-radius:var(--radius-xl);padding:20px;margin-bottom:16px;box-shadow:var(--shadow-sm);}
+    .brand-section-title{font-size:13px;font-weight:800;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+    .brand-logo-area{
+      display:flex;align-items:center;gap:16px;
+    }
+    .brand-logo-preview{
+      width:80px;height:80px;border-radius:var(--radius-lg);border:2px dashed var(--border-mid);
+      background:var(--surface-2);display:flex;align-items:center;justify-content:center;
+      overflow:hidden;flex-shrink:0;cursor:pointer;transition:all .15s;
+    }
+    .brand-logo-preview:hover{border-color:var(--brand);}
+    .brand-logo-preview img{width:100%;height:100%;object-fit:contain;}
+    .brand-logo-hint{font-size:12px;color:var(--text-3);line-height:1.6;}
+    .brand-logo-btns{display:flex;gap:8px;margin-top:8px;}
+    .brand-logo-upload{
+      padding:7px 14px;border-radius:var(--radius-md);background:var(--grad-brand);
+      border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;
+    }
+    .brand-logo-remove{
+      padding:7px 14px;border-radius:var(--radius-md);border:1px solid var(--border-mid);
+      background:transparent;color:var(--text-2);font-size:12px;font-weight:600;
+      cursor:pointer;font-family:inherit;
+    }
+    .brand-colors{display:flex;gap:12px;flex-wrap:wrap;}
+    .brand-color-item{display:flex;flex-direction:column;gap:6px;align-items:center;}
+    .brand-color-label{font-size:11px;color:var(--text-3);font-weight:600;}
+    .brand-color-swatch{
+      width:52px;height:52px;border-radius:var(--radius-md);
+      border:2px solid var(--border);cursor:pointer;position:relative;overflow:hidden;
+    }
+    .brand-color-swatch input[type=color]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+    .brand-font-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;}
+    .brand-font-btn{
+      padding:10px 12px;border-radius:var(--radius-md);border:2px solid var(--border);
+      background:var(--surface-2);cursor:pointer;font-size:13px;font-weight:600;
+      text-align:center;transition:all .15s;color:var(--text);
+    }
+    .brand-font-btn:hover{border-color:var(--brand-mid);}
+    .brand-font-btn.active{border-color:var(--brand);background:var(--brand-light);color:var(--brand);}
+    .brand-preview-box{
+      border-radius:var(--radius-lg);overflow:hidden;
+      aspect-ratio:4/5;position:relative;max-width:200px;margin:0 auto;
+    }
+    .brand-preview-bg{position:absolute;inset:0;}
+    .brand-preview-content{
+      position:absolute;inset:0;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;padding:16px;text-align:center;
+    }
+    .brand-preview-logo{width:48px;height:48px;object-fit:contain;margin-bottom:8px;display:none;}
+    .brand-preview-title{font-size:18px;font-weight:800;line-height:1.2;margin-bottom:6px;}
+    .brand-preview-sub{font-size:12px;opacity:.8;line-height:1.4;}
+    .brand-text-colors{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;}
+
+    /* ── MOBILE ── */
+    @media (max-width:480px) {
+      .pub-grid { grid-template-columns:repeat(2,1fr); }
+      .adv-grid { grid-template-columns:1fr; }
+      .auth-card { padding:28px 20px; }
+      #mainApp { padding:16px 12px 80px; }
+      .gen-card-body { padding:16px; }
+      .gen-card-header { padding:20px 16px 0; }
+    }
+
+    /* ── NICHE MISMATCH MODAL ── */
+    #nicheMismatchModal {
+      display:none; position:fixed; inset:0;
+      background:rgba(0,0,0,.6); z-index:9800;
+      align-items:center; justify-content:center; padding:20px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- PROGRESS BAR -->
+<div id="progressBar"><div id="progressFill" style="width:0%"></div></div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ═══ USER BAR ═══ -->
+<div class="user-bar" id="userBar">
+  <div class="user-bar-inner">
+    <div class="user-bar-left">
+      <div id="ubAvatarWrap" style="position:relative;cursor:pointer;flex-shrink:0;" onclick="toggleUbDropdown(event)">
+        <div style="width:34px;height:34px;border-radius:50%;background:var(--grad-brand);display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 2px 8px rgba(124,58,237,.45);border:2px solid rgba(255,255,255,.2);">👤</div>
+        <div id="ubDropdown" style="display:none;position:absolute;top:calc(100% + 8px);left:0;background:#1a1a2e;border:1px solid rgba(139,95,191,.4);border-radius:12px;padding:8px;min-width:210px;box-shadow:0 8px 32px rgba(0,0,0,.45);z-index:9000;">
+          <div style="padding:10px 12px 8px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:4px;">
+            <div id="dropEmail" style="font-size:12px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:186px;"></div>
+            <div style="display:flex;align-items:center;gap:5px;margin-top:4px;">
+              <span id="dropPlan" style="font-size:9px;font-weight:800;color:rgba(255,255,255,.9);background:rgba(255,255,255,.15);padding:1px 7px;border-radius:10px;text-transform:uppercase;"></span>
+              <span style="font-size:10px;color:rgba(255,255,255,.45);">⚡ <span id="dropCredits" style="font-weight:700;color:rgba(255,255,255,.8);"></span></span>
+            </div>
+          </div>
+          <button onclick="openSidebar();closeUbDropdown()" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">📜 Historial</button>
+          <button id="dropBrandBtn" onclick="showBrandScreen();closeUbDropdown()" style="display:none;width:100%;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">🎨 Mi Marca</button>
+          <hr style="border:none;border-top:1px solid rgba(255,255,255,.1);margin:4px 0;">
+          <button id="dropUpgradeBtn" onclick="showPlansScreen();closeUbDropdown()" style="display:none;width:100%;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">⬆️ Mejorar plan</button>
+          <button id="dropCancelBtn" onclick="cancelSubscription();closeUbDropdown()" style="display:none;width:100%;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">⚙️ Cancelar suscripción</button>
+          <button id="dropAdminBtn" onclick="openAdmin();closeUbDropdown()" style="display:none;width:100%;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:#FCD34D;cursor:pointer;border:none;background:none;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">🛡️ Admin</button>
+          <hr style="border:none;border-top:1px solid rgba(255,255,255,.1);margin:4px 0;">
+          <button onclick="logout()" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:#FCA5A5;cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(252,129,129,.1)'" onmouseout="this.style.background='none'">🚪 Cerrar sesión</button>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+        <span id="userEmail" style="font-size:12px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px;line-height:1.2;">–</span>
+        <div style="display:flex;align-items:center;gap:5px;">
+          <span id="userPlan" style="font-size:9px;font-weight:800;color:rgba(255,255,255,.95);background:rgba(255,255,255,.18);padding:1px 7px;border-radius:10px;letter-spacing:.6px;text-transform:uppercase;">–</span>
+          <span style="font-size:10px;color:rgba(255,255,255,.45);">⚡ <span id="userCredits" style="font-weight:700;color:rgba(255,255,255,.8);">–</span></span>
+        </div>
+      </div>
+    </div>
+    <div class="user-bar-right">
+      <button id="upgradePlanBtn" class="ub-btn upgrade hidden" onclick="showPlansScreen()">⬆️ Mejorar</button>
+      <div class="ub-sep"></div>
+      <button id="adminBtn" class="ub-btn admin hidden" onclick="openAdmin()">🛡️ Admin</button>
+      <button class="ub-btn danger" onclick="logout()">🚪 Salir</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PLANS SCREEN ═══ -->
+<div id="plansScreen">
+  <div class="hero-bg">
+    <div style="position:relative;">
+      <div class="hero-badge">✨ Generador de contenido para Instagram</div>
+      <h1 class="hero-title">El copiloto de contenido<br><span>para coaches</span></h1>
+      <p class="hero-sub">Convierte tu conocimiento en hooks, captions y carruseles que atraen clientes — en segundos, sin bloqueo creativo.</p>
+    </div>
+  </div>
+  <div style="padding:56px 0 80px;background:var(--bg);">
+    <p style="text-align:center;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3);margin-bottom:40px;">Elige tu plan</p>
+    <div class="plans-grid" id="plansGrid">
+      <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-3);">
+        <span class="spinner" style="display:inline-block;width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--brand);border-radius:50%;animation:spin .8s linear infinite;"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ AUTH SCREEN ═══ -->
+<div id="authScreen" class="hidden">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-text">✦ Conteniza</div>
+    </div>
+    <div class="auth-title" id="authTitle">Iniciar sesión</div>
+    <div class="auth-sub" id="authSub">Bienvenido de vuelta</div>
+    <form id="authForm" onsubmit="handleAuth(event)">
+      <div class="form-group" id="nameGroup" style="display:none;">
+        <label class="form-label">Nombre</label>
+        <input type="text" id="authName" class="form-input" placeholder="Tu nombre">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" id="authEmail" class="form-input" placeholder="tu@email.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Contraseña</label>
+        <input type="password" id="authPassword" class="form-input" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn btn-primary btn-lg" id="authSubmitBtn">Entrar</button>
+    </form>
+    <div class="auth-toggle">
+      <span id="authToggleText">¿No tienes cuenta?</span>
+      <a onclick="toggleAuthMode()"> <span id="authToggleLink">Regístrate</span></a>
+    </div>
+    <div style="text-align:center;margin-top:10px;">
+      <a onclick="showForgotPassword()" style="font-size:12px;color:var(--text-3);cursor:pointer;">¿Olvidaste tu contraseña?</a>
+    </div>
+    <div id="forgotForm" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+      <div class="form-group">
+        <label class="form-label">Email de recuperación</label>
+        <input type="email" id="forgotEmail" class="form-input" placeholder="tu@email.com">
+      </div>
+      <button onclick="sendForgotPassword()" class="btn btn-outline btn-full">Enviar instrucciones</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MAIN APP ═══ -->
+<div id="mainApp" class="hidden">
+  <div style="text-align:center;padding:28px 0 20px;">
+    <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;background:var(--grad-brand);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px;">✦ Conteniza</div>
+    <p style="font-size:13px;color:var(--text-3);">¿Qué contenido creamos hoy?</p>
+  </div>
+
+  <div class="gen-card">
+    <div class="gen-card-header">
+      <h2>✨ Nuevo contenido</h2>
+      <p>Describe el tema y elige el formato — la IA hace el resto</p>
+    </div>
+    <div class="gen-card-body">
+      <form id="contentForm" onsubmit="generateContent(event)">
+
+        <!-- TEMA -->
+        <div class="form-group">
+          <label class="form-label">💡 ¿De qué quieres publicar hoy?</label>
+          <textarea
+            id="description"
+            class="form-textarea"
+            placeholder="Ej: 5 errores que cometen mis clientes al intentar escalar su negocio..."
+            style="min-height:96px;"
+            oninput="autosaveDesc(this.value)"
+          ></textarea>
+          <div class="form-hint">Sé específico para obtener mejores resultados</div>
+        </div>
+
+        <!-- NICHO + TONO — visibles siempre -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">🎯 Tu nicho</label>
+            <input type="text" id="niche" class="form-input"
+              placeholder="coaching, finanzas, salud…"
+              oninput="localStorage.setItem('conteniza_niche',this.value)"
+              style="font-size:13px;">
+            <div class="form-hint" style="font-size:10px;margin-top:3px;">Define tu audiencia</div>
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">🎭 Tono</label>
+            <select id="tone" class="form-select" style="font-size:13px;">
+              <option value="">IA elige el mejor</option>
+              <option value="Profesional">Profesional</option>
+              <option value="Motivacional">Motivacional</option>
+              <option value="Educativo">Educativo</option>
+              <option value="Inspirador">Inspirador</option>
+              <option value="Humor/Memes">Humor / Memes</option>
+              <option value="Casual/Amigable">Casual / Cercano</option>
+              <option value="Persuasivo/Ventas">Persuasivo / Ventas</option>
+              <option value="Viral/Trendy">Viral / Trendy</option>
+              <option value="Emocional/Vulnerable">Emocional</option>
+              <option value="Urgente/FOMO">Urgente / FOMO</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- FORMATO -->
+        <div class="form-group">
+          <label class="form-label" style="margin-bottom:10px;">📋 Formato de publicación</label>
+          <div class="pub-grid">
+            <button type="button" class="pub-btn active" data-value="post" onclick="selectPubType(this)">
+              <div class="pub-btn-icon">📸</div>
+              <span class="pub-btn-label">Post</span>
+              <span class="pub-btn-desc">Caption + hashtags</span>
+            </button>
+            <button type="button" class="pub-btn" data-value="carousel" onclick="selectPubType(this)">
+              <div class="pub-btn-icon">🎠</div>
+              <span class="pub-btn-label">Carrusel <span id="badge-carousel" style="display:none;font-size:9px;background:#8B5FBF;color:#fff;padding:1px 6px;border-radius:99px;vertical-align:middle;">PRO</span></span>
+              <span class="pub-btn-desc">Hasta 10 slides</span>
+            </button>
+            <button type="button" class="pub-btn" data-value="story" onclick="selectPubType(this)">
+              <div class="pub-btn-icon">📱</div>
+              <span class="pub-btn-label">Story <span id="badge-story" style="display:none;font-size:9px;background:#8B5FBF;color:#fff;padding:1px 6px;border-radius:99px;vertical-align:middle;">PRO</span></span>
+              <span class="pub-btn-desc">5 ideas interactivas</span>
+            </button>
+            <button type="button" class="pub-btn" data-value="reel" onclick="selectPubType(this)">
+              <div class="pub-btn-icon">🎬</div>
+              <span class="pub-btn-label">Reel <span id="badge-reel" style="display:none;font-size:9px;background:#8B5FBF;color:#fff;padding:1px 6px;border-radius:99px;vertical-align:middle;">PRO</span></span>
+              <span class="pub-btn-desc">Guión + hooks</span>
+            </button>
+          </div>
+          <input type="hidden" id="publicationType" value="post">
+        </div>
+
+        <!-- ARCHIVOS (colapsable) -->
+        <div class="form-group">
+          <button type="button" class="collapse-trigger" onclick="toggleCollapse('imageSection', this)">
+            <span style="display:flex;align-items:center;gap:8px;">
+              📎 Añadir archivos de referencia
+              <span style="font-size:11px;font-weight:400;color:var(--text-3);">opcional</span>
+            </span>
+            <i class="collapse-chevron">＋</i>
+          </button>
+          <div id="imageSection" class="collapse-body" style="display:none;">
+            <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+              <input type="file" id="fileInput" accept="image/*,video/*,audio/*,.pdf" multiple onchange="handleFileSelect(event)">
+              <div class="upload-zone-icon">📁</div>
+              <div class="upload-zone-label">Arrastra archivos o haz clic</div>
+              <div class="upload-zone-hint">Imágenes, videos, audios, PDFs · Máx. 10 archivos</div>
+            </div>
+            <div id="filePreview" class="file-preview"></div>
+          </div>
+        </div>
+
+        <!-- OPCIONES AVANZADAS -->
+        <div class="form-group" style="margin-bottom:24px;">
+          <button type="button" class="collapse-trigger" onclick="toggleCollapse('advSection', this)">
+            <span>⚙️ Opciones avanzadas</span>
+            <i class="collapse-chevron">＋</i>
+          </button>
+          <div id="advSection" class="collapse-body" style="display:none;">
+            <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;margin-top:0;">
+              <div class="adv-grid">
+                <div class="form-group" style="margin:0;">
+                  <label class="form-label">✏️ Título (opcional)</label>
+                  <input type="text" id="title" class="form-input" placeholder="Título del contenido">
+                </div>
+                <div class="form-group" style="margin:0;">
+                  <label class="form-label">📂 Tipo de contenido</label>
+                  <select id="contentType" class="form-select">
+                    <option value="general">General</option>
+                    <option value="educativo">Educativo</option>
+                    <option value="inspiracional">Inspiracional</option>
+                    <option value="ventas">Ventas / Oferta</option>
+                    <option value="detras_escenas">Detrás de cámaras</option>
+                    <option value="testimonio">Testimonio / Caso de éxito</option>
+                    <option value="viral">Viral / Tendencia</option>
+                    <option value="storytelling">Storytelling</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CREDITS — arriba del botón -->
+        <div class="credits-bar" style="flex-direction:column;align-items:stretch;gap:6px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span>⚡ <strong id="creditsDisplay">–</strong> créditos disponibles</span>
+            <span id="creditsLabel" style="font-size:11px;color:var(--text-3);"></span>
+          </div>
+          <div style="background:var(--surface-2);border-radius:99px;height:6px;overflow:hidden;border:1px solid var(--border);">
+            <div id="creditsBar" style="height:100%;border-radius:99px;background:var(--grad-brand);transition:width .4s ease;width:0%;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-3);">
+            <span id="creditsUsedLabel">0 usados este mes</span>
+            <span id="creditsResetLabel"></span>
+          </div>
+          <!-- Warning créditos bajos -->
+          <div id="lowCreditsWarning" style="display:none;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;color:#DC2626;">
+            ⚠️ Te queda 1 crédito — úsalo bien
+          </div>
+          <div id="zeroCreditsWarning" style="display:none;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4);border-radius:8px;padding:10px 12px;font-size:12px;font-weight:700;color:#DC2626;text-align:center;">
+            🔒 Sin créditos disponibles · <a href="#planes" onclick="showPlans()" style="color:#DC2626;text-decoration:underline;cursor:pointer;">Mejorar plan →</a>
+          </div>
+        </div>
+
+        <!-- GENERATE BUTTON -->
+        <button type="submit" class="btn btn-primary" id="generateBtn">
+          <span id="generateBtnContent" style="display:flex;align-items:center;gap:8px;">
+            <span>✨</span><span>Generar contenido</span>
+          </span>
+        </button>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PREVIEW MODAL (antes de abrir editor) ═══ -->
+<div id="previewModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9998;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;">
+  <div style="background:var(--surface);border-radius:20px;width:100%;max-width:420px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.4);margin:auto;max-height:none;">
+    <div style="background:var(--grad-brand);padding:18px 20px 14px;">
+      <div style="font-size:22px;margin-bottom:4px;">🎉</div>
+      <div style="font-size:16px;font-weight:800;color:#fff;">¡Contenido generado!</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.8);margin-top:2px;">Revisa antes de abrir el editor</div>
+    </div>
+    <div style="padding:16px 20px;">
+      <!-- Hook preview -->
+      <div style="margin-bottom:12px;">
+        <div style="font-size:10px;font-weight:800;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">🎣 Hook sugerido</div>
+        <div id="pvHook" style="background:var(--surface-2);border-radius:10px;padding:10px 12px;font-size:13px;font-weight:600;color:var(--text);line-height:1.5;border-left:3px solid var(--brand);"></div>
+      </div>
+      <!-- Caption preview -->
+      <div style="margin-bottom:12px;">
+        <div style="font-size:10px;font-weight:800;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">📝 Descripción</div>
+        <div id="pvCaption" style="background:var(--surface-2);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--text-2);line-height:1.5;max-height:72px;overflow:hidden;"></div>
+      </div>
+      <!-- Hashtags preview -->
+      <div style="margin-bottom:16px;">
+        <div style="font-size:10px;font-weight:800;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;"># Hashtags</div>
+        <div id="pvHashtags" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
+      </div>
+      <!-- Coherence warning -->
+      <div id="pvCoherence" style="display:none;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:10px 12px;font-size:12px;color:#B45309;margin-bottom:14px;line-height:1.5;"></div>
+      <!-- Buttons -->
+      <div style="display:flex;gap:10px;">
+        <button onclick="closePreviewModal()" style="flex:1;padding:11px;border-radius:var(--radius-md);border:1.5px solid var(--border);background:none;color:var(--text-2);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">← Volver</button>
+        <button onclick="goToEditor()" style="flex:2;padding:11px;border-radius:var(--radius-md);background:var(--grad-brand);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">Editar y publicar →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ NICHE MISMATCH MODAL ═══ -->
+<div id="nicheMismatchModal">
+  <div style="background:var(--surface);border-radius:20px;width:100%;max-width:400px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.3);">
+    <div style="background:linear-gradient(135deg,#F59E0B,#EF4444);padding:20px 24px 16px;">
+      <div style="font-size:28px;margin-bottom:6px;">⚠️</div>
+      <div style="font-size:16px;font-weight:800;color:#fff;line-height:1.3;">
+        Nicho no se corresponde con el tema a publicar
+      </div>
+    </div>
+    <div style="padding:18px 24px 0;">
+      <div style="background:var(--surface-2);border-radius:10px;padding:12px 14px;margin-bottom:16px;">
+        <div style="display:flex;gap:10px;margin-bottom:6px;">
+          <span style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;min-width:44px;">Nicho</span>
+          <span id="nmNiche" style="font-size:13px;font-weight:700;color:var(--brand);"></span>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <span style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;min-width:44px;">Tema</span>
+          <span id="nmTopic" style="font-size:13px;color:var(--text);"></span>
+        </div>
+      </div>
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;text-align:center;">¿Deseas cambiar de nicho?</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 24px 24px;">
+      <button onclick="confirmNicheMode('exact')" style="background:var(--grad-brand);border:none;border-radius:12px;padding:14px 10px;cursor:pointer;color:#fff;">
+        <div style="font-size:22px;margin-bottom:4px;">✅</div>
+        <div style="font-size:14px;font-weight:800;">SÍ</div>
+        <div style="font-size:10px;opacity:.85;margin-top:2px;line-height:1.3;">Generar solo sobre el tema</div>
+      </button>
+      <button onclick="confirmNicheMode('mix')" style="background:var(--surface-2);border:2px solid var(--border);border-radius:12px;padding:14px 10px;cursor:pointer;color:var(--text);" onmouseover="this.style.borderColor='var(--brand)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="font-size:22px;margin-bottom:4px;">🔀</div>
+        <div style="font-size:14px;font-weight:800;">NO</div>
+        <div style="font-size:10px;color:var(--text-3);margin-top:2px;line-height:1.3;">Mezclar tema con mi nicho</div>
+      </button>
+    </div>
+    <div style="padding:0 24px 16px;text-align:center;">
+      <button onclick="closeNicheMismatchModal()" style="background:none;border:none;color:var(--text-3);font-size:12px;cursor:pointer;padding:4px 12px;">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MI MARCA SCREEN ═══ -->
+<div id="brandScreen">
+  <div class="brand-header">
+    <button class="brand-back" onclick="closeBrandScreen()">←</button>
+    <div class="brand-title">🎨 Mi Marca</div>
+    <button class="brand-save-btn" onclick="saveBrand()">Guardar</button>
+  </div>
+  <div class="brand-body">
+
+    <!-- NICHO — primer campo, más importante -->
+    <div class="brand-section" style="background:rgba(139,95,191,.06);border:1.5px solid rgba(139,95,191,.2);border-radius:14px;padding:16px;">
+      <div class="brand-section-title" style="color:var(--brand);">🎯 Tu nicho principal</div>
+      <p style="font-size:12px;color:var(--text-3);margin:0 0 10px;line-height:1.5;">
+        Define a qué te dedicas. La IA usará esto para personalizar cada post que generes.
+      </p>
+      <input
+        type="text"
+        id="brandNicheInput"
+        class="form-input"
+        placeholder="Ej: coach de vida, nutricionista, finanzas personales…"
+        style="font-size:13px;margin-bottom:8px;"
+        oninput="localStorage.setItem('conteniza_niche', this.value)"
+      >
+      <div style="font-size:11px;color:var(--text-3);">
+        💡 Si describes un tema distinto a tu nicho, la IA te avisará antes de generar.
+      </div>
+    </div>
+
+    <!-- Logo -->
+    <div class="brand-section">
+      <div class="brand-section-title">🖼 Logo</div>
+      <div class="brand-logo-area">
+        <div class="brand-logo-preview" id="brandLogoPreview" onclick="document.getElementById('brandLogoInput').click()">
+          <span style="font-size:28px;">+</span>
+        </div>
+        <div>
+          <div class="brand-logo-hint">Tu logo aparecerá en el canvas del editor.<br>PNG con fondo transparente recomendado.</div>
+          <div class="brand-logo-btns">
+            <button class="brand-logo-upload" onclick="document.getElementById('brandLogoInput').click()">📷 Subir logo</button>
+            <button class="brand-logo-remove" id="brandLogoRemoveBtn" onclick="removeBrandLogo()" style="display:none;">Eliminar</button>
+          </div>
+        </div>
+      </div>
+      <input type="file" id="brandLogoInput" accept="image/*" style="display:none" onchange="uploadBrandLogo(event)">
+    </div>
+
+    <!-- Colores -->
+    <div class="brand-section">
+      <div class="brand-section-title">🎨 Colores de marca</div>
+      <div class="brand-colors">
+        <div class="brand-color-item">
+          <div class="brand-color-swatch" id="swatchPrimary" style="background:#8B5FBF;">
+            <input type="color" id="brandColor1" value="#8B5FBF" oninput="onBrandColorChange()">
+          </div>
+          <span class="brand-color-label">Principal</span>
+        </div>
+        <div class="brand-color-item">
+          <div class="brand-color-swatch" id="swatchSecondary" style="background:#E91E8C;">
+            <input type="color" id="brandColor2" value="#E91E8C" oninput="onBrandColorChange()">
+          </div>
+          <span class="brand-color-label">Secundario</span>
+        </div>
+        <div class="brand-color-item">
+          <div class="brand-color-swatch" id="swatchFontColor" style="background:#ffffff;border-color:#ccc;">
+            <input type="color" id="brandFontColor" value="#ffffff" oninput="onBrandColorChange()">
+          </div>
+          <span class="brand-color-label">Texto</span>
+        </div>
+        <div class="brand-color-item">
+          <div class="brand-color-swatch" id="swatchSubColor" style="background:#cccccc;border-color:#ccc;">
+            <input type="color" id="brandSubColor" value="#cccccc" oninput="onBrandColorChange()">
+          </div>
+          <span class="brand-color-label">Subtítulo</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fuente -->
+    <div class="brand-section">
+      <div class="brand-section-title">✍️ Fuente de marca</div>
+      <div class="brand-font-grid" id="brandFontGrid"></div>
+    </div>
+
+    <!-- Preview -->
+    <div class="brand-section">
+      <div class="brand-section-title">👁 Vista previa</div>
+      <div class="brand-preview-box" id="brandPreviewBox">
+        <div class="brand-preview-bg" id="brandPreviewBg"></div>
+        <div class="brand-preview-content">
+          <img class="brand-preview-logo" id="brandPreviewLogo" src="" alt="logo">
+          <div class="brand-preview-title" id="brandPreviewTitle">Tu hook aquí</div>
+          <div class="brand-preview-sub"  id="brandPreviewSub">Descripción del contenido que generará la IA para tu marca</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   CONTENIZA V3 — index.html
+   Solo formulario + lógica de generación → redirige a editor.html
+   ═══════════════════════════════════════════════════════ */
+
+const API_URL = 'https://conteniza-backend.onrender.com/api';
+
+let currentUser   = null;
+let currentPlan   = 'free';
+let uploadedFiles = [];
+let userCredits   = 0;
+let selectedPubType = 'post';
+let _pendingGenerateNicheMode = null;
+let _isRegister = false;
+
+/* ── UTILS ── */
+function showNotification(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.className = 'toast visible ' + type;
+  t.textContent = msg;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('visible'), 4000);
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function validateEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+
+function showProgress(show = true, text = '', percent = 0) {
+  const bar  = document.getElementById('progressBar');
+  const fill = document.getElementById('progressFill');
+  if (show) {
+    bar.classList.add('visible');
+    fill.style.width = percent + '%';
+  } else {
+    bar.classList.remove('visible');
+    fill.style.width = '0%';
+  }
+}
+
+function toggleCollapse(id, trigger) {
+  const body = document.getElementById(id);
+  const chev = trigger.querySelector('.collapse-chevron');
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  if (chev) chev.style.transform = open ? '' : 'rotate(45deg)';
+}
+
+/* ── API FETCH ── */
+async function apiFetch(url, options = {}, timeoutMs = 30000) {
+  const token = localStorage.getItem('token');
+  const publicPaths = ['/auth/login', '/auth/register', '/auth/plans', '/auth/waitlist', '/auth/forgot-password'];
+  const isPublic = publicPaths.some(p => url.includes(p));
+  if (!options.headers) options.headers = {};
+  if (token && !isPublic) options.headers['Authorization'] = `Bearer ${token}`;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  options.signal = controller.signal;
+
+  try {
+    const res = await fetch(url, options);
+    clearTimeout(timer);
+    if (res.status === 401) {
+      localStorage.removeItem('token'); localStorage.removeItem('user');
+      currentUser = null;
+      showNotification('Tu sesión expiró. Inicia sesión de nuevo.', 'error');
+      setTimeout(() => { showPlansScreen(); }, 1500);
+      const err = new Error('Sesión expirada'); err.status = 401; throw err;
+    }
+    return res;
+  } catch(e) {
+    clearTimeout(timer);
+    if (e.name === 'AbortError') throw new Error('La solicitud tardó demasiado. Intenta de nuevo.');
+    throw e;
+  }
+}
+
+/* ── AUTH ── */
+function toggleAuthMode() {
+  _isRegister = !_isRegister;
+  document.getElementById('authTitle').textContent   = _isRegister ? 'Crear cuenta' : 'Iniciar sesión';
+  document.getElementById('authSub').textContent     = _isRegister ? 'Empieza gratis hoy' : 'Bienvenido de vuelta';
+  document.getElementById('authSubmitBtn').textContent = _isRegister ? 'Crear cuenta' : 'Entrar';
+  document.getElementById('authToggleText').textContent = _isRegister ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?';
+  document.getElementById('authToggleLink').textContent = _isRegister ? 'Inicia sesión' : 'Regístrate';
+  document.getElementById('nameGroup').style.display = _isRegister ? 'block' : 'none';
+}
+
+async function handleAuth(event) {
+  event.preventDefault();
+  const email    = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  if (!validateEmail(email))  { showNotification('Email inválido', 'error'); return; }
+  if (password.length < 6)    { showNotification('Contraseña mínimo 6 caracteres', 'error'); return; }
+
+  const btn = document.getElementById('authSubmitBtn');
+  btn.disabled = true; btn.textContent = '…';
+
+  try {
+    const endpoint = _isRegister ? '/auth/register' : '/auth/login';
+    const body     = _isRegister
+      ? { name: document.getElementById('authName').value.trim(), email, password }
+      : { email, password };
+
+    const r = await apiFetch(`${API_URL}${endpoint}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Error de autenticación');
+
+    if (d.token) {
+      localStorage.setItem('token', d.token);
+      localStorage.setItem('user', JSON.stringify(d.user));
+      currentUser = d.user;
+      userCredits = d.user.credits_remaining ?? 0;
+      await showMainApp();
+      showNotification(_isRegister ? '¡Cuenta creada!' : '¡Bienvenido!', 'success');
+    } else {
+      // Email verificación pendiente
+      showNotification(d.message || 'Revisa tu email para verificar tu cuenta.', 'info');
+    }
+  } catch(e) {
+    showNotification(e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = _isRegister ? 'Crear cuenta' : 'Entrar';
+  }
+}
+
+function showForgotPassword() {
+  const f = document.getElementById('forgotForm');
+  f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+
+async function sendForgotPassword() {
+  const email = document.getElementById('forgotEmail').value.trim();
+  if (!validateEmail(email)) { showNotification('Email inválido', 'error'); return; }
+  try {
+    const r = await apiFetch(`${API_URL}/auth/forgot-password`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    showNotification('Si el email existe, recibirás instrucciones en tu correo.', 'success');
+    document.getElementById('forgotForm').style.display = 'none';
+  } catch(e) { showNotification(e.message, 'error'); }
+}
+
+/* ── SCREENS ── */
+function showPlansScreen() {
+  document.getElementById('plansScreen').classList.remove('hidden');
+  document.getElementById('authScreen').classList.add('hidden');
+  document.getElementById('mainApp').classList.add('hidden');
+  document.getElementById('userBar').classList.remove('visible');
+  loadPlans();
+}
+
+function showAuthScreen(plan = '') {
+  document.getElementById('plansScreen').classList.add('hidden');
+  document.getElementById('authScreen').classList.remove('hidden');
+  document.getElementById('mainApp').classList.add('hidden');
+}
+
+async function showMainApp() {
+  document.getElementById('plansScreen').classList.add('hidden');
+  document.getElementById('authScreen').classList.add('hidden');
+  document.getElementById('mainApp').classList.remove('hidden');
+  document.getElementById('userBar').classList.add('visible');
+  updateUserPanel();
+  await syncCredits();
+  updateFormatBadges();
+  updateCreditsBar();
+
+  // Restore unsaved description draft
+  const draft = localStorage.getItem('conteniza_desc_draft');
+  if (draft) {
+    const el = document.getElementById('description');
+    if (el && !el.value) el.value = draft;
+  }
+  // Restore saved niche
+  const savedNiche = localStorage.getItem('conteniza_niche');
+  if (savedNiche) {
+    const el = document.getElementById('niche');
+    if (el && !el.value) el.value = savedNiche;
+  }
+}
+function updateUserPanel() {
+  if (!currentUser) return;
+  const plan = currentUser.plan_type || 'free';
+  document.getElementById('userEmail').textContent    = currentUser.email || '–';
+  document.getElementById('userPlan').textContent     = plan.toUpperCase();
+  document.getElementById('userCredits').textContent  = userCredits + ' créditos';
+  document.getElementById('dropEmail').textContent    = currentUser.email || '–';
+  document.getElementById('dropPlan').textContent     = plan.toUpperCase();
+  document.getElementById('dropCredits').textContent  = userCredits + ' créditos';
+  document.getElementById('creditsDisplay').textContent = userCredits;
+
+  // Admin
+  const isAdmin = currentUser.is_admin;
+  document.getElementById('adminBtn').classList.toggle('hidden', !isAdmin);
+  document.getElementById('dropAdminBtn').style.display = isAdmin ? 'block' : 'none';
+
+  // Upgrade
+  const canUpgrade = plan === 'free' || plan === 'pro';
+  document.getElementById('upgradePlanBtn').classList.toggle('hidden', !canUpgrade);
+  document.getElementById('dropUpgradeBtn').style.display = canUpgrade ? 'block' : 'none';
+
+  // Cancel
+  const canCancel = plan !== 'free';
+  document.getElementById('dropCancelBtn').style.display = canCancel ? 'block' : 'none';
+
+  // Brand (premium)
+  const hasBrand = plan === 'premium';
+  document.getElementById('dropBrandBtn').style.display = hasBrand ? 'block' : 'none';
+}
+
+async function syncCredits() {
+  try {
+    const r = await apiFetch(`${API_URL}/user/profile`);
+    if (!r.ok) return;
+    const d = await r.json();
+    if (d.user) {
+      userCredits = d.user.credits_remaining ?? userCredits;
+      currentUser.plan_type = d.user.plan_type ?? currentUser.plan_type;
+      document.getElementById('userCredits').textContent = userCredits + ' créditos';
+      document.getElementById('dropCredits').textContent = userCredits + ' créditos';
+      document.getElementById('creditsDisplay').textContent = userCredits;
+      updateFormatBadges();
+      updateCreditsBar();
+
+      // Sync niche from backend → takes priority over localStorage
+      if (d.user.niche) {
+        localStorage.setItem('conteniza_niche', d.user.niche);
+        if (currentUser) currentUser.niche = d.user.niche;
+        const nicheEl = document.getElementById('niche');
+        if (nicheEl) nicheEl.value = d.user.niche;
+      }
+
+      // Show onboarding if user has no niche anywhere
+      if (shouldShowOnboarding()) {
+        setTimeout(showOnboarding, 300);
+      }
+    }
+  } catch(e) {}
+}
+
+/* ── FORMAT SELECTOR ── */
+function selectPubType(btn) {
+  const type = btn.dataset.value;
+  const premiumFormats = ['carousel', 'story', 'reel'];
+  const plan = currentUser?.plan_type || 'free';
+
+  if (plan === 'free' && premiumFormats.includes(type)) {
+    showNotification('⭐ Este formato requiere Pro o Premium — desde 11€/mes.', 'error');
+    return;
+  }
+
+  document.querySelectorAll('.pub-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  selectedPubType = type;
+  document.getElementById('publicationType').value = type;
+  localStorage.setItem('conteniza_format', type);
+}
+
+function updateFormatBadges() {
+  const plan = currentUser?.plan_type || 'free';
+  const showBadge = plan === 'free';
+  ['carousel','story','reel'].forEach(f => {
+    const el = document.getElementById('badge-' + f);
+    if (el) el.style.display = showBadge ? 'inline' : 'none';
+  });
+}
+
+/* ── PLANS ── */
+async function loadPlans() {
+  // Planes por defecto — se sobreescriben si la API responde
+  const defaultPlans = [
+    {
+      id:'free', name:'Free', price:0, credits:5,
+      features:[
+        '5 análisis/mes',
+        '2 análisis por día',
+        '📸 Formato Post',
+        'Hooks, captions y hashtags',
+        'Export PDF',
+        '❌ Carrusel, Story, Reel',
+        '❌ Subida de archivos',
+        '❌ Mi Marca y Studio',
+      ]
+    },
+    {
+      id:'pro', name:'Pro', price:11, credits:100,
+      features:[
+        '100 análisis/mes',
+        '20 análisis por día',
+        '📸 Todos los formatos (Post, Carrusel, Story, Reel)',
+        'Regenerar cualquier sección',
+        '🎙 Archivos de referencia 200MB/mes',
+        'Historial últimos 50 análisis',
+        'Export PNG + ZIP + PDF',
+        'Publicar directo en Instagram',
+        '📧 Soporte 24-48h (soporte@conteniza.com)',
+        '❌ Mi Marca y Studio (Premium)',
+      ]
+    },
+    {
+      id:'premium', name:'Premium', price:19, credits:300,
+      features:[
+        '300 análisis/mes',
+        '30 análisis por día',
+        '✅ Todo lo de Pro',
+        '🎨 Mi Marca — colores, fuente y logo propio',
+        '🎬 Conteniza Studio — editor drag & drop',
+        'IA con contexto de tu marca',
+        '🎙 5GB almacenamiento/mes',
+        'Historial ilimitado',
+        '📧 Soporte prioritario (soporte@conteniza.com)',
+      ]
+    },
+  ];
+  renderPlans(defaultPlans);
+  try {
+    const r = await fetch(`${API_URL}/auth/plans`);
+    const d = await r.json();
+    if (d.plans?.length) renderPlans(d.plans);
+  } catch(e) {}
+}
+
+function renderPlans(plans) {
+  const grid = document.getElementById('plansGrid');
+  const savedToken = localStorage.getItem('token');
+  grid.innerHTML = plans.map(p => {
+    const isFeatured = p.id === 'pro';
+    const price = p.price === 0
+      ? `<span style="font-family:'Syne',sans-serif;font-size:36px;font-weight:800;">0€</span><div style="font-size:12px;color:var(--text-2);margin-top:2px;">para siempre</div>`
+      : `<span style="font-family:'Syne',sans-serif;font-size:36px;font-weight:800;">${p.price}€</span><div style="font-size:12px;color:var(--text-2);margin-top:2px;">/ mes</div>`;
+    return `
+    <div class="plan-card ${isFeatured ? 'featured' : ''}" onclick="selectPlan('${p.id}')">
+      ${isFeatured ? '<div class="plan-badge">⭐ Más popular</div>' : ''}
+      <div class="plan-name">${p.name}</div>
+      <div class="plan-price" style="margin:16px 0 4px;">${price}</div>
+      <ul class="plan-features">
+        ${(p.features || []).map(f => {
+          const isNo = f.startsWith('❌');
+          const clean = f.replace(/^[❌✅📸🎙🎨🎬📧]/,'').trim();
+          return `<li style="${isNo ? 'opacity:.45;' : ''}">${isNo ? '✗' : '✓'} ${escapeHtml(clean)}</li>`;
+        }).join('')}
+      </ul>
+      <button class="btn ${isFeatured ? 'btn-primary' : 'btn-outline'} btn-full" style="margin-top:auto;">
+        ${savedToken ? 'Seleccionar' : (p.price === 0 ? 'Comenzar gratis' : 'Contratar ahora')}
+      </button>
+    </div>`;
+  }).join('');
+}
+
+function selectPlan(plan) {
+  const token = localStorage.getItem('token');
+  if (token) {
+    // Ya logueado → ir al checkout o directo a app
+    if (plan === 'free') { showMainApp(); return; }
+    window.location.href = `${API_URL}/payments/checkout?plan=${plan}&token=${localStorage.getItem('token')}`;
+  } else {
+    showAuthScreen(plan);
+  }
+}
+
+/* ── FILE UPLOAD ── */
+function handleFileSelect(event) {
+  const files = Array.from(event.target.files);
+  if (files.length > 10) { showNotification('Máximo 10 archivos', 'error'); return; }
+  uploadFiles(files);
+}
+
+async function uploadFiles(files) {
+  if (!currentUser) { showNotification('Inicia sesión primero', 'error'); return; }
+  const preview = document.getElementById('filePreview');
+
+  for (const file of files) {
+    const chip = document.createElement('div');
+    chip.className = 'file-chip';
+    chip.id = 'chip-' + file.name.replace(/\s/g,'_');
+    chip.innerHTML = `<span>📄 ${escapeHtml(file.name)}</span><span style="font-size:11px;color:var(--text-3);">Subiendo…</span>`;
+    preview.appendChild(chip);
+
+    try {
+      const fd = new FormData(); fd.append('file', file);
+      const r  = await apiFetch(`${API_URL}/files/upload`, { method:'POST', body:fd });
+      const d  = await r.json();
+      if (!r.ok) throw new Error(d.error || 'Error');
+      uploadedFiles.push(d.file);
+      chip.innerHTML = `<span>✅ ${escapeHtml(file.name)}</span><button class="file-chip-remove" onclick="removeFile('${d.file.id}','${chip.id}')">✕</button>`;
+    } catch(e) {
+      chip.innerHTML = `<span>❌ ${escapeHtml(file.name)} — ${e.message}</span><button class="file-chip-remove" onclick="this.parentElement.remove()">✕</button>`;
+    }
+  }
+}
+
+function removeFile(id, chipId) {
+  uploadedFiles = uploadedFiles.filter(f => f.id !== id);
+  document.getElementById(chipId)?.remove();
+}
+
+/* ── NICHE MISMATCH ── */
+function detectNicheMismatch(description, savedNiche) {
+  if (!savedNiche || !description) return false;
+  const nicheLower = savedNiche.toLowerCase();
+  const descLower  = description.toLowerCase();
+  // Keywords del nicho
+  const nicheWords = nicheLower.split(/[\s,\/]+/).filter(w => w.length > 3);
+  // Si ninguna palabra del nicho aparece en la descripción → mismatch
+  return nicheWords.length > 0 && !nicheWords.some(w => descLower.includes(w));
+}
+
+function showNicheMismatchModal(desc, niche) {
+  const modal = document.getElementById('nicheMismatchModal');
+  document.getElementById('nmNiche').textContent = niche.length > 30 ? niche.substring(0,30)+'…' : niche;
+  document.getElementById('nmTopic').textContent = desc.length  > 45 ? desc.substring(0,45)+'…'  : desc;
+  modal.style.display = 'flex';
+}
+
+function closeNicheMismatchModal() {
+  document.getElementById('nicheMismatchModal').style.display = 'none';
+  _pendingGenerateNicheMode = null;
+}
+
+function confirmNicheMode(mode) {
+  document.getElementById('nicheMismatchModal').style.display = 'none';
+  _pendingGenerateNicheMode = mode;
+  document.getElementById('generateBtn').click();
+}
+
+/* ── AUTOSAVE DESCRIPTION ── */
+function autosaveDesc(val) {
+  try { localStorage.setItem('conteniza_desc_draft', val); } catch(e) {}
+}
+
+/* ── CREDITS BAR ── */
+const PLAN_LIMITS = { free: 5, pro: 100, premium: 300 };
+
+function updateCreditsBar() {
+  const plan   = currentUser?.plan_type || 'free';
+  const limit  = PLAN_LIMITS[plan] || 5;
+  const used   = limit - userCredits;
+  const pct    = Math.max(0, Math.min(100, (userCredits / limit) * 100));
+
+  const bar    = document.getElementById('creditsBar');
+  const usedLb = document.getElementById('creditsUsedLabel');
+  const resetLb= document.getElementById('creditsResetLabel');
+
+  if (bar) {
+    bar.style.width = pct + '%';
+    // Color: green > 50%, amber 20-50%, red < 20%
+    bar.style.background = pct > 50
+      ? 'linear-gradient(90deg,#8B5FBF,#6366f1)'
+      : pct > 20
+        ? 'linear-gradient(90deg,#F59E0B,#EF4444)'
+        : 'linear-gradient(90deg,#EF4444,#DC2626)';
+  }
+  if (usedLb) usedLb.textContent = `${used < 0 ? 0 : used} usados de ${limit} este mes`;
+
+  // Reset date: first day of next month
+  if (resetLb) {
+    const now   = new Date();
+    const reset = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const days  = Math.ceil((reset - now) / 86400000);
+    resetLb.textContent = `Renueva en ${days}d`;
+  }
+
+  // Warnings créditos bajos
+  const lowWarn  = document.getElementById('lowCreditsWarning');
+  const zeroWarn = document.getElementById('zeroCreditsWarning');
+  const genBtn   = document.getElementById('generateBtn');
+  if (lowWarn)  lowWarn.style.display  = (userCredits === 1) ? 'block' : 'none';
+  if (zeroWarn) zeroWarn.style.display = (userCredits <= 0)  ? 'block' : 'none';
+  if (genBtn)   genBtn.disabled        = (userCredits <= 0);
+}
+
+/* ── PREVIEW MODAL ── */
+let _pendingEditorData = null;
+
+function showPreviewModal(editorData) {
+  _pendingEditorData = editorData;
+
+  const hook    = (editorData.hooks    || [])[0] || '–';
+  const caption = (editorData.captions || [])[0] || '–';
+  const tags    = (editorData.hashtags || []).slice(0, 8);
+
+  document.getElementById('pvHook').textContent    = hook;
+  document.getElementById('pvCaption').textContent = caption;
+
+  const pvTags = document.getElementById('pvHashtags');
+  pvTags.innerHTML = tags.map(t =>
+    `<span style="padding:3px 9px;border-radius:99px;background:rgba(139,95,191,.15);color:var(--brand);font-size:11px;font-weight:600;">${t}</span>`
+  ).join('');
+
+  // Coherence warning
+  const pvCoh = document.getElementById('pvCoherence');
+  if (editorData.is_coherent === false) {
+    pvCoh.style.display = 'block';
+    pvCoh.textContent   = `⚠️ La IA detectó que el tema no coincide exactamente con tu nicho (${editorData.detected_niche || '–'}). El contenido puede ser menos preciso.`;
+  } else {
+    pvCoh.style.display = 'none';
+  }
+
+  document.getElementById('previewModal').style.display = 'flex';
+}
+
+function closePreviewModal() {
+  document.getElementById('previewModal').style.display = 'none';
+  _pendingEditorData = null;
+  // Re-enable generate button
+  const btn = document.getElementById('generateBtn');
+  const btnCont = document.getElementById('generateBtnContent');
+  if (btn) btn.disabled = false;
+  if (btnCont) btnCont.innerHTML = '<span>✨</span><span>Generar contenido</span>';
+}
+
+function goToEditor() {
+  if (!_pendingEditorData) return;
+  sessionStorage.setItem('conteniza_editor_data', JSON.stringify(_pendingEditorData));
+  window.location.href = 'editor.html';
+}
+
+/* ── GENERATE → muestra preview antes de ir al editor ── */
+async function generateContent(event) {
+  if (event) event.preventDefault();
+
+  const _descVal  = document.getElementById('description')?.value?.trim() || '';
+  const _nicheVal = document.getElementById('niche')?.value?.trim() || localStorage.getItem('conteniza_niche') || '';
+
+  if (!_descVal) { showNotification('Describe el tema del contenido', 'error'); return; }
+  if (userCredits <= 0) {
+    showNotification('Sin créditos este mes. ¡Mejora tu plan para continuar!', 'error'); return;
+  }
+
+  // Niche mismatch check
+  if (_pendingGenerateNicheMode === null && detectNicheMismatch(_descVal, _nicheVal)) {
+    showNicheMismatchModal(_descVal, _nicheVal);
+    return;
+  }
+
+  const _nicheMode = _pendingGenerateNicheMode || 'adapt';
+  _pendingGenerateNicheMode = null;
+
+  const btn     = document.getElementById('generateBtn');
+  const btnCont = document.getElementById('generateBtnContent');
+  btn.disabled  = true;
+  btnCont.innerHTML = '<span class="spinner"></span><span>Generando…</span>';
+  showProgress(true, 'Iniciando…', 10);
+
+  try {
+    let niche = _nicheVal;
+    if (_nicheMode === 'exact') { niche = ''; }
+
+    const description = _nicheMode === 'mix' && niche
+      ? `IMPORTANTE: Mezcla creativamente el tema "${_descVal.substring(0,80)}" con el nicho de ${niche}. TEMA BASE: ${_descVal}`
+      : _descVal;
+
+    const payload = {
+      niche:           niche || _descVal.substring(0, 60),
+      title:           document.getElementById('title')?.value?.trim() || '',
+      description,
+      tone:            document.getElementById('tone')?.value || 'Profesional',
+      contentType:     document.getElementById('contentType')?.value || 'general',
+      publicationType: selectedPubType,
+      files:           uploadedFiles.map(f => f.id),
+      _mixMode:        _nicheMode === 'mix'
+    };
+
+    showProgress(true, 'Analizando con IA…', 55);
+
+    // Cold-start warning: if Render is sleeping, first request takes 30-60s
+    const _coldStartTimer = setTimeout(() => {
+      showNotification('⏳ El servidor está arrancando… puede tardar hasta 30s en la primera visita del día. ¡Ya casi!', 'info');
+    }, 8000);
+
+    const r = await apiFetch(`${API_URL}/analyze`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }, 90000);
+    clearTimeout(_coldStartTimer);
+
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Error generando contenido');
+
+    // Guardar créditos
+    userCredits = d.credits_remaining ?? userCredits - 1;
+    document.getElementById('userCredits').textContent  = userCredits + ' créditos';
+    document.getElementById('creditsDisplay').textContent = userCredits;
+
+    showProgress(true, 'Abriendo vista previa…', 90);
+
+    const editorData = {
+      ...d.analysis,
+      id:              d.id || d.analysis_id || d.analysis?.id || null,
+      publicationType: selectedPubType,
+      niche:           _nicheVal,
+      description:     _descVal,
+    };
+
+    showProgress(false);
+    showPreviewModal(editorData);
+
+    // Reset button here so user can go back and generate again
+    btn.disabled  = false;
+    btnCont.innerHTML = '<span>✨</span><span>Generar contenido</span>';
+
+  } catch(e) {
+    if (e.status !== 401) showNotification(e.message, 'error');
+    btn.disabled  = false;
+    btnCont.innerHTML = '<span>✨</span><span>Generar contenido</span>';
+    showProgress(false);
+  }
+}
+
+/* ── SIDEBAR (historial) ── */
+function openSidebar() {
+  // El editor.html puede abrir el historial — aquí navegamos a él con flag
+  sessionStorage.setItem('conteniza_open_historial', '1');
+  window.location.href = 'editor.html';
+}
+
+/* ── ADMIN ── */
+function openAdmin() { window.open('admin.html', '_blank'); }
+
+/* ── LOGOUT ── */
+function logout() {
+  localStorage.removeItem('token'); localStorage.removeItem('user');
+  currentUser = null; uploadedFiles = []; userCredits = 0;
+  showPlansScreen();
+  showNotification('Sesión cerrada', 'success');
+}
+
+/* ── DROPDOWN ── */
+function toggleUbDropdown(e) {
+  e.stopPropagation();
+  const d = document.getElementById('ubDropdown');
+  d.style.display = d.style.display === 'none' ? 'block' : 'none';
+}
+function closeUbDropdown() {
+  document.getElementById('ubDropdown').style.display = 'none';
+}
+document.addEventListener('click', function(e) {
+  if (!document.getElementById('ubAvatarWrap')?.contains(e.target)) closeUbDropdown();
+});
+
+/* ── STUB funciones referenciadas en la UI ── */
+/* ══ MI MARCA ══ */
+const BRAND_FONTS = ['DM Sans','Montserrat','Poppins','Playfair Display','Raleway',
+  'Oswald','Lato','Roboto','Inter','Nunito','Bebas Neue','Abril Fatface','Space Grotesk','Unbounded','Syne'];
+
+let _brandData = { color_primary:'#8B5FBF', color_secondary:'#E91E8C', font_name:'DM Sans', font_color:'#ffffff', sub_font_color:'#cccccc', logo_url:null };
+
+function showBrandScreen() {
+  if (!currentUser) { showNotification('Inicia sesión primero','error'); return; }
+  if (currentUser.plan_type !== 'premium') {
+    showNotification('Mi Marca es exclusivo del plan Premium ⭐','error'); return;
+  }
+  document.getElementById('brandScreen').classList.add('open');
+  loadBrandData();
+  renderBrandFonts();
+  // Restore saved niche in brand screen input
+  const savedNiche = localStorage.getItem('conteniza_niche') || '';
+  const nicheInput = document.getElementById('brandNicheInput');
+  if (nicheInput) nicheInput.value = savedNiche;
+}
+
+function closeBrandScreen() {
+  document.getElementById('brandScreen').classList.remove('open');
+}
+
+async function loadBrandData() {
+  try {
+    const token = localStorage.getItem('token'); if (!token) return;
+    const r = await apiFetch(`${API_URL}/brand`);
+    if (!r.ok) return;
+    const d = await r.json();
+    if (d.brand) {
+      _brandData = { ..._brandData, ...d.brand };
+      applyBrandToUI();
+    }
+  } catch(e) {}
+}
+
+function applyBrandToUI() {
+  const b = _brandData;
+  // Colors
+  document.getElementById('brandColor1').value   = b.color_primary   || '#8B5FBF';
+  document.getElementById('brandColor2').value   = b.color_secondary || '#E91E8C';
+  document.getElementById('brandFontColor').value= b.font_color      || '#ffffff';
+  document.getElementById('brandSubColor').value = b.sub_font_color  || '#cccccc';
+  document.getElementById('swatchPrimary').style.background   = b.color_primary   || '#8B5FBF';
+  document.getElementById('swatchSecondary').style.background = b.color_secondary || '#E91E8C';
+  document.getElementById('swatchFontColor').style.background = b.font_color      || '#ffffff';
+  document.getElementById('swatchSubColor').style.background  = b.sub_font_color  || '#cccccc';
+  // Logo
+  if (b.logo_url) {
+    const prev = document.getElementById('brandLogoPreview');
+    prev.innerHTML = `<img src="${b.logo_url}" alt="logo">`;
+    document.getElementById('brandLogoRemoveBtn').style.display = 'block';
+    document.getElementById('brandPreviewLogo').src = b.logo_url;
+    document.getElementById('brandPreviewLogo').style.display = 'block';
+  }
+  // Font active state
+  document.querySelectorAll('.brand-font-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.font === (b.font_name || 'DM Sans'));
+    btn.style.fontFamily = `'${btn.dataset.font}', sans-serif`;
+  });
+  updateBrandPreview();
+}
+
+function renderBrandFonts() {
+  const grid = document.getElementById('brandFontGrid');
+  grid.innerHTML = BRAND_FONTS.map(f => `
+    <button class="brand-font-btn ${(_brandData.font_name||'DM Sans')===f?'active':''}"
+            data-font="${f}" style="font-family:'${f}',sans-serif;"
+            onclick="selectBrandFont('${f}')">${f}</button>
+  `).join('');
+}
+
+function selectBrandFont(font) {
+  _brandData.font_name = font;
+  document.querySelectorAll('.brand-font-btn').forEach(b => b.classList.toggle('active', b.dataset.font === font));
+  updateBrandPreview();
+}
+
+function onBrandColorChange() {
+  _brandData.color_primary   = document.getElementById('brandColor1').value;
+  _brandData.color_secondary = document.getElementById('brandColor2').value;
+  _brandData.font_color      = document.getElementById('brandFontColor').value;
+  _brandData.sub_font_color  = document.getElementById('brandSubColor').value;
+  document.getElementById('swatchPrimary').style.background   = _brandData.color_primary;
+  document.getElementById('swatchSecondary').style.background = _brandData.color_secondary;
+  document.getElementById('swatchFontColor').style.background = _brandData.font_color;
+  document.getElementById('swatchSubColor').style.background  = _brandData.sub_font_color;
+  updateBrandPreview();
+}
+
+function updateBrandPreview() {
+  const b   = _brandData;
+  const bg  = document.getElementById('brandPreviewBg');
+  const ttl = document.getElementById('brandPreviewTitle');
+  const sub = document.getElementById('brandPreviewSub');
+  bg.style.background    = `linear-gradient(135deg,${b.color_primary},${b.color_secondary})`;
+  ttl.style.fontFamily   = `'${b.font_name||'DM Sans'}',sans-serif`;
+  ttl.style.color        = b.font_color      || '#fff';
+  sub.style.fontFamily   = `'${b.font_name||'DM Sans'}',sans-serif`;
+  sub.style.color        = b.sub_font_color  || '#ccc';
+}
+
+async function uploadBrandLogo(event) {
+  const file = event.target.files[0]; if (!file) return;
+  const token = localStorage.getItem('token'); if (!token) return;
+  const btn = document.querySelector('.brand-logo-upload');
+  btn.textContent = 'Subiendo…'; btn.disabled = true;
+  try {
+    const fd = new FormData(); fd.append('logo', file);
+    const r  = await fetch(`${API_URL}/brand/logo`, {
+      method:'POST', headers:{ Authorization:'Bearer '+token }, body:fd
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error);
+    _brandData.logo_url = d.logo_url;
+    const prev = document.getElementById('brandLogoPreview');
+    prev.innerHTML = `<img src="${d.logo_url}" alt="logo">`;
+    document.getElementById('brandLogoRemoveBtn').style.display = 'block';
+    document.getElementById('brandPreviewLogo').src = d.logo_url;
+    document.getElementById('brandPreviewLogo').style.display = 'block';
+    showNotification('✅ Logo subido','success');
+  } catch(e) { showNotification(e.message||'Error subiendo logo','error'); }
+  finally { btn.textContent='📷 Subir logo'; btn.disabled=false; event.target.value=''; }
+}
+
+async function removeBrandLogo() {
+  const token = localStorage.getItem('token'); if (!token) return;
+  try {
+    await apiFetch(`${API_URL}/brand/logo`, { method:'DELETE' });
+    _brandData.logo_url = null;
+    document.getElementById('brandLogoPreview').innerHTML = '<span style="font-size:28px;">+</span>';
+    document.getElementById('brandLogoRemoveBtn').style.display = 'none';
+    document.getElementById('brandPreviewLogo').style.display = 'none';
+    showNotification('Logo eliminado','success');
+  } catch(e) { showNotification('Error','error'); }
+}
+
+async function saveBrand() {
+  const token = localStorage.getItem('token'); if (!token) return;
+  const btn = document.querySelector('.brand-save-btn');
+  btn.textContent = 'Guardando…'; btn.disabled = true;
+  try {
+    const r = await apiFetch(`${API_URL}/brand`, {
+      method:'PUT',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({
+        color_primary:   _brandData.color_primary,
+        color_secondary: _brandData.color_secondary,
+        font_name:       _brandData.font_name,
+        font_color:      _brandData.font_color,
+        sub_font_color:  _brandData.sub_font_color,
+      })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error);
+    showNotification('✅ Marca guardada','success');
+    closeBrandScreen();
+  } catch(e) { showNotification(e.message||'Error guardando','error'); }
+  finally { btn.textContent='Guardar'; btn.disabled=false; }
+}
+function cancelSubscription(){ showNotification('Para cancelar escríbenos a soporte@conteniza.com', 'info'); }
+
+/* ── INIT ── */
+async function init() {
+  const token = localStorage.getItem('token');
+  const saved = localStorage.getItem('user');
+
+  if (token && saved) {
+    try {
+      currentUser = JSON.parse(saved);
+      userCredits = currentUser.credits_remaining ?? 0;
+      await showMainApp();
+      // Restaurar formato guardado
+      const savedFmt = localStorage.getItem('conteniza_format') || 'post';
+      const fmtBtn   = document.querySelector(`.pub-btn[data-value="${savedFmt}"]`);
+      if (fmtBtn) selectPubType(fmtBtn);
+    } catch(e) {
+      logout();
+    }
+  } else {
+    // Cargar planes
+    loadPlans();
+  }
+}
+
+// Cerrar modal con Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeNicheMismatchModal();
+});
+
+init();
+/* ══ ONBOARDING NICHO ══════════════════════════════════════════════════════ */
+const ONBOARDING_KEY  = 'conteniza_onboarding_done';
+const NICHE_OPTIONS   = [
+  { emoji:'🧠', label:'Coaching & Desarrollo personal' },
+  { emoji:'💰', label:'Finanzas e inversión' },
+  { emoji:'🥗', label:'Nutrición & Salud' },
+  { emoji:'💪', label:'Fitness & Entrenamiento' },
+  { emoji:'📱', label:'Marketing digital' },
+  { emoji:'🏢', label:'Negocios & Emprendimiento' },
+  { emoji:'🧘', label:'Bienestar & Mindfulness' },
+  { emoji:'💆', label:'Psicología & Terapia' },
+  { emoji:'✈️', label:'Viajes & Lifestyle' },
+  { emoji:'📸', label:'Fotografía & Creatividad' },
+  { emoji:'👗', label:'Moda & Belleza' },
+  { emoji:'🍳', label:'Gastronomía & Recetas' },
+  { emoji:'🎓', label:'Educación & Formación' },
+  { emoji:'🏠', label:'Inmobiliaria' },
+  { emoji:'✏️', label:'Otro (escribir)' },
+];
+
+let _selectedNiche = '';
+
+function shouldShowOnboarding() {
+  // Show if: no done flag AND no niche saved anywhere
+  if (localStorage.getItem(ONBOARDING_KEY)) return false;
+  if (localStorage.getItem('conteniza_niche')) return false;
+  if (currentUser?.niche) return false;
+  return true;
+}
+
+function showOnboarding() {
+  renderNicheGrid();
+  document.getElementById('onboardingScreen').style.display = 'block';
+}
+
+function renderNicheGrid() {
+  const grid = document.getElementById('nicheGrid');
+  grid.innerHTML = '';
+  NICHE_OPTIONS.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.style.cssText = 'display:flex;align-items:center;gap:8px;padding:12px 14px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface-2);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left;transition:all .15s;';
+    btn.innerHTML = `<span style="font-size:20px;">${opt.emoji}</span><span style="line-height:1.3;">${opt.label}</span>`;
+    btn.onclick = () => selectNicheOption(opt, btn);
+    grid.appendChild(btn);
+  });
+}
+
+function selectNicheOption(opt, btn) {
+  // Deselect all
+  document.querySelectorAll('#nicheGrid button').forEach(b => {
+    b.style.background   = 'var(--surface-2)';
+    b.style.borderColor  = 'var(--border)';
+    b.style.color        = 'var(--text)';
+  });
+  // Select this one
+  btn.style.background  = 'rgba(139,95,191,.15)';
+  btn.style.borderColor = 'var(--brand)';
+  btn.style.color       = 'var(--brand)';
+
+  const isOther = opt.label.startsWith('Otro');
+  document.getElementById('nicheCustomWrap').style.display = isOther ? 'block' : 'none';
+
+  if (isOther) {
+    _selectedNiche = '';
+    document.getElementById('nicheCustomInput').oninput = function() {
+      _selectedNiche = this.value.trim();
+      updateOnboardingBtn();
+    };
+  } else {
+    _selectedNiche = opt.label;
+  }
+  updateOnboardingBtn();
+}
+
+function updateOnboardingBtn() {
+  const btn = document.getElementById('onboardingBtn');
+  const ok  = _selectedNiche.length > 0;
+  btn.disabled      = !ok;
+  btn.style.opacity = ok ? '1' : '.4';
+  btn.style.cursor  = ok ? 'pointer' : 'not-allowed';
+}
+
+async function saveOnboardingNiche() {
+  if (!_selectedNiche) return;
+
+  const btn = document.getElementById('onboardingBtn');
+  btn.textContent = 'Guardando…';
+  btn.disabled    = true;
+
+  // 1. Save in localStorage (immediate, works offline)
+  localStorage.setItem('conteniza_niche', _selectedNiche);
+  localStorage.setItem(ONBOARDING_KEY, '1');
+
+  // 2. Sync to backend (best effort — don't block if fails)
+  try {
+    const token = localStorage.getItem('token');
+    if (token) {
+      await fetch(`${API_URL}/user/niche`, {
+        method:  'PATCH',
+        headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+        body:    JSON.stringify({ niche: _selectedNiche })
+      });
+    }
+  } catch(e) {
+    // Silent — localStorage already saved it
+  }
+
+  // 3. Update niche field in main form
+  const nicheEl = document.getElementById('niche');
+  if (nicheEl) nicheEl.value = _selectedNiche;
+
+  // 4. Update currentUser
+  if (currentUser) currentUser.niche = _selectedNiche;
+
+  // 5. Close onboarding
+  document.getElementById('onboardingScreen').style.display = 'none';
+  showNotification('¡Listo! La IA ya conoce tu nicho 🎯', 'success');
+}
+
+function skipOnboarding() {
+  localStorage.setItem(ONBOARDING_KEY, '1');
+  document.getElementById('onboardingScreen').style.display = 'none';
+}
+
+</script>
+<!-- ═══ ONBOARDING NICHO ═══ -->
+<div id="onboardingScreen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:10000;overflow-y:auto;">
+  <div style="max-width:480px;margin:0 auto;padding:32px 20px 48px;">
+    <!-- Header -->
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-size:36px;margin-bottom:8px;">🎯</div>
+      <div style="font-size:22px;font-weight:900;color:var(--text);margin-bottom:6px;">¿A qué te dedicas?</div>
+      <div style="font-size:14px;color:var(--text-3);line-height:1.5;">
+        La IA usará esto para personalizar cada post.<br>Solo lo pedimos una vez.
+      </div>
+    </div>
+
+    <!-- Grid de nichos -->
+    <div id="nicheGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;"></div>
+
+    <!-- Input personalizado -->
+    <div id="nicheCustomWrap" style="display:none;margin-bottom:16px;">
+      <input
+        type="text"
+        id="nicheCustomInput"
+        class="form-input"
+        placeholder="Describe tu nicho principal…"
+        maxlength="150"
+        style="font-size:14px;"
+      >
+      <div style="font-size:11px;color:var(--text-3);margin-top:4px;">Ej: "Fotografía de bodas", "Coach de productividad"</div>
+    </div>
+
+    <!-- Botón continuar -->
+    <button
+      id="onboardingBtn"
+      onclick="saveOnboardingNiche()"
+      disabled
+      style="width:100%;padding:14px;border-radius:var(--radius-md);background:var(--grad-brand);border:none;color:#fff;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;opacity:.4;transition:opacity .2s;"
+    >
+      Empezar a crear contenido →
+    </button>
+    <div style="text-align:center;margin-top:12px;">
+      <button onclick="skipOnboarding()" style="background:none;border:none;color:var(--text-3);font-size:12px;cursor:pointer;text-decoration:underline;">
+        Saltar por ahora
+      </button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
