@@ -1165,6 +1165,9 @@ function renderPlans(plans) {
   const grid = document.getElementById('plansGrid');
   const savedToken = localStorage.getItem('token');
   grid.innerHTML = plans.map(p => {
+    // Normalize: backend uses price_usd, defaultPlans use price
+    const priceVal = p.price ?? p.price_usd ?? 0;
+    p = { ...p, price: priceVal };
     const isFeatured = p.id === 'pro';
     const price = p.price === 0
       ? `<span style="font-family:'Syne',sans-serif;font-size:36px;font-weight:800;">0€</span><div style="font-size:12px;color:var(--text-2);margin-top:2px;">para siempre</div>`
