@@ -1107,85 +1107,101 @@ function updateFormatBadges() {
 }
 
 /* ── PLANS ── */
+// Features locales — fuente de verdad para el frontend
+const PLAN_FEATURES = {
+  free: [
+    '✅ 5 análisis / mes',
+    '✅ 2 análisis por día',
+    '✅ Formato Post',
+    '✅ Hooks, captions y hashtags',
+    '✅ Export PDF',
+    '❌ Carrusel, Story, Reel',
+    '❌ Subida de archivos',
+    '❌ Mi Marca y Studio',
+  ],
+  pro: [
+    '✅ 100 análisis / mes',
+    '✅ 20 análisis por día',
+    '✅ Todos los formatos (Post, Carrusel, Story, Reel)',
+    '✅ 🤖 Copiloto IA',
+    '✅ 📎 Archivos de referencia 200MB/mes',
+    '✅ Historial últimos 50 análisis',
+    '✅ Export PNG + ZIP + PDF',
+    '✅ 📧 Soporte 24-48h',
+    '❌ Mi Marca y Studio (solo Premium)',
+  ],
+  premium: [
+    '✅ 300 análisis / mes',
+    '✅ 30 análisis por día',
+    '✅ Todo lo de Pro',
+    '✅ 🎨 Mi Marca — colores, fuente y logo',
+    '✅ 🎬 Conteniza Studio — editor drag & drop',
+    '✅ IA con contexto de tu marca',
+    '✅ 📎 5GB almacenamiento/mes',
+    '✅ Historial ilimitado',
+    '✅ 📧 Soporte prioritario',
+  ],
+};
+
+const PLAN_BADGES = {
+  pro:     '🔥 Más popular',
+  premium: '🎨 Mi Marca + Studio',
+};
+
 async function loadPlans() {
-  // Planes por defecto — se sobreescriben si la API responde
-  const defaultPlans = [
-    {
-      id:'free', name:'Free', price:0, credits:5,
-      features:[
-        '5 análisis/mes',
-        '2 análisis por día',
-        '📸 Formato Post',
-        'Hooks, captions y hashtags',
-        'Export PDF',
-        '❌ Carrusel, Story, Reel',
-        '❌ Subida de archivos',
-        '❌ Mi Marca y Studio',
-      ]
-    },
-    {
-      id:'pro', name:'Pro', price:11, credits:100,
-      features:[
-        '100 análisis/mes',
-        '20 análisis por día',
-        '📸 Todos los formatos (Post, Carrusel, Story, Reel)',
-        'Regenerar cualquier sección',
-        '🎙 Archivos de referencia 200MB/mes',
-        'Historial últimos 50 análisis',
-        'Export PNG + ZIP + PDF',
-        'Publicar directo en Instagram',
-        '📧 Soporte 24-48h (soporte@conteniza.com)',
-        '❌ Mi Marca y Studio (Premium)',
-      ]
-    },
-    {
-      id:'premium', name:'Premium', price:19, credits:300,
-      features:[
-        '300 análisis/mes',
-        '30 análisis por día',
-        '✅ Todo lo de Pro',
-        '🎨 Mi Marca — colores, fuente y logo propio',
-        '🎬 Conteniza Studio — editor drag & drop',
-        'IA con contexto de tu marca',
-        '🎙 5GB almacenamiento/mes',
-        'Historial ilimitado',
-        '📧 Soporte prioritario (soporte@conteniza.com)',
-      ]
-    },
-  ];
-  renderPlans(defaultPlans);
+  const grid = document.getElementById('plansGrid');
+  if (!grid) return;
+
+  // Mostrar fallback inmediatamente sin esperar al backend
+  renderPlans([
+    { id:'free',    name:'free',    label:'Free',    price_usd:0,  credits:5 },
+    { id:'pro',     name:'pro',     label:'Pro',     price_usd:11, credits:100 },
+    { id:'premium', name:'premium', label:'Premium', price_usd:19, credits:300 },
+  ]);
+
   try {
-    const r = await fetch(`${API_URL}/auth/plans`);
+    const fetchPromise   = fetch(`${API_URL}/auth/plans`);
+    const timeoutPromise = new Promise((_,rej) => setTimeout(() => rej(new Error('timeout')), 3000));
+    const r = await Promise.race([fetchPromise, timeoutPromise]);
     const d = await r.json();
-    if (d.plans?.length) renderPlans(d.plans);
+    if (d.success && d.plans?.length) renderPlans(d.plans);
   } catch(e) {}
 }
 
 function renderPlans(plans) {
   const grid = document.getElementById('plansGrid');
+  if (!grid) return;
   const savedToken = localStorage.getItem('token');
   grid.innerHTML = plans.map(p => {
-    // Normalize: backend uses price_usd, defaultPlans use price
-    const priceVal = p.price ?? p.price_usd ?? 0;
-    p = { ...p, price: priceVal };
-    const isFeatured = p.id === 'pro';
-    const price = p.price === 0
-      ? `<span style="font-family:'Syne',sans-serif;font-size:36px;font-weight:800;">0€</span><div style="font-size:12px;color:var(--text-2);margin-top:2px;">para siempre</div>`
-      : `<span style="font-family:'Syne',sans-serif;font-size:36px;font-weight:800;">${p.price}€</span><div style="font-size:12px;color:var(--text-2);margin-top:2px;">/ mes</div>`;
+    // Normalize price — backend uses price_usd
+    const priceVal   = p.price_usd ?? p.price ?? 0;
+    const planKey    = (p.name || p.id || '').toLowerCase();
+    const isFeatured = planKey === 'pro';
+    const badge      = PLAN_BADGES[planKey] || '';
+    const features   = PLAN_FEATURES[planKey] || [];
+    const label      = p.label || p.name || planKey;
+    const btnLabel   = savedToken
+      ? (currentUser?.plan_type === planKey ? 'Plan actual ✓' : (planKey === 'free' ? 'Plan Free' : 'Contratar ahora'))
+      : (planKey === 'free' ? 'Comenzar gratis' : 'Contratar ahora');
+
+    const priceHTML = priceVal === 0
+      ? `<div class="plan-price" style="margin:16px 0 2px;font-size:36px;font-weight:800;font-family:'Syne',sans-serif;">0€</div><div style="font-size:12px;color:var(--text-2);margin-bottom:16px;">para siempre</div>`
+      : `<div class="plan-price" style="margin:16px 0 2px;font-size:36px;font-weight:800;font-family:'Syne',sans-serif;">${priceVal}€</div><div style="font-size:12px;color:var(--text-2);margin-bottom:16px;">/ mes</div>`;
+
     return `
-    <div class="plan-card ${isFeatured ? 'featured' : ''}" onclick="selectPlan('${p.id}')">
-      ${isFeatured ? '<div class="plan-badge">⭐ Más popular</div>' : ''}
-      <div class="plan-name">${p.name}</div>
-      <div class="plan-price" style="margin:16px 0 4px;">${price}</div>
+    <div class="plan-card ${isFeatured ? 'featured' : ''}" onclick="selectPlan('${planKey}')">
+      ${badge ? `<div class="plan-badge">${badge}</div>` : ''}
+      <div class="plan-name">${label}</div>
+      ${priceHTML}
       <ul class="plan-features">
-        ${(p.features || []).map(f => {
-          const isNo = f.startsWith('❌');
-          const clean = f.replace(/^[❌✅📸🎙🎨🎬📧]/,'').trim();
-          return `<li style="${isNo ? 'opacity:.45;' : ''}">${isNo ? '✗' : '✓'} ${escapeHtml(clean)}</li>`;
+        ${features.map(f => {
+          const isNo  = f.startsWith('❌');
+          const clean = f.replace(/^[❌✅]\s*/,'').replace(/^[📸🎙🎨🎬📧🤖]\s*/,'').trim();
+          return `<li style="${isNo ? 'opacity:.4;text-decoration:none;' : ''}">${isNo ? '✗' : '✓'} ${escapeHtml(clean)}</li>`;
         }).join('')}
       </ul>
       <button class="btn ${isFeatured ? 'btn-primary' : 'btn-outline'} btn-full" style="margin-top:auto;">
-        ${savedToken ? 'Seleccionar' : (p.price === 0 ? 'Comenzar gratis' : 'Contratar ahora')}
+        ${btnLabel}
       </button>
     </div>`;
   }).join('');
