@@ -214,7 +214,7 @@ function interceptToggleAuthMode() {
       event.preventDefault();
       
       const authTitle = document.getElementById('authTitle');
-      const isRegisterMode = authTitle && authTitle.textContent.includes('Crear Cuenta');
+      const isRegisterMode = authTitle && authTitle.textContent.toLowerCase().includes('crear cuenta');
       
       // VALIDAR CONSENTIMIENTO OBLIGATORIO en registro
       if (isRegisterMode) {

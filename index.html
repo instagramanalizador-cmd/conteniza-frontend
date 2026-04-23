@@ -376,7 +376,19 @@
       background:rgba(0,0,0,.6); z-index:9800;
       align-items:center; justify-content:center; padding:20px;
     }
-  </style>
+  
+    /* ── TOPBAR ── */
+    .topbar { background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:101;backdrop-filter:blur(12px); }
+    .topbar-inner { display:flex;align-items:center;justify-content:space-between;padding:14px 20px;max-width:1100px;margin:0 auto; }
+    .topbar-brand { display:flex;align-items:center;gap:10px;cursor:pointer; }
+    .topbar-logo { width:36px;height:36px;border-radius:var(--radius-sm);object-fit:cover;background:var(--surface-2);border:1px solid var(--border); }
+    .topbar-name { font-family:'Syne',sans-serif;font-weight:800;font-size:20px;background:var(--grad-brand);-webkit-background-clip:text;-webkit-text-fill-color:transparent; }
+    .topbar-tagline { font-size:12px;color:var(--text-3);font-weight:400;display:none; }
+    @media(min-width:600px){ .topbar-tagline { display:block; } }
+    .topbar-actions { display:flex;align-items:center;gap:10px; }
+    @media(max-width:480px){ .topbar-inner { padding:0 12px;height:52px; } .topbar-actions .btn { padding:6px 10px;font-size:11px;white-space:nowrap; } }
+
+    </style>
 </head>
 <body>
 
@@ -428,6 +440,22 @@
 </div>
 
 <!-- ═══ PLANS SCREEN ═══ -->
+<!-- ═══ TOPBAR ═══ -->
+<header class="topbar" id="mainTopbar">
+  <div class="topbar-inner">
+    <div class="topbar-brand" onclick="goHome()" title="Inicio">
+      <div>
+        <div class="topbar-name">✦ Conteniza</div>
+        <div class="topbar-tagline">Contenido para Instagram · Coaches y Creadores</div>
+      </div>
+    </div>
+    <div class="topbar-actions" id="topbarActions">
+      <button class="btn btn-outline btn-sm" onclick="showPlansFromTopbar()">Ver planes</button>
+      <button class="btn btn-primary btn-sm" onclick="showAuthFromPlans()">Iniciar sesión</button>
+    </div>
+  </div>
+</header>
+
 <div id="plansScreen">
   <div class="hero-bg">
     <div style="position:relative;">
@@ -1005,6 +1033,7 @@ async function showMainApp() {
   await syncCredits();
   updateFormatBadges();
   updateCreditsBar();
+  updateTopbarForLoggedIn();
 
   // Restore unsaved description draft
   const draft = localStorage.getItem('conteniza_desc_draft');
@@ -1482,6 +1511,7 @@ function logout() {
   localStorage.removeItem('token'); localStorage.removeItem('user');
   currentUser = null; uploadedFiles = []; userCredits = 0;
   showPlansScreen();
+  updateTopbarForLoggedOut();
   showNotification('Sesión cerrada', 'success');
 }
 
@@ -1691,6 +1721,54 @@ document.addEventListener('keydown', e => {
 });
 
 init();
+
+/* ── TOPBAR FUNCTIONS ── */
+function showPlansFromTopbar() {
+  document.getElementById('plansScreen').classList.remove('hidden');
+  document.getElementById('authScreen').classList.add('hidden');
+  document.getElementById('mainApp').classList.add('hidden');
+  setTimeout(() => {
+    const grid = document.getElementById('plansGrid');
+    if (grid) grid.scrollIntoView({ behavior:'smooth', block:'start' });
+    else window.scrollTo({ top:0, behavior:'smooth' });
+  }, 100);
+}
+
+function showAuthFromPlans() {
+  document.getElementById('plansScreen').classList.add('hidden');
+  document.getElementById('authScreen').classList.remove('hidden');
+  authMode = 'login';
+  document.getElementById('authTitle').textContent = 'Iniciar sesión';
+}
+
+function goHome() {
+  if (currentUser) {
+    document.getElementById('mainApp').classList.remove('hidden');
+    document.getElementById('plansScreen').classList.add('hidden');
+    document.getElementById('authScreen').classList.add('hidden');
+  } else {
+    document.getElementById('plansScreen').classList.remove('hidden');
+    document.getElementById('authScreen').classList.add('hidden');
+    document.getElementById('mainApp').classList.add('hidden');
+  }
+}
+
+function updateTopbarForLoggedIn() {
+  const actions = document.getElementById('topbarActions');
+  if (!actions) return;
+  actions.innerHTML = '';  // Hide buttons when logged in — userBar takes over
+}
+
+function updateTopbarForLoggedOut() {
+  const actions = document.getElementById('topbarActions');
+  if (!actions) return;
+  actions.innerHTML = `
+    <button class="btn btn-outline btn-sm" onclick="showPlansFromTopbar()">Ver planes</button>
+    <button class="btn btn-primary btn-sm" onclick="showAuthFromPlans()">Iniciar sesión</button>
+  `;
+}
+
+
 /* ══ ONBOARDING NICHO ══════════════════════════════════════════════════════ */
 const ONBOARDING_KEY  = 'conteniza_onboarding_done';
 const NICHE_OPTIONS   = [
@@ -1861,5 +1939,6 @@ function skipOnboarding() {
   </div>
 </div>
 
+  <script src="consent.js"></script>
 </body>
 </html>
