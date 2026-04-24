@@ -2093,6 +2093,27 @@ function skipOnboarding() {
 </div>
 
   <script src="consent.js"></script>
+  <script>
+  // Hide consent section immediately on login mode (before 250ms delay)
+  (function() {
+    const tryHide = () => {
+      const section = document.getElementById('consentSection');
+      const title   = document.getElementById('authTitle');
+      if (section && title) {
+        const isLogin = !title.textContent.toLowerCase().includes('crear');
+        if (isLogin) section.style.display = 'none';
+        return true;
+      }
+      return false;
+    };
+    // Try immediately and on next tick
+    if (!tryHide()) {
+      requestAnimationFrame(tryHide);
+      setTimeout(tryHide, 0);
+      setTimeout(tryHide, 50);
+    }
+  })();
+  </script>
 
 <!-- ── COOKIE BANNER ── -->
 <div id="cookieBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:99999;
