@@ -1063,20 +1063,81 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
       </div>
     </div>
 
-    <div class="ia-body" id="iaCap" style="display:none;">
-      <div class="cap-section">
-        <div class="cap-label">📣 Caption completo</div>
-        <textarea class="cap-text" id="capFull" placeholder="Tu caption aparecerá aquí…" oninput="onCaptionInput()"></textarea>
+    <div class="ia-body" id="iaCap" style="display:none;padding:0;flex-direction:column;">
+
+      <!-- Explicación clara de qué es el caption -->
+      <div style="padding:10px 12px 8px;background:rgba(139,95,191,.08);border-bottom:1px solid var(--border);flex-shrink:0;">
+        <div style="font-size:11px;font-weight:800;color:var(--brand);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">
+          📝 Caption de Instagram
+        </div>
+        <div style="font-size:11px;color:var(--text3);line-height:1.5;">
+          El caption va <strong style="color:var(--text2);">debajo de tu foto</strong> cuando publicas en Instagram — no forma parte del diseño visual. Aquí lo armas, lo copias y lo pegas al publicar.
+        </div>
       </div>
-      <div class="cap-section">
-        <div class="cap-label">🏷 Hashtags</div>
-        <div class="hashtag-chips" id="hashtagChips"></div>
+
+      <!-- Constructor de caption por secciones -->
+      <div style="flex:1;overflow-y:auto;padding:10px 12px;">
+
+        <!-- Hook del caption -->
+        <div class="cap-section">
+          <div class="cap-label" style="display:flex;align-items:center;justify-content:space-between;">
+            <span>1️⃣ Hook (primera línea)</span>
+            <button onclick="insertCaptionBlock('hook')" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid var(--brand);background:transparent;color:var(--brand);cursor:pointer;font-family:inherit;">+ Insertar</button>
+          </div>
+          <div id="capHookPreview" style="font-size:11px;color:var(--text3);padding:5px 8px;background:var(--surf2);border-radius:var(--r);margin-top:4px;cursor:pointer;min-height:28px;border:1px dashed var(--border2);"
+               onclick="insertCaptionBlock('hook')">
+            Elige un hook arriba y aparecerá aquí…
+          </div>
+        </div>
+
+        <!-- Cuerpo del caption -->
+        <div class="cap-section">
+          <div class="cap-label" style="display:flex;align-items:center;justify-content:space-between;">
+            <span>2️⃣ Cuerpo del post</span>
+            <button onclick="insertCaptionBlock('desc')" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid var(--brand);background:transparent;color:var(--brand);cursor:pointer;font-family:inherit;">+ Insertar</button>
+          </div>
+          <div id="capDescPreview" style="font-size:11px;color:var(--text3);padding:5px 8px;background:var(--surf2);border-radius:var(--r);margin-top:4px;cursor:pointer;min-height:36px;border:1px dashed var(--border2);"
+               onclick="insertCaptionBlock('desc')">
+            Elige una descripción arriba y aparecerá aquí…
+          </div>
+        </div>
+
+        <!-- CTA del caption -->
+        <div class="cap-section">
+          <div class="cap-label" style="display:flex;align-items:center;justify-content:space-between;">
+            <span>3️⃣ CTA (llamada a la acción)</span>
+            <button onclick="insertCaptionBlock('cta')" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid var(--brand);background:transparent;color:var(--brand);cursor:pointer;font-family:inherit;">+ Insertar</button>
+          </div>
+          <div id="capCtaPreview" style="font-size:11px;color:var(--text3);padding:5px 8px;background:var(--surf2);border-radius:var(--r);margin-top:4px;cursor:pointer;min-height:28px;border:1px dashed var(--border2);"
+               onclick="insertCaptionBlock('cta')">
+            Elige un CTA arriba y aparecerá aquí…
+          </div>
+        </div>
+
+        <!-- Caption completo editable -->
+        <div class="cap-section" style="margin-top:4px;">
+          <div class="cap-label">📋 Caption completo (editable)</div>
+          <textarea class="cap-text" id="capFull"
+            placeholder="Se construye automáticamente con tus elecciones… o escribe directamente."
+            oninput="onCaptionInput()" style="min-height:100px;"></textarea>
+        </div>
+
+        <!-- Hashtags -->
+        <div class="cap-section">
+          <div class="cap-label">🏷 Hashtags — toca para seleccionar</div>
+          <div class="hashtag-chips" id="hashtagChips"></div>
+        </div>
+
+        <!-- DM keyword -->
+        <div class="cap-section">
+          <div class="cap-label">💬 Palabra clave DM</div>
+          <div id="dmKeyword" style="font-size:12px;color:var(--text2);padding:6px 0;"></div>
+        </div>
+
       </div>
-      <div class="cap-section">
-        <div class="cap-label">💬 Palabra clave DM</div>
-        <div id="dmKeyword" style="font-size:12px;color:var(--text2);padding:6px 0;"></div>
-      </div>
-      <div class="cap-actions">
+
+      <!-- Acciones fijas abajo -->
+      <div class="cap-actions" style="flex-shrink:0;border-top:1px solid var(--border);padding:8px 12px;">
         <button class="cap-btn" onclick="clearCaption()">🗑 Limpiar</button>
         <button class="cap-btn primary" onclick="copyCaption()">📋 Copiar todo</button>
       </div>
@@ -1313,6 +1374,7 @@ function loadIAData() {
         return sl;
       });
       if (!slides.length) slides = [newSlide()];
+      currentSlide = 0;
     }
 
     // Pre-fill caption
@@ -1606,6 +1668,7 @@ function makeBlock(type, opts={}) {
   el.className    = 'eblock';
   el.id           = id;
   el.dataset.type = type;
+  if (opts.role)  el.dataset.role = opts.role;
   el.style.left   = (opts.x ?? 10) + '%';
   el.style.top    = (opts.y ?? 20) + '%';
   el.style.width  = (opts.w ?? 80) + '%';
@@ -2072,6 +2135,11 @@ function loadSlide(idx) {
         document.getElementById('canvasBlocks').appendChild(restored);
       }
     });
+  } else if (sl.iaSlide) {
+    // Auto-apply IA slide content when first visiting this slide
+    const s = sl.iaSlide;
+    if (s.title)   addTextBlock(s.title,   { y:18, w:88, x:6, fontSize:36, bold:true,  color:currentBrand?.font_color||'#fff', align:'center' });
+    if (s.content) addTextBlock(s.content, { y:55, w:88, x:6, fontSize:20, bold:false, color:currentBrand?.sub_font_color||'rgba(255,255,255,.85)', align:'center' });
   }
   updateCanvasBg();
   updateSlideNav();
@@ -2288,6 +2356,31 @@ let _wizStep   = 0;
 let _wizUsed   = {}; // track which items were used
 let _wizLastId = null; // last analysis_id shown in wizard
 
+const WIZARD_STEPS_POST = [
+  { id:'hook',     label:'Paso 1 de 6', title:'🎣 Elige tu hook',           hint:'El hook es la primera línea. Toca el que más te guste.' },
+  { id:'desc',     label:'Paso 2 de 6', title:'📝 Añade la descripción',     hint:'El cuerpo del post. Toca la que mejor encaje.' },
+  { id:'cta',      label:'Paso 3 de 6', title:'📢 Llama a la acción',        hint:'El CTA dice al seguidor qué hacer. Toca el que quieras.' },
+  { id:'hashtags', label:'Paso 4 de 6', title:'# Hashtags y emojis',         hint:'Los hashtags llevan tu post a nuevas audiencias.' },
+  { id:'bg',       label:'Paso 5 de 6', title:'🖼 Dale fondo a tu post',     hint:'El fondo hace que tu post destaque en el feed.' },
+  { id:'done',     label:'Paso 6 de 6', title:'🚀 Tu post está listo',       hint:'' },
+];
+const WIZARD_STEPS_CAROUSEL = [
+  { id:'slides',   label:'Paso 1 de 3', title:'🎠 Aplica los slides',        hint:'La IA generó 10 slides con estructura emocional. Aplícalos al carrusel.' },
+  { id:'bg',       label:'Paso 2 de 3', title:'🖼 Elige el fondo',           hint:'El fondo se aplica a todos los slides.' },
+  { id:'done',     label:'Paso 3 de 3', title:'🚀 Tu carrusel está listo',   hint:'' },
+];
+const WIZARD_STEPS_STORY = [
+  { id:'hook',     label:'Paso 1 de 3', title:'🎣 Elige tu hook',            hint:'El texto principal de tu story.' },
+  { id:'bg',       label:'Paso 2 de 3', title:'🖼 Elige el fondo',           hint:'Fondo que destaque en stories.' },
+  { id:'done',     label:'Paso 3 de 3', title:'🚀 Tu story está lista',      hint:'' },
+];
+
+function getWizardSteps() {
+  if (currentFormat === 'carousel') return WIZARD_STEPS_CAROUSEL;
+  if (currentFormat === 'story' || currentFormat === 'reel') return WIZARD_STEPS_STORY;
+  return WIZARD_STEPS_POST;
+}
+
 const WIZARD_STEPS = [
   {
     id:    'hook',
@@ -2347,6 +2440,7 @@ function startWizard() {
   _wizStep = 0;
   _wizUsed = {};
   _wizLastId = iaData?.id || iaData?.analysis_id || null;
+  window._activeWizardSteps = getWizardSteps();
   document.getElementById('wizardPanel').style.display = 'flex';
   document.getElementById('freePanel').style.display   = 'none';
   renderWizardStep();
@@ -2368,17 +2462,31 @@ function wizardNext() {
   renderWizardStep();
 }
 
+function wizardPrev() {
+  if (_wizStep <= 0) return;
+  _wizStep--;
+  renderWizardStep();
+}
+
+function wizardSkipToFree() {
+  skipWizard();
+  renderFreePanelContent();
+}
+
 function renderWizardStep() {
-  const step = WIZARD_STEPS[_wizStep];
+  const steps = window._activeWizardSteps || WIZARD_STEPS;
+  const step  = steps[_wizStep];
   if (!step) { skipWizard(); return; }
 
   // Progress dots
   const prog = document.getElementById('wizardProgress');
-  prog.innerHTML = WIZARD_STEPS.map((s,i) => {
-    const cls = i < _wizStep ? 'done' : i === _wizStep ? 'active' : '';
-    return `<div class="wizard-step-dot ${cls}"></div>`;
-  }).join('') +
-  `<button class="wizard-skip" onclick="skipWizard()">Saltar →</button>`;
+  prog.innerHTML =
+    (_wizStep > 0 ? `<button class="wizard-skip" style="margin-right:auto;color:var(--text3);" onclick="wizardPrev()">← Atrás</button>` : '<div style="min-width:52px;"></div>') +
+    steps.map((s,i) => {
+      const cls = i < _wizStep ? 'done' : i === _wizStep ? 'active' : '';
+      return `<div class="wizard-step-dot ${cls}"></div>`;
+    }).join('') +
+    `<button class="wizard-skip" onclick="skipWizard()">Saltar →</button>`;
 
   // Header
   const head = document.getElementById('wizardHeader');
@@ -2400,15 +2508,15 @@ function renderWizardStep() {
     case 'cta':      renderWizardCta(body, hint);  break;
     case 'hashtags': renderWizardHashtags(body, hint); break;
     case 'bg':       renderWizardBg(body, hint);   break;
+    case 'slides':   renderWizardSlides(body, hint); break;
     case 'done':     renderWizardDone(body);        break;
   }
 }
 
 function wizardPickItem(text, blockOpts, stepId) {
-  // Add to canvas
   addTextBlock(text, blockOpts);
   _wizUsed[stepId] = text;
-  // Auto-advance after 600ms
+  updateCaptionSectionPreviews();
   toast('✅ Añadido al canvas', 'success');
   setTimeout(wizardNext, 700);
 }
@@ -2420,10 +2528,26 @@ function renderWizardHooks(body, hint) {
     const btn = document.createElement('button');
     btn.className = 'wizard-option';
     btn.textContent = h;
+    // Mark first hook as pre-selected (came from preview modal choice)
+    if (i === 0) {
+      btn.classList.add('used');
+      const badge = document.createElement('span');
+      badge.style.cssText = 'font-size:9px;font-weight:800;background:var(--brand);color:#fff;padding:1px 6px;border-radius:20px;margin-left:6px;vertical-align:middle;';
+      badge.textContent   = '✓ Tu elección';
+      btn.appendChild(badge);
+    }
     btn.onclick = () => {
       body.querySelectorAll('.wizard-option').forEach(b => b.classList.remove('used'));
       btn.classList.add('used');
-      wizardPickItem(h, { y:8, w:88, x:6, fontSize:34, bold:true, color:currentBrand?.font_color||'#fff', align:'center' }, 'hook');
+      // For carousel: replace title block on slide 0 instead of adding new one
+      if (currentFormat === 'carousel') {
+        document.querySelectorAll('.eblock-text').forEach(el => {
+          if (el.dataset.role === 'hook') el.remove();
+        });
+        addTextBlock(h, { y:8, w:88, x:6, fontSize:34, bold:true, color:currentBrand?.font_color||'#fff', align:'center', role:'hook' });
+      } else {
+        wizardPickItem(h, { y:8, w:88, x:6, fontSize:34, bold:true, color:currentBrand?.font_color||'#fff', align:'center' }, 'hook');
+      }
     };
     body.appendChild(btn);
   });
@@ -2438,7 +2562,6 @@ function renderWizardHooks(body, hint) {
 function renderWizardDesc(body, hint) {
   const captions = iaData?.captions || [];
   if (!captions.length) { wizardNext(); return; }
-  // Show shortened versions
   captions.slice(0,3).forEach((c, i) => {
     const short = c.length > 150 ? c.substring(0,150)+'…' : c;
     const btn = document.createElement('button');
@@ -2447,10 +2570,25 @@ function renderWizardDesc(body, hint) {
     btn.onclick = () => {
       body.querySelectorAll('.wizard-option').forEach(b => b.classList.remove('used'));
       btn.classList.add('used');
-      wizardPickItem(c, { y:52, w:88, x:6, fontSize:16, color:currentBrand?.sub_font_color||'rgba(255,255,255,.85)', align:'center' }, 'desc');
+      _wizUsed['desc'] = c;
+      // Add short version to canvas
+      const shortDesc = c.length > 130 ? c.substring(0,130)+'…' : c;
+      addTextBlock(shortDesc, { y:52, w:88, x:6, fontSize:15, color:currentBrand?.sub_font_color||'rgba(255,255,255,.85)', align:'center' });
+      // Full version goes to caption tab
+      captionFull = c;
+      const capEl = document.getElementById('capFull');
+      if (capEl) capEl.value = c;
+      updateCaptionPreview();
+      toast('✅ Descripción añadida al canvas y caption', 'success');
+      setTimeout(wizardNext, 700);
     };
     body.appendChild(btn);
   });
+  // Small info note
+  const note = document.createElement('div');
+  note.style.cssText = 'font-size:11px;color:var(--text3);margin-top:8px;padding:6px 8px;background:rgba(139,95,191,.08);border-radius:6px;';
+  note.textContent = '💬 La descripción se añade al caption de tu post, no al diseño visual.';
+  body.appendChild(note);
   hint.textContent = '👆 Toca la descripción que más te guste';
 }
 
@@ -2464,10 +2602,26 @@ function renderWizardCta(body, hint) {
     btn.onclick = () => {
       body.querySelectorAll('.wizard-option').forEach(b => b.classList.remove('used'));
       btn.classList.add('used');
-      wizardPickItem(c, { y:82, w:88, x:6, fontSize:18, bold:true, color:currentBrand?.font_color||'#fff', align:'center' }, 'cta');
+      _wizUsed['cta'] = c;
+      // CTA → canvas (bloque visual pequeño abajo)
+      addTextBlock(c, { y:82, w:88, x:6, fontSize:17, bold:true,
+        color:currentBrand?.font_color||'#fff', align:'center' });
+      // CTA → caption también
+      const capEl = document.getElementById('capFull');
+      const existing = capEl?.value || captionFull || '';
+      const newCap = existing ? existing + '\n\n' + c : c;
+      captionFull = newCap;
+      if (capEl) capEl.value = newCap;
+      updateCaptionPreview();
+      toast('✅ CTA añadido al caption', 'success');
+      setTimeout(wizardNext, 700);
     };
     body.appendChild(btn);
   });
+  const note = document.createElement('div');
+  note.style.cssText = 'font-size:11px;color:var(--text3);margin-top:8px;padding:6px 8px;background:rgba(139,95,191,.08);border-radius:6px;';
+  note.textContent = '💬 El CTA se añade al caption — aparece justo después de la descripción.';
+  body.appendChild(note);
   hint.textContent = '👆 Toca el CTA que quieras usar';
 }
 
@@ -2631,15 +2785,15 @@ function renderWizardDone(body) {
       <div class="wizard-done-icon">🎉</div>
       <div class="wizard-done-title">¡Tu post está listo!</div>
       <div class="wizard-done-sub">
-        Ya tienes hook, descripción y CTA en el canvas.<br>
-        Ahora puedes exportarlo o seguir editando.
+        ✅ Canvas listo con hook, descripción y CTA.<br>
+        📋 Tu caption está en el tab <strong>📝 Cap</strong> — cópialo para publicar en Instagram.
       </div>
       <div class="wizard-done-actions">
         <button class="wizard-action-btn primary" onclick="exportAll()">
           📥 Exportar PNG — listo para Instagram
         </button>
-        <button class="wizard-action-btn secondary" onclick="copyWizardCaption()">
-          📋 Copiar caption + hashtags
+        <button class="wizard-action-btn secondary" onclick="switchIaTab('cap');setTimeout(copyCaption,150)">
+          📋 Ver y copiar caption
         </button>
         <button class="wizard-action-btn secondary" onclick="skipWizard()">
           ✏️ Seguir editando libremente
@@ -2679,6 +2833,7 @@ function switchIaTab(tab) {
   if (tab === 'cop')   { setTimeout(scrollCopMessages, 50); }
   if (tab === 'tpl')   { renderTemplates(); }
   if (tab === 'brand') { renderBrandPanel(); }
+  if (tab === 'cap')   { updateCaptionSectionPreviews(); }
 }
 
 function renderIAPanel() {
@@ -2694,6 +2849,15 @@ function renderIAPanel() {
     }
     setTimeout(() => restoreAutoSave(), 200);
     return;
+  }
+
+  // For carousel: apply slide 0 IA content to canvas so it's not empty
+  if (currentFormat === 'carousel' && slides[0]?.iaSlide && !slides[0]._dom?.length) {
+    const s0 = slides[0].iaSlide;
+    document.getElementById('canvasBlocks').innerHTML = '';
+    if (s0.title)   addTextBlock(s0.title,   { y:16, w:88, x:6, fontSize:34, bold:true,  color:currentBrand?.font_color||'#fff', align:'center' });
+    if (s0.content) addTextBlock(s0.content, { y:54, w:88, x:6, fontSize:18, bold:false, color:currentBrand?.sub_font_color||'rgba(255,255,255,.85)', align:'center' });
+    saveCurrentBlocks(); // persist so loadSlide restores correctly
   }
 
   // Show wizard for any format when new content arrives
@@ -2962,6 +3126,50 @@ function updateCaptionPreview() {
     const short = captionFull.substring(0,60) + (captionFull.length>60?'…':'');
     preview.textContent = ' ' + short;
   }
+}
+
+// Update the section previews in caption tab
+function updateCaptionSectionPreviews() {
+  const hookEl = document.getElementById('capHookPreview');
+  const descEl = document.getElementById('capDescPreview');
+  const ctaEl  = document.getElementById('capCtaPreview');
+  if (hookEl && _wizUsed.hook) {
+    hookEl.textContent = _wizUsed.hook;
+    hookEl.style.color = 'var(--text)';
+    hookEl.style.borderColor = 'var(--success)';
+  }
+  if (descEl && _wizUsed.desc) {
+    const short = _wizUsed.desc.length > 120 ? _wizUsed.desc.substring(0,120)+'…' : _wizUsed.desc;
+    descEl.textContent = short;
+    descEl.style.color = 'var(--text)';
+    descEl.style.borderColor = 'var(--success)';
+  }
+  if (ctaEl && _wizUsed.cta) {
+    ctaEl.textContent = _wizUsed.cta;
+    ctaEl.style.color = 'var(--text)';
+    ctaEl.style.borderColor = 'var(--success)';
+  }
+}
+
+function insertCaptionBlock(type) {
+  const capEl = document.getElementById('capFull');
+  if (!capEl) return;
+  let text = '';
+  if (type === 'hook') text = _wizUsed.hook || iaData?.hooks?.[0] || '';
+  if (type === 'desc') text = _wizUsed.desc || iaData?.captions?.[0] || '';
+  if (type === 'cta')  text = _wizUsed.cta  || iaData?.ctas?.[0]  || '';
+  if (!text) { toast('Aún no has elegido este elemento en el wizard', 'info'); return; }
+  // Build full caption in order: hook → desc → cta
+  const hook = _wizUsed.hook || '';
+  const desc = _wizUsed.desc || '';
+  const cta  = _wizUsed.cta  || '';
+  const parts = [hook, desc, cta].filter(Boolean);
+  const full  = parts.join('\n\n');
+  capEl.value  = full;
+  captionFull  = full;
+  updateCaptionPreview();
+  updateCaptionSectionPreviews();
+  toast('✅ Caption actualizado', 'success');
 }
 
 function clearCaption() { document.getElementById('capFull').value=''; captionFull=''; updateCaptionPreview(); }
@@ -4054,6 +4262,67 @@ function applyBrandToAllSlides() {
   toast(`✅ Marca aplicada a ${total} slides`,'success');
 }
 
+/* ══ WIZARD SLIDES (CARRUSEL) ══ */
+function renderWizardSlides(body, hint) {
+  const slides_data = iaData?.carousel_slides || [];
+  if (!slides_data.length) { wizardNext(); return; }
+
+  const roleColors = { titulo:'#8B5FBF',intro:'#0EA5E9',
+    dolor_1:'#F43F5E',dolor_2:'#F43F5E',dolor_3:'#F43F5E',
+    valor_1:'#10B981',valor_2:'#10B981',valor_3:'#10B981',valor_4:'#10B981',accion:'#F59E0B' };
+  const roleLabels = { titulo:'TÍTULO',intro:'INTRO',
+    dolor_1:'DOLOR 1',dolor_2:'DOLOR 2',dolor_3:'DOLOR 3',
+    valor_1:'VALOR 1',valor_2:'VALOR 2',valor_3:'VALOR 3',valor_4:'VALOR 4',accion:'ACCIÓN' };
+
+  // Summary of slides
+  const summary = document.createElement('div');
+  summary.style.cssText = 'font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6;padding:10px;background:var(--surf2);border-radius:var(--r);';
+  summary.innerHTML = `<strong style="color:var(--text);">La IA generó ${slides_data.length} slides:</strong><br>` +
+    slides_data.map((s,i) => {
+      const color = roleColors[s.role] || '#8B5FBF';
+      return `<span style="display:inline-block;margin:2px 3px;padding:2px 7px;border-radius:4px;background:${color}22;color:${color};font-size:10px;font-weight:700;">${roleLabels[s.role]||s.role}</span>`;
+    }).join('');
+  body.appendChild(summary);
+
+  // Apply all button (main action)
+  const applyAll = document.createElement('button');
+  applyAll.style.cssText = 'width:100%;padding:12px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;';
+  applyAll.textContent = '✨ Aplicar todos los slides al carrusel';
+  applyAll.onclick = () => {
+    // Ensure slides array has enough slides
+    while (slides.length < slides_data.length) {
+      slides.push(newSlide(slides[0]?.bg1||'#7C3AED', slides[0]?.bg2||'#F43F5E'));
+    }
+    // Apply each slide
+    slides_data.forEach((s, i) => {
+      const prevSlide = currentSlide;
+      loadSlide(i);
+      document.getElementById('canvasBlocks').innerHTML = '';
+      if (s.title)   addTextBlock(s.title,   { y:20, w:88, x:6, fontSize:32, bold:true, color:currentBrand?.font_color||'#fff', align:'center' });
+      if (s.content) addTextBlock(s.content, { y:55, w:88, x:6, fontSize:17, color:currentBrand?.sub_font_color||'rgba(255,255,255,.85)', align:'center' });
+      saveCurrentBlocks();
+    });
+    loadSlide(0);
+    updateSlideNav();
+    renderSlideStrip();
+    historySave();
+    applyAll.textContent = '✅ Slides aplicados';
+    applyAll.style.background = 'var(--success)';
+    toast('✅ ' + slides_data.length + ' slides aplicados al carrusel', 'success');
+    setTimeout(wizardNext, 800);
+  };
+  body.appendChild(applyAll);
+
+  // Or apply one by one
+  const oneByOne = document.createElement('button');
+  oneByOne.style.cssText = 'width:100%;padding:9px;border-radius:var(--r);border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;';
+  oneByOne.textContent = 'Ver y aplicar slide por slide →';
+  oneByOne.onclick = () => { skipWizard(); switchIaTab('build'); };
+  body.appendChild(oneByOne);
+
+  hint.textContent = '👆 Aplica todos de una vez o edítalos individualmente';
+}
+
 /* ══ COPILOTO IA ══ */
 let _copHistory  = [];
 let _copBusy     = false;
@@ -4131,6 +4400,7 @@ async function copSend(preset) {
       return;
     }
 
+    if (r.status === 429) throw new Error('⏳ Demasiadas solicitudes. Espera un momento.');
     if (!r.ok || !d.success) throw new Error(d.error || 'Error del servidor');
 
     copAddMsg('ai', d.reply);

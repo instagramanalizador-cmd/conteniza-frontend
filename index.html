@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Conteniza — Crea contenido para Instagram con IA</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -439,7 +439,6 @@
   </div>
 </div>
 
-<!-- ═══ PLANS SCREEN ═══ -->
 <!-- ═══ TOPBAR ═══ -->
 <header class="topbar" id="mainTopbar">
   <div class="topbar-inner">
@@ -502,7 +501,14 @@
       <a onclick="toggleAuthMode()"> <span id="authToggleLink">Regístrate</span></a>
     </div>
     <div style="text-align:center;margin-top:10px;">
-      <a onclick="showForgotPassword()" style="font-size:12px;color:var(--text-3);cursor:pointer;">¿Olvidaste tu contraseña?</a>
+      <a href="forgot-password.html" style="font-size:12px;color:var(--text-3);cursor:pointer;">¿Olvidaste tu contraseña?</a>
+    </div>
+    <div style="text-align:center;margin-top:12px;font-size:11px;color:var(--text-3);">
+      <a href="privacy.html" target="_blank" style="color:var(--text-3);text-decoration:underline;">Privacidad</a>
+      &nbsp;·&nbsp;
+      <a href="terms.html" target="_blank" style="color:var(--text-3);text-decoration:underline;">Términos</a>
+      &nbsp;·&nbsp;
+      <a href="mailto:soporte@conteniza.com" style="color:var(--text-3);text-decoration:underline;">Soporte</a>
     </div>
     <div id="forgotForm" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
       <div class="form-group">
@@ -546,10 +552,12 @@
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
           <div class="form-group" style="margin:0;">
             <label class="form-label">🎯 Tu nicho</label>
-            <input type="text" id="niche" class="form-input"
-              placeholder="coaching, finanzas, salud…"
-              oninput="localStorage.setItem('conteniza_niche',this.value)"
-              style="font-size:13px;">
+            <div id="nicheDisplay" style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:rgba(139,95,191,.1);border:1.5px solid rgba(139,95,191,.3);border-radius:var(--radius-sm);min-height:40px;cursor:pointer;" onclick="openNicheSelector()">
+              <span id="nicheDisplayText" style="font-size:13px;font-weight:600;color:var(--brand);flex:1;">–</span>
+              <span style="font-size:11px;color:var(--text-3);">cambiar</span>
+            </div>
+            <!-- Hidden input keeps compatibility with existing JS -->
+            <input type="hidden" id="niche">
             <div class="form-hint" style="font-size:10px;margin-top:3px;">Define tu audiencia</div>
           </div>
           <div class="form-group" style="margin:0;">
@@ -608,11 +616,13 @@
             <i class="collapse-chevron">＋</i>
           </button>
           <div id="imageSection" class="collapse-body" style="display:none;">
-            <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
-              <input type="file" id="fileInput" accept="image/*,video/*,audio/*,.pdf" multiple onchange="handleFileSelect(event)">
-              <div class="upload-zone-icon">📁</div>
-              <div class="upload-zone-label">Arrastra archivos o haz clic</div>
-              <div class="upload-zone-hint">Imágenes, videos, audios, PDFs · Máx. 10 archivos</div>
+            <div id="uploadZoneWrapper">
+              <div class="upload-zone" id="uploadZone" onclick="handleUploadClick()">
+                <input type="file" id="fileInput" accept="image/*,video/*,audio/*,.pdf" multiple onchange="handleFileSelect(event)" style="display:none;">
+                <div class="upload-zone-icon" id="uploadZoneIcon">📁</div>
+                <div class="upload-zone-label" id="uploadZoneLabel">Arrastra archivos o haz clic</div>
+                <div class="upload-zone-hint" id="uploadZoneHint">Imágenes, videos, audios, PDFs · Máx. 10 archivos</div>
+              </div>
             </div>
             <div id="filePreview" class="file-preview"></div>
           </div>
@@ -667,7 +677,7 @@
             ⚠️ Te queda 1 crédito — úsalo bien
           </div>
           <div id="zeroCreditsWarning" style="display:none;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4);border-radius:8px;padding:10px 12px;font-size:12px;font-weight:700;color:#DC2626;text-align:center;">
-            🔒 Sin créditos disponibles · <a href="#planes" onclick="showPlans()" style="color:#DC2626;text-decoration:underline;cursor:pointer;">Mejorar plan →</a>
+            🔒 Sin créditos disponibles · <a href="#" onclick="showPlansScreen()" style="color:#DC2626;text-decoration:underline;cursor:pointer;">Mejorar plan →</a>
           </div>
         </div>
 
@@ -692,28 +702,25 @@
       <div style="font-size:12px;color:rgba(255,255,255,.8);margin-top:2px;">Revisa antes de abrir el editor</div>
     </div>
     <div style="padding:16px 20px;">
-      <!-- Hook preview -->
-      <div style="margin-bottom:12px;">
-        <div style="font-size:10px;font-weight:800;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">🎣 Hook sugerido</div>
-        <div id="pvHook" style="background:var(--surface-2);border-radius:10px;padding:10px 12px;font-size:13px;font-weight:600;color:var(--text);line-height:1.5;border-left:3px solid var(--brand);"></div>
-      </div>
-      <!-- Caption preview -->
-      <div style="margin-bottom:12px;">
-        <div style="font-size:10px;font-weight:800;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">📝 Descripción</div>
-        <div id="pvCaption" style="background:var(--surface-2);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--text-2);line-height:1.5;max-height:72px;overflow:hidden;"></div>
+      <!-- Hook selector — elige antes de ir al editor -->
+      <div style="margin-bottom:14px;">
+        <div style="font-size:10px;font-weight:800;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">🎣 Elige tu hook</div>
+        <div id="pvHooks" style="display:flex;flex-direction:column;gap:6px;"></div>
       </div>
       <!-- Hashtags preview -->
-      <div style="margin-bottom:16px;">
-        <div style="font-size:10px;font-weight:800;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;"># Hashtags</div>
+      <div style="margin-bottom:14px;">
+        <div style="font-size:10px;font-weight:800;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;"># Hashtags generados</div>
         <div id="pvHashtags" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
       </div>
       <!-- Coherence warning -->
       <div id="pvCoherence" style="display:none;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:10px 12px;font-size:12px;color:#B45309;margin-bottom:14px;line-height:1.5;"></div>
       <!-- Buttons -->
-      <div style="display:flex;gap:10px;">
+      <div style="display:flex;gap:10px;margin-top:4px;">
         <button onclick="closePreviewModal()" style="flex:1;padding:11px;border-radius:var(--radius-md);border:1.5px solid var(--border);background:none;color:var(--text-2);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">← Volver</button>
-        <button onclick="goToEditor()" style="flex:2;padding:11px;border-radius:var(--radius-md);background:var(--grad-brand);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">Editar y publicar →</button>
+        <button onclick="regenerateContent()" style="flex:1;padding:11px;border-radius:var(--radius-md);border:1.5px solid var(--border-mid);background:none;color:var(--brand);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">🔄 Regenerar</button>
+        <button onclick="goToEditor()" id="pvEditBtn" style="flex:2;padding:11px;border-radius:var(--radius-md);background:var(--grad-brand);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">Editar y publicar →</button>
       </div>
+      <div style="font-size:11px;color:var(--text-3);text-align:center;margin-top:8px;">Podrás elegir otras opciones en el editor</div>
     </div>
   </div>
 </div>
@@ -741,15 +748,15 @@
       <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;text-align:center;">¿Deseas cambiar de nicho?</div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 24px 24px;">
-      <button onclick="confirmNicheMode('exact')" style="background:var(--grad-brand);border:none;border-radius:12px;padding:14px 10px;cursor:pointer;color:#fff;">
-        <div style="font-size:22px;margin-bottom:4px;">✅</div>
-        <div style="font-size:14px;font-weight:800;">SÍ</div>
-        <div style="font-size:10px;opacity:.85;margin-top:2px;line-height:1.3;">Generar solo sobre el tema</div>
-      </button>
-      <button onclick="confirmNicheMode('mix')" style="background:var(--surface-2);border:2px solid var(--border);border-radius:12px;padding:14px 10px;cursor:pointer;color:var(--text);" onmouseover="this.style.borderColor='var(--brand)'" onmouseout="this.style.borderColor='var(--border)'">
+      <button onclick="confirmNicheMode('mix')" style="background:var(--grad-brand);border:none;border-radius:12px;padding:14px 10px;cursor:pointer;color:#fff;">
         <div style="font-size:22px;margin-bottom:4px;">🔀</div>
-        <div style="font-size:14px;font-weight:800;">NO</div>
-        <div style="font-size:10px;color:var(--text-3);margin-top:2px;line-height:1.3;">Mezclar tema con mi nicho</div>
+        <div style="font-size:14px;font-weight:800;">Mezclar</div>
+        <div style="font-size:10px;opacity:.85;margin-top:2px;line-height:1.3;">Unir tema con mi nicho</div>
+      </button>
+      <button onclick="confirmNicheMode('exact')" style="background:var(--surface-2);border:2px solid var(--border);border-radius:12px;padding:14px 10px;cursor:pointer;color:var(--text);" onmouseover="this.style.borderColor='var(--brand)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="font-size:22px;margin-bottom:4px;">🎯</div>
+        <div style="font-size:14px;font-weight:800;">Solo tema</div>
+        <div style="font-size:10px;color:var(--text-3);margin-top:2px;line-height:1.3;">Ignorar mi nicho esta vez</div>
       </button>
     </div>
     <div style="padding:0 24px 16px;text-align:center;">
@@ -1025,6 +1032,22 @@ function showAuthScreen(plan = '') {
 }
 
 async function showMainApp() {
+  // Check email verification
+  if (currentUser && currentUser.email_verified === false) {
+    showNotification('📧 Revisa tu email y verifica tu cuenta antes de continuar.', 'error');
+    // Still allow access but show persistent warning
+    setTimeout(() => {
+      const bar = document.getElementById('userBar');
+      if (bar && !document.getElementById('verifyBanner')) {
+        const banner = document.createElement('div');
+        banner.id = 'verifyBanner';
+        banner.style.cssText = 'background:#F59E0B;color:#000;font-size:12px;font-weight:700;text-align:center;padding:6px;cursor:pointer;';
+        banner.innerHTML = '📧 Verifica tu email para acceder a todas las funciones. <u>Reenviar email</u>';
+        banner.onclick = () => resendVerification();
+        bar.insertAdjacentElement('afterend', banner);
+      }
+    }, 500);
+  }
   document.getElementById('plansScreen').classList.add('hidden');
   document.getElementById('authScreen').classList.add('hidden');
   document.getElementById('mainApp').classList.remove('hidden');
@@ -1034,6 +1057,7 @@ async function showMainApp() {
   updateFormatBadges();
   updateCreditsBar();
   updateTopbarForLoggedIn();
+  updateUploadZone();
 
   // Restore unsaved description draft
   const draft = localStorage.getItem('conteniza_desc_draft');
@@ -1045,7 +1069,10 @@ async function showMainApp() {
   const savedNiche = localStorage.getItem('conteniza_niche');
   if (savedNiche) {
     const el = document.getElementById('niche');
-    if (el && !el.value) el.value = savedNiche;
+    if (el) el.value = savedNiche;
+    updateNicheDisplay(savedNiche);
+  } else {
+    updateNicheDisplay('');
   }
 }
 function updateUserPanel() {
@@ -1091,6 +1118,7 @@ async function syncCredits() {
       document.getElementById('creditsDisplay').textContent = userCredits;
       updateFormatBadges();
       updateCreditsBar();
+      updateUploadZone();
 
       // Sync niche from backend → takes priority over localStorage
       if (d.user.niche) {
@@ -1098,6 +1126,7 @@ async function syncCredits() {
         if (currentUser) currentUser.niche = d.user.niche;
         const nicheEl = document.getElementById('niche');
         if (nicheEl) nicheEl.value = d.user.niche;
+        updateNicheDisplay(d.user.niche);
       }
 
       // Show onboarding if user has no niche anywhere
@@ -1361,16 +1390,35 @@ function updateCreditsBar() {
 /* ── PREVIEW MODAL ── */
 let _pendingEditorData = null;
 
+let _selectedPreviewHook = null;
+
 function showPreviewModal(editorData) {
-  _pendingEditorData = editorData;
+  _pendingEditorData   = editorData;
+  _selectedPreviewHook = (editorData.hooks || [])[0] || null; // always reset to first hook of NEW data
 
-  const hook    = (editorData.hooks    || [])[0] || '–';
-  const caption = (editorData.captions || [])[0] || '–';
-  const tags    = (editorData.hashtags || []).slice(0, 8);
+  const hooks = (editorData.hooks || []).slice(0, 5);
+  const tags  = (editorData.hashtags || []).slice(0, 8);
 
-  document.getElementById('pvHook').textContent    = hook;
-  document.getElementById('pvCaption').textContent = caption;
+  // Render hook selector
+  const pvHooks = document.getElementById('pvHooks');
+  pvHooks.innerHTML = '';
+  hooks.forEach((h, i) => {
+    const btn = document.createElement('button');
+    btn.style.cssText = `width:100%;text-align:left;padding:10px 12px;border-radius:10px;border:1.5px solid ${i===0?'var(--brand)':'var(--border)'};background:${i===0?'rgba(139,95,191,.1)':'var(--surface-2)'};font-size:13px;font-weight:600;color:var(--text);cursor:pointer;font-family:inherit;line-height:1.4;transition:all .15s;`;
+    btn.textContent = h;
+    btn.onclick = () => {
+      _selectedPreviewHook = h;
+      pvHooks.querySelectorAll('button').forEach(b => {
+        b.style.borderColor = 'var(--border)';
+        b.style.background  = 'var(--surface-2)';
+      });
+      btn.style.borderColor = 'var(--brand)';
+      btn.style.background  = 'rgba(139,95,191,.1)';
+    };
+    pvHooks.appendChild(btn);
+  });
 
+  // Hashtags
   const pvTags = document.getElementById('pvHashtags');
   pvTags.innerHTML = tags.map(t =>
     `<span style="padding:3px 9px;border-radius:99px;background:rgba(139,95,191,.15);color:var(--brand);font-size:11px;font-weight:600;">${t}</span>`
@@ -1388,6 +1436,12 @@ function showPreviewModal(editorData) {
   document.getElementById('previewModal').style.display = 'flex';
 }
 
+function regenerateContent() {
+  closePreviewModal();
+  // Re-trigger generate with same params
+  document.getElementById('generateBtn').click();
+}
+
 function closePreviewModal() {
   document.getElementById('previewModal').style.display = 'none';
   _pendingEditorData = null;
@@ -1400,7 +1454,13 @@ function closePreviewModal() {
 
 function goToEditor() {
   if (!_pendingEditorData) return;
-  sessionStorage.setItem('conteniza_editor_data', JSON.stringify(_pendingEditorData));
+  // Put selected hook first in hooks array so editor wizard starts with it
+  const data = { ..._pendingEditorData };
+  if (_selectedPreviewHook) {
+    const others = (data.hooks || []).filter(h => h !== _selectedPreviewHook);
+    data.hooks = [_selectedPreviewHook, ...others];
+  }
+  sessionStorage.setItem('conteniza_editor_data', JSON.stringify(data));
   window.location.href = 'editor.html';
 }
 
@@ -1412,6 +1472,11 @@ async function generateContent(event) {
   const _nicheVal = document.getElementById('niche')?.value?.trim() || localStorage.getItem('conteniza_niche') || '';
 
   if (!_descVal) { showNotification('Describe el tema del contenido', 'error'); return; }
+  if (!_nicheVal) {
+    showNotification('Elige tu nicho antes de generar — toca el campo "Tu nicho"', 'error');
+    openNicheSelector();
+    return;
+  }
   if (userCredits <= 0) {
     showNotification('Sin créditos este mes. ¡Mejora tu plan para continuar!', 'error'); return;
   }
@@ -1464,6 +1529,8 @@ async function generateContent(event) {
     clearTimeout(_coldStartTimer);
 
     const d = await r.json();
+    if (r.status === 429) throw new Error('⏳ Demasiadas solicitudes. Espera un momento e intenta de nuevo.');
+    if (r.status === 403 && d.error?.includes('créditos')) throw new Error('Sin créditos disponibles este mes. Mejora tu plan para continuar.');
     if (!r.ok) throw new Error(d.error || 'Error generando contenido');
 
     // Guardar créditos
@@ -1479,6 +1546,15 @@ async function generateContent(event) {
       publicationType: selectedPubType,
       niche:           _nicheVal,
       description:     _descVal,
+      // Explicitly carry carousel slides and stories
+      carousel_slides: d.analysis?.carousel_slides || [],
+      stories:         d.analysis?.stories         || [],
+      hooks:           d.analysis?.hooks            || [],
+      captions:        d.analysis?.captions         || [],
+      ctas:            d.analysis?.ctas             || [],
+      hashtags:        d.analysis?.hashtags         || [],
+      emojis:          d.analysis?.emojis           || [],
+      thumbnails:      d.analysis?.thumbnails       || [],
     };
 
     showProgress(false);
@@ -1692,6 +1768,15 @@ async function saveBrand() {
 }
 function cancelSubscription(){ showNotification('Para cancelar escríbenos a soporte@conteniza.com', 'info'); }
 
+async function resendVerification() {
+  const token = localStorage.getItem('token');
+  if (!token) return;
+  try {
+    await apiFetch(`${API_URL}/auth/resend-verification`, { method:'POST' });
+    showNotification('✅ Email de verificación reenviado. Revisa tu bandeja.', 'success');
+  } catch(e) { showNotification('Error reenviando email', 'error'); }
+}
+
 /* ── INIT ── */
 async function init() {
   const token = localStorage.getItem('token');
@@ -1721,6 +1806,64 @@ document.addEventListener('keydown', e => {
 });
 
 init();
+
+/* ── UPLOAD ZONE PLAN CHECK ── */
+function updateUploadZone() {
+  const plan = currentUser?.plan_type || 'free';
+  const zone = document.getElementById('uploadZone');
+  const icon = document.getElementById('uploadZoneIcon');
+  const label = document.getElementById('uploadZoneLabel');
+  const hint = document.getElementById('uploadZoneHint');
+  if (!zone) return;
+
+  if (plan === 'free') {
+    zone.style.opacity = '.6';
+    zone.style.cursor = 'not-allowed';
+    if (icon)  icon.textContent  = '🔒';
+    if (label) label.textContent = 'Subida de archivos — Plan Pro o Premium';
+    if (hint)  hint.textContent  = 'Actualiza tu plan para subir imágenes, PDFs y audios de referencia';
+  } else {
+    zone.style.opacity = '1';
+    zone.style.cursor = 'pointer';
+    if (icon)  icon.textContent  = '📁';
+    if (label) label.textContent = 'Arrastra archivos o haz clic';
+    if (hint)  hint.textContent  = 'Imágenes, videos, audios, PDFs · Máx. 10 archivos';
+  }
+}
+
+function handleUploadClick() {
+  const plan = currentUser?.plan_type || 'free';
+  if (plan === 'free') {
+    showNotification('🔒 La subida de archivos requiere plan Pro o Premium', 'error');
+    return;
+  }
+  document.getElementById('fileInput').click();
+}
+
+/* ── NICHE SELECTOR ── */
+function updateNicheDisplay(val) {
+  const display = document.getElementById('nicheDisplay');
+  const text    = document.getElementById('nicheDisplayText');
+  const input   = document.getElementById('niche');
+  if (!val) {
+    if (text) text.textContent = 'Toca para elegir tu nicho →';
+    if (display) display.style.borderColor = 'rgba(239,68,68,.4)';
+    return;
+  }
+  if (text)  text.textContent = val;
+  if (input) input.value = val;
+  if (display) display.style.borderColor = 'rgba(139,95,191,.4)';
+}
+
+function openNicheSelector() {
+  // Reuse onboarding screen as niche selector
+  const screen = document.getElementById('onboardingScreen');
+  if (!screen) return;
+  // Change title for re-entry
+  const title = screen.querySelector('div[style*="font-size:22px"]');
+  if (title) title.textContent = 'Cambia tu nicho';
+  screen.style.display = 'block';
+}
 
 /* ── TOPBAR FUNCTIONS ── */
 function showPlansFromTopbar() {
@@ -1879,6 +2022,7 @@ async function saveOnboardingNiche() {
   // 3. Update niche field in main form
   const nicheEl = document.getElementById('niche');
   if (nicheEl) nicheEl.value = _selectedNiche;
+  updateNicheDisplay(_selectedNiche);
 
   // 4. Update currentUser
   if (currentUser) currentUser.niche = _selectedNiche;
@@ -1889,8 +2033,17 @@ async function saveOnboardingNiche() {
 }
 
 function skipOnboarding() {
-  localStorage.setItem(ONBOARDING_KEY, '1');
+  // Don't mark as done — user can come back via the niche badge
+  // Only hide the screen this time
   document.getElementById('onboardingScreen').style.display = 'none';
+  // Show a hint so user knows where to set niche later
+  const nicheDisplay = document.getElementById('nicheDisplay');
+  if (nicheDisplay && !localStorage.getItem('conteniza_niche')) {
+    nicheDisplay.style.borderColor = 'rgba(239,68,68,.5)';
+    nicheDisplay.style.background  = 'rgba(239,68,68,.06)';
+    const txt = document.getElementById('nicheDisplayText');
+    if (txt) txt.textContent = '⚠️ Sin nicho — toca para elegir';
+  }
 }
 
 </script>
@@ -1940,5 +2093,51 @@ function skipOnboarding() {
 </div>
 
   <script src="consent.js"></script>
-</body>
-</html>
+
+<!-- ── COOKIE BANNER ── -->
+<div id="cookieBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:99999;
+  background:rgba(15,15,25,.97);border-top:1px solid rgba(139,95,191,.4);
+  padding:14px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+  <div style="flex:1;min-width:200px;">
+    <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:3px;">🍪 Usamos cookies</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.6);line-height:1.5;">
+      Usamos cookies esenciales para el funcionamiento y analíticas para mejorar el servicio.
+      <a href="privacy.html" style="color:#c4b5fd;text-decoration:underline;">Ver política de privacidad</a>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;flex-shrink:0;">
+    <button onclick="acceptCookies('essential')" 
+      style="padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.2);
+      background:transparent;color:rgba(255,255,255,.7);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">
+      Solo esenciales
+    </button>
+    <button onclick="acceptCookies('all')"
+      style="padding:8px 16px;border-radius:8px;border:none;
+      background:linear-gradient(135deg,#7C3AED,#E91E8C);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
+      Aceptar todas
+    </button>
+  </div>
+</div>
+
+<script>
+// Cookie banner
+function acceptCookies(type) {
+  localStorage.setItem('conteniza_cookies', type);
+  localStorage.setItem('conteniza_cookies_date', new Date().toISOString());
+  document.getElementById('cookieBanner').style.display = 'none';
+  if (type === 'all' && typeof gtag !== 'undefined') {
+    gtag('consent', 'update', { analytics_storage:'granted', ad_storage:'granted' });
+  }
+}
+
+(function() {
+  const consent = localStorage.getItem('conteniza_cookies');
+  if (!consent) {
+    // Show after 1s
+    setTimeout(() => {
+      const banner = document.getElementById('cookieBanner');
+      if (banner) banner.style.display = 'flex';
+    }, 1000);
+  }
+})();
+</script>
