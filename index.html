@@ -1135,7 +1135,7 @@ async function syncCredits() {
 
       // Show onboarding if user has no niche anywhere
       if (shouldShowOnboarding()) {
-        setTimeout(showOnboarding, 300);
+        setTimeout(() => { renderNicheGrid(); showOnboarding(); }, 300);
       }
     }
   } catch(e) {}
@@ -1860,13 +1860,30 @@ function updateNicheDisplay(val) {
 }
 
 function openNicheSelector() {
-  // Reuse onboarding screen as niche selector
   const screen = document.getElementById('onboardingScreen');
   if (!screen) return;
-  // Change title for re-entry
   const title = screen.querySelector('div[style*="font-size:22px"]');
   if (title) title.textContent = 'Cambia tu nicho';
+  renderNicheGrid(); // ← CRÍTICO: llenar el grid de opciones
   screen.style.display = 'block';
+  // Pre-activar botón con nicho actual
+  const current = localStorage.getItem('conteniza_niche') || '';
+  if (current) {
+    _selectedNiche = current;
+    const btn = document.getElementById('onboardingBtn');
+    if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer'; }
+    // Resaltar tarjeta actual
+    setTimeout(() => {
+      document.querySelectorAll('#nicheGrid button').forEach(b => {
+        const match = NICHE_OPTIONS.find(o => o.label === current);
+        if (match && b.textContent.includes(match.label.substring(0,10))) {
+          b.style.background  = 'rgba(139,95,191,.15)';
+          b.style.borderColor = 'var(--brand)';
+          b.style.color       = 'var(--brand)';
+        }
+      });
+    }, 50);
+  }
 }
 
 /* ── TOPBAR FUNCTIONS ── */
@@ -1949,6 +1966,22 @@ function shouldShowOnboarding() {
 function showOnboarding() {
   renderNicheGrid();
   document.getElementById('onboardingScreen').style.display = 'block';
+  // Pre-select current niche if already set (user clicked "cambiar")
+  const current = localStorage.getItem('conteniza_niche') || '';
+  if (current) {
+    _selectedNiche = current;
+    const btn = document.getElementById('onboardingBtn');
+    if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+    // Highlight matching button
+    setTimeout(() => {
+      document.querySelectorAll('#nicheGrid button').forEach(b => {
+        if (b.textContent.includes(current.substring(0,12))) {
+          b.style.borderColor = 'var(--brand-mid)';
+          b.style.background  = 'var(--brand-light)';
+        }
+      });
+    }, 50);
+  }
 }
 
 function renderNicheGrid() {
@@ -1998,7 +2031,7 @@ function updateOnboardingBtn() {
   btn.style.cursor  = ok ? 'pointer' : 'not-allowed';
 }
 
-async function saveOnboardingNiche() {
+function saveOnboardingNiche() {
   if (!_selectedNiche) return;
 
   const btn = document.getElementById('onboardingBtn');
@@ -2013,15 +2046,13 @@ async function saveOnboardingNiche() {
   try {
     const token = localStorage.getItem('token');
     if (token) {
-      await fetch(`${API_URL}/user/niche`, {
+      fetch(`${API_URL}/user/niche`, {
         method:  'PATCH',
         headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
         body:    JSON.stringify({ niche: _selectedNiche })
-      });
+      }).catch(() => {}); // fire and forget — don't await
     }
-  } catch(e) {
-    // Silent — localStorage already saved it
-  }
+  } catch(e) {}
 
   // 3. Update niche field in main form
   const nicheEl = document.getElementById('niche');
@@ -2064,7 +2095,10 @@ function skipOnboarding() {
     </div>
 
     <!-- Grid de nichos -->
-    <div id="nicheGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;"></div>
+    <div id="nicheGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;"></div>
+    <div style="font-size:11px;color:var(--text-3);text-align:center;margin-bottom:14px;">
+      👆 Toca tu nicho para activar el botón
+    </div>
 
     <!-- Input personalizado -->
     <div id="nicheCustomWrap" style="display:none;margin-bottom:16px;">
