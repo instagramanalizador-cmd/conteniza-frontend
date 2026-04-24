@@ -480,6 +480,90 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   .tb-btn span{display:none;}
 }
 
+/* ── NUEVO PANEL CONTENIDO ── */
+.ia-scroll-panel{
+  display:flex;flex-direction:column;height:100%;overflow:hidden;
+}
+.ia-scroll-panel #iaContentInner{
+  flex:1;overflow-y:auto;padding:10px;
+}
+.ia-scroll-panel #iaContentInner::-webkit-scrollbar{width:3px;}
+.ia-scroll-panel #iaContentInner::-webkit-scrollbar-thumb{background:var(--brand);border-radius:2px;}
+
+/* Secciones de contenido */
+.content-section{margin-bottom:14px;}
+.content-section-title{
+  font-size:10px;font-weight:800;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.08em;
+  margin-bottom:8px;display:flex;align-items:center;gap:5px;
+}
+.content-option{
+  padding:10px 12px;border-radius:var(--rlg);border:1.5px solid var(--border2);
+  background:var(--surf2);font-size:12px;color:var(--text2);
+  cursor:pointer;transition:all .15s;margin-bottom:6px;line-height:1.45;
+  display:block;width:100%;text-align:left;font-family:inherit;
+  position:relative;
+}
+.content-option:hover{border-color:var(--brand);color:var(--text);background:rgba(139,95,191,.1);}
+.content-option.selected{
+  border-color:var(--success);background:rgba(52,211,153,.08);
+  color:var(--text);
+}
+.content-option.selected::after{
+  content:'✓';position:absolute;right:10px;top:50%;transform:translateY(-50%);
+  color:var(--success);font-weight:800;font-size:14px;
+}
+
+/* Emoji grid */
+.emoji-grid{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;}
+.emoji-chip{
+  width:38px;height:38px;border-radius:8px;border:1px solid var(--border2);
+  background:var(--surf2);font-size:20px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;
+}
+.emoji-chip:hover,.emoji-chip.selected{background:var(--brand);border-color:var(--brand);}
+
+/* Caption fijo abajo */
+.caption-fixed{
+  flex-shrink:0;padding:10px;border-top:2px solid var(--brand);
+  background:var(--surf);
+}
+.caption-fixed-label{
+  font-size:10px;font-weight:800;color:var(--brand);text-transform:uppercase;
+  letter-spacing:.06em;margin-bottom:6px;
+}
+.caption-fixed-actions{display:flex;gap:6px;margin-top:8px;}
+
+/* Slide cards para carrusel */
+.slide-card2{
+  border:1.5px solid var(--border2);border-radius:var(--rlg);
+  margin-bottom:8px;cursor:pointer;transition:all .15s;overflow:hidden;
+}
+.slide-card2:hover,.slide-card2.active{border-color:var(--brand);}
+.slide-card2-head{
+  padding:8px 12px;display:flex;align-items:center;gap:8px;
+  font-size:12px;font-weight:700;
+}
+.slide-card2-body{
+  padding:4px 12px 10px;font-size:11px;color:var(--text2);line-height:1.4;
+}
+.slide-role-badge{
+  font-size:9px;font-weight:800;text-transform:uppercase;
+  padding:2px 7px;border-radius:4px;flex-shrink:0;
+}
+
+/* Bg thumbs */
+.bg-thumb-option{
+  flex:1;aspect-ratio:4/5;border-radius:8px;border:2px solid var(--border2);
+  cursor:pointer;transition:all .15s;overflow:hidden;position:relative;
+}
+.bg-thumb-option:hover,.bg-thumb-option.active{border-color:var(--brand);}
+.bg-thumb-label{
+  position:absolute;bottom:0;left:0;right:0;
+  background:rgba(0,0,0,.6);font-size:9px;font-weight:700;
+  color:#fff;padding:3px;text-align:center;
+}
+
 /* Empty state */
 .ia-empty{
   display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -987,166 +1071,111 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 
   <!-- ══ IA PANEL ══ -->
   <div class="ia-panel">
+
+    <!-- Tabs simplificados -->
     <div class="ia-tabs">
-      <div class="ia-tab active" data-tab="build" onclick="switchIaTab('build')">🎨 Armar</div>
-      <div class="ia-tab"        data-tab="tpl"   onclick="switchIaTab('tpl')">✨ Tpl</div>
-      <div class="ia-tab"        data-tab="imgs"  onclick="switchIaTab('imgs')">🖼</div>
-      <div class="ia-tab"        data-tab="brand" onclick="switchIaTab('brand')">🏷 Marca</div>
-      <div class="ia-tab"        data-tab="cap"   onclick="switchIaTab('cap')">📝</div>
-      <div class="ia-tab"        data-tab="cop"   onclick="switchIaTab('cop')" id="copTab">🤖</div>
+      <div class="ia-tab active" data-tab="content" onclick="switchIaTab('content')">✍️ Contenido</div>
+      <div class="ia-tab"        data-tab="design"  onclick="switchIaTab('design')">🎨 Diseño</div>
+      <div class="ia-tab"        data-tab="brand"   onclick="switchIaTab('brand')">🏷 Marca</div>
+      <div class="ia-tab"        data-tab="cop"     onclick="switchIaTab('cop')" id="copTab">🤖 IA</div>
     </div>
-    <div class="ia-body" id="iaTpl" style="display:none;">
-      <div id="tplContent"></div>
-    </div>
-    <div class="ia-body" id="iaBuild" style="padding:0;">
-      <!-- WIZARD (primer uso) -->
-      <div id="wizardPanel" style="display:none;height:100%;flex-direction:column;">
-        <div class="wizard-progress" id="wizardProgress"></div>
-        <div class="wizard-header" id="wizardHeader"></div>
-        <div class="wizard-body" id="wizardBody"></div>
-        <div class="wizard-next-hint" id="wizardHint"></div>
-      </div>
-      <!-- MODO LIBRE (después del wizard) -->
-      <div id="freePanel" style="display:none;padding:10px;height:100%;overflow-y:auto;">
+
+    <!-- ── TAB: CONTENIDO ── -->
+    <div id="iaContent" class="ia-scroll-panel">
+      <div id="iaContentInner">
         <div class="ia-empty"><div class="ia-empty-icon">✨</div>Generando contenido…</div>
       </div>
-    </div>
-    <div class="ia-body" id="iaImgs" style="display:none;flex-direction:column;padding:8px;">
-      <!-- Tabs: Pexels / Mis fotos -->
-      <div class="img-bank-tabs">
-        <div class="img-bank-tab active" id="tabPexels"   onclick="switchImgTab('pexels')">🌐 Pexels</div>
-        <div class="img-bank-tab"        id="tabUnsplash" onclick="switchImgTab('unsplash')">📷 Unsplash</div>
-        <div class="img-bank-tab"        id="tabMine"     onclick="switchImgTab('mine')">🖼 Mis fotos</div>
+      <!-- Caption fijo abajo -->
+      <div class="caption-fixed" id="captionFixed">
+        <div class="caption-fixed-label">📋 Tu caption</div>
+        <textarea id="capFull" class="cap-text" placeholder="Se construye con tus elecciones…" oninput="onCaptionInput()" rows="4"></textarea>
+        <div class="hashtag-chips" id="hashtagChips" style="margin-top:6px;"></div>
+        <div class="caption-fixed-actions">
+          <button class="cap-btn" onclick="clearCaption()">🗑</button>
+          <button class="cap-btn primary" onclick="copyCaption()">📋 Copiar</button>
+        </div>
       </div>
-      <!-- Search (Pexels/Unsplash) -->
-      <div class="img-search-row" id="imgSearchRow">
-        <input type="text" class="img-search-input" id="imgSearchInput"
-               placeholder="Buscar: coaching, negocios..."
-               onkeydown="if(event.key==='Enter')searchStockImages()">
+    </div>
+
+    <!-- ── TAB: DISEÑO ── -->
+    <div id="iaDesign" style="display:none;flex-direction:column;height:100%;overflow:hidden;">
+      <!-- Templates container (hidden, used by renderTemplates) -->
+      <div id="tplContent" style="display:none;"></div>
+      <!-- Miniaturas de fondo -->
+      <div style="padding:10px 10px 6px;font-size:11px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;flex-shrink:0;">
+        🖼 Elige un fondo
+      </div>
+      <div id="bgThumbsRow" style="display:flex;gap:8px;padding:0 10px 10px;flex-shrink:0;">
+        <!-- 3 miniaturas generadas -->
+      </div>
+      <!-- Controles de fondo -->
+      <div class="bg-controls" id="bgControls" style="flex-shrink:0;">
+        <div class="bgc-row">
+          <button class="bgc-img-btn" onclick="document.getElementById('bgImgInput').click()" title="Cargar imagen">📷 Cargar imagen</button>
+          <input type="file" id="bgImgInput" accept="image/*" style="display:none" onchange="loadBgImage(event)">
+          <button class="bgc-remove-btn" id="bgRemoveBtn" onclick="removeBgImage()" style="display:none;" title="Quitar">✕</button>
+        </div>
+        <div class="bgc-row" style="margin-top:8px;">
+          <span style="font-size:11px;color:var(--text3);font-weight:700;min-width:44px;">Colores</span>
+          <div class="bgc-swatch" id="bg1Swatch" style="background:#7C3AED;">
+            <input type="color" id="bg1Input" value="#7C3AED" oninput="onBgColorChange()">
+          </div>
+          <div class="bgc-swatch" id="bg2Swatch" style="background:#F43F5E;">
+            <input type="color" id="bg2Input" value="#F43F5E" oninput="onBgColorChange()">
+          </div>
+          <div id="bgPresetRow" class="bgc-presets"></div>
+        </div>
+        <div class="bgc-slider-row" style="margin-top:6px;">
+          <span class="bgc-slider-lbl">🌑 Oscurecer</span>
+          <input type="range" class="bgc-slider" id="overlaySlider" min="0" max="90" value="0" oninput="onOverlayChange()" style="width:100px;">
+          <span class="bgc-slider-val" id="overlayVal">0%</span>
+        </div>
+        <div class="bgc-slider-row" style="margin-top:4px;">
+          <span class="bgc-slider-lbl">◻️ Opacidad</span>
+          <input type="range" class="bgc-slider" id="opacitySlider" min="10" max="100" value="100" oninput="onBgOpacityChange()" style="width:100px;">
+          <span class="bgc-slider-val" id="opacityVal">100%</span>
+        </div>
+      </div>
+      <!-- Banco de imágenes -->
+      <div style="padding:8px 10px 4px;font-size:11px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;flex-shrink:0;">
+        🌐 Banco de imágenes
+      </div>
+      <div style="display:flex;gap:6px;padding:0 10px 8px;flex-shrink:0;">
+        <div class="img-bank-tab active" id="tabPexels"   onclick="switchImgTab('pexels')"   style="flex:1;padding:5px;border-radius:6px;border:1px solid var(--border2);background:var(--surf2);font-size:11px;font-weight:700;text-align:center;cursor:pointer;color:var(--text2);">Pexels</div>
+        <div class="img-bank-tab"        id="tabUnsplash" onclick="switchImgTab('unsplash')" style="flex:1;padding:5px;border-radius:6px;border:1px solid var(--border2);background:var(--surf2);font-size:11px;font-weight:700;text-align:center;cursor:pointer;color:var(--text2);">Unsplash</div>
+        <div class="img-bank-tab"        id="tabMine"     onclick="switchImgTab('mine')"     style="flex:1;padding:5px;border-radius:6px;border:1px solid var(--border2);background:var(--surf2);font-size:11px;font-weight:700;text-align:center;cursor:pointer;color:var(--text2);">Mis fotos</div>
+      </div>
+      <div class="img-search-row" id="imgSearchRow" style="padding:0 10px 8px;display:flex;gap:6px;flex-shrink:0;">
+        <input type="text" class="img-search-input" id="imgSearchInput" placeholder="Buscar fotos…" onkeydown="if(event.key==='Enter')searchStockImages()">
         <button class="img-search-btn" onclick="searchStockImages()">🔍</button>
       </div>
-      <!-- Bank grid -->
-      <div class="img-bank" id="imgBank">
-        <div class="img-bank-spinner">Busca una imagen o escribe un tema…</div>
+      <div class="img-bank" id="imgBank" style="flex:1;overflow-y:auto;padding:0 10px 10px;">
+        <div class="img-bank-spinner">Busca un tema…</div>
       </div>
-      <div class="img-bank-credit" id="imgBankCredit">Fotos de <strong>Pexels</strong> — gratis para uso comercial</div>
-      <!-- Upload (mis fotos) -->
+      <div class="img-bank-credit" id="imgBankCredit" style="padding:4px 10px;font-size:9px;color:var(--text3);text-align:center;flex-shrink:0;">Fotos de <strong>Pexels</strong> — gratis para uso comercial</div>
       <input type="file" id="bankUploadInput" accept="image/*" multiple style="display:none" onchange="uploadToBank(event)">
     </div>
-    <!-- BRAND PANEL -->
-    <div class="ia-body" id="iaBrand" style="display:none;">
-      <div style="padding:10px;">
-        <div class="ia-section-title" style="margin-bottom:10px;">🏷 Mi Marca</div>
-        <!-- Preview -->
-        <div id="edBrandPreview" style="border-radius:10px;overflow:hidden;aspect-ratio:4/5;margin-bottom:10px;position:relative;background:linear-gradient(135deg,#8B5FBF,#E91E8C);">
-          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px;text-align:center;">
-            <img id="edBrandLogo" src="" style="width:40px;height:40px;object-fit:contain;margin-bottom:6px;display:none;" alt="logo">
-            <div id="edBrandTitle" style="font-size:16px;font-weight:800;color:#fff;line-height:1.2;">Tu hook aquí</div>
-            <div id="edBrandSub"   style="font-size:11px;color:rgba(255,255,255,.8);margin-top:4px;">Descripción del contenido</div>
-          </div>
-        </div>
-        <!-- Apply buttons -->
-        <button onclick="applyBrandToCurrentSlide()" style="width:100%;padding:10px;border-radius:var(--r);background:var(--grad-brand);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:6px;">
-          ✨ Aplicar marca a este slide
-        </button>
-        <button onclick="applyBrandToAllSlides()" style="width:100%;padding:8px;border-radius:var(--r);border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:12px;">
-          Aplicar a todos los slides
-        </button>
-        <!-- Brand info -->
-        <div id="edBrandInfo" style="font-size:11px;color:var(--text3);line-height:1.6;padding:8px;background:var(--surf2);border-radius:var(--r);">
-          Cargando configuración de marca…
-        </div>
-        <!-- No brand message -->
-        <div id="edBrandEmpty" style="display:none;text-align:center;padding:16px;color:var(--text3);font-size:12px;">
-          Sin marca configurada.<br>Ve a la app → Mi Marca para configurarla.
+
+    <!-- ── TAB: MARCA ── -->
+    <div id="iaBrand" style="display:none;padding:10px;overflow-y:auto;">
+      <div class="ia-section-title" style="margin-bottom:10px;">🏷 Mi Marca</div>
+      <div id="edBrandPreview" style="border-radius:10px;overflow:hidden;aspect-ratio:4/5;margin-bottom:10px;position:relative;background:linear-gradient(135deg,#8B5FBF,#E91E8C);">
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px;text-align:center;">
+          <img id="edBrandLogo" src="" style="width:40px;height:40px;object-fit:contain;margin-bottom:6px;display:none;" alt="logo">
+          <div id="edBrandTitle" style="font-size:16px;font-weight:800;color:#fff;line-height:1.2;">Tu hook aquí</div>
+          <div id="edBrandSub"   style="font-size:11px;color:rgba(255,255,255,.8);margin-top:4px;">Descripción del contenido</div>
         </div>
       </div>
+      <button onclick="applyBrandToCurrentSlide()" style="width:100%;padding:10px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:6px;">✨ Aplicar marca a este slide</button>
+      <button onclick="applyBrandToAllSlides()" style="width:100%;padding:8px;border-radius:var(--r);border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:12px;">Aplicar a todos los slides</button>
+      <div id="edBrandInfo" style="font-size:11px;color:var(--text3);line-height:1.6;padding:8px;background:var(--surf2);border-radius:var(--r);">Cargando marca…</div>
+      <div id="edBrandEmpty" style="display:none;text-align:center;padding:16px;color:var(--text3);font-size:12px;">Sin marca configurada.</div>
     </div>
 
-    <div class="ia-body" id="iaCap" style="display:none;padding:0;flex-direction:column;">
-
-      <!-- Explicación clara de qué es el caption -->
-      <div style="padding:10px 12px 8px;background:rgba(139,95,191,.08);border-bottom:1px solid var(--border);flex-shrink:0;">
-        <div style="font-size:11px;font-weight:800;color:var(--brand);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">
-          📝 Caption de Instagram
-        </div>
-        <div style="font-size:11px;color:var(--text3);line-height:1.5;">
-          El caption va <strong style="color:var(--text2);">debajo de tu foto</strong> cuando publicas en Instagram — no forma parte del diseño visual. Aquí lo armas, lo copias y lo pegas al publicar.
-        </div>
-      </div>
-
-      <!-- Constructor de caption por secciones -->
-      <div style="flex:1;overflow-y:auto;padding:10px 12px;">
-
-        <!-- Hook del caption -->
-        <div class="cap-section">
-          <div class="cap-label" style="display:flex;align-items:center;justify-content:space-between;">
-            <span>1️⃣ Hook (primera línea)</span>
-            <button onclick="insertCaptionBlock('hook')" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid var(--brand);background:transparent;color:var(--brand);cursor:pointer;font-family:inherit;">+ Insertar</button>
-          </div>
-          <div id="capHookPreview" style="font-size:11px;color:var(--text3);padding:5px 8px;background:var(--surf2);border-radius:var(--r);margin-top:4px;cursor:pointer;min-height:28px;border:1px dashed var(--border2);"
-               onclick="insertCaptionBlock('hook')">
-            Elige un hook arriba y aparecerá aquí…
-          </div>
-        </div>
-
-        <!-- Cuerpo del caption -->
-        <div class="cap-section">
-          <div class="cap-label" style="display:flex;align-items:center;justify-content:space-between;">
-            <span>2️⃣ Cuerpo del post</span>
-            <button onclick="insertCaptionBlock('desc')" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid var(--brand);background:transparent;color:var(--brand);cursor:pointer;font-family:inherit;">+ Insertar</button>
-          </div>
-          <div id="capDescPreview" style="font-size:11px;color:var(--text3);padding:5px 8px;background:var(--surf2);border-radius:var(--r);margin-top:4px;cursor:pointer;min-height:36px;border:1px dashed var(--border2);"
-               onclick="insertCaptionBlock('desc')">
-            Elige una descripción arriba y aparecerá aquí…
-          </div>
-        </div>
-
-        <!-- CTA del caption -->
-        <div class="cap-section">
-          <div class="cap-label" style="display:flex;align-items:center;justify-content:space-between;">
-            <span>3️⃣ CTA (llamada a la acción)</span>
-            <button onclick="insertCaptionBlock('cta')" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid var(--brand);background:transparent;color:var(--brand);cursor:pointer;font-family:inherit;">+ Insertar</button>
-          </div>
-          <div id="capCtaPreview" style="font-size:11px;color:var(--text3);padding:5px 8px;background:var(--surf2);border-radius:var(--r);margin-top:4px;cursor:pointer;min-height:28px;border:1px dashed var(--border2);"
-               onclick="insertCaptionBlock('cta')">
-            Elige un CTA arriba y aparecerá aquí…
-          </div>
-        </div>
-
-        <!-- Caption completo editable -->
-        <div class="cap-section" style="margin-top:4px;">
-          <div class="cap-label">📋 Caption completo (editable)</div>
-          <textarea class="cap-text" id="capFull"
-            placeholder="Se construye automáticamente con tus elecciones… o escribe directamente."
-            oninput="onCaptionInput()" style="min-height:100px;"></textarea>
-        </div>
-
-        <!-- Hashtags -->
-        <div class="cap-section">
-          <div class="cap-label">🏷 Hashtags — toca para seleccionar</div>
-          <div class="hashtag-chips" id="hashtagChips"></div>
-        </div>
-
-        <!-- DM keyword -->
-        <div class="cap-section">
-          <div class="cap-label">💬 Palabra clave DM</div>
-          <div id="dmKeyword" style="font-size:12px;color:var(--text2);padding:6px 0;"></div>
-        </div>
-
-      </div>
-
-      <!-- Acciones fijas abajo -->
-      <div class="cap-actions" style="flex-shrink:0;border-top:1px solid var(--border);padding:8px 12px;">
-        <button class="cap-btn" onclick="clearCaption()">🗑 Limpiar</button>
-        <button class="cap-btn primary" onclick="copyCaption()">📋 Copiar todo</button>
-      </div>
-    </div>
-
-    <!-- COPILOTO IA -->
+    <!-- ── TAB: COPILOTO ── -->
     <div class="ia-body" id="iaCop" style="display:none;flex-direction:column;height:100%;">
       <div id="copMessages" class="cop-messages">
-        <div class="cop-msg ai">¡Hola! Soy tu copiloto. ¿Qué quieres cambiar del contenido?</div>
+        <div class="cop-msg ai">¡Hola! Soy tu copiloto. ¿Qué quieres cambiar?</div>
       </div>
       <div class="cop-suggestions">
         <button class="cop-sug" onclick="copSend('Hazlo más corto')">Más corto</button>
@@ -1154,26 +1183,19 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
         <button class="cop-sug" onclick="copSend('Cambia el tono a humor')">Humor</button>
         <button class="cop-sug" onclick="copSend('Dame 3 hooks nuevos')">Nuevos hooks</button>
         <button class="cop-sug" onclick="copSend('Mejora el CTA')">Mejor CTA</button>
-        <button class="cop-sug" onclick="copSend('Más formal')">Más formal</button>
       </div>
       <div class="cop-input-row">
-        <textarea class="cop-input" id="copInput" rows="1"
-          placeholder="Ej: hazlo más corto, cambia el tono..."
-          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();copSend();}"></textarea>
+        <textarea class="cop-input" id="copInput" rows="1" placeholder="Ej: hazlo más corto…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();copSend();}"></textarea>
         <button class="cop-send" id="copSendBtn" onclick="copSend()">➤</button>
       </div>
     </div>
 
-    <!-- BG controls (visible in ia panel on mobile) -->
+    <!-- Mobile bg controls -->
     <div class="bg-controls" id="bgControlsMobile" style="display:none;">
       <div class="bgc-row">
-        <div class="bgc-swatch" style="background:#7C3AED;">
-          <input type="color" id="bg1InputM" value="#7C3AED" oninput="onBgColorChangeMobile()">
-        </div>
-        <div class="bgc-swatch" style="background:#F43F5E;">
-          <input type="color" id="bg2InputM" value="#F43F5E" oninput="onBgColorChangeMobile()">
-        </div>
-        <button class="bgc-remove-btn" id="bgRemoveBtnM" onclick="removeBgImage()" style="display:none;" title="Quitar imagen">✕</button>
+        <div class="bgc-swatch" style="background:#7C3AED;"><input type="color" id="bg1InputM" value="#7C3AED" oninput="onBgColorChangeMobile()"></div>
+        <div class="bgc-swatch" style="background:#F43F5E;"><input type="color" id="bg2InputM" value="#F43F5E" oninput="onBgColorChangeMobile()"></div>
+        <button class="bgc-remove-btn" id="bgRemoveBtnM" onclick="removeBgImage()" style="display:none;">✕</button>
         <div style="flex:1;"></div>
         <div class="bgc-sliders">
           <div class="bgc-slider-row">
@@ -2351,372 +2373,39 @@ function reorderSlide(fromIdx, toIdx) {
 }
 
 /* ══ WIZARD — PRIMER USO ══ */
+let _wizUsed = {}; // tracks user selections
 const WIZARD_KEY = 'conteniza_wizard_done';
-let _wizStep   = 0;
-let _wizUsed   = {}; // track which items were used
-let _wizLastId = null; // last analysis_id shown in wizard
 
-const WIZARD_STEPS_POST = [
-  { id:'hook',     label:'Paso 1 de 6', title:'🎣 Elige tu hook',           hint:'El hook es la primera línea. Toca el que más te guste.' },
-  { id:'desc',     label:'Paso 2 de 6', title:'📝 Añade la descripción',     hint:'El cuerpo del post. Toca la que mejor encaje.' },
-  { id:'cta',      label:'Paso 3 de 6', title:'📢 Llama a la acción',        hint:'El CTA dice al seguidor qué hacer. Toca el que quieras.' },
-  { id:'hashtags', label:'Paso 4 de 6', title:'# Hashtags y emojis',         hint:'Los hashtags llevan tu post a nuevas audiencias.' },
-  { id:'bg',       label:'Paso 5 de 6', title:'🖼 Dale fondo a tu post',     hint:'El fondo hace que tu post destaque en el feed.' },
-  { id:'done',     label:'Paso 6 de 6', title:'🚀 Tu post está listo',       hint:'' },
-];
-const WIZARD_STEPS_CAROUSEL = [
-  { id:'slides',   label:'Paso 1 de 3', title:'🎠 Aplica los slides',        hint:'La IA generó 10 slides con estructura emocional. Aplícalos al carrusel.' },
-  { id:'bg',       label:'Paso 2 de 3', title:'🖼 Elige el fondo',           hint:'El fondo se aplica a todos los slides.' },
-  { id:'done',     label:'Paso 3 de 3', title:'🚀 Tu carrusel está listo',   hint:'' },
-];
-const WIZARD_STEPS_STORY = [
-  { id:'hook',     label:'Paso 1 de 3', title:'🎣 Elige tu hook',            hint:'El texto principal de tu story.' },
-  { id:'bg',       label:'Paso 2 de 3', title:'🖼 Elige el fondo',           hint:'Fondo que destaque en stories.' },
-  { id:'done',     label:'Paso 3 de 3', title:'🚀 Tu story está lista',      hint:'' },
-];
 
-function getWizardSteps() {
-  if (currentFormat === 'carousel') return WIZARD_STEPS_CAROUSEL;
-  if (currentFormat === 'story' || currentFormat === 'reel') return WIZARD_STEPS_STORY;
-  return WIZARD_STEPS_POST;
-}
 
-const WIZARD_STEPS = [
-  {
-    id:    'hook',
-    label: 'Paso 1 de 6',
-    title: '🎣 Elige tu hook',
-    hint:  'El hook es la primera línea — lo que hace que la gente pare de hacer scroll. Toca el que más te guste.',
-    hintDone: '¡Perfecto! El hook ya está en tu canvas.',
-  },
-  {
-    id:    'desc',
-    label: 'Paso 2 de 6',
-    title: '📝 Añade la descripción',
-    hint:  'El cuerpo del post. Explica el valor que das. Toca la que mejor encaje con tu mensaje.',
-    hintDone: 'Descripción añadida. Sigue.',
-  },
-  {
-    id:    'cta',
-    label: 'Paso 3 de 6',
-    title: '📢 Llama a la acción',
-    hint:  'El CTA dice al seguidor qué hacer. Comenta, guarda, sigue... Toca el que quieras.',
-    hintDone: 'CTA añadido. ¡Ya tienes los 3 elementos!',
-  },
-  {
-    id:    'hashtags',
-    label: 'Paso 4 de 6',
-    title: '# Elige hashtags y emojis',
-    hint:  'Los hashtags llevan tu post a nuevas audiencias. Toca los que quieras incluir.',
-    hintDone: 'Hashtags seleccionados.',
-  },
-  {
-    id:    'bg',
-    label: 'Paso 5 de 6',
-    title: '🖼 Dale fondo a tu post',
-    hint:  'El fondo hace que tu post destaque en el feed. Elige cómo quieres hacerlo.',
-    hintDone: 'Fondo aplicado.',
-  },
-  {
-    id:    'done',
-    label: 'Paso 6 de 6',
-    title: '🚀 Tu post está listo',
-    hint:  '',
-    hintDone: '',
-  },
-];
 
-function shouldShowWizard() {
-  if (!iaData) return false;
-  // Always show wizard when a new analysis arrives (different id than last time)
-  const currentId = iaData.id || iaData.analysis_id || null;
-  if (currentId && currentId !== _wizLastId) return true;
-  // Fallback: show for first-time users
-  if (!localStorage.getItem(WIZARD_KEY)) return true;
-  return false;
-}
 
-function startWizard() {
-  _wizStep = 0;
-  _wizUsed = {};
-  _wizLastId = iaData?.id || iaData?.analysis_id || null;
-  window._activeWizardSteps = getWizardSteps();
-  document.getElementById('wizardPanel').style.display = 'flex';
-  document.getElementById('freePanel').style.display   = 'none';
-  renderWizardStep();
-}
 
-function skipWizard() {
-  localStorage.setItem(WIZARD_KEY, '1');
-  document.getElementById('wizardPanel').style.display = 'none';
-  document.getElementById('freePanel').style.display   = 'block';
-  renderFreePanelContent();
-}
 
-function wizardNext() {
-  _wizStep++;
-  if (_wizStep >= WIZARD_STEPS.length) {
-    skipWizard();
-    return;
-  }
-  renderWizardStep();
-}
 
-function wizardPrev() {
-  if (_wizStep <= 0) return;
-  _wizStep--;
-  renderWizardStep();
-}
 
-function wizardSkipToFree() {
-  skipWizard();
-  renderFreePanelContent();
-}
 
-function renderWizardStep() {
-  const steps = window._activeWizardSteps || WIZARD_STEPS;
-  const step  = steps[_wizStep];
-  if (!step) { skipWizard(); return; }
 
-  // Progress dots
-  const prog = document.getElementById('wizardProgress');
-  prog.innerHTML =
-    (_wizStep > 0 ? `<button class="wizard-skip" style="margin-right:auto;color:var(--text3);" onclick="wizardPrev()">← Atrás</button>` : '<div style="min-width:52px;"></div>') +
-    steps.map((s,i) => {
-      const cls = i < _wizStep ? 'done' : i === _wizStep ? 'active' : '';
-      return `<div class="wizard-step-dot ${cls}"></div>`;
-    }).join('') +
-    `<button class="wizard-skip" onclick="skipWizard()">Saltar →</button>`;
 
-  // Header
-  const head = document.getElementById('wizardHeader');
-  head.innerHTML = `
-    <div class="wizard-step-label">${step.label}</div>
-    <div class="wizard-step-title">${step.title}</div>
-    ${step.hint ? `<div class="wizard-step-hint">${step.hint}</div>` : ''}
-  `;
 
-  // Body
-  const body = document.getElementById('wizardBody');
-  const hint = document.getElementById('wizardHint');
-  body.innerHTML = '';
-  hint.textContent = '';
 
-  switch(step.id) {
-    case 'hook':     renderWizardHooks(body, hint); break;
-    case 'desc':     renderWizardDesc(body, hint); break;
-    case 'cta':      renderWizardCta(body, hint);  break;
-    case 'hashtags': renderWizardHashtags(body, hint); break;
-    case 'bg':       renderWizardBg(body, hint);   break;
-    case 'slides':   renderWizardSlides(body, hint); break;
-    case 'done':     renderWizardDone(body);        break;
-  }
-}
 
-function wizardPickItem(text, blockOpts, stepId) {
-  addTextBlock(text, blockOpts);
-  _wizUsed[stepId] = text;
-  updateCaptionSectionPreviews();
-  toast('✅ Añadido al canvas', 'success');
-  setTimeout(wizardNext, 700);
-}
 
-function renderWizardHooks(body, hint) {
-  const hooks = iaData?.hooks || [];
-  if (!hooks.length) { wizardNext(); return; }
-  hooks.slice(0,5).forEach((h, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'wizard-option';
-    btn.textContent = h;
-    // Mark first hook as pre-selected (came from preview modal choice)
-    if (i === 0) {
-      btn.classList.add('used');
-      const badge = document.createElement('span');
-      badge.style.cssText = 'font-size:9px;font-weight:800;background:var(--brand);color:#fff;padding:1px 6px;border-radius:20px;margin-left:6px;vertical-align:middle;';
-      badge.textContent   = '✓ Tu elección';
-      btn.appendChild(badge);
-    }
-    btn.onclick = () => {
-      body.querySelectorAll('.wizard-option').forEach(b => b.classList.remove('used'));
-      btn.classList.add('used');
-      // For carousel: replace title block on slide 0 instead of adding new one
-      if (currentFormat === 'carousel') {
-        document.querySelectorAll('.eblock-text').forEach(el => {
-          if (el.dataset.role === 'hook') el.remove();
-        });
-        addTextBlock(h, { y:8, w:88, x:6, fontSize:34, bold:true, color:currentBrand?.font_color||'#fff', align:'center', role:'hook' });
-      } else {
-        wizardPickItem(h, { y:8, w:88, x:6, fontSize:34, bold:true, color:currentBrand?.font_color||'#fff', align:'center' }, 'hook');
-      }
-    };
-    body.appendChild(btn);
-  });
-  // Copiloto hint
-  const tip = document.createElement('div');
-  tip.style.cssText = 'margin-top:10px;padding:8px 10px;border-radius:8px;background:rgba(139,95,191,.1);border:1px dashed rgba(139,95,191,.35);font-size:11px;color:var(--text3);line-height:1.5;';
-  tip.innerHTML = `¿No te convence ninguno? Usa el <button onclick="switchIaTab('cop');copPreFill('Dame 5 hooks nuevos');" style="background:none;border:none;color:var(--brand);font-weight:700;cursor:pointer;font-size:11px;font-family:inherit;padding:0;">🤖 Copiloto</button> para pedir hooks nuevos.`;
-  body.appendChild(tip);
-  hint.textContent = '👆 Toca cualquier hook para añadirlo';
-}
 
-function renderWizardDesc(body, hint) {
-  const captions = iaData?.captions || [];
-  if (!captions.length) { wizardNext(); return; }
-  captions.slice(0,3).forEach((c, i) => {
-    const short = c.length > 150 ? c.substring(0,150)+'…' : c;
-    const btn = document.createElement('button');
-    btn.className = 'wizard-option';
-    btn.textContent = short;
-    btn.onclick = () => {
-      body.querySelectorAll('.wizard-option').forEach(b => b.classList.remove('used'));
-      btn.classList.add('used');
-      _wizUsed['desc'] = c;
-      // Add short version to canvas
-      const shortDesc = c.length > 130 ? c.substring(0,130)+'…' : c;
-      addTextBlock(shortDesc, { y:52, w:88, x:6, fontSize:15, color:currentBrand?.sub_font_color||'rgba(255,255,255,.85)', align:'center' });
-      // Full version goes to caption tab
-      captionFull = c;
-      const capEl = document.getElementById('capFull');
-      if (capEl) capEl.value = c;
-      updateCaptionPreview();
-      toast('✅ Descripción añadida al canvas y caption', 'success');
-      setTimeout(wizardNext, 700);
-    };
-    body.appendChild(btn);
-  });
-  // Small info note
-  const note = document.createElement('div');
-  note.style.cssText = 'font-size:11px;color:var(--text3);margin-top:8px;padding:6px 8px;background:rgba(139,95,191,.08);border-radius:6px;';
-  note.textContent = '💬 La descripción se añade al caption de tu post, no al diseño visual.';
-  body.appendChild(note);
-  hint.textContent = '👆 Toca la descripción que más te guste';
-}
 
-function renderWizardCta(body, hint) {
-  const ctas = iaData?.ctas || [];
-  if (!ctas.length) { wizardNext(); return; }
-  ctas.slice(0,5).forEach(c => {
-    const btn = document.createElement('button');
-    btn.className = 'wizard-option';
-    btn.textContent = c;
-    btn.onclick = () => {
-      body.querySelectorAll('.wizard-option').forEach(b => b.classList.remove('used'));
-      btn.classList.add('used');
-      _wizUsed['cta'] = c;
-      // CTA → canvas (bloque visual pequeño abajo)
-      addTextBlock(c, { y:82, w:88, x:6, fontSize:17, bold:true,
-        color:currentBrand?.font_color||'#fff', align:'center' });
-      // CTA → caption también
-      const capEl = document.getElementById('capFull');
-      const existing = capEl?.value || captionFull || '';
-      const newCap = existing ? existing + '\n\n' + c : c;
-      captionFull = newCap;
-      if (capEl) capEl.value = newCap;
-      updateCaptionPreview();
-      toast('✅ CTA añadido al caption', 'success');
-      setTimeout(wizardNext, 700);
-    };
-    body.appendChild(btn);
-  });
-  const note = document.createElement('div');
-  note.style.cssText = 'font-size:11px;color:var(--text3);margin-top:8px;padding:6px 8px;background:rgba(139,95,191,.08);border-radius:6px;';
-  note.textContent = '💬 El CTA se añade al caption — aparece justo después de la descripción.';
-  body.appendChild(note);
-  hint.textContent = '👆 Toca el CTA que quieras usar';
-}
 
-function renderWizardHashtags(body, hint) {
-  const hashtags = iaData?.hashtags || [];
-  const emojis   = iaData?.emojis   || [];
 
-  if (!hashtags.length && !emojis.length) { wizardNext(); return; }
 
-  // Selected set for this step
-  const selected = new Set();
 
-  // Hashtags section
-  if (hashtags.length) {
-    const label = document.createElement('div');
-    label.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;';
-    label.textContent = 'Hashtags — toca para seleccionar';
-    body.appendChild(label);
 
-    const chipsWrap = document.createElement('div');
-    chipsWrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;';
 
-    hashtags.forEach(tag => {
-      const chip = document.createElement('button');
-      chip.style.cssText = 'padding:5px 10px;border-radius:20px;border:1.5px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;';
-      chip.textContent = tag;
-      chip.onclick = () => {
-        if (selected.has(tag)) {
-          selected.delete(tag);
-          chip.style.background = 'var(--surf2)';
-          chip.style.borderColor = 'var(--border2)';
-          chip.style.color = 'var(--text2)';
-        } else {
-          selected.add(tag);
-          chip.style.background = 'rgba(139,95,191,.18)';
-          chip.style.borderColor = 'var(--brand)';
-          chip.style.color = 'var(--brand)';
-        }
-      };
-      chipsWrap.appendChild(chip);
-    });
-    body.appendChild(chipsWrap);
-  }
 
-  // Emojis section
-  if (emojis.length) {
-    const label2 = document.createElement('div');
-    label2.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;';
-    label2.textContent = 'Emojis sugeridos';
-    body.appendChild(label2);
 
-    const emojiWrap = document.createElement('div');
-    emojiWrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;';
-    emojis.slice(0,12).forEach(em => {
-      const eb = document.createElement('button');
-      eb.style.cssText = 'width:36px;height:36px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surf2);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;';
-      eb.textContent = em;
-      eb.title = 'Añadir al canvas';
-      eb.onclick = () => {
-        addTextBlock(em, { w:15, x:42, y:10, fontSize:56 });
-        eb.style.borderColor = 'var(--success)';
-        toast('✅ Emoji añadido', 'success');
-      };
-      emojiWrap.appendChild(eb);
-    });
-    body.appendChild(emojiWrap);
-  }
 
-  // Confirm button
-  const confirmBtn = document.createElement('button');
-  confirmBtn.style.cssText = 'width:100%;padding:11px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px;';
-  confirmBtn.textContent = 'Confirmar selección →';
-  confirmBtn.onclick = () => {
-    // Save selected hashtags globally
-    selected.forEach(t => selectedHashtags.add(t));
-    // Pre-fill caption with selected hashtags
-    if (selected.size > 0) {
-      const capEl = document.getElementById('capFull');
-      if (capEl) {
-        const existing = capEl.value;
-        const tagStr = '\n\n' + [...selected].join(' ');
-        if (!existing.includes(tagStr.trim())) {
-          capEl.value = existing + tagStr;
-          captionFull = capEl.value;
-          updateCaptionPreview();
-        }
-      }
-      toast('✅ ' + selected.size + ' hashtags añadidos al caption', 'success');
-    }
-    setTimeout(wizardNext, 400);
-  };
-  body.appendChild(confirmBtn);
 
-  hint.textContent = '👆 Selecciona los hashtags y emojis para tu post';
-}
+
+
+
 
 // Helper: pre-fill copiloto input and open its tab
 function copPreFill(msg) {
@@ -2726,163 +2415,314 @@ function copPreFill(msg) {
   setTimeout(() => { if (input) input.focus(); }, 100);
 }
 
-function renderWizardBg(body, hint) {
-  const wrap = document.createElement('div');
-  wrap.className = 'wizard-bg-options';
 
-  // Option 1: Keep current gradient
-  const btn1 = document.createElement('button');
-  btn1.className = 'wizard-bg-btn';
-  const sl = slides[currentSlide];
-  btn1.innerHTML = `
-    <div class="wizard-bg-icon" style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,${sl.bg1},${sl.bg2});flex-shrink:0;"></div>
-    <div><div style="font-weight:700;">Mantener gradiente actual</div><div style="font-size:11px;color:var(--text3);">El fondo de colores ya se ve bien</div></div>`;
-  btn1.onclick = () => { toast('✅ Fondo de colores listo','success'); setTimeout(wizardNext, 500); };
-  wrap.appendChild(btn1);
 
-  // Option 2: Search Pexels
-  const btn2 = document.createElement('button');
-  btn2.className = 'wizard-bg-btn';
-  btn2.innerHTML = `
-    <div class="wizard-bg-icon">🌐</div>
-    <div><div style="font-weight:700;">Buscar foto en Pexels</div><div style="font-size:11px;color:var(--text3);">Millones de fotos gratis</div></div>`;
-  btn2.onclick = () => {
-    switchIaTab('imgs');
-    switchImgTab('pexels');
-    // Pre-fill search with niche
-    const q = iaData?.detected_niche || iaData?.niche || 'coaching';
-    const inp = document.getElementById('imgSearchInput');
-    if (inp) { inp.value = q; searchStockImages(); }
-    // Set a flag to auto-advance after image applied
-    _wizAutoAdvanceOnBg = true;
-  };
-  wrap.appendChild(btn2);
 
-  // Option 3: Upload own image
-  const btn3 = document.createElement('button');
-  btn3.className = 'wizard-bg-btn';
-  btn3.innerHTML = `
-    <div class="wizard-bg-icon">📷</div>
-    <div><div style="font-weight:700;">Subir mi propia foto</div><div style="font-size:11px;color:var(--text3);">Desde tu galería o archivos</div></div>`;
-  btn3.onclick = () => { document.getElementById('bgImgInput').click(); _wizAutoAdvanceOnBg = true; };
-  wrap.appendChild(btn3);
 
-  body.appendChild(wrap);
-  hint.textContent = '👆 Elige cómo quieres el fondo';
-}
 
-let _wizAutoAdvanceOnBg = false;
 
-function renderWizardDone(body) {
-  // Save wizard as done
-  localStorage.setItem(WIZARD_KEY, '1');
 
-  const hashtags = (iaData?.hashtags || []).slice(0,5).join(' ');
-  const captionUsed = _wizUsed.desc || (iaData?.captions?.[0] || '');
-
-  body.innerHTML = `
-    <div class="wizard-done-box">
-      <div class="wizard-done-icon">🎉</div>
-      <div class="wizard-done-title">¡Tu post está listo!</div>
-      <div class="wizard-done-sub">
-        ✅ Canvas listo con hook, descripción y CTA.<br>
-        📋 Tu caption está en el tab <strong>📝 Cap</strong> — cópialo para publicar en Instagram.
-      </div>
-      <div class="wizard-done-actions">
-        <button class="wizard-action-btn primary" onclick="exportAll()">
-          📥 Exportar PNG — listo para Instagram
-        </button>
-        <button class="wizard-action-btn secondary" onclick="switchIaTab('cap');setTimeout(copyCaption,150)">
-          📋 Ver y copiar caption
-        </button>
-        <button class="wizard-action-btn secondary" onclick="skipWizard()">
-          ✏️ Seguir editando libremente
-        </button>
-      </div>
-    </div>`;
-
-  // Pre-fill caption tab
-  if (captionUsed) {
-    const capEl = document.getElementById('capFull');
-    if (capEl && !capEl.value) {
-      capEl.value = captionUsed + (hashtags ? '\n\n' + hashtags : '');
-      captionFull = capEl.value;
-      updateCaptionPreview();
-    }
-  }
-}
-
-function copyWizardCaption() {
-  const capEl2 = document.getElementById('capFull');
-  const cap = (capEl2?.value) ||
-    (_wizUsed.desc || '') + '\n\n' + (iaData?.hashtags||[]).slice(0,7).join(' ');
-  navigator.clipboard.writeText(cap).then(() => toast('✅ Caption copiado','success'));
-}
 
 /* ══ IA PANEL ══ */
 function switchIaTab(tab) {
   document.querySelectorAll('.ia-tab').forEach(t => t.classList.toggle('active', t.dataset.tab===tab));
-  document.getElementById('iaTpl').style.display   = tab==='tpl'   ? 'block' : 'none';
-  document.getElementById('iaBuild').style.display = tab==='build' ? 'block' : 'none';
-  document.getElementById('iaImgs').style.display  = tab==='imgs'  ? 'flex'  : 'none';
-  document.getElementById('iaBrand').style.display = tab==='brand' ? 'block' : 'none';
-  document.getElementById('iaCap').style.display   = tab==='cap'   ? 'block' : 'none';
-  document.getElementById('iaCop').style.display   = tab==='cop'   ? 'flex'  : 'none';
-  if (tab === 'imgs' && _currentImgTab === 'mine') { switchImgTab('mine'); }
-  else if (tab === 'imgs') { switchImgTab(_currentImgTab || 'pexels'); }
-  if (tab === 'cop')   { setTimeout(scrollCopMessages, 50); }
-  if (tab === 'tpl')   { renderTemplates(); }
-  if (tab === 'brand') { renderBrandPanel(); }
-  if (tab === 'cap')   { updateCaptionSectionPreviews(); }
+  const ids = { content:'iaContent', design:'iaDesign', brand:'iaBrand', cop:'iaCop' };
+  Object.entries(ids).forEach(([k,id]) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = k===tab ? (k==='cop'?'flex':'flex') : 'none';
+  });
+  if (tab === 'content') { renderContentPanel(); }
+  if (tab === 'design')  { renderDesignPanel(); }
+  if (tab === 'brand')   { renderBrandPanel(); }
+  if (tab === 'cop')     { setTimeout(scrollCopMessages, 50); }
 }
 
 function renderIAPanel() {
-  const wizPanel  = document.getElementById('wizardPanel');
-  const freePanel = document.getElementById('freePanel');
+  // Auto-switch to content tab
+  switchIaTab('content');
+}
+
+function renderContentPanel() {
+  const inner = document.getElementById('iaContentInner');
+  if (!inner) return;
 
   if (!iaData) {
-    if (wizPanel)  wizPanel.style.display  = 'none';
-    if (freePanel) {
-      freePanel.style.display = 'block';
-      freePanel.style.padding = '10px';
-      freePanel.innerHTML = '<div class="ia-empty"><div class="ia-empty-icon">🔗</div>Abre el editor desde la app para ver el contenido generado</div>';
-    }
+    inner.innerHTML = '<div class="ia-empty"><div class="ia-empty-icon">🔗</div>Abre el editor desde la app para ver el contenido generado</div>';
     setTimeout(() => restoreAutoSave(), 200);
     return;
   }
 
-  // For carousel: apply slide 0 IA content to canvas so it's not empty
-  if (currentFormat === 'carousel' && slides[0]?.iaSlide && !slides[0]._dom?.length) {
-    const s0 = slides[0].iaSlide;
-    document.getElementById('canvasBlocks').innerHTML = '';
-    if (s0.title)   addTextBlock(s0.title,   { y:16, w:88, x:6, fontSize:34, bold:true,  color:currentBrand?.font_color||'#fff', align:'center' });
-    if (s0.content) addTextBlock(s0.content, { y:54, w:88, x:6, fontSize:18, bold:false, color:currentBrand?.sub_font_color||'rgba(255,255,255,.85)', align:'center' });
-    saveCurrentBlocks(); // persist so loadSlide restores correctly
+  inner.innerHTML = '';
+
+  if (currentFormat === 'carousel') {
+    renderCarouselContentPanel(inner);
+  } else if (currentFormat === 'story') {
+    renderStoryContentPanel(inner);
+  } else if (currentFormat === 'reel') {
+    renderReelContentPanel(inner);
+  } else {
+    renderPostContentPanel(inner);
   }
 
-  // Show wizard for any format when new content arrives
-  if (shouldShowWizard()) {
-    if (wizPanel)  wizPanel.style.display  = 'flex';
-    if (freePanel) freePanel.style.display = 'none';
-    startWizard();
-  } else {
-    if (wizPanel)  wizPanel.style.display  = 'none';
-    if (freePanel) freePanel.style.display = 'block';
-    renderFreePanelContent();
-  }
   renderCaptionTab();
 }
 
-function renderFreePanelContent() {
-  const container = document.getElementById('freePanel');
-  if (!iaData || !container) return;
-  container.innerHTML = '';
-  container.style.padding = '10px';
-  container.style.overflowY = 'auto';
-  if (currentFormat === 'carousel') { renderCarouselPanel(container); }
-  else if (currentFormat === 'story') { renderStoryPanel(container); }
-  else if (currentFormat === 'reel')  { renderReelPanel(container); }
-  else { renderPostPanel(container); }
+/* ── POST: scroll continuo con secciones ── */
+function renderPostContentPanel(container) {
+  const hooks    = iaData?.hooks    || [];
+  const captions = iaData?.captions || [];
+  const ctas     = iaData?.ctas     || [];
+  const emojis   = iaData?.emojis   || [];
+
+  // HOOKS
+  if (hooks.length) {
+    const sec = makeSection('🎣', 'Elige tu hook');
+    hooks.slice(0,5).forEach(h => {
+      const btn = makeOption(h, () => {
+        clearSelected(container, 'hook');
+        btn.classList.add('selected');
+        _wizUsed.hook = h;
+        addTextBlock(h, { y:8, w:88, x:6, fontSize:32, bold:true, color:currentBrand?.font_color||'#fff', align:'center' });
+        rebuildCaption();
+        toast('✅ Hook añadido al canvas y caption','success');
+      });
+      btn.dataset.group = 'hook';
+      sec.appendChild(btn);
+    });
+    container.appendChild(sec);
+  }
+
+  // DESCRIPCIONES
+  if (captions.length) {
+    const sec2 = makeSection('📝', 'Elige la descripción');
+    const hint = document.createElement('div');
+    hint.style.cssText = 'font-size:10px;color:var(--text3);margin-bottom:6px;';
+    hint.textContent = 'Se añade al caption — no al canvas visual';
+    sec2.appendChild(hint);
+    captions.slice(0,3).forEach(c => {
+      const short = c.length > 120 ? c.substring(0,120)+'…' : c;
+      const btn = makeOption(short, () => {
+        clearSelected(container, 'desc');
+        btn.classList.add('selected');
+        _wizUsed.desc = c;
+        rebuildCaption();
+        toast('✅ Descripción añadida al caption','success');
+      });
+      btn.dataset.group = 'desc';
+      sec2.appendChild(btn);
+    });
+    container.appendChild(sec2);
+  }
+
+  // CTAs
+  if (ctas.length) {
+    const sec3 = makeSection('📢', 'Elige el CTA');
+    ctas.slice(0,5).forEach(c => {
+      const btn = makeOption(c, () => {
+        clearSelected(container, 'cta');
+        btn.classList.add('selected');
+        _wizUsed.cta = c;
+        addTextBlock(c, { y:82, w:88, x:6, fontSize:17, bold:true, color:currentBrand?.font_color||'#fff', align:'center' });
+        rebuildCaption();
+        toast('✅ CTA añadido','success');
+      });
+      btn.dataset.group = 'cta';
+      sec3.appendChild(btn);
+    });
+    container.appendChild(sec3);
+  }
+
+  // EMOJIS
+  if (emojis.length) {
+    const sec4 = makeSection('😊', 'Emojis para el canvas');
+    const grid = document.createElement('div'); grid.className = 'emoji-grid';
+    emojis.slice(0,10).forEach(em => {
+      const btn = document.createElement('div');
+      btn.className = 'emoji-chip'; btn.textContent = em;
+      btn.onclick = () => { addTextBlock(em,{w:12,x:44,y:5,fontSize:52}); toast('✅ Emoji añadido','success'); };
+      grid.appendChild(btn);
+    });
+    sec4.appendChild(grid);
+    container.appendChild(sec4);
+  }
+
+  // HASHTAGS en caption-fixed
+  renderCaptionTab();
+}
+
+/* ── CARRUSEL: tarjetas de slides ── */
+function renderCarouselContentPanel(container) {
+  const slides_data = iaData?.carousel_slides || [];
+
+  const roleColors = {titulo:'#8B5FBF',intro:'#0EA5E9',
+    dolor_1:'#F43F5E',dolor_2:'#F43F5E',dolor_3:'#F43F5E',
+    valor_1:'#10B981',valor_2:'#10B981',valor_3:'#10B981',valor_4:'#10B981',accion:'#F59E0B'};
+  const roleLabels = {titulo:'PORTADA',intro:'INTRO',
+    dolor_1:'DOLOR 1',dolor_2:'DOLOR 2',dolor_3:'DOLOR 3',
+    valor_1:'VALOR 1',valor_2:'VALOR 2',valor_3:'VALOR 3',valor_4:'VALOR 4',accion:'ACCIÓN'};
+
+  if (!slides_data.length) {
+    container.innerHTML = '<div class="ia-empty"><div class="ia-empty-icon">🎠</div>Sin slides generados</div>';
+    return;
+  }
+
+  // Header
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'padding:6px 0 10px;font-size:11px;color:var(--text3);line-height:1.5;';
+  hdr.innerHTML = `<strong style="color:var(--text);">${slides_data.length} slides generados</strong><br>Toca un slide para editarlo en el canvas`;
+  container.appendChild(hdr);
+
+  // Apply all button
+  const applyAll = document.createElement('button');
+  applyAll.style.cssText = 'width:100%;padding:10px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:12px;';
+  applyAll.innerHTML = '✨ Aplicar todos los slides de una vez';
+  applyAll.onclick = () => applyAllSlides(slides_data);
+  container.appendChild(applyAll);
+
+  // Slide cards
+  slides_data.forEach((s, i) => {
+    const color = roleColors[s.role] || '#8B5FBF';
+    const label = roleLabels[s.role] || s.role;
+    const card = document.createElement('div');
+    card.className = 'slide-card2';
+    card.id = `slideCard_${i}`;
+    card.innerHTML = `
+      <div class="slide-card2-head" style="border-left:3px solid ${color};padding-left:10px;">
+        <span style="font-size:12px;font-weight:700;color:${color};">Slide ${i+1}</span>
+        <span class="slide-role-badge" style="background:${color}22;color:${color};">${label}</span>
+      </div>
+      <div class="slide-card2-body">
+        ${s.title ? `<strong style="color:var(--text);font-size:12px;">${escHtml(s.title)}</strong>` : ''}
+        ${s.content ? `<br><span style="font-size:11px;">${escHtml(s.content.substring(0,80))}${s.content.length>80?'…':''}</span>` : ''}
+      </div>`;
+    card.onclick = () => {
+      // Highlight active card
+      container.querySelectorAll('.slide-card2').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      // Load this slide
+      applySlideToCanvas(i, s);
+    };
+    container.appendChild(card);
+  });
+}
+
+function applySlideToCanvas(idx, s) {
+  if (idx !== currentSlide) loadSlide(idx);
+  document.getElementById('canvasBlocks').innerHTML = '';
+  slides[idx] = slides[idx] || newSlide();
+  slides[idx].blocks = [];
+  if (s.title)   addTextBlock(s.title,   {y:20, w:88, x:6, fontSize:34, bold:true,  color:currentBrand?.font_color||'#fff', align:'center'});
+  if (s.content) addTextBlock(s.content, {y:56, w:88, x:6, fontSize:18, bold:false, color:currentBrand?.sub_font_color||'rgba(255,255,255,.85)', align:'center'});
+  saveCurrentBlocks();
+  updateSlideNav();
+  toast(`Slide ${idx+1} cargado — edítalo en el canvas`,'success');
+}
+
+function applyAllSlides(slides_data) {
+  while (slides.length < slides_data.length) slides.push(newSlide(slides[0]?.bg1||'#7C3AED', slides[0]?.bg2||'#F43F5E'));
+  slides_data.forEach((s, i) => {
+    loadSlide(i);
+    document.getElementById('canvasBlocks').innerHTML = '';
+    if (s.title)   addTextBlock(s.title,   {y:20, w:88, x:6, fontSize:34, bold:true,  color:currentBrand?.font_color||'#fff', align:'center'});
+    if (s.content) addTextBlock(s.content, {y:56, w:88, x:6, fontSize:18, bold:false, color:currentBrand?.sub_font_color||'rgba(255,255,255,.85)', align:'center'});
+    saveCurrentBlocks();
+  });
+  loadSlide(0);
+  updateSlideNav(); renderSlideStrip(); historySave();
+  toast(`✅ ${slides_data.length} slides aplicados`,'success');
+}
+
+/* ── STORY ── */
+function renderStoryContentPanel(container) {
+  const stories = iaData?.stories || [];
+  const hooks   = iaData?.hooks   || [];
+  const sec = makeSection('📱','Ideas de Story');
+  stories.forEach((s,i) => {
+    const div = document.createElement('div');
+    div.style.cssText = 'padding:10px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surf2);margin-bottom:6px;font-size:12px;color:var(--text2);line-height:1.5;cursor:pointer;';
+    div.innerHTML = `<div style="font-size:10px;font-weight:800;color:var(--brand);margin-bottom:4px;">Story ${i+1}</div>${escHtml(s)}`;
+    sec.appendChild(div);
+  });
+  container.appendChild(sec);
+  if (hooks.length) {
+    const sec2 = makeSection('🎣','Hooks para story');
+    hooks.slice(0,3).forEach(h => {
+      const btn = makeOption(h, () => { addTextBlock(h,{y:25,w:82,x:9,fontSize:42,bold:true,color:'#fff',align:'center'}); toast('✅','success'); });
+      sec2.appendChild(btn);
+    });
+    container.appendChild(sec2);
+  }
+}
+
+/* ── REEL ── */
+function renderReelContentPanel(container) {
+  const hooks = iaData?.hooks || [];
+  const sec = makeSection('🎬','Hooks para Reel');
+  hooks.slice(0,5).forEach(h => {
+    const btn = makeOption(h, () => { addTextBlock(h,{y:20,w:82,x:9,fontSize:38,bold:true,color:'#fff',align:'center'}); toast('✅','success'); });
+    sec.appendChild(btn);
+  });
+  container.appendChild(sec);
+  const niche = iaData?.detected_niche || iaData?.niche || 'coaching';
+  const desc  = iaData?.description?.substring(0,60) || '';
+  const sec2  = makeSection('🎞','Prompt Runway/CapCut');
+  const prompt = `Create a vertical Instagram Reel (1080x1920, 30s) about: "${desc}". Style: ${niche} coach, cinematic, high energy. Hook in first 2s.`;
+  const pDiv = document.createElement('div');
+  pDiv.style.cssText = 'font-size:11px;color:var(--text2);padding:10px;background:var(--surf2);border-radius:var(--r);cursor:pointer;line-height:1.6;';
+  pDiv.textContent = prompt;
+  pDiv.onclick = () => { navigator.clipboard.writeText(prompt); toast('✅ Prompt copiado','success'); };
+  sec2.appendChild(pDiv);
+  container.appendChild(sec2);
+}
+
+/* ── DISEÑO ── */
+function renderDesignPanel() {
+  // Render 3 gradient preset thumbnails
+  const thumbsRow = document.getElementById('bgThumbsRow');
+  if (!thumbsRow) return;
+  const presets = [
+    ['#7C3AED','#F43F5E','Morado-Rosa'],
+    ['#0F172A','#1E293B','Dark'],
+    ['#065F46','#10B981','Verde'],
+  ];
+  thumbsRow.innerHTML = presets.map(([c1,c2,label]) => `
+    <div class="bg-thumb-option" onclick="applyBgPreset('${c1}','${c2}')"
+         style="background:linear-gradient(135deg,${c1},${c2});">
+      <div class="bg-thumb-label">${label}</div>
+    </div>`).join('');
+  // Init preset row
+  const pr = document.getElementById('bgPresetRow');
+  if (pr) pr.innerHTML = BG_PRESETS.map(([c1,c2]) =>
+    `<div class="bg-preset" style="background:linear-gradient(135deg,${c1},${c2});" onclick="applyBgPreset('${c1}','${c2}')"></div>`
+  ).join('');
+}
+
+/* ── HELPERS ── */
+function makeSection(icon, title) {
+  const div = document.createElement('div');
+  div.className = 'content-section';
+  div.innerHTML = `<div class="content-section-title">${icon} ${title}</div>`;
+  return div;
+}
+function makeOption(text, onClick) {
+  const btn = document.createElement('button');
+  btn.className = 'content-option';
+  btn.textContent = text;
+  btn.onclick = onClick;
+  return btn;
+}
+function clearSelected(container, group) {
+  container.querySelectorAll(`[data-group="${group}"]`).forEach(b => b.classList.remove('selected'));
+}
+
+/* Rebuild caption from selections */
+function rebuildCaption() {
+  const parts = [_wizUsed.hook, _wizUsed.desc, _wizUsed.cta].filter(Boolean);
+  const cap = parts.join('\n\n');
+  captionFull = cap;
+  const el = document.getElementById('capFull');
+  if (el) el.value = cap;
+  updateCaptionPreview();
 }
 
 /* POST panel */
@@ -3089,30 +2929,24 @@ function renderReelPanel(container) {
 
 /* Caption tab */
 function renderCaptionTab() {
-  if (iaData?.captions?.length) {
-    const cap = currentFormat==='reel' ? '' : iaData.captions[0];
-    if (cap && !document.getElementById('capFull').value) {
-      document.getElementById('capFull').value = cap;
-      captionFull = cap;
-      updateCaptionPreview();
-    }
-  }
-  if (iaData?.hashtags?.length) {
-    const chips = document.getElementById('hashtagChips');
-    chips.innerHTML = '';
-    iaData.hashtags.forEach(h => {
-      const chip = document.createElement('span');
-      chip.className = 'htag';
-      chip.textContent = h;
-      chip.onclick = () => { chip.classList.toggle('selected'); };
-      chips.appendChild(chip);
-    });
-  }
-  if (iaData?.seo_analysis) {
-    const dm = document.getElementById('dmKeyword');
-    const match = iaData.seo_analysis.match(/comenta\s+([A-Z]+)/i);
-    dm.textContent = match ? `Comenta "${match[1]}" en los comentarios` : iaData.seo_analysis.substring(0,80);
-  }
+  const chipsEl = document.getElementById('hashtagChips');
+  if (!chipsEl || !iaData?.hashtags) return;
+  const selected = new Set();
+  chipsEl.innerHTML = '';
+  iaData.hashtags.forEach(tag => {
+    const chip = document.createElement('span');
+    chip.textContent = tag.startsWith('#') ? tag : '#'+tag;
+    chip.style.cssText = 'display:inline-block;padding:3px 8px;border-radius:99px;background:rgba(139,95,191,.15);color:var(--brand);font-size:11px;font-weight:600;cursor:pointer;margin:2px 2px 2px 0;border:1.5px solid transparent;transition:all .1s;';
+    chip.onclick = () => {
+      if (selected.has(tag)) { selected.delete(tag); chip.style.background='rgba(139,95,191,.15)'; chip.style.borderColor='transparent'; }
+      else { selected.add(tag); chip.style.background='rgba(139,95,191,.3)'; chip.style.borderColor='var(--brand)'; }
+      const base = captionFull.replace(/\n\n#.*/s,'').trim();
+      const hashStr = selected.size ? '\n\n' + [...selected].map(t=>t.startsWith('#')?t:'#'+t).join(' ') : '';
+      const capEl = document.getElementById('capFull');
+      if (capEl) { capEl.value = base+hashStr; captionFull = capEl.value; updateCaptionPreview(); }
+    };
+    chipsEl.appendChild(chip);
+  });
 }
 
 function onCaptionInput() {
@@ -3130,46 +2964,11 @@ function updateCaptionPreview() {
 
 // Update the section previews in caption tab
 function updateCaptionSectionPreviews() {
-  const hookEl = document.getElementById('capHookPreview');
-  const descEl = document.getElementById('capDescPreview');
-  const ctaEl  = document.getElementById('capCtaPreview');
-  if (hookEl && _wizUsed.hook) {
-    hookEl.textContent = _wizUsed.hook;
-    hookEl.style.color = 'var(--text)';
-    hookEl.style.borderColor = 'var(--success)';
-  }
-  if (descEl && _wizUsed.desc) {
-    const short = _wizUsed.desc.length > 120 ? _wizUsed.desc.substring(0,120)+'…' : _wizUsed.desc;
-    descEl.textContent = short;
-    descEl.style.color = 'var(--text)';
-    descEl.style.borderColor = 'var(--success)';
-  }
-  if (ctaEl && _wizUsed.cta) {
-    ctaEl.textContent = _wizUsed.cta;
-    ctaEl.style.color = 'var(--text)';
-    ctaEl.style.borderColor = 'var(--success)';
-  }
+  // No-op — caption is rebuilt automatically via rebuildCaption()
 }
 
 function insertCaptionBlock(type) {
-  const capEl = document.getElementById('capFull');
-  if (!capEl) return;
-  let text = '';
-  if (type === 'hook') text = _wizUsed.hook || iaData?.hooks?.[0] || '';
-  if (type === 'desc') text = _wizUsed.desc || iaData?.captions?.[0] || '';
-  if (type === 'cta')  text = _wizUsed.cta  || iaData?.ctas?.[0]  || '';
-  if (!text) { toast('Aún no has elegido este elemento en el wizard', 'info'); return; }
-  // Build full caption in order: hook → desc → cta
-  const hook = _wizUsed.hook || '';
-  const desc = _wizUsed.desc || '';
-  const cta  = _wizUsed.cta  || '';
-  const parts = [hook, desc, cta].filter(Boolean);
-  const full  = parts.join('\n\n');
-  capEl.value  = full;
-  captionFull  = full;
-  updateCaptionPreview();
-  updateCaptionSectionPreviews();
-  toast('✅ Caption actualizado', 'success');
+  rebuildCaption();
 }
 
 function clearCaption() { document.getElementById('capFull').value=''; captionFull=''; updateCaptionPreview(); }
@@ -3529,13 +3328,7 @@ function clearAutoSave() {
   localStorage.removeItem(AUTOSAVE_KEY);
 }
 
-function resetWizard() {
-  localStorage.removeItem(WIZARD_KEY);
-  _wizStep = 0; _wizUsed = {};
-  switchIaTab('build');
-  renderIAPanel();
-  toast('Tutorial reiniciado','info');
-}
+
 
 /* ══ NAVIGATION ══ */
 function goBack() {
@@ -4263,65 +4056,7 @@ function applyBrandToAllSlides() {
 }
 
 /* ══ WIZARD SLIDES (CARRUSEL) ══ */
-function renderWizardSlides(body, hint) {
-  const slides_data = iaData?.carousel_slides || [];
-  if (!slides_data.length) { wizardNext(); return; }
 
-  const roleColors = { titulo:'#8B5FBF',intro:'#0EA5E9',
-    dolor_1:'#F43F5E',dolor_2:'#F43F5E',dolor_3:'#F43F5E',
-    valor_1:'#10B981',valor_2:'#10B981',valor_3:'#10B981',valor_4:'#10B981',accion:'#F59E0B' };
-  const roleLabels = { titulo:'TÍTULO',intro:'INTRO',
-    dolor_1:'DOLOR 1',dolor_2:'DOLOR 2',dolor_3:'DOLOR 3',
-    valor_1:'VALOR 1',valor_2:'VALOR 2',valor_3:'VALOR 3',valor_4:'VALOR 4',accion:'ACCIÓN' };
-
-  // Summary of slides
-  const summary = document.createElement('div');
-  summary.style.cssText = 'font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6;padding:10px;background:var(--surf2);border-radius:var(--r);';
-  summary.innerHTML = `<strong style="color:var(--text);">La IA generó ${slides_data.length} slides:</strong><br>` +
-    slides_data.map((s,i) => {
-      const color = roleColors[s.role] || '#8B5FBF';
-      return `<span style="display:inline-block;margin:2px 3px;padding:2px 7px;border-radius:4px;background:${color}22;color:${color};font-size:10px;font-weight:700;">${roleLabels[s.role]||s.role}</span>`;
-    }).join('');
-  body.appendChild(summary);
-
-  // Apply all button (main action)
-  const applyAll = document.createElement('button');
-  applyAll.style.cssText = 'width:100%;padding:12px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;';
-  applyAll.textContent = '✨ Aplicar todos los slides al carrusel';
-  applyAll.onclick = () => {
-    // Ensure slides array has enough slides
-    while (slides.length < slides_data.length) {
-      slides.push(newSlide(slides[0]?.bg1||'#7C3AED', slides[0]?.bg2||'#F43F5E'));
-    }
-    // Apply each slide
-    slides_data.forEach((s, i) => {
-      const prevSlide = currentSlide;
-      loadSlide(i);
-      document.getElementById('canvasBlocks').innerHTML = '';
-      if (s.title)   addTextBlock(s.title,   { y:20, w:88, x:6, fontSize:32, bold:true, color:currentBrand?.font_color||'#fff', align:'center' });
-      if (s.content) addTextBlock(s.content, { y:55, w:88, x:6, fontSize:17, color:currentBrand?.sub_font_color||'rgba(255,255,255,.85)', align:'center' });
-      saveCurrentBlocks();
-    });
-    loadSlide(0);
-    updateSlideNav();
-    renderSlideStrip();
-    historySave();
-    applyAll.textContent = '✅ Slides aplicados';
-    applyAll.style.background = 'var(--success)';
-    toast('✅ ' + slides_data.length + ' slides aplicados al carrusel', 'success');
-    setTimeout(wizardNext, 800);
-  };
-  body.appendChild(applyAll);
-
-  // Or apply one by one
-  const oneByOne = document.createElement('button');
-  oneByOne.style.cssText = 'width:100%;padding:9px;border-radius:var(--r);border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;';
-  oneByOne.textContent = 'Ver y aplicar slide por slide →';
-  oneByOne.onclick = () => { skipWizard(); switchIaTab('build'); };
-  body.appendChild(oneByOne);
-
-  hint.textContent = '👆 Aplica todos de una vez o edítalos individualmente';
-}
 
 /* ══ COPILOTO IA ══ */
 let _copHistory  = [];
