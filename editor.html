@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&family=Montserrat:wght@400;600;700;800&family=Poppins:wght@400;600;700&family=Playfair+Display:wght@400;700&family=Raleway:wght@400;600;700&family=Oswald:wght@400;600;700&family=Lato:wght@400;700&family=Roboto:wght@400;700&family=Inter:wght@400;600;700&family=Nunito:wght@400;600;700&family=Bebas+Neue&family=Abril+Fatface&family=Space+Grotesk:wght@400;600;700&family=Unbounded:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root {
   --brand:    #8B5FBF;
@@ -887,6 +888,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   <button class="tb-btn" onclick="openDesignsModal()" title="Guardar diseño">💾 <span>Guardar</span></button>
   <span id="autoSaveLabel" style="font-size:10px;color:var(--text3);display:none;flex-shrink:0;">⏱</span>
   <button class="tb-btn" onclick="showHelp()" title="Ayuda">❓</button>
+  <button class="tb-btn" onclick="showIgPreview()" title="Vista previa como Instagram" style="background:rgba(139,95,191,.2);border:1px solid rgba(139,95,191,.5);color:var(--brand);">👁 <span>Preview</span></button>
   <button class="tb-btn primary" onclick="exportAll()" title="Exportar">📥 <span>Exportar</span></button>
 </div>
 
@@ -1121,6 +1123,61 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
     </div>
 
   </div><!-- /canvas-area -->
+
+  <!-- ══ VISTA PREVIA INSTAGRAM MODAL ══ -->
+  <div id="igPreviewModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:8000;overflow-y:auto;padding:20px;">
+    <div style="max-width:420px;margin:0 auto;">
+      <!-- Header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:#fff;">👁 Vista previa Instagram</div>
+        <button onclick="closeIgPreview()" style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:18px;cursor:pointer;">✕</button>
+      </div>
+      <!-- Nav tabs para post/carrusel -->
+      <div id="igPrevNav" style="display:none;gap:6px;margin-bottom:10px;">
+        <button onclick="igPrevGo(-1)" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">‹</button>
+        <span id="igPrevCounter" style="color:rgba(255,255,255,.7);font-size:12px;flex:1;text-align:center;line-height:36px;"></span>
+        <button onclick="igPrevGo(1)"  style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">›</button>
+      </div>
+      <!-- Instagram phone mockup -->
+      <div style="background:#000;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5);">
+        <!-- IG top bar -->
+        <div style="padding:10px 12px;display:flex;align-items:center;gap:10px;">
+          <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);"></div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#fff;" id="igPrevUsername">tu_usuario</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.5);">Hace 2 horas</div>
+          </div>
+          <button style="margin-left:auto;padding:5px 12px;border-radius:6px;background:transparent;border:1.5px solid rgba(255,255,255,.3);color:#fff;font-size:12px;font-weight:700;cursor:pointer;">Seguir</button>
+        </div>
+        <!-- Image area -->
+        <div id="igPrevImgWrap" style="width:100%;aspect-ratio:4/5;position:relative;background:#111;overflow:hidden;">
+          <img id="igPrevImg" src="" alt="Preview" style="width:100%;height:100%;object-fit:cover;display:block;">
+          <!-- Carousel dots -->
+          <div id="igPrevDots" style="display:none;position:absolute;bottom:8px;left:50%;transform:translateX(-50%);gap:4px;"></div>
+        </div>
+        <!-- IG actions -->
+        <div style="padding:10px 14px 6px;display:flex;align-items:center;gap:14px;">
+          <span style="font-size:24px;cursor:pointer;">♡</span>
+          <span style="font-size:22px;cursor:pointer;">💬</span>
+          <span style="font-size:22px;cursor:pointer;">➤</span>
+          <span style="font-size:22px;margin-left:auto;cursor:pointer;">🔖</span>
+        </div>
+        <!-- Likes -->
+        <div style="padding:2px 14px;font-size:13px;font-weight:700;color:#fff;">248 Me gusta</div>
+        <!-- Caption -->
+        <div style="padding:4px 14px 14px;">
+          <span style="font-size:13px;font-weight:700;color:#fff;" id="igPrevUser2">tu_usuario</span>
+          <span style="font-size:13px;color:rgba(255,255,255,.9);margin-left:6px;" id="igPrevCaption">Tu caption aparecerá aquí…</span>
+          <div id="igPrevHashtags" style="font-size:12px;color:#6fa3ef;margin-top:4px;line-height:1.6;"></div>
+        </div>
+      </div>
+      <!-- Actions -->
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button onclick="closeIgPreview()" style="flex:1;padding:12px;border-radius:10px;background:rgba(255,255,255,.1);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">← Volver a editar</button>
+        <button onclick="exportFromPreview()" style="flex:1;padding:12px;border-radius:10px;background:var(--grad);border:none;color:#fff;font-size:13px;font-weight:800;cursor:pointer;font-family:'Syne',sans-serif;">📥 Exportar</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ══ IA PANEL ══ -->
   <div class="ia-panel">
@@ -3896,11 +3953,77 @@ function toast(msg, type='success') {
 
 /* ══ EXPORT ══ */
 async function exportAll() {
-  if (currentFormat==='carousel' && slides.length>1) {
-    await exportCarouselZip();
+  if (currentFormat === 'carousel' && slides.length > 1) {
+    showExportCarouselModal();
   } else {
     await exportPNG();
   }
+}
+
+function showExportCarouselModal() {
+  // Create quick modal to choose ZIP or PDF
+  const existing = document.getElementById('exportChoiceModal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'exportChoiceModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px;';
+  modal.innerHTML = `
+    <div style="background:var(--surf);border-radius:16px;padding:24px;max-width:320px;width:100%;text-align:center;">
+      <div style="font-size:28px;margin-bottom:8px;">📥</div>
+      <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px;">Exportar carrusel</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:20px;">${slides.length} slides listos para exportar</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button onclick="document.getElementById('exportChoiceModal').remove();exportCarouselZip()" style="padding:12px;border-radius:10px;background:var(--grad);border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
+          🗜 Descargar ZIP (PNG por slide)
+        </button>
+        <button onclick="document.getElementById('exportChoiceModal').remove();exportCarouselPDF()" style="padding:12px;border-radius:10px;background:rgba(139,95,191,.15);border:1.5px solid var(--brand);color:var(--brand);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
+          📄 Descargar PDF (todos en uno)
+        </button>
+        <button onclick="document.getElementById('exportChoiceModal').remove()" style="padding:10px;border-radius:10px;background:transparent;border:1px solid var(--border2);color:var(--text3);font-size:13px;cursor:pointer;font-family:inherit;">
+          Cancelar
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+}
+
+async function exportCarouselPDF() {
+  const { jsPDF } = window.jspdf;
+  if (!jsPDF) { toast('Error: jsPDF no disponible','error'); return; }
+
+  const wrap  = document.getElementById('canvasWrap');
+  const scale = parseFloat(wrap.dataset.scale) || 1;
+  const realW = parseInt(wrap.dataset.realW) || 1080;
+  const realH = parseInt(wrap.dataset.realH) || 1350;
+  const total = slides.length;
+
+  toast('Generando PDF…','info');
+
+  // PDF dimensions in mm — Instagram 4:5 ratio
+  const pdfW = 108; // mm
+  const pdfH = 135; // mm
+  const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:[pdfW, pdfH] });
+
+  for (let i = 0; i < total; i++) {
+    if (i > 0) pdf.addPage([pdfW, pdfH]);
+    loadSlide(i);
+    await new Promise(r => setTimeout(r, 180));
+    try {
+      const hasBg = !!slides[i]?.bgImg;
+      const c = await html2canvas(wrap, {scale:1/scale, useCORS:true, allowTaint:hasBg, backgroundColor:null});
+      const out = document.createElement('canvas');
+      out.width=realW; out.height=realH;
+      out.getContext('2d').drawImage(c, 0, 0, realW, realH);
+      const imgData = out.toDataURL('image/jpeg', 0.92);
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
+    } catch(err) { console.warn('PDF slide error:', err); }
+  }
+
+  loadSlide(0);
+  pdf.save('conteniza_carrusel.pdf');
+  toast('✅ PDF descargado','success');
 }
 
 async function exportPNG(idx) {
@@ -4089,6 +4212,103 @@ function showHelp() {
 function goBack() {
   autoSaveToLocal();
   window.location.href='index.html';
+}
+
+/* ══ VISTA PREVIA INSTAGRAM ══ */
+let _igPrevSlides = [];
+let _igPrevIdx    = 0;
+
+async function showIgPreview() {
+  const modal = document.getElementById('igPreviewModal');
+  if (!modal) return;
+
+  // Save current state
+  saveCurrentBlocks();
+  toast('Generando vista previa…','info');
+
+  // Render all slides to images
+  _igPrevSlides = [];
+  const wrap  = document.getElementById('canvasWrap');
+  const scale = parseFloat(wrap.dataset.scale) || 1;
+  const realW = parseInt(wrap.dataset.realW) || 1080;
+  const realH = parseInt(wrap.dataset.realH) || 1350;
+  const total = currentFormat === 'carousel' ? slides.length : 1;
+
+  for (let i = 0; i < total; i++) {
+    if (total > 1) loadSlide(i);
+    await new Promise(r => setTimeout(r, 150));
+    try {
+      const hasBg = !!slides[i]?.bgImg;
+      const c = await html2canvas(wrap, {scale:1/scale, useCORS:true, allowTaint:hasBg, backgroundColor:null});
+      const out = document.createElement('canvas');
+      out.width=realW; out.height=realH;
+      out.getContext('2d').drawImage(c, 0, 0, realW, realH);
+      _igPrevSlides.push(out.toDataURL('image/jpeg', 0.92));
+    } catch(err) {
+      console.warn('Preview slide error:', err);
+    }
+  }
+
+  // Restore first slide
+  if (total > 1) loadSlide(0);
+
+  _igPrevIdx = 0;
+  renderIgPreview();
+  modal.style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+function renderIgPreview() {
+  const img     = document.getElementById('igPrevImg');
+  const nav     = document.getElementById('igPrevNav');
+  const dots    = document.getElementById('igPrevDots');
+  const counter = document.getElementById('igPrevCounter');
+  const capEl   = document.getElementById('igPrevCaption');
+  const hashEl  = document.getElementById('igPrevHashtags');
+
+  if (!img || !_igPrevSlides.length) return;
+
+  // Set image
+  img.src = _igPrevSlides[_igPrevIdx] || '';
+
+  // Nav
+  if (_igPrevSlides.length > 1) {
+    nav.style.display = 'flex';
+    counter.textContent = (_igPrevIdx+1) + ' / ' + _igPrevSlides.length;
+    // Dots
+    dots.style.display = 'flex';
+    dots.innerHTML = _igPrevSlides.map((_, i) =>
+      `<div style="width:${i===_igPrevIdx?8:5}px;height:${i===_igPrevIdx?8:5}px;border-radius:50%;background:${i===_igPrevIdx?'#fff':'rgba(255,255,255,.5)'};transition:.2s;"></div>`
+    ).join('');
+  } else {
+    nav.style.display = 'none';
+    dots.style.display = 'none';
+  }
+
+  // Caption from textarea
+  const fullCap = document.getElementById('capFull')?.value || captionFull || '';
+  // Split hashtags from caption
+  const parts = fullCap.split(/\n\n/);
+  const hashLine = parts.find(p => p.trim().startsWith('#')) || '';
+  const capText  = parts.filter(p => !p.trim().startsWith('#')).join(' ');
+  capEl.textContent = capText.substring(0, 150) + (capText.length > 150 ? '… ver más' : '');
+  hashEl.textContent = hashLine;
+}
+
+function igPrevGo(dir) {
+  _igPrevIdx = Math.max(0, Math.min(_igPrevSlides.length-1, _igPrevIdx + dir));
+  renderIgPreview();
+}
+
+function closeIgPreview() {
+  const modal = document.getElementById('igPreviewModal');
+  if (modal) modal.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+async function exportFromPreview() {
+  closeIgPreview();
+  await exportAll();
 }
 
 /* ══ BRAND OVERLAY ══ */
