@@ -1400,9 +1400,14 @@ function updateCreditsBar() {
   // Reset date: first day of next month
   if (resetLb) {
     const now   = new Date();
-    const reset = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    const days  = Math.ceil((reset - now) / 86400000);
-    resetLb.textContent = `Renueva en ${days}d`;
+    // Calculate renewal based on subscription date (monthly from join date)
+    const joinDate = user.created_at ? new Date(user.created_at) : now;
+    const renewDay = joinDate.getDate(); // Same day each month
+    let renewDate = new Date(now.getFullYear(), now.getMonth(), renewDay);
+    if (renewDate <= now) renewDate = new Date(now.getFullYear(), now.getMonth()+1, renewDay);
+    const days = Math.ceil((renewDate - now) / 86400000);
+    const renewStr = renewDate.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
+    resetLb.textContent = `Renueva el ${renewStr} (${days}d)`;
   }
 
   // Warnings créditos bajos

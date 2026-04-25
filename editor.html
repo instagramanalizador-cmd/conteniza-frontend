@@ -950,6 +950,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
     <!-- Slide strip -->
     <div class="slide-strip" id="slideStrip"></div>
 
+    <!-- Floating action buttons on canvas -->
+    <div id="canvasFloatBtns" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:6px;z-index:50;">
+      <button onclick="addTextBlock('Texto',{x:20,y:40,w:60,fontSize:24,color:'#fff',bold:false})" title="Añadir texto" style="width:36px;height:36px;border-radius:50%;background:var(--brand);border:none;color:#fff;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;">T+</button>
+      <button onclick="document.getElementById('imgBlockInput').click()" title="Añadir imagen" style="width:36px;height:36px;border-radius:50%;background:var(--brand);border:none;color:#fff;font-size:16px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;">🖼</button>
+      <button onclick="document.getElementById('logoBlockInput').click()" title="Añadir logo" style="width:36px;height:36px;border-radius:50%;background:rgba(139,95,191,.7);border:none;color:#fff;font-size:14px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;">🏷</button>
+    </div>
+    <input type="file" id="logoBlockInput" accept="image/*" style="display:none" onchange="addLogoBlock(event)">
+
     <!-- BG controls (desktop) — hidden, moved to design tab -->
     <div class="bg-controls" id="bgControlsHidden" style="display:none;">
       <div class="bgc-row">
@@ -1213,7 +1221,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
       <div id="edBrandEmpty" style="display:none;text-align:center;padding:20px;color:var(--text3);font-size:12px;line-height:1.6;">
         <div style="font-size:32px;margin-bottom:8px;">🎨</div>
         <div style="font-weight:700;color:var(--text2);margin-bottom:4px;">Sin marca configurada</div>
-        <div style="margin-bottom:12px;">Configura tu marca en la app principal para aplicarla aquí.</div>
+        <div style="margin-bottom:12px;">Ve a Mi Marca en el menú principal para configurar colores, fuente y logo.</div>
+        <button onclick="goBack();setTimeout(()=>document.getElementById('brandTab')?.click(),300)" style="padding:8px 16px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Ir a Mi Marca →</button>
       </div>
 
       <!-- Con marca configurada -->
@@ -1229,6 +1238,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 
         <!-- Datos de marca -->
         <div id="edBrandInfo" style="font-size:11px;color:var(--text2);line-height:1.8;padding:8px 10px;background:var(--surf2);border-radius:var(--r);margin-bottom:10px;"></div>
+
+        <!-- Logo upload directo desde editor -->
+        <div style="margin-bottom:10px;">
+          <div style="font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">🏷 Logo de marca</div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <div id="edLogoPreviewThumb" style="width:36px;height:36px;border-radius:6px;background:var(--surf2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:16px;overflow:hidden;flex-shrink:0;">🏷</div>
+            <button onclick="document.getElementById('brandLogoUpload').click()" style="flex:1;padding:6px 10px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">📷 Cambiar logo</button>
+            <input type="file" id="brandLogoUpload" accept="image/*" style="display:none" onchange="uploadBrandLogoFromEditor(event)">
+          </div>
+        </div>
 
         <!-- Botones de acción -->
         <div style="font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">¿Dónde aplicar?</div>
@@ -1646,10 +1665,14 @@ function onBgColorChange() {
   slides[currentSlide].bg1 = c1;
   slides[currentSlide].bg2 = c2;
   slides[currentSlide].bgImg = null;
-  document.getElementById('bg1Input').closest('.bgc-swatch').style.background = c1;
-  document.getElementById('bg2Input').closest('.bgc-swatch').style.background = c2;
-  document.getElementById('bg1InputM').value = c1;
-  document.getElementById('bg2InputM').value = c2;
+  const sw1 = document.getElementById('bg1Input')?.closest('.bgc-swatch');
+  const sw2 = document.getElementById('bg2Input')?.closest('.bgc-swatch');
+  if (sw1) sw1.style.background = c1;
+  if (sw2) sw2.style.background = c2;
+  const m1 = document.getElementById('bg1InputM');
+  const m2 = document.getElementById('bg2InputM');
+  if (m1) m1.value = c1;
+  if (m2) m2.value = c2;
   updateCanvasBg();
   updateStripThumb(currentSlide);
   historySave();
@@ -1688,8 +1711,10 @@ function onOverlayChange() {
   const v = parseInt(document.getElementById('overlaySlider').value);
   slides[currentSlide].overlay = v;
   document.getElementById('overlayVal').textContent = v + '%';
-  document.getElementById('overlaySliderM').value = v;
-  document.getElementById('overlayValM').textContent = v + '%';
+  const osm = document.getElementById('overlaySliderM');
+  const ovm = document.getElementById('overlayValM');
+  if (osm) osm.value = v;
+  if (ovm) ovm.textContent = v + '%';
   document.getElementById('canvasOverlay').style.background = `rgba(0,0,0,${v/100})`;
   clearTimeout(_overlayTimer);
   _overlayTimer = setTimeout(historySave, 400);
@@ -1699,8 +1724,10 @@ function onBgOpacityChange() {
   const v  = parseInt(document.getElementById('opacitySlider').value);
   slides[currentSlide].bgOpacity = v;
   document.getElementById('opacityVal').textContent = v + '%';
-  document.getElementById('opacitySliderM').value = v;
-  document.getElementById('opacityValM').textContent = v + '%';
+  const psm = document.getElementById('opacitySliderM');
+  const pvm = document.getElementById('opacityValM');
+  if (psm) psm.value = v;
+  if (pvm) pvm.textContent = v + '%';
   document.getElementById('canvasBg').style.opacity = v / 100;
   clearTimeout(_overlayTimer);
   _overlayTimer = setTimeout(historySave, 400);
@@ -1865,6 +1892,17 @@ function makeBlock(type, opts={}) {
 
 function addTextBlock(text, opts={}) {
   return makeBlock('text', { text: text||'Texto', ...opts });
+}
+
+function addLogoBlock(event) {
+  const file = event.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e2 => {
+    addImageBlock_url(e2.target.result, { x:2, y:2, w:20, h:20 });
+    toast('✅ Logo añadido al canvas','success');
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
 }
 
 function addImageBlock(event) {
@@ -2657,7 +2695,9 @@ function renderPostContentPanel(container) {
     const renderCap = () => {
       const cap = captions[capIdx] || '';
       counter.textContent = (capIdx+1) + ' de ' + captions.length;
-      capText.textContent = cap;
+      // Strip any "CAPTION N — Hook:" labels that might come from AI
+      const cleanCap = cap.replace(/^CAPTION\s*\d+\s*[—-]\s*(Hook:|Descripción:|CTA:)?\s*/i, '').trim();
+      capText.textContent = cleanCap;
       btnP.style.opacity = capIdx === 0 ? '.3' : '1';
       btnN.style.opacity = capIdx === captions.length-1 ? '.3' : '1';
       // NO auto-apply on navigation — only on "Usar este caption"
@@ -2799,6 +2839,24 @@ function renderCarouselContentPanel(container) {
   applyAll.innerHTML = '✨ Aplicar todos los slides';
   applyAll.onclick = () => { applyAllSlides(slides_data); applyAll.textContent='✅ Slides aplicados'; applyAll.style.background='var(--success)'; };
   container.appendChild(applyAll);
+
+  // Regenerar + IA
+  const carRegen = document.createElement('button');
+  carRegen.style.cssText = 'width:100%;padding:8px;border-radius:var(--r);border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:6px;';
+  carRegen.innerHTML = '🔄 Regenerar slides (-1 crédito)';
+  carRegen.onclick = () => regenerateFromEditor();
+  container.appendChild(carRegen);
+
+  const carCop = document.createElement('button');
+  carCop.style.cssText = 'width:100%;padding:8px;border-radius:var(--r);background:rgba(139,95,191,.15);border:1px solid rgba(139,95,191,.3);color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;';
+  carCop.innerHTML = '🤖 Mejorar con IA';
+  let _carCopOpen = false;
+  const carCopPanel = document.createElement('div');
+  carCopPanel.style.cssText = 'display:none;margin-bottom:8px;border:1px solid var(--border2);border-radius:var(--r);overflow:hidden;';
+  carCopPanel.innerHTML = document.getElementById('iaCop')?.innerHTML || '';
+  carCop.onclick = () => { _carCopOpen=!_carCopOpen; carCopPanel.style.display=_carCopOpen?'block':'none'; if(_carCopOpen)setTimeout(scrollCopMessages,100); };
+  container.appendChild(carCop);
+  container.appendChild(carCopPanel);
 
   // Slide cards
   slides_data.forEach((s, i) => {
@@ -2995,12 +3053,35 @@ function renderDesignPanel() {
     });
   }
 
-  // Init preset color row
+  // Preset color combos (always available)
+  const QUICK_PRESETS = [
+    ['#7C3AED','#F43F5E'],['#0F172A','#1E293B'],['#065F46','#10B981'],
+    ['#2563EB','#7C3AED'],['#D97706','#DC2626'],['#0EA5E9','#6366F1'],
+    ['#EC4899','#F59E0B'],['#14B8A6','#3B82F6'],['#8B5CF6','#EC4899'],
+    ['#1E293B','#7C3AED'],
+  ];
   const pr = document.getElementById('bgPresetRow');
-  if (pr && typeof BG_PRESETS !== 'undefined') {
-    pr.innerHTML = BG_PRESETS.slice(0,8).map(([c1,c2]) =>
-      `<div class="bg-preset" style="background:linear-gradient(135deg,${c1},${c2});width:20px;height:20px;" onclick="applyBgPreset('${c1}','${c2}')"></div>`
-    ).join('');
+  if (pr) {
+    const presetSrc = (typeof BG_PRESETS !== 'undefined' ? BG_PRESETS : QUICK_PRESETS);
+    pr.innerHTML = '';
+    presetSrc.slice(0,10).forEach(([c1,c2]) => {
+      const d = document.createElement('div');
+      d.style.cssText = `width:22px;height:22px;border-radius:5px;background:linear-gradient(135deg,${c1},${c2});cursor:pointer;border:2px solid transparent;transition:all .12s;flex-shrink:0;`;
+      d.title = c1 + ' → ' + c2;
+      d.onclick = () => {
+        pr.querySelectorAll('div').forEach(x=>x.style.borderColor='transparent');
+        d.style.borderColor='var(--brand)';
+        applyBgPreset(c1,c2);
+        document.getElementById('bg1Input').value=c1;
+        document.getElementById('bg2Input').value=c2;
+        const sw1=document.getElementById('bg1Input')?.closest('.bgc-swatch');
+        const sw2=document.getElementById('bg2Input')?.closest('.bgc-swatch');
+        if(sw1)sw1.style.background=c1;
+        if(sw2)sw2.style.background=c2;
+      };
+      pr.appendChild(d);
+    });
+    pr.style.cssText='display:flex;gap:4px;flex-wrap:wrap;margin-top:8px;';
   }
 
   // Init Pexels with auto-search using niche
@@ -3013,19 +3094,22 @@ function renderDesignPanel() {
 
 /* ── HELPERS ── */
 function replaceOrAddBlock(role, text, opts) {
+  // Find existing block with this role and REPLACE its text
   const existing = document.querySelector('[data-block-role="' + role + '"]');
   if (existing) {
     const ta = existing.querySelector('.eblock-text');
     if (ta) {
-      if (text.includes('\n')) {
-        ta.innerHTML = text.split('\n').map(l=>`<div>${l||'<br>'}</div>`).join('');
-      } else {
-        ta.textContent = text;
-      }
+      ta.textContent = text;
+      // Update stored data
+      const id = existing.id;
+      const blk = slides[currentSlide]?.blocks?.find(b => b.id === id);
+      if (blk) blk.text = text;
       historySave();
-      return existing.id;
+      updateStripThumb(currentSlide);
+      return id;
     }
   }
+  // No existing — add new block
   const id = addTextBlock(text, opts);
   const el = document.getElementById(id);
   if (el) el.dataset.blockRole = role;
@@ -3305,7 +3389,9 @@ function updateCaptionHashEmoji(selHash, selEmoji) {
   const capEl = document.getElementById('capFull');
   if (!capEl) return;
   // Base caption without previous hash/emoji suffix
-  const base = captionFull.split('\n\n').slice(0,3).join('\n\n').replace(/#\S+/g,'').replace(/\s+$/,'').trim();
+  // Get base caption — remove previous hashtags/emojis
+  const rawBase = captionFull || (document.getElementById('capFull')?.value || '');
+  const base = rawBase.split('\n\n').slice(0,3).join('\n\n').replace(/#\S+/g,'').replace(/\s+$/,'').trim();
   // Build suffix
   const emojiStr = selEmoji.size ? [...selEmoji].join(' ') : '';
   const hashStr  = selHash.size  ? [...selHash].map(t=>t.startsWith('#')?t:'#'+t).join(' ') : '';
@@ -3388,8 +3474,9 @@ function switchImgTab(tab) {
   const bank       = document.getElementById('imgBank');
 
   if (tab === 'mine') {
-    searchRow.style.display = 'none';
-    creditEl.innerHTML = `<button class="img-upload-btn" onclick="document.getElementById('bankUploadInput').click()" style="margin:0;">+ Subir imagen</button>`;
+    if (searchRow) searchRow.style.display = 'none';
+    if (creditEl) { const upBtn=document.createElement('button'); upBtn.className='img-upload-btn'; upBtn.style.margin='0'; upBtn.textContent='📷 Subir mi imagen'; upBtn.onclick=()=>document.getElementById('bankUploadInput').click(); creditEl.innerHTML=''; creditEl.appendChild(upBtn); }
+    _stockPhotos = []; // Clear Pexels/Unsplash photos
     renderImgBank();
   } else {
     searchRow.style.display = 'flex';
@@ -3440,7 +3527,7 @@ async function searchPexels(q, page=1) {
       author:'Picsum', link:'https://picsum.photos'
     }));
   }
-  const r = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(q)}&per_page=20&page=${page}`, {
+  const r = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(q)}&per_page=40&page=${page}`, {
     headers: { Authorization: PEXELS_API_KEY }
   });
   const d = await r.json();
@@ -3460,7 +3547,7 @@ async function searchUnsplash(q) {
       author:'Unsplash', link:'https://unsplash.com'
     }));
   }
-  const r = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(q)}&per_page=20&client_id=${UNSPLASH_ACCESS}`);
+  const r = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(q)}&per_page=40&client_id=${UNSPLASH_ACCESS}`);
   const d = await r.json();
   return (d.results || []).map(p => ({
     thumb:  p.urls.small,
@@ -3472,7 +3559,7 @@ async function searchUnsplash(q) {
 
 let _stockPhotos = [];
 let _stockPage   = 0;
-const PHOTOS_PER_PAGE = 6;
+const PHOTOS_PER_PAGE = 8;   // 8 per page = 2x4 grid
 
 function renderStockResults(photos) {
   _stockPhotos = photos;
@@ -3501,7 +3588,12 @@ function renderStockPage() {
       <div style="position:absolute;inset:0;background:rgba(139,95,191,.0);transition:.15s;display:flex;align-items:center;justify-content:center;font-size:24px;opacity:0;">+</div>`;
     div.onmouseenter = () => { div.querySelector('div').style.opacity='1'; div.querySelector('div').style.background='rgba(139,95,191,.5)'; };
     div.onmouseleave = () => { div.querySelector('div').style.opacity='0'; div.querySelector('div').style.background='rgba(139,95,191,.0)'; };
-    div.onclick = () => applyStockImageAsBg(p.full, p.author);
+    div.onclick = () => {
+      slides[currentSlide].bgImg = p.full;
+      updateCanvasBg(); updateStripThumb(currentSlide); historySave();
+      const rb = document.getElementById('bgRemoveBtn'); if (rb) rb.style.display='inline-flex';
+      toast('✅ Foto aplicada — ✕ para quitarla','success');
+    };
     grid.appendChild(div);
   });
   bank.appendChild(grid);
@@ -3586,8 +3678,8 @@ function renderImgBank() {
 
   if (!imgBank.length) {
     const empty = document.createElement('div');
-    empty.style.cssText = 'grid-column:1/-1;text-align:center;padding:20px;color:var(--text3);font-size:12px;';
-    empty.textContent = 'Sube fotos para usarlas como fondo';
+    empty.style.cssText = 'text-align:center;padding:24px 12px;color:var(--text3);font-size:12px;line-height:1.6;';
+    empty.innerHTML = '<div style="font-size:28px;margin-bottom:8px;">📷</div><strong style="color:var(--text2);display:block;margin-bottom:4px;">Sin fotos cargadas</strong>Sube tus propias fotos para usarlas de fondo';
     bank.insertBefore(empty, existing);
     return;
   }
@@ -3607,7 +3699,9 @@ function renderImgBank() {
       updateCanvasBg();
       updateStripThumb(currentSlide);
       historySave();
-      toast('✅ Imagen aplicada al fondo','success');
+      const rb = document.getElementById('bgRemoveBtn');
+      if (rb) rb.style.display = 'inline-flex';
+      toast('✅ Imagen aplicada — toca ✕ Quitar para cambiarla','success');
     };
     // Delete button on hover
     const del = document.createElement('div');
@@ -3856,7 +3950,13 @@ function updateTopbarUser() {
   if (currentUser) {
     infoEl.style.display = 'flex';
     if (emailEl)  emailEl.textContent  = currentUser.email || '';
-    if (creditEl) creditEl.textContent = '⚡ ' + (currentUser.credits_remaining ?? '—');
+    if (creditEl) {
+      const cr = currentUser.credits_remaining ?? '—';
+      const du = currentUser.daily_usage_count ?? 0;
+      const dl = currentUser.plan_type === 'free' ? 2 : currentUser.plan_type === 'pro' ? 20 : 30;
+      creditEl.textContent = `⚡ ${cr}`;
+      creditEl.title = `${cr} créditos disponibles • Hoy: ${du}/${dl} análisis usados`;
+    }
   } else {
     infoEl.style.display = 'none';
   }
@@ -4597,6 +4697,26 @@ function renderBrandPanel() {
     `<span style="display:inline-block;width:16px;height:16px;border-radius:4px;background:linear-gradient(135deg,${c1},${c2});vertical-align:middle;margin-right:5px;border:1px solid rgba(255,255,255,.1);"></span><strong>Colores</strong> configurados<br>` +
     `✍️ <strong>Fuente:</strong> ${fn}<br>` +
     `${b.logo_url ? '🖼 <strong>Logo:</strong> ✅ Listo' : '🖼 <strong>Logo:</strong> Sin configurar (opcional)'}`;
+}
+
+async function uploadBrandLogoFromEditor(event) {
+  const file = event.target.files[0]; if (!file) return;
+  const token = localStorage.getItem('token');
+  if (!token) { toast('Inicia sesión primero','error'); return; }
+  try {
+    const fd = new FormData(); fd.append('logo', file);
+    const r = await fetch(API_URL+'/brand/logo', {method:'POST',headers:{Authorization:'Bearer '+token},body:fd});
+    const d = await r.json();
+    if (r.ok && d.logo_url) {
+      currentBrand = currentBrand || {};
+      currentBrand.logo_url = d.logo_url;
+      // Show preview thumb
+      const thumb = document.getElementById('edLogoPreviewThumb');
+      if (thumb) thumb.innerHTML = `<img src="${d.logo_url}" style="width:100%;height:100%;object-fit:contain;">`;
+      toast('✅ Logo actualizado','success');
+    } else { throw new Error(d.error||'Error'); }
+  } catch(e) { toast('Error subiendo logo: '+e.message,'error'); }
+  event.target.value='';
 }
 
 function applyBrandToCurrentSlide() {
