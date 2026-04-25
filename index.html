@@ -1395,13 +1395,15 @@ function updateCreditsBar() {
         ? 'linear-gradient(90deg,#F59E0B,#EF4444)'
         : 'linear-gradient(90deg,#EF4444,#DC2626)';
   }
-  if (usedLb) usedLb.textContent = `${used < 0 ? 0 : used} usados de ${limit} este mes`;
+  const dailyUsed  = currentUser?.daily_usage_count || 0;
+  const dailyLimit = plan === 'free' ? 2 : plan === 'pro' ? 20 : 30;
+  if (usedLb) usedLb.textContent = `${used < 0 ? 0 : used} usados de ${limit} este mes  •  Hoy: ${dailyUsed}/${dailyLimit}`;
 
   // Reset date: first day of next month
   if (resetLb) {
     const now   = new Date();
     // Calculate renewal based on subscription date (monthly from join date)
-    const joinDate = user.created_at ? new Date(user.created_at) : now;
+    const joinDate = currentUser?.created_at ? new Date(currentUser.created_at) : now;
     const renewDay = joinDate.getDate(); // Same day each month
     let renewDate = new Date(now.getFullYear(), now.getMonth(), renewDay);
     if (renewDate <= now) renewDate = new Date(now.getFullYear(), now.getMonth()+1, renewDay);
