@@ -1221,8 +1221,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
       <div id="edBrandEmpty" style="display:none;text-align:center;padding:20px;color:var(--text3);font-size:12px;line-height:1.6;">
         <div style="font-size:32px;margin-bottom:8px;">🎨</div>
         <div style="font-weight:700;color:var(--text2);margin-bottom:4px;">Sin marca configurada</div>
-        <div style="margin-bottom:12px;">Ve a Mi Marca en el menú principal para configurar colores, fuente y logo.</div>
-        <button onclick="goBack();setTimeout(()=>document.getElementById('brandTab')?.click(),300)" style="padding:8px 16px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Ir a Mi Marca →</button>
+        <div style="margin-bottom:12px;">Configura tus colores, fuente y logo aquí mismo.</div>
+        <button onclick="openBrandOverlay()" style="padding:8px 16px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">🎨 Configurar Mi Marca</button>
       </div>
 
       <!-- Con marca configurada -->
@@ -1249,6 +1249,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
           </div>
         </div>
 
+        <!-- Edit brand button -->
+        <button onclick="openBrandOverlay()" style="width:100%;padding:8px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;">✏️ Editar Mi Marca</button>
+
         <!-- Botones de acción -->
         <div style="font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">¿Dónde aplicar?</div>
         <button onclick="applyBrandToCurrentSlide()" style="width:100%;padding:11px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:6px;">
@@ -1264,6 +1267,77 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
           🎨 Colores de fondo (gradiente de tu marca)<br>
           ✍️ Fuente de todos los bloques de texto<br>
           🖼 Logo si está configurado
+        </div>
+      </div>
+    </div>
+
+    <!-- ── BRAND OVERLAY (accessible from editor) ── -->
+    <div id="brandOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:5000;overflow-y:auto;">
+      <div style="max-width:480px;margin:20px auto;background:var(--surf);border-radius:16px;padding:0;overflow:hidden;">
+        <!-- Header -->
+        <div style="padding:16px 20px;background:var(--grad);display:flex;align-items:center;justify-content:space-between;">
+          <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#fff;">🎨 Mi Marca</div>
+          <button onclick="closeBrandOverlay()" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.2);border:none;color:#fff;font-size:16px;cursor:pointer;">✕</button>
+        </div>
+        <div style="padding:20px;">
+          <!-- Colors -->
+          <div style="margin-bottom:16px;">
+            <div style="font-size:11px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">🎨 Colores de marca</div>
+            <div style="display:flex;gap:12px;align-items:center;">
+              <div style="flex:1;">
+                <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Principal</div>
+                <div style="display:flex;align-items:center;gap:8px;padding:8px;background:var(--surf2);border-radius:8px;border:1px solid var(--border2);cursor:pointer;" onclick="document.getElementById('ovColor1').click()">
+                  <div id="ovColor1Swatch" style="width:24px;height:24px;border-radius:5px;background:#8B5FBF;flex-shrink:0;"></div>
+                  <span id="ovColor1Text" style="font-size:12px;color:var(--text2);">#8B5FBF</span>
+                  <input type="color" id="ovColor1" value="#8B5FBF" style="display:none" oninput="onOvColor1Change()">
+                </div>
+              </div>
+              <div style="flex:1;">
+                <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Secundario</div>
+                <div style="display:flex;align-items:center;gap:8px;padding:8px;background:var(--surf2);border-radius:8px;border:1px solid var(--border2);cursor:pointer;" onclick="document.getElementById('ovColor2').click()">
+                  <div id="ovColor2Swatch" style="width:24px;height:24px;border-radius:5px;background:#E91E8C;flex-shrink:0;"></div>
+                  <span id="ovColor2Text" style="font-size:12px;color:var(--text2);">#E91E8C</span>
+                  <input type="color" id="ovColor2" value="#E91E8C" style="display:none" oninput="onOvColor2Change()">
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Font -->
+          <div style="margin-bottom:16px;">
+            <div style="font-size:11px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">✍️ Fuente</div>
+            <select id="ovFontSelect" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border2);background:var(--surf2);color:var(--text);font-size:13px;font-family:inherit;" onchange="onOvFontChange()">
+              <option value="DM Sans">DM Sans</option>
+              <option value="Syne">Syne</option>
+              <option value="Inter">Inter</option>
+              <option value="Playfair Display">Playfair Display</option>
+              <option value="Montserrat">Montserrat</option>
+              <option value="Oswald">Oswald</option>
+              <option value="Raleway">Raleway</option>
+              <option value="Poppins">Poppins</option>
+            </select>
+          </div>
+          <!-- Logo -->
+          <div style="margin-bottom:16px;">
+            <div style="font-size:11px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">🏷 Logo</div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div id="ovLogoPreview" style="width:56px;height:56px;border-radius:10px;background:var(--surf2);border:1.5px dashed var(--border2);display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden;flex-shrink:0;">🏷</div>
+              <button onclick="document.getElementById('ovLogoInput').click()" style="flex:1;padding:10px;border-radius:8px;border:1.5px dashed var(--border2);background:transparent;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">📷 Subir logo (PNG transparente)</button>
+              <input type="file" id="ovLogoInput" accept="image/*" style="display:none" onchange="onOvLogoUpload(event)">
+            </div>
+          </div>
+          <!-- Preview -->
+          <div style="margin-bottom:16px;">
+            <div style="font-size:11px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">👁 Vista previa</div>
+            <div id="ovPreview" style="border-radius:12px;overflow:hidden;aspect-ratio:4/5;position:relative;background:linear-gradient(135deg,#8B5FBF,#E91E8C);">
+              <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center;">
+                <img id="ovPreviewLogo" src="" style="width:40px;height:40px;object-fit:contain;margin-bottom:8px;display:none;">
+                <div id="ovPreviewText" style="font-size:20px;font-weight:800;color:#fff;font-family:'DM Sans',sans-serif;">Tu hook aquí</div>
+                <div id="ovPreviewSub" style="font-size:13px;color:rgba(255,255,255,.8);margin-top:6px;font-family:'DM Sans',sans-serif;">Descripción de tu contenido</div>
+              </div>
+            </div>
+          </div>
+          <!-- Save button -->
+          <button onclick="saveBrandOverlay()" style="width:100%;padding:14px;border-radius:10px;background:var(--grad);border:none;color:#fff;font-size:14px;font-weight:800;cursor:pointer;font-family:'Syne',sans-serif;">✅ Guardar Mi Marca</button>
         </div>
       </div>
     </div>
@@ -1903,6 +1977,23 @@ function addLogoBlock(event) {
   };
   reader.readAsDataURL(file);
   event.target.value = '';
+}
+
+function addImageBlock_url(dataUrl, opts) {
+  // Add image block to canvas from a data URL or external URL
+  const id   = 'blk_' + Date.now();
+  const sl   = slides[currentSlide];
+  const blk  = {
+    id, type:'image', src: dataUrl,
+    x: opts?.x ?? 5, y: opts?.y ?? 5,
+    w: opts?.w ?? 40, h: opts?.h ?? 40,
+  };
+  sl.blocks = sl.blocks || [];
+  sl.blocks.push(blk);
+  makeImageBlock(blk);
+  updateStripThumb(currentSlide);
+  historySave();
+  return id;
 }
 
 function addImageBlock(event) {
@@ -3970,6 +4061,104 @@ function showHelp() {
 function goBack() {
   autoSaveToLocal();
   window.location.href='index.html';
+}
+
+/* ══ BRAND OVERLAY ══ */
+function openBrandOverlay() {
+  const ov = document.getElementById('brandOverlay');
+  if (!ov) return;
+  // Pre-fill with current brand
+  if (currentBrand) {
+    const c1 = currentBrand.color_primary   || '#8B5FBF';
+    const c2 = currentBrand.color_secondary || '#E91E8C';
+    const fn = currentBrand.font_name       || 'DM Sans';
+    document.getElementById('ovColor1').value = c1;
+    document.getElementById('ovColor2').value = c2;
+    document.getElementById('ovColor1Swatch').style.background = c1;
+    document.getElementById('ovColor2Swatch').style.background = c2;
+    document.getElementById('ovColor1Text').textContent = c1;
+    document.getElementById('ovColor2Text').textContent = c2;
+    document.getElementById('ovFontSelect').value = fn;
+    if (currentBrand.logo_url) {
+      const lp = document.getElementById('ovLogoPreview');
+      if (lp) lp.innerHTML = `<img src="${currentBrand.logo_url}" style="width:100%;height:100%;object-fit:contain;">`;
+    }
+    updateOvPreview();
+  }
+  ov.style.display = 'block';
+}
+
+function closeBrandOverlay() {
+  const ov = document.getElementById('brandOverlay');
+  if (ov) ov.style.display = 'none';
+}
+
+function updateOvPreview() {
+  const c1 = document.getElementById('ovColor1').value;
+  const c2 = document.getElementById('ovColor2').value;
+  const fn = document.getElementById('ovFontSelect').value;
+  const prev = document.getElementById('ovPreview');
+  if (prev) prev.style.background = `linear-gradient(135deg,${c1},${c2})`;
+  const pt = document.getElementById('ovPreviewText');
+  const ps = document.getElementById('ovPreviewSub');
+  if (pt) pt.style.fontFamily = `'${fn}',sans-serif`;
+  if (ps) ps.style.fontFamily = `'${fn}',sans-serif`;
+}
+
+function onOvColor1Change() {
+  const v = document.getElementById('ovColor1').value;
+  document.getElementById('ovColor1Swatch').style.background = v;
+  document.getElementById('ovColor1Text').textContent = v;
+  updateOvPreview();
+}
+function onOvColor2Change() {
+  const v = document.getElementById('ovColor2').value;
+  document.getElementById('ovColor2Swatch').style.background = v;
+  document.getElementById('ovColor2Text').textContent = v;
+  updateOvPreview();
+}
+function onOvFontChange() { updateOvPreview(); }
+
+async function onOvLogoUpload(event) {
+  const file = event.target.files[0]; if (!file) return;
+  const token = localStorage.getItem('token');
+  if (!token) { toast('Inicia sesión primero','error'); return; }
+  try {
+    const fd = new FormData(); fd.append('logo', file);
+    const r  = await fetch(API_URL+'/brand/logo',{method:'POST',headers:{Authorization:'Bearer '+token},body:fd});
+    const d  = await r.json();
+    if (r.ok && d.logo_url) {
+      const lp = document.getElementById('ovLogoPreview');
+      if (lp) lp.innerHTML = `<img src="${d.logo_url}" style="width:100%;height:100%;object-fit:contain;">`;
+      const pl = document.getElementById('ovPreviewLogo');
+      if (pl) { pl.src=d.logo_url; pl.style.display='block'; }
+      if (!currentBrand) currentBrand = {};
+      currentBrand.logo_url = d.logo_url;
+      toast('✅ Logo subido','success');
+    }
+  } catch(err) { toast('Error: '+err.message,'error'); }
+  event.target.value='';
+}
+
+async function saveBrandOverlay() {
+  const token = localStorage.getItem('token');
+  if (!token) { toast('Inicia sesión primero','error'); return; }
+  const c1 = document.getElementById('ovColor1').value;
+  const c2 = document.getElementById('ovColor2').value;
+  const fn = document.getElementById('ovFontSelect').value;
+  try {
+    const r = await fetch(API_URL+'/brand',{
+      method:'PUT',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body: JSON.stringify({color_primary:c1,color_secondary:c2,font_name:fn})
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error||'Error');
+    currentBrand = {...(currentBrand||{}), color_primary:c1, color_secondary:c2, font_name:fn};
+    renderBrandPanel();
+    closeBrandOverlay();
+    toast('✅ Marca guardada y aplicada','success');
+  } catch(err) { toast('Error: '+err.message,'error'); }
 }
 
 async function regenerateFromEditor() {
