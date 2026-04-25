@@ -75,14 +75,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 
 /* Instagram phone preview */
 .ig-phone{
-  position:relative;flex:1;display:flex;align-items:center;justify-content:center;
-  width:100%;overflow:hidden;
+  position:relative;flex:1;display:flex;align-items:flex-start;justify-content:center;
+  width:100%;overflow-y:auto;overflow-x:hidden;padding-bottom:8px;
 }
+.ig-phone::-webkit-scrollbar{width:3px;}
+.ig-phone::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:2px;}
 .ig-frame{
   position:relative;display:flex;flex-direction:column;
   background:#000;border-radius:18px;overflow:hidden;
   box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.08);
-  max-height:100%;
+  width:100%;
 }
 .ig-topbar{
   display:flex;align-items:center;gap:8px;padding:8px 12px;
@@ -113,7 +115,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 .ig-action-icons span{font-size:20px;opacity:.9;}
 .ig-bookmark{font-size:20px;opacity:.9;}
 .ig-likes{font-size:12px;font-weight:700;color:#fff;padding:0 12px 6px;background:#000;}
-.ig-caption-preview{font-size:11px;color:rgba(255,255,255,.85);padding:4px 12px 10px;background:#000;line-height:1.55;max-height:64px;overflow-y:auto;cursor:pointer;border-top:1px solid rgba(255,255,255,.08);}
+.ig-caption-preview{font-size:12px;color:rgba(255,255,255,.85);padding:6px 12px 12px;background:#000;line-height:1.6;max-height:64px;overflow:hidden;cursor:pointer;border-top:1px solid rgba(255,255,255,.08);}
 .ig-caption-preview::-webkit-scrollbar{width:2px;}
 .ig-caption-preview::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);}
 
@@ -381,8 +383,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 
 /* BLOCKS */
 .eblock{
-  position:absolute;cursor:move;user-select:none;min-width:30px;min-height:20px;
+  position:absolute;cursor:pointer;user-select:none;min-width:30px;min-height:20px;
+  transition:outline .1s;
 }
+.eblock:hover{outline:1.5px dashed rgba(139,95,191,.5);}
+.eblock.dragging{cursor:grabbing !important;}
 .eblock-inner{position:relative;width:100%;height:100%;}
 .eblock.selected>.eblock-inner::after{
   content:'';position:absolute;inset:-2px;border:2px solid var(--brand);
@@ -874,10 +879,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   <!-- Acciones -->
   <button class="tb-btn" id="undoBtn" onclick="historyUndo()" title="Deshacer (Ctrl+Z)" style="opacity:.35;">↩</button>
   <button class="tb-btn" id="redoBtn" onclick="historyRedo()" title="Rehacer (Ctrl+Y)" style="opacity:.35;">↪</button>
-  <button class="tb-btn" onclick="addTextBlock('Texto')" title="Añadir texto (doble clic en canvas)">T+</button>
-  <button class="tb-btn" onclick="document.getElementById('imgBlockInput').click()" title="Añadir imagen al canvas">🖼</button>
-  <input type="file" id="imgBlockInput" accept="image/*" style="display:none" onchange="addImageBlock(event)">
   <button class="tb-btn" onclick="toggleGrid()" id="gridBtn" title="Cuadrícula">⊞</button>
+  <input type="file" id="imgBlockInput" accept="image/*" style="display:none" onchange="addImageBlock(event)">
   <button class="tb-btn" onclick="openDesignsModal()" title="Guardar diseño">💾 <span>Guardar</span></button>
   <span id="autoSaveLabel" style="font-size:10px;color:var(--text3);display:none;flex-shrink:0;">⏱</span>
   <button class="tb-btn" onclick="showHelp()" title="Ayuda">❓</button>
@@ -932,11 +935,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
         <div class="ig-likes">
           <strong style="color:#fff;">248 Me gusta</strong>
         </div>
-        <div class="ig-caption-preview" id="igCaptionPreview" 
-             onclick="this.style.maxHeight=this.style.maxHeight==='none'?'80px':'none';this.style.overflow=this.style.overflow==='visible'?'auto':'visible';"
-             title="Clic para expandir">
-          <strong style="color:#fff;" id="igCaptionUser">tu_usuario</strong>
-          <span id="igCaptionText"> Añade tu caption en el panel →</span>
+        <div class="ig-caption-preview" id="igCaptionPreview"
+             onclick="expandCaptionPreview()"
+             title="Clic para ver más">
+          <div style="display:flex;gap:6px;align-items:flex-start;">
+            <strong style="color:#fff;white-space:nowrap;" id="igCaptionUser">tu_usuario</strong>
+            <span id="igCaptionText" style="color:rgba(255,255,255,.85);"> Usa un caption del panel →</span>
+          </div>
         </div>
 
       </div>
@@ -945,8 +950,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
     <!-- Slide strip -->
     <div class="slide-strip" id="slideStrip"></div>
 
-    <!-- BG controls (desktop) -->
-    <div class="bg-controls" id="bgControls">
+    <!-- BG controls (desktop) — hidden, moved to design tab -->
+    <div class="bg-controls" id="bgControlsHidden" style="display:none;">
       <div class="bgc-row">
         <!-- Img button -->
         <button class="bgc-img-btn" onclick="document.getElementById('bgImgInput').click()" title="Imagen de fondo">📷</button>
@@ -1106,7 +1111,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
       <div class="ia-tab active" data-tab="content" onclick="switchIaTab('content')">✍️ Contenido</div>
       <div class="ia-tab"        data-tab="design"  onclick="switchIaTab('design')">🎨 Diseño</div>
       <div class="ia-tab"        data-tab="brand"   onclick="switchIaTab('brand')">🏷 Marca</div>
-      <div class="ia-tab"        data-tab="cop"     onclick="switchIaTab('cop')" id="copTab">🤖 IA</div>
+
     </div>
 
     <!-- ── TAB: CONTENIDO ── -->
@@ -1128,61 +1133,72 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 
     <!-- ── TAB: DISEÑO ── -->
     <div id="iaDesign" style="display:none;flex-direction:column;height:100%;overflow:hidden;">
-      <!-- Templates container (hidden, used by renderTemplates) -->
       <div id="tplContent" style="display:none;"></div>
-      <!-- Miniaturas de fondo -->
-      <div style="padding:10px 10px 6px;font-size:11px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;flex-shrink:0;">
-        🖼 Elige un fondo
-      </div>
-      <div id="bgThumbsRow" style="display:flex;gap:8px;padding:0 10px 10px;flex-shrink:0;">
-        <!-- 3 miniaturas generadas -->
-      </div>
-      <!-- Controles de fondo -->
-      <div class="bg-controls" id="bgControls" style="flex-shrink:0;">
-        <div class="bgc-row">
-          <button class="bgc-img-btn" onclick="document.getElementById('bgImgInput').click()" title="Cargar imagen">📷 Cargar imagen</button>
-          <input type="file" id="bgImgInput" accept="image/*" style="display:none" onchange="loadBgImage(event)">
-          <button class="bgc-remove-btn" id="bgRemoveBtn" onclick="removeBgImage()" style="display:none;" title="Quitar">✕</button>
-        </div>
-        <div class="bgc-row" style="margin-top:8px;">
-          <span style="font-size:11px;color:var(--text3);font-weight:700;min-width:44px;">Colores</span>
-          <div class="bgc-swatch" id="bg1Swatch" style="background:#7C3AED;">
+      <div style="flex:1;overflow-y:auto;padding:10px;">
+
+        <!-- SECCIÓN 1: GRADIENTES -->
+        <div style="font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">🎨 Color de fondo</div>
+        <div id="bgThumbsRow" style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px;"></div>
+
+        <!-- Pickers de color custom -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:8px;background:var(--surf2);border-radius:var(--r);border:1px solid var(--border2);">
+          <span style="font-size:11px;color:var(--text3);flex:1;">Color personalizado</span>
+          <div class="bgc-swatch" id="bg1Swatch" style="background:#7C3AED;" title="Color 1">
             <input type="color" id="bg1Input" value="#7C3AED" oninput="onBgColorChange()">
           </div>
-          <div class="bgc-swatch" id="bg2Swatch" style="background:#F43F5E;">
+          <div class="bgc-swatch" id="bg2Swatch" style="background:#F43F5E;" title="Color 2">
             <input type="color" id="bg2Input" value="#F43F5E" oninput="onBgColorChange()">
           </div>
-          <div id="bgPresetRow" class="bgc-presets"></div>
         </div>
-        <div class="bgc-slider-row" style="margin-top:6px;">
-          <span class="bgc-slider-lbl">🌑 Oscurecer</span>
-          <input type="range" class="bgc-slider" id="overlaySlider" min="0" max="90" value="0" oninput="onOverlayChange()" style="width:100px;">
-          <span class="bgc-slider-val" id="overlayVal">0%</span>
+
+        <!-- SECCIÓN 2: IMAGEN DE FONDO -->
+        <div style="font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;margin-top:4px;">🖼 Imagen de fondo</div>
+
+        <!-- Ajustes: oscurecer y opacidad — SIEMPRE visibles -->
+        <div style="background:var(--surf2);border-radius:var(--r);border:1px solid var(--border2);padding:8px 10px;margin-bottom:8px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <span style="font-size:11px;color:var(--text3);min-width:70px;">🌑 Oscurecer</span>
+            <input type="range" id="overlaySlider" min="0" max="90" value="0" oninput="onOverlayChange()" style="flex:1;accent-color:var(--brand);">
+            <span id="overlayVal" style="font-size:11px;color:var(--text2);min-width:30px;">0%</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:11px;color:var(--text3);min-width:70px;">◻ Opacidad</span>
+            <input type="range" id="opacitySlider" min="10" max="100" value="100" oninput="onBgOpacityChange()" style="flex:1;accent-color:var(--brand);">
+            <span id="opacityVal" style="font-size:11px;color:var(--text2);min-width:30px;">100%</span>
+          </div>
         </div>
-        <div class="bgc-slider-row" style="margin-top:4px;">
-          <span class="bgc-slider-lbl">◻️ Opacidad</span>
-          <input type="range" class="bgc-slider" id="opacitySlider" min="10" max="100" value="100" oninput="onBgOpacityChange()" style="width:100px;">
-          <span class="bgc-slider-val" id="opacityVal">100%</span>
+
+        <!-- Cargar imagen propia -->
+        <div style="display:flex;gap:6px;margin-bottom:10px;">
+          <button onclick="document.getElementById('bgImgInput').click()" style="flex:1;padding:8px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">📷 Cargar mi imagen</button>
+          <button id="bgRemoveBtn" onclick="removeBgImage()" style="display:none;padding:8px 12px;border-radius:var(--r);border:1px solid rgba(248,113,113,.3);background:rgba(248,113,113,.1);color:#F87171;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">✕ Quitar</button>
         </div>
-      </div>
-      <!-- Banco de imágenes -->
-      <div style="padding:8px 10px 4px;font-size:11px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;flex-shrink:0;">
-        🌐 Banco de imágenes
-      </div>
-      <div style="display:flex;gap:6px;padding:0 10px 8px;flex-shrink:0;">
-        <div class="img-bank-tab active" id="tabPexels"   onclick="switchImgTab('pexels')"   style="flex:1;padding:5px;border-radius:6px;border:1px solid var(--border2);background:var(--surf2);font-size:11px;font-weight:700;text-align:center;cursor:pointer;color:var(--text2);">Pexels</div>
-        <div class="img-bank-tab"        id="tabUnsplash" onclick="switchImgTab('unsplash')" style="flex:1;padding:5px;border-radius:6px;border:1px solid var(--border2);background:var(--surf2);font-size:11px;font-weight:700;text-align:center;cursor:pointer;color:var(--text2);">Unsplash</div>
-        <div class="img-bank-tab"        id="tabMine"     onclick="switchImgTab('mine')"     style="flex:1;padding:5px;border-radius:6px;border:1px solid var(--border2);background:var(--surf2);font-size:11px;font-weight:700;text-align:center;cursor:pointer;color:var(--text2);">Mis fotos</div>
-      </div>
-      <div class="img-search-row" id="imgSearchRow" style="padding:0 10px 8px;display:flex;gap:6px;flex-shrink:0;">
-        <input type="text" class="img-search-input" id="imgSearchInput" placeholder="Buscar fotos…" onkeydown="if(event.key==='Enter')searchStockImages()">
-        <button class="img-search-btn" onclick="searchStockImages()">🔍</button>
-      </div>
-      <div class="img-bank" id="imgBank" style="flex:1;overflow-y:auto;padding:0 10px 10px;">
-        <div class="img-bank-spinner">Busca un tema…</div>
-      </div>
-      <div class="img-bank-credit" id="imgBankCredit" style="padding:4px 10px;font-size:9px;color:var(--text3);text-align:center;flex-shrink:0;">Fotos de <strong>Pexels</strong> — gratis para uso comercial</div>
-      <input type="file" id="bankUploadInput" accept="image/*" multiple style="display:none" onchange="uploadToBank(event)">
+        <input type="file" id="bgImgInput" accept="image/*" style="display:none" onchange="loadBgImage(event)">
+
+        <!-- SECCIÓN 3: BANCO DE IMÁGENES -->
+        <div style="font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">🌐 Buscar foto de fondo</div>
+
+        <!-- Tabs Pexels/Unsplash/Mis fotos -->
+        <div style="display:flex;gap:4px;margin-bottom:8px;">
+          <div id="tabPexels"   onclick="switchImgTab('pexels')"   class="img-bank-tab active" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border2);background:var(--surf2);font-size:11px;font-weight:700;text-align:center;cursor:pointer;">Pexels</div>
+          <div id="tabUnsplash" onclick="switchImgTab('unsplash')" class="img-bank-tab"        style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border2);background:var(--surf2);font-size:11px;font-weight:700;text-align:center;cursor:pointer;">Unsplash</div>
+          <div id="tabMine"     onclick="switchImgTab('mine')"     class="img-bank-tab"        style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border2);background:var(--surf2);font-size:11px;font-weight:700;text-align:center;cursor:pointer;">Mis fotos</div>
+        </div>
+
+        <!-- Buscador -->
+        <div id="imgSearchRow" style="display:flex;gap:6px;margin-bottom:8px;">
+          <input type="text" class="img-search-input" id="imgSearchInput" placeholder="Buscar fotos…" style="flex:1;" onkeydown="if(event.key==='Enter')searchStockImages()">
+          <button class="img-search-btn" onclick="searchStockImages()">🔍</button>
+        </div>
+
+        <!-- Grid de fotos — más grandes, 2 columnas -->
+        <div id="imgBank" style="min-height:200px;">
+          <div class="img-bank-spinner">Busca un tema…</div>
+        </div>
+        <div id="imgBankCredit" style="font-size:9px;color:var(--text3);text-align:center;margin-top:4px;">Fotos de <strong>Pexels</strong> — gratis para uso comercial</div>
+        <input type="file" id="bankUploadInput" accept="image/*" multiple style="display:none" onchange="uploadToBank(event)">
+
+      </div><!-- /scroll area -->
     </div>
 
     <!-- ── TAB: MARCA ── -->
@@ -1408,7 +1424,7 @@ window.addEventListener('DOMContentLoaded', () => {
 function setupMobileDetect() {
   const isMobile = window.innerWidth <= 700;
   if (isMobile) {
-    document.getElementById('bgControls').style.display = 'none';
+    document.getElementById('bgControlsHidden').style.display = 'none';
     document.getElementById('bgControlsMobile').style.display = 'block';
   }
 }
@@ -2503,21 +2519,18 @@ function copPreFill(msg) {
 /* ══ IA PANEL ══ */
 function switchIaTab(tab) {
   document.querySelectorAll('.ia-tab').forEach(t => t.classList.toggle('active', t.dataset.tab===tab));
-  const ids = { content:'iaContent', design:'iaDesign', brand:'iaBrand', cop:'iaCop' };
+  const ids = { content:'iaContent', design:'iaDesign', brand:'iaBrand' };
   Object.entries(ids).forEach(([k,id]) => {
     const el = document.getElementById(id);
     if (!el) return;
-    if (k === tab) {
-      el.style.display = 'flex';
-      el.style.flexDirection = 'column';
-    } else {
-      el.style.display = 'none';
-    }
+    el.style.display = k===tab ? 'flex' : 'none';
+    if (k===tab) el.style.flexDirection = 'column';
   });
+  // Hide tooltips when leaving content tab
+  if (tab !== 'content') document.querySelectorAll('.tt-bubble').forEach(e=>e.remove());
   if (tab === 'content') { renderContentPanel(); }
   if (tab === 'design')  { renderDesignPanel(); }
   if (tab === 'brand')   { renderBrandPanel(); }
-  if (tab === 'cop')     { setTimeout(scrollCopMessages, 50); }
 }
 
 function renderIAPanel() {
@@ -2658,8 +2671,11 @@ function renderPostContentPanel(container) {
       const capEl = document.getElementById('capFull');
       if (capEl) { capEl.value = cap; captionFull = cap; updateCaptionPreview(); }
       // Hook (primera línea) al canvas
-      const fl = cap.split('\n')[0].trim();
-      if (fl) replaceOrAddBlock('hook-block', fl, {y:8,w:88,x:6,fontSize:32,bold:true,color:currentBrand?.font_color||'#fff',align:'center'});
+      // Hook = primera oración visible en Instagram (antes de "ver más")
+      const _firstLine = cap.split('\n')[0].trim();
+      const _sentEnd = _firstLine.search(/[.!?]/);
+      const fl = (_sentEnd > 20 && _sentEnd < 120) ? _firstLine.substring(0, _sentEnd+1).trim() : _firstLine.substring(0,125).trim();
+      if (fl) replaceOrAddBlock('hook-block', fl, {y:8,w:88,x:6,fontSize:28,bold:true,color:currentBrand?.font_color||'#fff',align:'center'});
       useBtn.textContent = '✅ Caption aplicado';
       useBtn.style.background = '#10B981';
       setTimeout(()=>{ useBtn.textContent='✅ Usar este caption'; useBtn.style.background='var(--grad)'; },1500);
@@ -2716,15 +2732,35 @@ function renderPostContentPanel(container) {
     container.appendChild(sec3);
   }
 
-  // ── Botón Regenerar ──
+  // ── Botón Regenerar + Copiloto IA expandible ──
   const regenSec = document.createElement('div');
   regenSec.style.cssText = 'margin-top:12px;padding-top:12px;border-top:1px solid var(--border);';
+
+  // Regenerar
   const regenBtn = document.createElement('button');
-  regenBtn.style.cssText = 'width:100%;padding:10px;border-radius:var(--r);border:1.5px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;';
+  regenBtn.style.cssText = 'width:100%;padding:10px;border-radius:var(--r);border:1.5px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;margin-bottom:8px;';
   regenBtn.innerHTML = '🔄 Regenerar contenido (-1 crédito)';
   regenBtn.onclick = () => regenerateFromEditor();
-  container.appendChild(regenSec);
   regenSec.appendChild(regenBtn);
+
+  // Copiloto IA expandible
+  const copBtn = document.createElement('button');
+  copBtn.style.cssText = 'width:100%;padding:10px;border-radius:var(--r);background:rgba(139,95,191,.15);border:1.5px solid rgba(139,95,191,.4);color:var(--brand);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;';
+  copBtn.innerHTML = '🤖 Mejorar con IA Copiloto';
+  let copOpen = false;
+  const copPanel = document.createElement('div');
+  copPanel.style.cssText = 'display:none;margin-top:8px;border:1px solid var(--border2);border-radius:var(--rlg);overflow:hidden;';
+  copPanel.innerHTML = document.getElementById('iaCop')?.innerHTML || '<div style="padding:12px;font-size:12px;color:var(--text3);">Copiloto no disponible</div>';
+  // Wire up the send button in inline cop panel
+  copBtn.onclick = () => {
+    copOpen = !copOpen;
+    copPanel.style.display = copOpen ? 'block' : 'none';
+    copBtn.style.background = copOpen ? 'rgba(139,95,191,.3)' : 'rgba(139,95,191,.15)';
+    if (copOpen) setTimeout(scrollCopMessages, 100);
+  };
+  regenSec.appendChild(copBtn);
+  regenSec.appendChild(copPanel);
+  container.appendChild(regenSec);
 
   // Hashtags + caption
   renderCaptionTab();
@@ -2829,8 +2865,10 @@ function renderCarouselContentPanel(container) {
       const cap2 = captions[capIdx];
       const ce=document.getElementById('capFull');
       if(ce){ce.value=cap2;captionFull=cap2;updateCaptionPreview();}
-      const fl2 = cap2.split('\n')[0].trim();
-      if(fl2) replaceOrAddBlock('hook-block',fl2,{y:8,w:88,x:6,fontSize:32,bold:true,color:currentBrand?.font_color||'#fff',align:'center'});
+      const _fl2 = cap2.split('\n')[0].trim();
+      const _se2 = _fl2.search(/[.!?]/);
+      const fl2 = (_se2>20&&_se2<120) ? _fl2.substring(0,_se2+1).trim() : _fl2.substring(0,125).trim();
+      if(fl2) replaceOrAddBlock('hook-block',fl2,{y:8,w:88,x:6,fontSize:28,bold:true,color:currentBrand?.font_color||'#fff',align:'center'});
       toast('✅ Hook en canvas + caption aplicado','success');
     };
     navB2.appendChild(bP2); navB2.appendChild(bN2);
@@ -2943,10 +2981,10 @@ function renderDesignPanel() {
       ['#D97706','#DC2626','Fuego'],
     ];
     thumbsRow.innerHTML = '';
-    thumbsRow.style.cssText = 'display:flex;gap:6px;padding:0 10px 10px;flex-shrink:0;overflow-x:auto;';
+    thumbsRow.style.cssText = 'display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px;';
     presets.forEach(([c1,c2,label]) => {
       const div = document.createElement('div');
-      div.style.cssText = `min-width:60px;height:80px;border-radius:10px;background:linear-gradient(135deg,${c1},${c2});cursor:pointer;border:2px solid transparent;transition:all .15s;position:relative;flex-shrink:0;`;
+      div.style.cssText = `aspect-ratio:2/3;border-radius:10px;background:linear-gradient(135deg,${c1},${c2});cursor:pointer;border:2px solid transparent;transition:all .15s;position:relative;`;
       div.innerHTML = `<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.5);font-size:8px;font-weight:700;color:#fff;padding:3px;text-align:center;border-radius:0 0 8px 8px;">${label}</div>`;
       div.onclick = () => {
         thumbsRow.querySelectorAll('div').forEach(d => d.style.borderColor='transparent');
@@ -3283,15 +3321,34 @@ function onCaptionInput() {
 }
 
 function updateCaptionPreview() {
-  // Update IG frame caption
   const preview = document.getElementById('igCaptionText');
   if (preview) {
-    const short = captionFull.substring(0,120) + (captionFull.length>120?'…':'');
-    preview.textContent = ' ' + (short || 'Añade tu caption en el panel →');
+    if (!captionFull) {
+      preview.textContent = ' Usa un caption del panel →';
+      preview.style.color = 'rgba(255,255,255,.4)';
+    } else {
+      const short = captionFull.substring(0,125) + (captionFull.length>125?'…':'');
+      preview.textContent = ' ' + short;
+      preview.style.color = 'rgba(255,255,255,.85)';
+    }
   }
-  // Sync captionFixed textarea
   const capEl = document.getElementById('capFull');
   if (capEl && capEl.value !== captionFull) capEl.value = captionFull;
+}
+
+function expandCaptionPreview() {
+  const prev = document.getElementById('igCaptionPreview');
+  if (!prev) return;
+  const isExpanded = prev.dataset.expanded === '1';
+  if (isExpanded) {
+    prev.style.maxHeight = '64px';
+    prev.style.overflow  = 'hidden';
+    prev.dataset.expanded = '0';
+  } else {
+    prev.style.maxHeight = 'none';
+    prev.style.overflow  = 'visible';
+    prev.dataset.expanded = '1';
+  }
 }
 
 // Update the section previews in caption tab
@@ -3436,10 +3493,10 @@ function renderStockPage() {
 
   // Photo grid — 2 columns
   const grid = document.createElement('div');
-  grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px;';
+  grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;';
   pagePhotos.forEach(p => {
     const div = document.createElement('div');
-    div.style.cssText = 'aspect-ratio:1;border-radius:8px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:all .12s;background:var(--surf2);position:relative;';
+    div.style.cssText = 'aspect-ratio:4/5;border-radius:8px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:all .12s;background:var(--surf2);position:relative;';
     div.innerHTML = `<img src="${p.thumb}" loading="lazy" alt="${p.author}" style="width:100%;height:100%;object-fit:cover;display:block;">
       <div style="position:absolute;inset:0;background:rgba(139,95,191,.0);transition:.15s;display:flex;align-items:center;justify-content:center;font-size:24px;opacity:0;">+</div>`;
     div.onmouseenter = () => { div.querySelector('div').style.opacity='1'; div.querySelector('div').style.background='rgba(139,95,191,.5)'; };
@@ -3538,7 +3595,7 @@ function renderImgBank() {
   imgBank.forEach(img => {
     const div = document.createElement('div');
     div.className = 'img-bank-item';
-    div.style.cssText = 'aspect-ratio:1;border-radius:8px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:all .12s;background:var(--surf2);position:relative;';
+    div.style.cssText = 'aspect-ratio:4/5;border-radius:8px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:all .12s;background:var(--surf2);position:relative;';
     const im = document.createElement('img');
     im.src = img.url; im.loading='lazy';
     im.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
@@ -4592,7 +4649,6 @@ function initCopiloto() {
   _copAnalysisId = iaData?.id || iaData?.analysis_id || null;
   if (!_copAnalysisId) {
     // Hide cop tab if no analysis
-    const tab = document.getElementById('copTab');
     if (tab) tab.style.display = 'none';
   }
 }
