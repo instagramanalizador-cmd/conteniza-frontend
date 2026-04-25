@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Conteniza Editor</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&family=Montserrat:wght@400;600;700;800&family=Poppins:wght@400;600;700&family=Playfair+Display:wght@400;700&family=Raleway:wght@400;600;700&family=Oswald:wght@400;600;700&family=Lato:wght@400;700&family=Roboto:wght@400;700&family=Inter:wght@400;600;700&family=Nunito:wght@400;600;700&family=Bebas+Neue&family=Abril+Fatface&family=Space+Grotesk:wght@400;600;700&family=Unbounded:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&family=Montserrat:wght@400;600;700;800&family=Poppins:wght@400;600;700;800&family=Playfair+Display:wght@400;600;700;800&family=Raleway:wght@400;600;700;800&family=Oswald:wght@400;600;700;800&family=Lato:wght@400;600;700;800&family=Roboto:wght@400;600;700;800&family=Inter:wght@400;600;700;800&family=Nunito:wght@400;600;700;800&family=Bebas+Neue:wght@400;600;700;800&family=Abril+Fatface:wght@400;600;700;800&family=Space+Grotesk:wght@400;600;700;800&family=Unbounded:wght@400;600;700;800&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -980,10 +980,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
         <button class="bgc-remove-btn" id="bgRemoveBtnH" onclick="removeBgImage()" style="display:none;" title="Quitar imagen">✕</button>
         <!-- Color swatches -->
         <div class="bgc-swatch" id="bg1SwatchH" style="background:#7C3AED;" title="Color 1">
-          <input type="color" id="bg1InputH" value="#7C3AED" oninput="onBgColorChange()">
+          <input type="color" id="bg1InputH" value="#7C3AED">
         </div>
         <div class="bgc-swatch" id="bg2SwatchH" style="background:#F43F5E;" title="Color 2">
-          <input type="color" id="bg2InputH" value="#F43F5E" oninput="onBgColorChange()">
+          <input type="color" id="bg2InputH" value="#F43F5E">
         </div>
         <!-- Presets inline -->
         <div id="bgPresetRow" class="bgc-presets"></div>
@@ -2217,6 +2217,7 @@ function applyPropFont() {
   const el = document.getElementById(selectedId); if (!el) return;
   const ta = el.querySelector('.eblock-text'); if (!ta) return;
   ta.style.fontFamily = `'${document.getElementById('propFont').value}', sans-serif`;
+  setTimeout(historySave, 100);
 }
 
 function applyPropSize() {
@@ -2240,12 +2241,14 @@ function toggleProp(style) {
   if (style==='bold')      { const on = ta.style.fontWeight==='700'; ta.style.fontWeight = on?'400':'700'; document.getElementById('propBold').classList.toggle('active',!on); }
   if (style==='italic')    { const on = ta.style.fontStyle==='italic'; ta.style.fontStyle = on?'normal':'italic'; document.getElementById('propItalic').classList.toggle('active',!on); }
   if (style==='underline') { const on = ta.style.textDecoration?.includes('underline'); ta.style.textDecoration = on?'none':'underline'; document.getElementById('propUnder').classList.toggle('active',!on); }
+  setTimeout(historySave, 100);
 }
 
 function applyAlign(align) {
   const el = document.getElementById(selectedId); if (!el) return;
   const ta = el.querySelector('.eblock-text'); if (!ta) return;
   ta.style.textAlign = align;
+  setTimeout(historySave, 100);
 }
 
 function applyPropColor() {
@@ -2258,6 +2261,7 @@ function applyPropColor() {
   ta.style.webkitTextFillColor  = '';
   ta.style.color = document.getElementById('propColor').value;
   delete el.dataset.textGradient;
+  setTimeout(historySave, 100);
 }
 
 function changeLetterSpacing(delta) {
@@ -4205,7 +4209,44 @@ function updateTopbarUser() {
 }
 
 function showHelp() {
-  toast('💡 Toca un hook → va al canvas. Navega los captions ← →. Toca un bloque de texto para editarlo.','info');
+  const existing = document.getElementById('helpOverlay');
+  if (existing) { existing.remove(); return; }
+  const ov = document.createElement('div');
+  ov.id = 'helpOverlay';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9500;display:flex;align-items:center;justify-content:center;padding:20px;';
+  ov.innerHTML = `
+    <div style="background:var(--surf);border-radius:16px;padding:24px;max-width:360px;width:100%;">
+      <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--text);margin-bottom:16px;">💡 Guía rápida</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <span style="font-size:20px;flex-shrink:0;">📝</span>
+          <div><strong style="color:var(--text);font-size:13px;">Elegir contenido</strong><div style="font-size:12px;color:var(--text3);margin-top:2px;">Navega los captions ← → y toca "Usar" para aplicarlo al canvas</div></div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <span style="font-size:20px;flex-shrink:0;">✏️</span>
+          <div><strong style="color:var(--text);font-size:13px;">Editar texto</strong><div style="font-size:12px;color:var(--text3);margin-top:2px;">Toca cualquier texto del canvas — aparece la barra de edición al lado izquierdo</div></div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <span style="font-size:20px;flex-shrink:0;">🎨</span>
+          <div><strong style="color:var(--text);font-size:13px;">Cambiar fondo</strong><div style="font-size:12px;color:var(--text3);margin-top:2px;">Tab Diseño → elige gradiente o busca foto en Pexels/Unsplash</div></div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <span style="font-size:20px;flex-shrink:0;">↔️</span>
+          <div><strong style="color:var(--text);font-size:13px;">Mover bloques</strong><div style="font-size:12px;color:var(--text3);margin-top:2px;">Arrastra cualquier bloque de texto o imagen para moverlo</div></div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <span style="font-size:20px;flex-shrink:0;">📋</span>
+          <div><strong style="color:var(--text);font-size:13px;">Caption e Instagram</strong><div style="font-size:12px;color:var(--text3);margin-top:2px;">El caption se arma con tus elecciones. Cópialo y pégalo en Instagram</div></div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <span style="font-size:20px;flex-shrink:0;">📥</span>
+          <div><strong style="color:var(--text);font-size:13px;">Exportar</strong><div style="font-size:12px;color:var(--text3);margin-top:2px;">👁 Preview → ve cómo quedará en Instagram · Exportar → PNG o PDF</div></div>
+        </div>
+      </div>
+      <button onclick="document.getElementById('helpOverlay').remove()" style="width:100%;padding:12px;border-radius:10px;background:var(--grad);border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Entendido ✓</button>
+    </div>`;
+  ov.onclick = (ev) => { if (ev.target === ov) ov.remove(); };
+  document.body.appendChild(ov);
 }
 
 /* ══ NAVIGATION ══ */
@@ -4586,6 +4627,7 @@ function applyBlockBg() {
   el.querySelector('.eblock-inner').style.background = color;
   el.querySelector('.eblock-inner').style.borderRadius = '6px';
   el.querySelector('.eblock-inner').style.padding = color !== '#000000' ? '6px 10px' : '0';
+  setTimeout(historySave, 100);
 }
 
 function clearBlockBg() {
@@ -4594,6 +4636,7 @@ function clearBlockBg() {
   inner.style.background = 'transparent';
   inner.style.padding = '0';
   document.getElementById('propBgColor').value = '#000000';
+  setTimeout(historySave, 100);
 }
 
 function removeTextGradient() {
