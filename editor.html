@@ -69,14 +69,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 /* ── CANVAS AREA ── */
 .canvas-area{
   flex:1;display:flex;flex-direction:column;align-items:center;
-  overflow:hidden;padding:12px;gap:10px;position:relative;
+  overflow:hidden;padding:12px 12px 0;gap:8px;position:relative;
   background:var(--bg);
 }
 
 /* Instagram phone preview */
 .ig-phone{
   position:relative;flex:1;display:flex;align-items:flex-start;justify-content:center;
-  width:100%;overflow-y:auto;overflow-x:hidden;padding-bottom:8px;
+  width:100%;overflow-y:auto;overflow-x:hidden;padding-bottom:4px;
+  min-height:0;
 }
 .ig-phone::-webkit-scrollbar{width:3px;}
 .ig-phone::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:2px;}
@@ -121,15 +122,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 
 /* ── SLIDE STRIP ── */
 .slide-strip{
-  display:none;gap:6px;padding:4px 0;overflow-x:auto;
-  width:100%;flex-shrink:0;
+  display:none;gap:6px;padding:6px 12px;overflow-x:auto;
+  width:100%;flex-shrink:0;background:var(--bg);
+  border-top:1px solid var(--border);
 }
+.slide-strip.visible{display:flex;}
 .slide-strip.visible{display:flex;}
 .slide-strip::-webkit-scrollbar{height:3px;}
 .slide-strip::-webkit-scrollbar-track{background:transparent;}
 .slide-strip::-webkit-scrollbar-thumb{background:var(--brand);border-radius:2px;}
 .strip-thumb{
-  width:44px;height:56px;border-radius:6px;border:2px solid var(--border2);
+  width:52px;height:68px;border-radius:8px;border:2px solid var(--border2);
   background:linear-gradient(135deg,#7C3AED,#F43F5E);flex-shrink:0;
   cursor:grab;transition:border-color .15s, opacity .15s, transform .15s;
   position:relative;overflow:hidden;touch-action:none;user-select:none;
@@ -947,8 +950,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
       </div>
     </div>
 
-    <!-- Slide strip -->
-    <div class="slide-strip" id="slideStrip"></div>
+    <!-- Slide strip con flechas de navegación -->
+    <div style="display:none;flex-direction:column;width:100%;flex-shrink:0;" id="carouselNav">
+      <div style="display:flex;align-items:center;gap:6px;padding:4px 12px;border-top:1px solid var(--border);background:var(--bg);">
+        <button onclick="prevSlide()" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:14px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;">‹</button>
+        <div class="slide-strip" id="slideStrip" style="flex:1;"></div>
+        <button onclick="nextSlide()" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:14px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;">›</button>
+        <button onclick="addSlide()" title="Añadir slide" style="width:28px;height:28px;border-radius:50%;border:1.5px dashed var(--border2);background:transparent;color:var(--text3);font-size:16px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;">+</button>
+      </div>
+      <div style="text-align:center;font-size:9px;color:var(--text3);padding:2px 0 4px;">Arrastra para reordenar</div>
+    </div>
 
     <!-- Floating action buttons on canvas -->
     <div id="canvasFloatBtns" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:6px;z-index:50;">
@@ -964,13 +975,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
         <!-- Img button -->
         <button class="bgc-img-btn" onclick="document.getElementById('bgImgInput').click()" title="Imagen de fondo">📷</button>
         <input type="file" id="bgImgInput" accept="image/*" style="display:none" onchange="loadBgImage(event)">
-        <button class="bgc-remove-btn" id="bgRemoveBtn" onclick="removeBgImage()" style="display:none;" title="Quitar imagen">✕</button>
+        <button class="bgc-remove-btn" id="bgRemoveBtnH" onclick="removeBgImage()" style="display:none;" title="Quitar imagen">✕</button>
         <!-- Color swatches -->
-        <div class="bgc-swatch" id="bg1Swatch" style="background:#7C3AED;" title="Color 1">
-          <input type="color" id="bg1Input" value="#7C3AED" oninput="onBgColorChange()">
+        <div class="bgc-swatch" id="bg1SwatchH" style="background:#7C3AED;" title="Color 1">
+          <input type="color" id="bg1InputH" value="#7C3AED" oninput="onBgColorChange()">
         </div>
-        <div class="bgc-swatch" id="bg2Swatch" style="background:#F43F5E;" title="Color 2">
-          <input type="color" id="bg2Input" value="#F43F5E" oninput="onBgColorChange()">
+        <div class="bgc-swatch" id="bg2SwatchH" style="background:#F43F5E;" title="Color 2">
+          <input type="color" id="bg2InputH" value="#F43F5E" oninput="onBgColorChange()">
         </div>
         <!-- Presets inline -->
         <div id="bgPresetRow" class="bgc-presets"></div>
@@ -980,13 +991,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
         <div class="bgc-sliders">
           <div class="bgc-slider-row">
             <span class="bgc-slider-lbl">🌑</span>
-            <input type="range" class="bgc-slider" id="overlaySlider" min="0" max="90" value="0" oninput="onOverlayChange()" title="Oscurecer">
-            <span class="bgc-slider-val" id="overlayVal">0%</span>
+            <input type="range" class="bgc-slider" id="overlaySliderH" min="0" max="90" value="0" oninput="onOverlayChange()" title="Oscurecer">
+            <span class="bgc-slider-val" id="overlayValH">0%</span>
           </div>
           <div class="bgc-slider-row">
             <span class="bgc-slider-lbl">◻️</span>
-            <input type="range" class="bgc-slider" id="opacitySlider" min="10" max="100" value="100" oninput="onBgOpacityChange()" title="Transparencia del fondo">
-            <span class="bgc-slider-val" id="opacityVal">100%</span>
+            <input type="range" class="bgc-slider" id="opacitySliderH" min="10" max="100" value="100" oninput="onBgOpacityChange()" title="Transparencia del fondo">
+            <span class="bgc-slider-val" id="opacityValH">100%</span>
           </div>
         </div>
       </div>
@@ -1677,6 +1688,8 @@ function switchFormat(fmt) {
   const isCarousel = fmt === 'carousel';
   document.getElementById('slideNav').classList.toggle('visible', isCarousel);
   document.getElementById('slideStrip').classList.toggle('visible', isCarousel);
+  const _carNav = document.getElementById('carouselNav');
+  if (_carNav) _carNav.style.display = isCarousel ? 'flex' : 'none';
 
   if (isCarousel && iaData?.carousel_slides?.length && slides.length === 1 && !slides[0]._dom?.length) {
     slides = iaData.carousel_slides.map(s => {
@@ -1703,34 +1716,46 @@ function updateCanvasBg() {
     bg.style.background = `url('${sl.bgImg}') center/cover no-repeat`;
   } else {
     bg.style.background = `linear-gradient(135deg, ${sl.bg1}, ${sl.bg2})`;
-    document.getElementById('bg1Input').value = sl.bg1;
-    document.getElementById('bg2Input').value = sl.bg2;
-    document.getElementById('bg1InputM').value = sl.bg1;
-    document.getElementById('bg2InputM').value = sl.bg2;
-    document.getElementById('bg1Input').closest('.bgc-swatch').style.background = sl.bg1;
-    document.getElementById('bg2Input').closest('.bgc-swatch').style.background = sl.bg2;
+    const _b1 = document.getElementById('bg1Input');
+    const _b2 = document.getElementById('bg2Input');
+    if (_b1) { _b1.value = sl.bg1; _b1.closest('.bgc-swatch').style.background = sl.bg1; }
+    if (_b2) { _b2.value = sl.bg2; _b2.closest('.bgc-swatch').style.background = sl.bg2; }
+    const _b1m = document.getElementById('bg1InputM');
+    const _b2m = document.getElementById('bg2InputM');
+    if (_b1m) _b1m.value = sl.bg1;
+    if (_b2m) _b2m.value = sl.bg2;
   }
 
   const alpha = (sl.overlay || 0) / 100;
   ov.style.background = `rgba(0,0,0,${alpha})`;
   const sliderVal = sl.overlay || 0;
-  document.getElementById('overlaySlider').value  = sliderVal;
-  document.getElementById('overlaySliderM').value = sliderVal;
-  document.getElementById('overlayVal').textContent  = sliderVal + '%';
-  document.getElementById('overlayValM').textContent = sliderVal + '%';
+  const _os = document.getElementById('overlaySlider');
+  const _osm = document.getElementById('overlaySliderM');
+  const _ov = document.getElementById('overlayVal');
+  const _ovm = document.getElementById('overlayValM');
+  if (_os) _os.value = sliderVal;
+  if (_osm) _osm.value = sliderVal;
+  if (_ov) _ov.textContent = sliderVal + '%';
+  if (_ovm) _ovm.textContent = sliderVal + '%';
 
   // Restore bg opacity
   const bgOpacity = sl.bgOpacity !== undefined ? sl.bgOpacity : 100;
   document.getElementById('canvasBg').style.opacity = bgOpacity / 100;
-  document.getElementById('opacitySlider').value  = bgOpacity;
-  document.getElementById('opacitySliderM').value = bgOpacity;
-  document.getElementById('opacityVal').textContent  = bgOpacity + '%';
-  document.getElementById('opacityValM').textContent = bgOpacity + '%';
+  const _ps = document.getElementById('opacitySlider');
+  const _psm = document.getElementById('opacitySliderM');
+  const _pv = document.getElementById('opacityVal');
+  const _pvm = document.getElementById('opacityValM');
+  if (_ps) _ps.value = bgOpacity;
+  if (_psm) _psm.value = bgOpacity;
+  if (_pv) _pv.textContent = bgOpacity + '%';
+  if (_pvm) _pvm.textContent = bgOpacity + '%';
 
   // Show/hide remove bg button
   const show = !!sl.bgImg;
-  document.getElementById('bgRemoveBtn').style.display  = show ? 'block' : 'none';
-  document.getElementById('bgRemoveBtnM').style.display = show ? 'block' : 'none';
+  const _rb  = document.getElementById('bgRemoveBtn');
+  const _rbm = document.getElementById('bgRemoveBtnM');
+  if (_rb)  _rb.style.display  = show ? 'inline-flex' : 'none';
+  if (_rbm) _rbm.style.display = show ? 'block' : 'none';
 }
 
 function onBgColorChange() {
@@ -1769,12 +1794,14 @@ function applyBgPreset(c1, c2) {
   slides[currentSlide].bg1 = c1;
   slides[currentSlide].bg2 = c2;
   slides[currentSlide].bgImg = null;
-  document.getElementById('bg1Input').value = c1;
-  document.getElementById('bg2Input').value = c2;
-  document.getElementById('bg1InputM').value = c1;
-  document.getElementById('bg2InputM').value = c2;
-  document.getElementById('bg1Input').closest('.bgc-swatch').style.background = c1;
-  document.getElementById('bg2Input').closest('.bgc-swatch').style.background = c2;
+  const _p1 = document.getElementById('bg1Input');
+  const _p2 = document.getElementById('bg2Input');
+  const _p1m = document.getElementById('bg1InputM');
+  const _p2m = document.getElementById('bg2InputM');
+  if (_p1) { _p1.value=c1; _p1.closest('.bgc-swatch').style.background=c1; }
+  if (_p2) { _p2.value=c2; _p2.closest('.bgc-swatch').style.background=c2; }
+  if (_p1m) _p1m.value = c1;
+  if (_p2m) _p2m.value = c2;
   updateCanvasBg();
   updateStripThumb(currentSlide);
   historySave();
@@ -1841,11 +1868,7 @@ function loadBgImage(event) {
     updateStripThumb(currentSlide);
     historySave();
     toast('✅ Fondo aplicado','success');
-    // Auto-advance wizard if in bg step
-    if (_wizAutoAdvanceOnBg) {
-      _wizAutoAdvanceOnBg = false;
-      setTimeout(() => { switchIaTab('build'); wizardNext(); }, 600);
-    }
+
   };
   reader.readAsDataURL(file);
   event.target.value = '';
@@ -2036,6 +2059,7 @@ function duplicateBlock() {
   } else if (img) {
     makeBlock('image', { src:img.src, x, y, h:parseFloat(el.style.height)||30 });
   }
+  setTimeout(historySave, 100);
 }
 
 function selectBlock(id) {
@@ -2192,6 +2216,7 @@ function applyLetterSpacing() {
   const el = document.getElementById(selectedId); if (!el) return;
   const ta = el.querySelector('.eblock-text'); if (!ta) return;
   ta.style.letterSpacing = (document.getElementById('propSpacing').value || 0) + 'px';
+  setTimeout(historySave,200);
 }
 
 function changeLineHeight(delta) {
@@ -2207,6 +2232,7 @@ function applyLineHeight() {
   const el = document.getElementById(selectedId); if (!el) return;
   const ta = el.querySelector('.eblock-text'); if (!ta) return;
   ta.style.lineHeight = document.getElementById('propLineHeight').value || 1.3;
+  setTimeout(historySave,200);
 }
 
 /* ══ DRAG (mouse) ══ */
@@ -2445,7 +2471,15 @@ function deleteSlide(idx, e) {
 
 function renderSlideStrip() {
   const strip = document.getElementById('slideStrip');
-  if (currentFormat !== 'carousel') { strip.innerHTML=''; return; }
+  if (!strip) return;
+  const carNav = document.getElementById('carouselNav');
+  if (currentFormat !== 'carousel') {
+    strip.innerHTML=''; strip.classList.remove('visible');
+    if (carNav) carNav.style.display='none';
+    return;
+  }
+  strip.classList.add('visible');
+  if (carNav) carNav.style.display='flex';
   strip.innerHTML = slides.map((s,i) => `
     <div class="strip-thumb ${i===currentSlide?'active':''}"
          data-idx="${i}"
@@ -2920,8 +2954,8 @@ function renderCarouselContentPanel(container) {
 
   // Header
   const hdr = document.createElement('div');
-  hdr.style.cssText = 'padding:4px 0 10px;font-size:11px;color:var(--text3);line-height:1.5;';
-  hdr.innerHTML = `<strong style="color:var(--text);">${slides_data.length} slides generados</strong> — toca uno para editarlo`;
+  hdr.style.cssText = 'padding:4px 0 8px;font-size:11px;color:var(--text3);line-height:1.5;';
+  hdr.innerHTML = `<strong style="color:var(--text);">${slides_data.length} slides generados</strong><br>Las miniaturas abajo del canvas muestran todos los slides. Toca una tarjeta para editarla.`;
   container.appendChild(hdr);
 
   // Apply all button
@@ -3014,11 +3048,8 @@ function renderCarouselContentPanel(container) {
       const cap2 = captions[capIdx];
       const ce=document.getElementById('capFull');
       if(ce){ce.value=cap2;captionFull=cap2;updateCaptionPreview();}
-      const _fl2 = cap2.split('\n')[0].trim();
-      const _se2 = _fl2.search(/[.!?]/);
-      const fl2 = (_se2>20&&_se2<120) ? _fl2.substring(0,_se2+1).trim() : _fl2.substring(0,125).trim();
-      if(fl2) replaceOrAddBlock('hook-block',fl2,{y:8,w:88,x:6,fontSize:28,bold:true,color:currentBrand?.font_color||'#fff',align:'center'});
-      toast('✅ Hook en canvas + caption aplicado','success');
+      // Carousel: caption ONLY goes to textarea — does NOT touch canvas slides
+      toast('✅ Caption del carrusel listo — cópialo abajo','success');
     };
     navB2.appendChild(bP2); navB2.appendChild(bN2);
     nav2.appendChild(ctr2); nav2.appendChild(navB2);
@@ -3479,10 +3510,11 @@ function renderCaptionTab() {
 function updateCaptionHashEmoji(selHash, selEmoji) {
   const capEl = document.getElementById('capFull');
   if (!capEl) return;
-  // Base caption without previous hash/emoji suffix
-  // Get base caption — remove previous hashtags/emojis
-  const rawBase = captionFull || (document.getElementById('capFull')?.value || '');
-  const base = rawBase.split('\n\n').slice(0,3).join('\n\n').replace(/#\S+/g,'').replace(/\s+$/,'').trim();
+  // Always sync captionFull from textarea (in case user typed directly)
+  if (capEl.value) captionFull = capEl.value;
+  // Base caption — remove previous hashtags and emojis
+  const rawBase = captionFull || '';
+  const base = rawBase.split('\n\n').slice(0,3).join('\n\n').replace(/#\S+/g,'').replace(/[\u{1F300}-\u{1FFFF}]/gu,'').replace(/\s+$/,'').trim();
   // Build suffix
   const emojiStr = selEmoji.size ? [...selEmoji].join(' ') : '';
   const hashStr  = selHash.size  ? [...selHash].map(t=>t.startsWith('#')?t:'#'+t).join(' ') : '';
@@ -3568,6 +3600,9 @@ function switchImgTab(tab) {
     if (searchRow) searchRow.style.display = 'none';
     if (creditEl) { const upBtn=document.createElement('button'); upBtn.className='img-upload-btn'; upBtn.style.margin='0'; upBtn.textContent='📷 Subir mi imagen'; upBtn.onclick=()=>document.getElementById('bankUploadInput').click(); creditEl.innerHTML=''; creditEl.appendChild(upBtn); }
     _stockPhotos = []; // Clear Pexels/Unsplash photos
+    // Clear imgBank HTML immediately so Pexels grid disappears
+    const bank = document.getElementById('imgBank');
+    if (bank) bank.innerHTML = '';
     renderImgBank();
   } else {
     searchRow.style.display = 'flex';
@@ -3739,13 +3774,6 @@ function applyStockImageAsBg(url, author) {
     updateStripThumb(currentSlide);
     historySave();
     toast(`✅ Imagen de ${author} aplicada`, 'success');
-    // Auto-advance wizard if in bg step
-    if (_wizAutoAdvanceOnBg) {
-      _wizAutoAdvanceOnBg = false;
-      setTimeout(() => { switchIaTab('build'); wizardNext(); }, 600);
-    } else {
-      switchIaTab('build');
-    }
   };
   img.onerror = () => {
     // Direct URL fallback (may fail CORS on export)
