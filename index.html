@@ -1321,10 +1321,44 @@ function detectNicheMismatch(description, savedNiche) {
   if (!savedNiche || !description) return false;
   const nicheLower = savedNiche.toLowerCase();
   const descLower  = description.toLowerCase();
-  // Keywords del nicho
+
+  // Mapa de nichos con keywords relacionadas (sinónimos y conceptos afines)
+  const nicheKeywords = {
+    'finanz':     ['dinero','ahorro','inversion','presupuesto','deuda','credito','capital','riqueza','patrimonio','banco','bolsa','activo','pasivo','ingreso','gasto','cripto','bitcoin','mercado','retiro','pension'],
+    'coaching':   ['habito','meta','objetivo','cambio','transformacion','mindset','liderazgo','exito','motivacion','crecimiento','mentalidad','productividad','estrategia','vida','personal'],
+    'nutricion':  ['comida','alimento','dieta','calorias','proteina','vitamina','receta','salud','peso','grasa','musculo','hidratacion','suplemento','vegano','meal'],
+    'fitness':    ['ejercicio','entrenamiento','gimnasio','musculo','peso','cardio','rutina','fuerza','cuerpo','resistencia','flexibilidad','CrossFit','yoga','running'],
+    'marketing':  ['venta','cliente','marca','redes','contenido','publicidad','campana','conversion','funnel','email','seo','trafic','lead','engagement','viral'],
+    'negocio':    ['empresa','emprendimiento','startup','producto','servicio','mercado','venta','socio','inversion','modelo','revenue','factura','contrato','equipo'],
+    'bienestar':  ['estres','ansiedad','meditacion','mindfulness','equilibrio','descanso','sueno','energia','paz','emocion','mental','terapia'],
+    'psicolog':   ['mente','emocion','terapia','trauma','ansiedad','depresion','autoestima','relacion','conducta','cognitivo'],
+    'viaje':      ['destino','turismo','vuelo','hotel','mochilero','aventura','cultura','pais','ciudad','playa','montana'],
+    'fotograf':   ['camara','imagen','foto','retoque','edicion','lightroom','lente','composicion','iluminacion','retrato'],
+    'moda':       ['ropa','estilo','tendencia','outfit','color','temporada','accesorio','belleza','makeup','piel'],
+    'gastronom':  ['cocina','receta','sabor','ingrediente','tecnica','plato','restaurante','chef','especias'],
+    'educacion':  ['aprendizaje','estudio','curso','habilidad','conocimiento','clase','alumno','formacion','certificado'],
+    'inmobiliar': ['propiedad','casa','apartamento','alquiler','renta','hipoteca','terreno','edificio','inversion'],
+  };
+
+  // Encontrar keywords del nicho del usuario
   const nicheWords = nicheLower.split(/[\s,\/]+/).filter(w => w.length > 3);
-  // Si ninguna palabra del nicho aparece en la descripción → mismatch
-  return nicheWords.length > 0 && !nicheWords.some(w => descLower.includes(w));
+  
+  // Expandir con sinónimos del mapa
+  let expandedKeywords = [...nicheWords];
+  for (const [key, synonyms] of Object.entries(nicheKeywords)) {
+    if (nicheWords.some(w => w.includes(key) || key.includes(w))) {
+      expandedKeywords = [...expandedKeywords, ...synonyms];
+    }
+  }
+
+  // Si alguna keyword expandida aparece en la descripción → NO es mismatch
+  const hasmatch = expandedKeywords.some(w => w.length > 3 && descLower.includes(w));
+  if (hasmatch) return false;
+
+  // Si la descripción es muy corta (< 4 palabras) → no mostrar modal
+  if (description.trim().split(/\s+/).length < 4) return false;
+
+  return true;
 }
 
 function showNicheMismatchModal(desc, niche) {
@@ -1562,7 +1596,9 @@ async function generateContent(event) {
     };
 
     showProgress(false);
-    showPreviewModal(editorData);
+    // Ir directo al editor — sin modal intermedio
+    sessionStorage.setItem('conteniza_editor_data', JSON.stringify(editorData));
+    window.location.href = 'editor.html';
 
     // Reset button here so user can go back and generate again
     btn.disabled  = false;

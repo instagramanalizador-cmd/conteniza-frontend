@@ -113,7 +113,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 .ig-action-icons span{font-size:20px;opacity:.9;}
 .ig-bookmark{font-size:20px;opacity:.9;}
 .ig-likes{font-size:12px;font-weight:700;color:#fff;padding:0 12px 6px;background:#000;}
-.ig-caption-preview{font-size:11px;color:rgba(255,255,255,.7);padding:0 12px 8px;background:#000;line-height:1.5;max-height:80px;overflow-y:auto;cursor:pointer;}
+.ig-caption-preview{font-size:11px;color:rgba(255,255,255,.85);padding:4px 12px 10px;background:#000;line-height:1.55;max-height:64px;overflow-y:auto;cursor:pointer;border-top:1px solid rgba(255,255,255,.08);}
 .ig-caption-preview::-webkit-scrollbar{width:2px;}
 .ig-caption-preview::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);}
 
@@ -1081,7 +1081,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
     </div>
 
     <!-- ── TAB: CONTENIDO ── -->
-    <div id="iaContent" class="ia-scroll-panel">
+    <div id="iaContent" class="ia-scroll-panel" style="display:flex;">
       <div id="iaContentInner">
         <div class="ia-empty"><div class="ia-empty-icon">✨</div>Generando contenido…</div>
       </div>
@@ -1157,19 +1157,51 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
     </div>
 
     <!-- ── TAB: MARCA ── -->
-    <div id="iaBrand" style="display:none;padding:10px;overflow-y:auto;">
-      <div class="ia-section-title" style="margin-bottom:10px;">🏷 Mi Marca</div>
-      <div id="edBrandPreview" style="border-radius:10px;overflow:hidden;aspect-ratio:4/5;margin-bottom:10px;position:relative;background:linear-gradient(135deg,#8B5FBF,#E91E8C);">
-        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px;text-align:center;">
-          <img id="edBrandLogo" src="" style="width:40px;height:40px;object-fit:contain;margin-bottom:6px;display:none;" alt="logo">
-          <div id="edBrandTitle" style="font-size:16px;font-weight:800;color:#fff;line-height:1.2;">Tu hook aquí</div>
-          <div id="edBrandSub"   style="font-size:11px;color:rgba(255,255,255,.8);margin-top:4px;">Descripción del contenido</div>
+    <div id="iaBrand" style="display:none;padding:12px;overflow-y:auto;">
+      <!-- Header explicativo -->
+      <div style="background:rgba(139,95,191,.1);border-radius:10px;padding:10px 12px;margin-bottom:12px;border-left:3px solid var(--brand);">
+        <div style="font-size:12px;font-weight:800;color:var(--brand);margin-bottom:4px;">🏷 Mi Marca</div>
+        <div style="font-size:11px;color:var(--text2);line-height:1.5;">Aplica los colores, fuente y logo de tu marca a este slide con un clic.</div>
+      </div>
+
+      <!-- Sin marca configurada -->
+      <div id="edBrandEmpty" style="display:none;text-align:center;padding:20px;color:var(--text3);font-size:12px;line-height:1.6;">
+        <div style="font-size:32px;margin-bottom:8px;">🎨</div>
+        <div style="font-weight:700;color:var(--text2);margin-bottom:4px;">Sin marca configurada</div>
+        <div style="margin-bottom:12px;">Configura tu marca en la app principal para aplicarla aquí.</div>
+      </div>
+
+      <!-- Con marca configurada -->
+      <div id="edBrandContent" style="display:none;">
+        <!-- Mini preview -->
+        <div id="edBrandPreview" style="border-radius:10px;overflow:hidden;aspect-ratio:4/5;margin-bottom:10px;position:relative;max-height:160px;">
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px;text-align:center;">
+            <img id="edBrandLogo" src="" style="width:32px;height:32px;object-fit:contain;margin-bottom:4px;display:none;" alt="logo">
+            <div id="edBrandTitle" style="font-size:13px;font-weight:800;color:#fff;line-height:1.2;">Tu hook aquí</div>
+            <div id="edBrandSub"   style="font-size:10px;color:rgba(255,255,255,.8);margin-top:3px;">Subtítulo de ejemplo</div>
+          </div>
+        </div>
+
+        <!-- Datos de marca -->
+        <div id="edBrandInfo" style="font-size:11px;color:var(--text2);line-height:1.8;padding:8px 10px;background:var(--surf2);border-radius:var(--r);margin-bottom:10px;"></div>
+
+        <!-- Botones de acción -->
+        <div style="font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">¿Dónde aplicar?</div>
+        <button onclick="applyBrandToCurrentSlide()" style="width:100%;padding:11px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:6px;">
+          ✨ Solo este slide
+        </button>
+        <button onclick="applyBrandToAllSlides()" style="width:100%;padding:9px;border-radius:var(--r);border:1.5px solid var(--brand);background:transparent;color:var(--brand);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:14px;">
+          Aplicar a todos los slides
+        </button>
+
+        <!-- Qué cambia -->
+        <div style="font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Qué se aplica</div>
+        <div style="font-size:11px;color:var(--text2);line-height:1.8;padding:8px 10px;background:var(--surf2);border-radius:var(--r);">
+          🎨 Colores de fondo (gradiente de tu marca)<br>
+          ✍️ Fuente de todos los bloques de texto<br>
+          🖼 Logo si está configurado
         </div>
       </div>
-      <button onclick="applyBrandToCurrentSlide()" style="width:100%;padding:10px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:6px;">✨ Aplicar marca a este slide</button>
-      <button onclick="applyBrandToAllSlides()" style="width:100%;padding:8px;border-radius:var(--r);border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:12px;">Aplicar a todos los slides</button>
-      <div id="edBrandInfo" style="font-size:11px;color:var(--text3);line-height:1.6;padding:8px;background:var(--surf2);border-radius:var(--r);">Cargando marca…</div>
-      <div id="edBrandEmpty" style="display:none;text-align:center;padding:16px;color:var(--text3);font-size:12px;">Sin marca configurada.</div>
     </div>
 
     <!-- ── TAB: COPILOTO ── -->
@@ -2429,7 +2461,13 @@ function switchIaTab(tab) {
   const ids = { content:'iaContent', design:'iaDesign', brand:'iaBrand', cop:'iaCop' };
   Object.entries(ids).forEach(([k,id]) => {
     const el = document.getElementById(id);
-    if (el) el.style.display = k===tab ? (k==='cop'?'flex':'flex') : 'none';
+    if (!el) return;
+    if (k === tab) {
+      el.style.display = 'flex';
+      el.style.flexDirection = 'column';
+    } else {
+      el.style.display = 'none';
+    }
   });
   if (tab === 'content') { renderContentPanel(); }
   if (tab === 'design')  { renderDesignPanel(); }
@@ -2471,95 +2509,217 @@ function renderContentPanel() {
 function renderPostContentPanel(container) {
   const hooks    = iaData?.hooks    || [];
   const captions = iaData?.captions || [];
-  const ctas     = iaData?.ctas     || [];
   const emojis   = iaData?.emojis   || [];
 
-  // HOOKS
+  // ── SECCIÓN 1: HOOKS VISUALES ──
   if (hooks.length) {
-    const sec = makeSection('🎣', 'Elige tu hook');
-    hooks.slice(0,5).forEach(h => {
+    const sec = makeSection('🎣', 'Elige tu hook visual');
+    const hint = document.createElement('div');
+    hint.style.cssText = 'font-size:10px;color:var(--text3);margin-bottom:8px;';
+    hint.textContent = 'Se añade al canvas como texto principal';
+    sec.appendChild(hint);
+    hooks.slice(0,5).forEach((h, i) => {
       const btn = makeOption(h, () => {
-        clearSelected(container, 'hook');
+        // Reemplazar (no duplicar) el bloque de hook en el canvas
+        replaceOrAddBlock('hook-block', h, {
+          y:8, w:88, x:6, fontSize:32, bold:true,
+          color: currentBrand?.font_color||'#fff', align:'center'
+        });
+        sec.querySelectorAll('.content-option').forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
-        _wizUsed.hook = h;
-        addTextBlock(h, { y:8, w:88, x:6, fontSize:32, bold:true, color:currentBrand?.font_color||'#fff', align:'center' });
-        rebuildCaption();
-        toast('✅ Hook añadido al canvas y caption','success');
+        toast('✅ Hook aplicado al canvas','success');
       });
-      btn.dataset.group = 'hook';
       sec.appendChild(btn);
     });
     container.appendChild(sec);
   }
 
-  // DESCRIPCIONES
+  // ── SECCIÓN 2: CAPTIONS CON FLECHAS ──
   if (captions.length) {
-    const sec2 = makeSection('📝', 'Elige la descripción');
-    const hint = document.createElement('div');
-    hint.style.cssText = 'font-size:10px;color:var(--text3);margin-bottom:6px;';
-    hint.textContent = 'Se añade al caption — no al canvas visual';
-    sec2.appendChild(hint);
-    captions.slice(0,3).forEach(c => {
-      const short = c.length > 120 ? c.substring(0,120)+'…' : c;
-      const btn = makeOption(short, () => {
-        clearSelected(container, 'desc');
-        btn.classList.add('selected');
-        _wizUsed.desc = c;
-        rebuildCaption();
-        toast('✅ Descripción añadida al caption','success');
-      });
-      btn.dataset.group = 'desc';
-      sec2.appendChild(btn);
-    });
+    const sec2 = makeSection('📝', 'Caption completo');
+    const hint2 = document.createElement('div');
+    hint2.style.cssText = 'font-size:10px;color:var(--text3);margin-bottom:8px;';
+    hint2.textContent = 'Navega entre los ' + captions.length + ' captions — toca uno para usarlo';
+    sec2.appendChild(hint2);
+
+    let capIdx = 0;
+    const capCard = document.createElement('div');
+    capCard.style.cssText = 'border:1.5px solid var(--border2);border-radius:var(--rlg);background:var(--surf2);padding:10px;margin-bottom:8px;';
+
+    const capNav = document.createElement('div');
+    capNav.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;';
+
+    const capCounter = document.createElement('span');
+    capCounter.style.cssText = 'font-size:10px;font-weight:800;color:var(--brand);text-transform:uppercase;';
+    capCounter.textContent = 'Caption 1 de ' + captions.length;
+
+    const navBtns = document.createElement('div');
+    navBtns.style.cssText = 'display:flex;gap:4px;';
+
+    const btnPrev = document.createElement('button');
+    btnPrev.style.cssText = 'width:28px;height:28px;border-radius:6px;border:1px solid var(--border2);background:var(--surf);color:var(--text2);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;';
+    btnPrev.textContent = '←';
+
+    const btnNext = document.createElement('button');
+    btnNext.style.cssText = 'width:28px;height:28px;border-radius:6px;border:1px solid var(--border2);background:var(--surf);color:var(--text2);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;';
+    btnNext.textContent = '→';
+
+    const capText = document.createElement('div');
+    capText.style.cssText = 'font-size:12px;color:var(--text2);line-height:1.6;white-space:pre-wrap;max-height:200px;overflow-y:auto;margin-bottom:10px;';
+
+    const useBtn = document.createElement('button');
+    useBtn.style.cssText = 'width:100%;padding:8px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;';
+    useBtn.textContent = '✅ Usar este caption';
+
+    const renderCap = () => {
+      capCounter.textContent = 'Caption ' + (capIdx+1) + ' de ' + captions.length;
+      capText.textContent = captions[capIdx] || '';
+      btnPrev.style.opacity = capIdx === 0 ? '.3' : '1';
+      btnNext.style.opacity = capIdx === captions.length-1 ? '.3' : '1';
+    };
+
+    btnPrev.onclick = () => { if (capIdx > 0) { capIdx--; renderCap(); } };
+    btnNext.onclick = () => { if (capIdx < captions.length-1) { capIdx++; renderCap(); } };
+    useBtn.onclick  = () => {
+      const capEl = document.getElementById('capFull');
+      if (capEl) { capEl.value = captions[capIdx]; captionFull = captions[capIdx]; updateCaptionPreview(); }
+      useBtn.textContent = '✅ Caption aplicado';
+      useBtn.style.background = 'var(--success)';
+      setTimeout(() => { useBtn.textContent = '✅ Usar este caption'; useBtn.style.background = 'var(--grad)'; }, 1500);
+      toast('✅ Caption listo para copiar','success');
+    };
+
+    navBtns.appendChild(btnPrev);
+    navBtns.appendChild(btnNext);
+    capNav.appendChild(capCounter);
+    capNav.appendChild(navBtns);
+    capCard.appendChild(capNav);
+    capCard.appendChild(capText);
+    capCard.appendChild(useBtn);
+    sec2.appendChild(capCard);
     container.appendChild(sec2);
+    renderCap();
   }
 
-  // CTAs
-  if (ctas.length) {
-    const sec3 = makeSection('📢', 'Elige el CTA');
-    ctas.slice(0,5).forEach(c => {
-      const btn = makeOption(c, () => {
-        clearSelected(container, 'cta');
-        btn.classList.add('selected');
-        _wizUsed.cta = c;
-        addTextBlock(c, { y:82, w:88, x:6, fontSize:17, bold:true, color:currentBrand?.font_color||'#fff', align:'center' });
-        rebuildCaption();
-        toast('✅ CTA añadido','success');
-      });
-      btn.dataset.group = 'cta';
-      sec3.appendChild(btn);
+  // ── SECCIÓN 3: EMOJIS ──
+  if (emojis.length) {
+    const sec3 = makeSection('😊', 'Emojis');
+    const hint3 = document.createElement('div');
+    hint3.style.cssText = 'font-size:10px;color:var(--text3);margin-bottom:8px;';
+    hint3.textContent = 'Toca un emoji — elige dónde va';
+    sec3.appendChild(hint3);
+
+    const grid = document.createElement('div');
+    grid.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;';
+    emojis.slice(0,8).forEach(em => {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:3px;';
+      const chip = document.createElement('div');
+      chip.style.cssText = 'width:40px;height:40px;border-radius:10px;background:var(--surf2);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;transition:all .12s;';
+      chip.textContent = em;
+      chip.onclick = () => showEmojiDestination(em, chip);
+      wrap.appendChild(chip);
+      grid.appendChild(wrap);
     });
+    sec3.appendChild(grid);
     container.appendChild(sec3);
   }
 
-  // EMOJIS
-  if (emojis.length) {
-    const sec4 = makeSection('😊', 'Emojis para el canvas');
-    const grid = document.createElement('div'); grid.className = 'emoji-grid';
-    emojis.slice(0,10).forEach(em => {
-      const btn = document.createElement('div');
-      btn.className = 'emoji-chip'; btn.textContent = em;
-      btn.onclick = () => { addTextBlock(em,{w:12,x:44,y:5,fontSize:52}); toast('✅ Emoji añadido','success'); };
-      grid.appendChild(btn);
-    });
-    sec4.appendChild(grid);
-    container.appendChild(sec4);
-  }
-
-  // HASHTAGS en caption-fixed
+  // ── Hashtags y caption fixed ──
   renderCaptionTab();
 }
+
+function showEmojiDestination(em, originEl) {
+  // Remove any existing picker
+  document.querySelectorAll('.emoji-dest-picker').forEach(e => e.remove());
+  originEl.style.borderColor = 'var(--brand)';
+  originEl.style.background  = 'rgba(139,95,191,.2)';
+
+  const picker = document.createElement('div');
+  picker.className = 'emoji-dest-picker';
+  picker.style.cssText = 'position:fixed;z-index:999;background:var(--surf);border:1.5px solid var(--brand);border-radius:10px;padding:8px;display:flex;gap:6px;box-shadow:0 4px 20px rgba(0,0,0,.3);';
+  // Position near the origin
+  const rect = originEl.getBoundingClientRect();
+  picker.style.top  = (rect.bottom + 4) + 'px';
+  picker.style.left = Math.max(4, rect.left - 30) + 'px';
+
+  const toCanvas = document.createElement('button');
+  toCanvas.style.cssText = 'padding:6px 12px;border-radius:6px;background:var(--grad);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
+  toCanvas.textContent = '📸 Canvas';
+  toCanvas.onclick = () => {
+    addTextBlock(em, {w:16, x:42, y:5, fontSize:56});
+    picker.remove();
+    originEl.style.borderColor = ''; originEl.style.background = '';
+    toast('Emoji añadido al canvas','success');
+  };
+
+  const toCaption = document.createElement('button');
+  toCaption.style.cssText = 'padding:6px 12px;border-radius:6px;background:var(--surf2);border:1px solid var(--border2);color:var(--text);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
+  toCaption.textContent = '📝 Caption';
+  toCaption.onclick = () => {
+    const capEl = document.getElementById('capFull');
+    if (capEl) { capEl.value += ' ' + em; captionFull = capEl.value; updateCaptionPreview(); }
+    picker.remove();
+    originEl.style.borderColor = ''; originEl.style.background = '';
+    toast('Emoji añadido al caption','success');
+  };
+
+  const cancel = document.createElement('button');
+  cancel.style.cssText = 'width:24px;height:24px;border-radius:50%;border:none;background:rgba(248,113,113,.2);color:var(--danger);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;align-self:center;';
+  cancel.textContent = '✕';
+  cancel.onclick = () => { picker.remove(); originEl.style.borderColor=''; originEl.style.background=''; };
+
+  picker.appendChild(toCanvas);
+  picker.appendChild(toCaption);
+  picker.appendChild(cancel);
+  document.body.appendChild(picker);
+
+  // Close on outside click
+  setTimeout(() => {
+    document.addEventListener('click', function closePicker(e) {
+      if (!picker.contains(e.target) && e.target !== originEl) {
+        picker.remove();
+        originEl.style.borderColor=''; originEl.style.background='';
+        document.removeEventListener('click', closePicker);
+      }
+    });
+  }, 100);
+}
+
+/* replaceOrAddBlock — reemplaza bloque con data-role o añade uno nuevo */
+function replaceOrAddBlock(role, text, opts) {
+  // Find existing block with this role
+  const existing = document.querySelector('[data-block-role="' + role + '"]');
+  if (existing) {
+    const ta = existing.querySelector('.eblock-text');
+    if (ta) {
+      ta.textContent = text;
+      historySave();
+      return;
+    }
+  }
+  // Add new
+  const id = addTextBlock(text, opts);
+  // Tag it with role
+  const el = document.getElementById(id);
+  if (el) el.dataset.blockRole = role;
+}
+
 
 /* ── CARRUSEL: tarjetas de slides ── */
 function renderCarouselContentPanel(container) {
   const slides_data = iaData?.carousel_slides || [];
+  const captions    = iaData?.captions         || [];
+  const emojis      = iaData?.emojis           || [];
 
-  const roleColors = {titulo:'#8B5FBF',intro:'#0EA5E9',
+  const roleColors = {titulo:'#8B5FBF',portada:'#8B5FBF',intro:'#0EA5E9',
     dolor_1:'#F43F5E',dolor_2:'#F43F5E',dolor_3:'#F43F5E',
-    valor_1:'#10B981',valor_2:'#10B981',valor_3:'#10B981',valor_4:'#10B981',accion:'#F59E0B'};
-  const roleLabels = {titulo:'PORTADA',intro:'INTRO',
+    valor_1:'#10B981',valor_2:'#10B981',valor_3:'#10B981',valor_4:'#10B981',
+    accion:'#F59E0B',item:'#6366F1'};
+  const roleLabels = {titulo:'TÍTULO',portada:'PORTADA',intro:'INTRO',
     dolor_1:'DOLOR 1',dolor_2:'DOLOR 2',dolor_3:'DOLOR 3',
-    valor_1:'VALOR 1',valor_2:'VALOR 2',valor_3:'VALOR 3',valor_4:'VALOR 4',accion:'ACCIÓN'};
+    valor_1:'VALOR 1',valor_2:'VALOR 2',valor_3:'VALOR 3',valor_4:'VALOR 4',
+    accion:'ACCIÓN',item:'ÍTEM'};
 
   if (!slides_data.length) {
     container.innerHTML = '<div class="ia-empty"><div class="ia-empty-icon">🎠</div>Sin slides generados</div>';
@@ -2568,42 +2728,105 @@ function renderCarouselContentPanel(container) {
 
   // Header
   const hdr = document.createElement('div');
-  hdr.style.cssText = 'padding:6px 0 10px;font-size:11px;color:var(--text3);line-height:1.5;';
-  hdr.innerHTML = `<strong style="color:var(--text);">${slides_data.length} slides generados</strong><br>Toca un slide para editarlo en el canvas`;
+  hdr.style.cssText = 'padding:4px 0 10px;font-size:11px;color:var(--text3);line-height:1.5;';
+  hdr.innerHTML = `<strong style="color:var(--text);">${slides_data.length} slides generados</strong> — toca uno para editarlo`;
   container.appendChild(hdr);
 
   // Apply all button
   const applyAll = document.createElement('button');
-  applyAll.style.cssText = 'width:100%;padding:10px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:12px;';
-  applyAll.innerHTML = '✨ Aplicar todos los slides de una vez';
-  applyAll.onclick = () => applyAllSlides(slides_data);
+  applyAll.style.cssText = 'width:100%;padding:10px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;';
+  applyAll.innerHTML = '✨ Aplicar todos los slides';
+  applyAll.onclick = () => { applyAllSlides(slides_data); applyAll.textContent='✅ Slides aplicados'; applyAll.style.background='var(--success)'; };
   container.appendChild(applyAll);
 
   // Slide cards
   slides_data.forEach((s, i) => {
     const color = roleColors[s.role] || '#8B5FBF';
-    const label = roleLabels[s.role] || s.role;
-    const card = document.createElement('div');
+    const label = roleLabels[s.role] || s.role?.toUpperCase() || 'SLIDE';
+    const card  = document.createElement('div');
     card.className = 'slide-card2';
-    card.id = `slideCard_${i}`;
-    card.innerHTML = `
-      <div class="slide-card2-head" style="border-left:3px solid ${color};padding-left:10px;">
-        <span style="font-size:12px;font-weight:700;color:${color};">Slide ${i+1}</span>
-        <span class="slide-role-badge" style="background:${color}22;color:${color};">${label}</span>
-      </div>
-      <div class="slide-card2-body">
-        ${s.title ? `<strong style="color:var(--text);font-size:12px;">${escHtml(s.title)}</strong>` : ''}
-        ${s.content ? `<br><span style="font-size:11px;">${escHtml(s.content.substring(0,80))}${s.content.length>80?'…':''}</span>` : ''}
-      </div>`;
+    card.id = 'slideCard_' + i;
+    card.innerHTML =
+      '<div class="slide-card2-head" style="border-left:3px solid ' + color + ';padding-left:10px;">' +
+        '<span style="font-size:12px;font-weight:700;color:' + color + ';">Slide ' + (i+1) + '</span>' +
+        '<span class="slide-role-badge" style="background:' + color + '22;color:' + color + ';">' + label + '</span>' +
+      '</div>' +
+      '<div class="slide-card2-body">' +
+        (s.title   ? '<strong style="color:var(--text);font-size:12px;">' + escHtml(s.title) + '</strong>' : '') +
+        (s.content ? '<br><span style="font-size:11px;">' + escHtml(s.content.substring(0,80)) + (s.content.length>80?'…':'') + '</span>' : '') +
+      '</div>';
     card.onclick = () => {
-      // Highlight active card
       container.querySelectorAll('.slide-card2').forEach(c => c.classList.remove('active'));
       card.classList.add('active');
-      // Load this slide
       applySlideToCanvas(i, s);
     };
     container.appendChild(card);
   });
+
+  // Caption navegable (mismo que POST)
+  if (captions.length) {
+    const capSec = makeSection('📝','Caption del carrusel');
+    const hint = document.createElement('div');
+    hint.style.cssText = 'font-size:10px;color:var(--text3);margin-bottom:8px;';
+    hint.textContent = 'Va debajo de tu primer slide en Instagram';
+    capSec.appendChild(hint);
+    // Mini caption navigator
+    let capIdx = 0;
+    const card2 = document.createElement('div');
+    card2.style.cssText = 'border:1.5px solid var(--border2);border-radius:var(--rlg);background:var(--surf2);padding:10px;';
+    const nav2 = document.createElement('div');
+    nav2.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;';
+    const ctr2 = document.createElement('span');
+    ctr2.style.cssText = 'font-size:10px;font-weight:800;color:var(--brand);';
+    ctr2.textContent = 'Caption 1 de ' + captions.length;
+    const navB2 = document.createElement('div');
+    navB2.style.cssText = 'display:flex;gap:4px;';
+    const bP2 = document.createElement('button');
+    bP2.style.cssText = 'width:24px;height:24px;border-radius:5px;border:1px solid var(--border2);background:var(--surf);color:var(--text2);font-size:12px;cursor:pointer;';
+    bP2.textContent = '←';
+    const bN2 = document.createElement('button');
+    bN2.style.cssText = 'width:24px;height:24px;border-radius:5px;border:1px solid var(--border2);background:var(--surf);color:var(--text2);font-size:12px;cursor:pointer;';
+    bN2.textContent = '→';
+    const ct2 = document.createElement('div');
+    ct2.style.cssText = 'font-size:11px;color:var(--text2);line-height:1.5;white-space:pre-wrap;max-height:120px;overflow-y:auto;margin-bottom:8px;';
+    const ub2 = document.createElement('button');
+    ub2.style.cssText = 'width:100%;padding:7px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
+    ub2.textContent = '✅ Usar este caption';
+    const renderC2 = () => {
+      ctr2.textContent = 'Caption ' + (capIdx+1) + ' de ' + captions.length;
+      ct2.textContent  = captions[capIdx] || '';
+      bP2.style.opacity = capIdx===0 ? '.3':'1';
+      bN2.style.opacity = capIdx===captions.length-1 ? '.3':'1';
+    };
+    bP2.onclick = () => { if(capIdx>0){ capIdx--; renderC2(); } };
+    bN2.onclick = () => { if(capIdx<captions.length-1){ capIdx++; renderC2(); } };
+    ub2.onclick = () => { const ce=document.getElementById('capFull'); if(ce){ce.value=captions[capIdx];captionFull=captions[capIdx];updateCaptionPreview();}toast('✅ Caption aplicado','success'); };
+    navB2.appendChild(bP2); navB2.appendChild(bN2);
+    nav2.appendChild(ctr2); nav2.appendChild(navB2);
+    card2.appendChild(nav2); card2.appendChild(ct2); card2.appendChild(ub2);
+    capSec.appendChild(card2);
+    container.appendChild(capSec);
+    renderC2();
+  }
+
+  // Emojis
+  if (emojis.length) {
+    const eSec = makeSection('😊','Emojis');
+    const eGrid = document.createElement('div');
+    eGrid.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px;';
+    emojis.slice(0,8).forEach(em => {
+      const chip = document.createElement('div');
+      chip.style.cssText = 'width:38px;height:38px;border-radius:9px;background:var(--surf2);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;transition:all .12s;';
+      chip.textContent = em;
+      chip.onclick = () => showEmojiDestination(em, chip);
+      eGrid.appendChild(chip);
+    });
+    eSec.appendChild(eGrid);
+    container.appendChild(eSec);
+  }
+
+  // Hashtags
+  renderCaptionTab();
 }
 
 function applySlideToCanvas(idx, s) {
@@ -2677,24 +2900,45 @@ function renderReelContentPanel(container) {
 
 /* ── DISEÑO ── */
 function renderDesignPanel() {
-  // Render 3 gradient preset thumbnails
+  // 3 gradient thumbs
   const thumbsRow = document.getElementById('bgThumbsRow');
-  if (!thumbsRow) return;
-  const presets = [
-    ['#7C3AED','#F43F5E','Morado-Rosa'],
-    ['#0F172A','#1E293B','Dark'],
-    ['#065F46','#10B981','Verde'],
-  ];
-  thumbsRow.innerHTML = presets.map(([c1,c2,label]) => `
-    <div class="bg-thumb-option" onclick="applyBgPreset('${c1}','${c2}')"
-         style="background:linear-gradient(135deg,${c1},${c2});">
-      <div class="bg-thumb-label">${label}</div>
-    </div>`).join('');
-  // Init preset row
+  if (thumbsRow) {
+    const presets = [
+      ['#7C3AED','#F43F5E','Morado-Rosa'],
+      ['#0F172A','#1E293B','Dark'],
+      ['#065F46','#10B981','Verde'],
+      ['#2563EB','#7C3AED','Océano'],
+      ['#D97706','#DC2626','Fuego'],
+    ];
+    thumbsRow.innerHTML = '';
+    thumbsRow.style.cssText = 'display:flex;gap:6px;padding:0 10px 10px;flex-shrink:0;overflow-x:auto;';
+    presets.forEach(([c1,c2,label]) => {
+      const div = document.createElement('div');
+      div.style.cssText = `min-width:60px;height:80px;border-radius:10px;background:linear-gradient(135deg,${c1},${c2});cursor:pointer;border:2px solid transparent;transition:all .15s;position:relative;flex-shrink:0;`;
+      div.innerHTML = `<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.5);font-size:8px;font-weight:700;color:#fff;padding:3px;text-align:center;border-radius:0 0 8px 8px;">${label}</div>`;
+      div.onclick = () => {
+        thumbsRow.querySelectorAll('div').forEach(d => d.style.borderColor='transparent');
+        div.style.borderColor = 'var(--brand)';
+        applyBgPreset(c1,c2);
+      };
+      thumbsRow.appendChild(div);
+    });
+  }
+
+  // Init preset color row
   const pr = document.getElementById('bgPresetRow');
-  if (pr) pr.innerHTML = BG_PRESETS.map(([c1,c2]) =>
-    `<div class="bg-preset" style="background:linear-gradient(135deg,${c1},${c2});" onclick="applyBgPreset('${c1}','${c2}')"></div>`
-  ).join('');
+  if (pr && typeof BG_PRESETS !== 'undefined') {
+    pr.innerHTML = BG_PRESETS.slice(0,8).map(([c1,c2]) =>
+      `<div class="bg-preset" style="background:linear-gradient(135deg,${c1},${c2});width:20px;height:20px;" onclick="applyBgPreset('${c1}','${c2}')"></div>`
+    ).join('');
+  }
+
+  // Init Pexels with auto-search using niche
+  const q = iaData?.detected_niche || iaData?.niche || '';
+  if (q && _currentImgTab !== 'mine') {
+    const inp = document.getElementById('imgSearchInput');
+    if (inp && !inp.value) { inp.value = q; searchStockImages(); }
+  }
 }
 
 /* ── HELPERS ── */
@@ -2929,24 +3173,82 @@ function renderReelPanel(container) {
 
 /* Caption tab */
 function renderCaptionTab() {
-  const chipsEl = document.getElementById('hashtagChips');
-  if (!chipsEl || !iaData?.hashtags) return;
-  const selected = new Set();
+  const chipsEl  = document.getElementById('hashtagChips');
+  if (!chipsEl || !iaData) return;
+
+  const MAX = 3;
+  const selHash  = new Set();
+  const selEmoji = new Set();
   chipsEl.innerHTML = '';
-  iaData.hashtags.forEach(tag => {
+
+  // ── Hashtags (max 3) ──
+  const hashTitle = document.createElement('div');
+  hashTitle.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;margin-top:2px;';
+  hashTitle.textContent = '# Hashtags — elige hasta 3';
+  chipsEl.appendChild(hashTitle);
+
+  const hashWrap = document.createElement('div');
+  hashWrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;';
+  (iaData.hashtags||[]).slice(0,10).forEach(tag => {
     const chip = document.createElement('span');
-    chip.textContent = tag.startsWith('#') ? tag : '#'+tag;
-    chip.style.cssText = 'display:inline-block;padding:3px 8px;border-radius:99px;background:rgba(139,95,191,.15);color:var(--brand);font-size:11px;font-weight:600;cursor:pointer;margin:2px 2px 2px 0;border:1.5px solid transparent;transition:all .1s;';
+    const label = tag.startsWith('#') ? tag : '#'+tag;
+    chip.textContent = label;
+    chip.style.cssText = 'display:inline-block;padding:4px 9px;border-radius:99px;background:var(--surf2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--border2);transition:all .12s;';
     chip.onclick = () => {
-      if (selected.has(tag)) { selected.delete(tag); chip.style.background='rgba(139,95,191,.15)'; chip.style.borderColor='transparent'; }
-      else { selected.add(tag); chip.style.background='rgba(139,95,191,.3)'; chip.style.borderColor='var(--brand)'; }
-      const base = captionFull.replace(/\n\n#.*/s,'').trim();
-      const hashStr = selected.size ? '\n\n' + [...selected].map(t=>t.startsWith('#')?t:'#'+t).join(' ') : '';
-      const capEl = document.getElementById('capFull');
-      if (capEl) { capEl.value = base+hashStr; captionFull = capEl.value; updateCaptionPreview(); }
+      if (selHash.has(tag)) {
+        selHash.delete(tag);
+        chip.style.background='var(--surf2)'; chip.style.borderColor='var(--border2)'; chip.style.color='var(--text2)';
+      } else {
+        if (selHash.size >= MAX) { toast('Máximo 3 hashtags','info'); return; }
+        selHash.add(tag);
+        chip.style.background='rgba(139,95,191,.2)'; chip.style.borderColor='var(--brand)'; chip.style.color='var(--brand)';
+      }
+      updateCaptionHashEmoji(selHash, selEmoji);
     };
-    chipsEl.appendChild(chip);
+    hashWrap.appendChild(chip);
   });
+  chipsEl.appendChild(hashWrap);
+
+  // ── Emojis (max 3) ──
+  const emojiTitle = document.createElement('div');
+  emojiTitle.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;';
+  emojiTitle.textContent = '😊 Emojis — elige hasta 3';
+  chipsEl.appendChild(emojiTitle);
+
+  const emojiWrap = document.createElement('div');
+  emojiWrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;';
+  (iaData.emojis||[]).slice(0,8).forEach(em => {
+    const chip = document.createElement('span');
+    chip.textContent = em;
+    chip.style.cssText = 'width:36px;height:36px;border-radius:8px;background:var(--surf2);border:1.5px solid var(--border2);display:inline-flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;transition:all .12s;';
+    chip.onclick = () => {
+      if (selEmoji.has(em)) {
+        selEmoji.delete(em);
+        chip.style.background='var(--surf2)'; chip.style.borderColor='var(--border2)';
+      } else {
+        if (selEmoji.size >= MAX) { toast('Máximo 3 emojis','info'); return; }
+        selEmoji.add(em);
+        chip.style.background='rgba(139,95,191,.2)'; chip.style.borderColor='var(--brand)';
+      }
+      updateCaptionHashEmoji(selHash, selEmoji);
+    };
+    emojiWrap.appendChild(chip);
+  });
+  chipsEl.appendChild(emojiWrap);
+}
+
+function updateCaptionHashEmoji(selHash, selEmoji) {
+  const capEl = document.getElementById('capFull');
+  if (!capEl) return;
+  // Base caption without previous hash/emoji suffix
+  const base = captionFull.split('\n\n').slice(0,3).join('\n\n').replace(/#\S+/g,'').replace(/\s+$/,'').trim();
+  // Build suffix
+  const emojiStr = selEmoji.size ? [...selEmoji].join(' ') : '';
+  const hashStr  = selHash.size  ? [...selHash].map(t=>t.startsWith('#')?t:'#'+t).join(' ') : '';
+  const suffix = [emojiStr, hashStr].filter(Boolean).join('  ');
+  capEl.value  = base + (suffix ? '\n\n' + suffix : '');
+  captionFull  = capEl.value;
+  updateCaptionPreview();
 }
 
 function onCaptionInput() {
@@ -2955,11 +3257,15 @@ function onCaptionInput() {
 }
 
 function updateCaptionPreview() {
+  // Update IG frame caption
   const preview = document.getElementById('igCaptionText');
   if (preview) {
-    const short = captionFull.substring(0,60) + (captionFull.length>60?'…':'');
-    preview.textContent = ' ' + short;
+    const short = captionFull.substring(0,120) + (captionFull.length>120?'…':'');
+    preview.textContent = ' ' + (short || 'Añade tu caption en el panel →');
   }
+  // Sync captionFixed textarea
+  const capEl = document.getElementById('capFull');
+  if (capEl && capEl.value !== captionFull) capEl.value = captionFull;
 }
 
 // Update the section previews in caption tab
@@ -3075,26 +3381,70 @@ async function searchUnsplash(q) {
   }));
 }
 
+let _stockPhotos = [];
+let _stockPage   = 0;
+const PHOTOS_PER_PAGE = 6;
+
 function renderStockResults(photos) {
+  _stockPhotos = photos;
+  _stockPage   = 0;
+  renderStockPage();
+}
+
+function renderStockPage() {
   const bank = document.getElementById('imgBank');
-  if (!photos.length) {
+  if (!bank) return;
+  if (!_stockPhotos.length) {
     bank.innerHTML = '<div class="img-bank-spinner">Sin resultados. Prueba otro término.</div>';
     return;
   }
   bank.innerHTML = '';
-  photos.forEach(p => {
+  const start = _stockPage * PHOTOS_PER_PAGE;
+  const pagePhotos = _stockPhotos.slice(start, start + PHOTOS_PER_PAGE);
+
+  // Photo grid — 2 columns
+  const grid = document.createElement('div');
+  grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px;';
+  pagePhotos.forEach(p => {
     const div = document.createElement('div');
-    div.className = 'img-bank-item';
-    div.innerHTML = `
-      <img src="${p.thumb}" loading="lazy" alt="${p.author}">
-      <div class="img-add-btn">+</div>
-    `;
-    div.onclick = () => {
-      // Use full resolution for canvas background
-      applyStockImageAsBg(p.full, p.author);
-    };
-    bank.appendChild(div);
+    div.style.cssText = 'aspect-ratio:1;border-radius:8px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:all .12s;background:var(--surf2);position:relative;';
+    div.innerHTML = `<img src="${p.thumb}" loading="lazy" alt="${p.author}" style="width:100%;height:100%;object-fit:cover;display:block;">
+      <div style="position:absolute;inset:0;background:rgba(139,95,191,.0);transition:.15s;display:flex;align-items:center;justify-content:center;font-size:24px;opacity:0;">+</div>`;
+    div.onmouseenter = () => { div.querySelector('div').style.opacity='1'; div.querySelector('div').style.background='rgba(139,95,191,.5)'; };
+    div.onmouseleave = () => { div.querySelector('div').style.opacity='0'; div.querySelector('div').style.background='rgba(139,95,191,.0)'; };
+    div.onclick = () => applyStockImageAsBg(p.full, p.author);
+    grid.appendChild(div);
   });
+  bank.appendChild(grid);
+
+  // Pagination arrows
+  const total = Math.ceil(_stockPhotos.length / PHOTOS_PER_PAGE);
+  if (total > 1) {
+    const nav = document.createElement('div');
+    nav.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:4px 0;';
+    const btnP = document.createElement('button');
+    btnP.style.cssText = 'padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:12px;cursor:pointer;font-family:inherit;';
+    btnP.textContent = '← Anterior';
+    btnP.disabled = _stockPage === 0;
+    btnP.style.opacity = _stockPage === 0 ? '.3' : '1';
+    btnP.onclick = () => { if (_stockPage > 0) { _stockPage--; renderStockPage(); } };
+
+    const info = document.createElement('span');
+    info.style.cssText = 'font-size:10px;color:var(--text3);';
+    info.textContent = (_stockPage+1) + ' / ' + total;
+
+    const btnN = document.createElement('button');
+    btnN.style.cssText = 'padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:12px;cursor:pointer;font-family:inherit;';
+    btnN.textContent = 'Siguiente →';
+    btnN.disabled = _stockPage >= total-1;
+    btnN.style.opacity = _stockPage >= total-1 ? '.3' : '1';
+    btnN.onclick = () => { if (_stockPage < total-1) { _stockPage++; renderStockPage(); } };
+
+    nav.appendChild(btnP);
+    nav.appendChild(info);
+    nav.appendChild(btnN);
+    bank.appendChild(nav);
+  }
 }
 
 function applyStockImageAsBg(url, author) {
@@ -3978,44 +4328,38 @@ function applyTemplate(id) {
 
 /* ══ BRAND PANEL EN EDITOR ══ */
 function renderBrandPanel() {
-  const infoEl  = document.getElementById('edBrandInfo');
-  const emptyEl = document.getElementById('edBrandEmpty');
-  const prev    = document.getElementById('edBrandPreview');
-  const logo    = document.getElementById('edBrandLogo');
-  const title   = document.getElementById('edBrandTitle');
-  const sub     = document.getElementById('edBrandSub');
+  const emptyEl   = document.getElementById('edBrandEmpty');
+  const contentEl = document.getElementById('edBrandContent');
+  const prev      = document.getElementById('edBrandPreview');
+  const logo      = document.getElementById('edBrandLogo');
+  const title     = document.getElementById('edBrandTitle');
+  const sub       = document.getElementById('edBrandSub');
+  const infoEl    = document.getElementById('edBrandInfo');
 
   if (!currentBrand) {
-    if (infoEl)  infoEl.style.display  = 'none';
-    if (emptyEl) emptyEl.style.display = 'block';
+    if (emptyEl)   emptyEl.style.display   = 'block';
+    if (contentEl) contentEl.style.display = 'none';
     return;
   }
 
-  if (emptyEl) emptyEl.style.display = 'none';
-  if (infoEl)  infoEl.style.display  = 'block';
+  if (emptyEl)   emptyEl.style.display   = 'none';
+  if (contentEl) contentEl.style.display = 'block';
 
   const b = currentBrand;
-  // Preview
-  if (prev) prev.style.background = `linear-gradient(135deg,${b.color_primary||'#8B5FBF'},${b.color_secondary||'#E91E8C'})`;
-  if (logo) {
-    if (b.logo_url) { logo.src=b.logo_url; logo.style.display='block'; }
-    else logo.style.display='none';
-  }
-  if (title) {
-    title.style.fontFamily = `'${b.font_name||'DM Sans'}',sans-serif`;
-    title.style.color      = b.font_color || '#fff';
-  }
-  if (sub) {
-    sub.style.fontFamily = `'${b.font_name||'DM Sans'}',sans-serif`;
-    sub.style.color      = b.sub_font_color || 'rgba(255,255,255,.8)';
-  }
-  // Info
-  if (infoEl) infoEl.innerHTML = `
-    <strong style="color:var(--text);">Fuente:</strong> ${b.font_name||'DM Sans'}<br>
-    <strong style="color:var(--text);">Color texto:</strong>
-      <span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${b.font_color||'#fff'};border:1px solid rgba(255,255,255,.2);vertical-align:middle;margin:0 3px;"></span>${b.font_color||'#fff'}<br>
-    ${b.logo_url ? '<strong style="color:var(--text);">Logo:</strong> ✅ Configurado' : '<strong style="color:var(--text);">Logo:</strong> Sin configurar'}
-  `;
+  const c1 = b.color_primary   || '#8B5FBF';
+  const c2 = b.color_secondary || '#E91E8C';
+  const fn = b.font_name       || 'DM Sans';
+  const fc = b.font_color      || '#fff';
+
+  if (prev) prev.style.background = `linear-gradient(135deg,${c1},${c2})`;
+  if (logo) { if (b.logo_url) { logo.src=b.logo_url; logo.style.display='block'; } else logo.style.display='none'; }
+  if (title) { title.style.fontFamily=`'${fn}',sans-serif`; title.style.color=fc; }
+  if (sub)   { sub.style.fontFamily=`'${fn}',sans-serif`; sub.style.color=b.sub_font_color||'rgba(255,255,255,.8)'; }
+
+  if (infoEl) infoEl.innerHTML =
+    `<span style="display:inline-block;width:16px;height:16px;border-radius:4px;background:linear-gradient(135deg,${c1},${c2});vertical-align:middle;margin-right:5px;border:1px solid rgba(255,255,255,.1);"></span><strong>Colores</strong> configurados<br>` +
+    `✍️ <strong>Fuente:</strong> ${fn}<br>` +
+    `${b.logo_url ? '🖼 <strong>Logo:</strong> ✅ Listo' : '🖼 <strong>Logo:</strong> Sin configurar (opcional)'}`;
 }
 
 function applyBrandToCurrentSlide() {
