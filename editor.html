@@ -148,13 +148,21 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 
 /* ── PROPERTIES PANEL (bottom strip) ── */
 .props-bar{
-  position:absolute;bottom:0;left:0;right:0;
-  background:var(--surf);border-top:1px solid var(--border);
-  padding:8px 12px;display:flex;align-items:center;gap:8px;
-  flex-wrap:nowrap;overflow-x:auto;z-index:10;
-  transition:transform .25s;transform:translateY(100%);
+  position:fixed;left:0;top:50%;transform:translateY(-50%) translateX(-110%);
+  background:var(--surf);border:1px solid var(--border);border-radius:0 12px 12px 0;
+  padding:8px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;
+  z-index:200;transition:transform .25s;max-height:80vh;overflow-y:auto;
+  box-shadow:4px 0 20px rgba(0,0,0,.3);
 }
-.props-bar.visible{transform:translateY(0);}
+.props-bar.visible{transform:translateY(-50%) translateX(0);}
+@media(max-width:700px){
+  .props-bar{
+    position:fixed;bottom:0;left:0;right:0;top:auto;
+    transform:translateY(100%);flex-direction:row;border-radius:12px 12px 0 0;
+    max-height:none;overflow-x:auto;overflow-y:hidden;
+  }
+  .props-bar.visible{transform:translateY(0);}
+}
 .props-bar::-webkit-scrollbar{display:none;}
 .prop-group{display:flex;align-items:center;gap:6px;flex-shrink:0;}
 .prop-sep{width:1px;height:24px;background:var(--border2);flex-shrink:0;}
@@ -710,6 +718,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 
 /* Tooltips */
 .tt-bubble{transition:opacity .2s;}
+
+.eblock-drag-handle{
+  position:absolute;top:2px;left:2px;
+  width:20px;height:20px;border-radius:4px;
+  background:rgba(139,95,191,.7);color:#fff;
+  font-size:14px;display:flex;align-items:center;justify-content:center;
+  cursor:grab;z-index:20;opacity:0;transition:opacity .15s;
+  user-select:none;-webkit-user-select:none;
+}
+.eblock:hover .eblock-drag-handle,
+.eblock.selected .eblock-drag-handle{opacity:1;}
+.eblock-drag-handle:active{cursor:grabbing;background:var(--brand);}
 
 /* Snap guides */
 .snap-guide{
@@ -1790,24 +1810,36 @@ function makeBlock(type, opts={}) {
 
   el.appendChild(inner);
 
-  // Drag — mouse
+  // Drag — mouse (from block border, not from text)
   el.addEventListener('mousedown', e => {
     if (e.target.classList.contains('eblock-handle')) return;
     if (e.target.classList.contains('eblock-del')) return;
-    if (e.target.classList.contains('eblock-text')) { selectBlock(id); return; }
+    if (e.target.classList.contains('eblock-drag-handle')) return; // handled separately
+    selectBlock(id);
+    if (e.target.classList.contains('eblock-text') || e.target.closest('.eblock-text')) return;
     e.preventDefault();
     startDrag(e, el);
-    selectBlock(id);
   });
 
-  // Drag — touch
+  // Drag — touch (always allow, user uses drag handle on mobile)
   el.addEventListener('touchstart', e => {
     if (e.target.classList.contains('eblock-handle')) return;
     if (e.target.classList.contains('eblock-del')) return;
-    if (e.target.classList.contains('eblock-text')) { selectBlock(id); return; }
-    startDragTouch(e, el);
+    if (e.target.classList.contains('eblock-drag-handle')) return;
     selectBlock(id);
+    if (e.target.classList.contains('eblock-text') || e.target.closest('.eblock-text')) return;
+    e.preventDefault();
+    startDragTouch(e, el);
   }, {passive:false});
+
+  // Dedicated drag handle — works on both mouse and touch
+  const dragHandle = document.createElement('div');
+  dragHandle.className = 'eblock-drag-handle';
+  dragHandle.innerHTML = '⠿';
+  dragHandle.title = 'Mover';
+  dragHandle.addEventListener('mousedown', e => { e.preventDefault(); e.stopPropagation(); selectBlock(id); startDrag(e, el); });
+  dragHandle.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); selectBlock(id); startDragTouch(e, el); }, {passive:false});
+  el.appendChild(dragHandle);
 
   document.getElementById('canvasBlocks').appendChild(el);
   selectBlock(id);
@@ -2615,26 +2647,23 @@ function renderPostContentPanel(container) {
       capText.textContent = cap;
       btnP.style.opacity = capIdx === 0 ? '.3' : '1';
       btnN.style.opacity = capIdx === captions.length-1 ? '.3' : '1';
-      // Auto-extract hook from caption (first line) and put on canvas
-      const firstLine = cap.split('\n')[0].trim();
-      if (firstLine) {
-        replaceOrAddBlock('hook-block', firstLine, {
-          y:8, w:88, x:6, fontSize:32, bold:true,
-          color: currentBrand?.font_color||'#fff', align:'center'
-        });
-      }
+      // NO auto-apply on navigation — only on "Usar este caption"
     };
 
     btnP.onclick = () => { if(capIdx>0){ capIdx--; renderCap(); } };
     btnN.onclick = () => { if(capIdx<captions.length-1){ capIdx++; renderCap(); } };
 
     useBtn.onclick = () => {
+      const cap = captions[capIdx];
       const capEl = document.getElementById('capFull');
-      if (capEl) { capEl.value = captions[capIdx]; captionFull = captions[capIdx]; updateCaptionPreview(); }
+      if (capEl) { capEl.value = cap; captionFull = cap; updateCaptionPreview(); }
+      // Hook (primera línea) al canvas
+      const fl = cap.split('\n')[0].trim();
+      if (fl) replaceOrAddBlock('hook-block', fl, {y:8,w:88,x:6,fontSize:32,bold:true,color:currentBrand?.font_color||'#fff',align:'center'});
       useBtn.textContent = '✅ Caption aplicado';
       useBtn.style.background = '#10B981';
       setTimeout(()=>{ useBtn.textContent='✅ Usar este caption'; useBtn.style.background='var(--grad)'; },1500);
-      toast('Caption listo — revísalo y copia abajo','success');
+      toast('✅ Hook en canvas + caption listo para copiar','success');
     };
 
     navBtns.appendChild(btnP); navBtns.appendChild(btnN);
@@ -2796,7 +2825,14 @@ function renderCarouselContentPanel(container) {
     };
     bP2.onclick = () => { if(capIdx>0){ capIdx--; renderC2(); } };
     bN2.onclick = () => { if(capIdx<captions.length-1){ capIdx++; renderC2(); } };
-    ub2.onclick = () => { const ce=document.getElementById('capFull'); if(ce){ce.value=captions[capIdx];captionFull=captions[capIdx];updateCaptionPreview();}toast('✅ Caption aplicado','success'); };
+    ub2.onclick = () => {
+      const cap2 = captions[capIdx];
+      const ce=document.getElementById('capFull');
+      if(ce){ce.value=cap2;captionFull=cap2;updateCaptionPreview();}
+      const fl2 = cap2.split('\n')[0].trim();
+      if(fl2) replaceOrAddBlock('hook-block',fl2,{y:8,w:88,x:6,fontSize:32,bold:true,color:currentBrand?.font_color||'#fff',align:'center'});
+      toast('✅ Hook en canvas + caption aplicado','success');
+    };
     navB2.appendChild(bP2); navB2.appendChild(bN2);
     nav2.appendChild(ctr2); nav2.appendChild(navB2);
     card2.appendChild(nav2); card2.appendChild(ct2); card2.appendChild(ub2);
@@ -3194,7 +3230,6 @@ function renderCaptionTab() {
 
   const MAX = 3;
   const selHash  = new Set();
-  const selEmoji = new Set();
   chipsEl.innerHTML = '';
 
   // ── Hashtags (max 3) ──
@@ -3225,32 +3260,7 @@ function renderCaptionTab() {
   });
   chipsEl.appendChild(hashWrap);
 
-  // ── Emojis (max 3) ──
-  const emojiTitle = document.createElement('div');
-  emojiTitle.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;';
-  emojiTitle.textContent = '😊 Emojis — elige hasta 3';
-  chipsEl.appendChild(emojiTitle);
 
-  const emojiWrap = document.createElement('div');
-  emojiWrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;';
-  (iaData.emojis||[]).slice(0,8).forEach(em => {
-    const chip = document.createElement('span');
-    chip.textContent = em;
-    chip.style.cssText = 'width:36px;height:36px;border-radius:8px;background:var(--surf2);border:1.5px solid var(--border2);display:inline-flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;transition:all .12s;';
-    chip.onclick = () => {
-      if (selEmoji.has(em)) {
-        selEmoji.delete(em);
-        chip.style.background='var(--surf2)'; chip.style.borderColor='var(--border2)';
-      } else {
-        if (selEmoji.size >= MAX) { toast('Máximo 3 emojis','info'); return; }
-        selEmoji.add(em);
-        chip.style.background='rgba(139,95,191,.2)'; chip.style.borderColor='var(--brand)';
-      }
-      updateCaptionHashEmoji(selHash, selEmoji);
-    };
-    emojiWrap.appendChild(chip);
-  });
-  chipsEl.appendChild(emojiWrap);
 }
 
 function updateCaptionHashEmoji(selHash, selEmoji) {
