@@ -878,6 +878,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   <div class="tb-user-info" id="tbUserInfo" style="display:none;">
     <span class="tb-user-email" id="tbUserEmail"></span>
     <span class="tb-credits" id="tbCredits" title="Créditos disponibles">⚡ —</span>
+    <span id="tbDailyUsage" style="font-size:10px;color:var(--text3);white-space:nowrap;"></span>
   </div>
 
   <!-- Acciones -->
@@ -3557,6 +3558,7 @@ function renderCaptionTab() {
 
   const MAX = 3;
   const selHash  = new Set();
+  const selEmoji = new Set(); // needed by updateCaptionHashEmoji
   chipsEl.innerHTML = '';
 
   // ── Hashtags (max 3) ──
@@ -4222,8 +4224,12 @@ function updateTopbarUser() {
       const cr = currentUser.credits_remaining ?? '—';
       const du = currentUser.daily_usage_count ?? 0;
       const dl = currentUser.plan_type === 'free' ? 2 : currentUser.plan_type === 'pro' ? 20 : 30;
+      // Show: "⚡ 268 créditos  |  Hoy: 5/30"
       creditEl.textContent = `⚡ ${cr}`;
-      creditEl.title = `${cr} créditos disponibles • Hoy: ${du}/${dl} análisis usados`;
+      creditEl.title = `${cr} créditos disponibles • Hoy: ${du}/${dl}`;
+      // Show daily usage inline next to credits
+      const dailyEl = document.getElementById('tbDailyUsage');
+      if (dailyEl) dailyEl.textContent = `Hoy: ${du}/${dl}`;
     }
   } else {
     infoEl.style.display = 'none';
@@ -4509,12 +4515,12 @@ async function regenerateFromEditor() {
     };
     sessionStorage.setItem('conteniza_editor_data', JSON.stringify(iaData));
 
-    // Update credits in topbar
-    if (d.credits_remaining !== undefined) {
-      const creditEl = document.getElementById('tbCredits');
-      if (creditEl) creditEl.textContent = '⚡ ' + d.credits_remaining;
-      if (currentUser) currentUser.credits_remaining = d.credits_remaining;
+    // Update credits and daily usage
+    if (currentUser) {
+      if (d.credits_remaining !== undefined) currentUser.credits_remaining = d.credits_remaining;
+      if (d.daily_usage?.current !== undefined) currentUser.daily_usage_count = d.daily_usage.current;
     }
+    updateTopbarUser();
 
     // Re-render content panel
     renderContentPanel();
@@ -4589,14 +4595,22 @@ function bringForward() {
   const el = document.getElementById(selectedId); if (!el) return;
   const cur = parseInt(el.style.zIndex) || 2;
   el.style.zIndex = cur + 1;
+  // Save to block data
+  const blk = slides[currentSlide]?.blocks?.find(b => b.id === selectedId);
+  if (blk) blk.zIndex = cur + 1;
   historySave();
+  toast('Capa subida','info');
 }
 
 function sendBackward() {
   const el = document.getElementById(selectedId); if (!el) return;
   const cur = parseInt(el.style.zIndex) || 2;
-  el.style.zIndex = Math.max(1, cur - 1);
+  const newZ = Math.max(1, cur - 1);
+  el.style.zIndex = newZ;
+  const blk = slides[currentSlide]?.blocks?.find(b => b.id === selectedId);
+  if (blk) blk.zIndex = newZ;
   historySave();
+  toast('Capa bajada','info');
 }
 
 /* ══ TEXT SHADOW ══ */
