@@ -1495,6 +1495,7 @@ function goToEditor() {
     data.hooks = [_selectedPreviewHook, ...others];
   }
   sessionStorage.setItem('conteniza_editor_data', JSON.stringify(data));
+  if (currentUser) sessionStorage.setItem('conteniza_user', JSON.stringify(currentUser));
   window.location.href = 'editor.html';
 }
 
@@ -1594,6 +1595,8 @@ async function generateContent(event) {
     showProgress(false);
     // Ir directo al editor — sin modal intermedio
     sessionStorage.setItem('conteniza_editor_data', JSON.stringify(editorData));
+    // Pass user data to editor so it doesn't need /api/auth/me
+    if (currentUser) sessionStorage.setItem('conteniza_user', JSON.stringify(currentUser));
     window.location.href = 'editor.html';
 
     // Reset button here so user can go back and generate again

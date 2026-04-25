@@ -1060,7 +1060,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
       </div>
       <div class="prop-group">
         <span class="prop-label">Fondo</span>
-        <input type="color" class="prop-color" id="propBgColor" value="#00000000" oninput="applyBlockBg()">
+        <input type="color" class="prop-color" id="propBgColor" value="#000000" oninput="applyBlockBg()">
         <button class="prop-btn" onclick="clearBlockBg()" title="Sin fondo" style="font-size:10px;">∅</button>
       </div>
       <div class="prop-sep"></div>
@@ -1662,12 +1662,33 @@ async function loadUser() {
   try {
     const token = localStorage.getItem('token');
     if (!token) return;
-    const r = await fetch(API_URL + '/auth/me', { headers:{ Authorization:'Bearer '+token }});
-    if (r.ok) {
-      const d = await r.json();
-      currentUser = d.user || d;
-      const username = currentUser.username || currentUser.email?.split('@')[0] || 'tu_usuario';
-      document.getElementById('igUsername').textContent = username;
+
+    // Try sessionStorage first (faster, avoids /auth/me 404)
+    const storedUser = sessionStorage.getItem('conteniza_user');
+    if (storedUser) {
+      try {
+        currentUser = JSON.parse(storedUser);
+        const username = currentUser.username || currentUser.email?.split('@')[0] || 'tu_usuario';
+        document.getElementById('igUsername').textContent = username;
+        updateTopbarUser();
+        // Still refresh in background
+        fetch(API_URL + '/auth/me', { headers:{ Authorization:'Bearer '+token }})
+          .then(r => r.ok ? r.json() : null)
+          .then(d => {
+            if (d?.user || d?.email) {
+              currentUser = d.user || d;
+              updateTopbarUser();
+            }
+          }).catch(()=>{});
+      } catch(pe) {}
+    } else {
+      const r = await fetch(API_URL + '/auth/me', { headers:{ Authorization:'Bearer '+token }});
+      if (r.ok) {
+        const d = await r.json();
+        currentUser = d.user || d;
+        const username = currentUser.username || currentUser.email?.split('@')[0] || 'tu_usuario';
+        document.getElementById('igUsername').textContent = username;
+      }
     }
     // Load brand
     const rb = await fetch(API_URL + '/brand', { headers:{ Authorization:'Bearer '+token }});
@@ -1766,6 +1787,7 @@ function switchFormat(fmt) {
 /* ══ CANVAS BG ══ */
 function updateCanvasBg() {
   const sl  = slides[currentSlide];
+  if (!sl) return; // guard — slide may not exist yet
   const bg  = document.getElementById('canvasBg');
   const ov  = document.getElementById('canvasOverlay');
 
@@ -2442,11 +2464,10 @@ function handleKeyboard(e) {
 
 /* ══ CAROUSEL SLIDES ══ */
 function saveCurrentBlocks() {
-  // Save complete DOM snapshot of all blocks
+  if (!slides[currentSlide]) return; // guard
   slides[currentSlide]._dom = Array.from(
     document.querySelectorAll('.eblock')
   ).map(el => el.outerHTML);
-  // Deselect before snapshot to avoid stale selection state
 }
 
 function loadSlide(idx) {
@@ -2540,7 +2561,7 @@ function renderSlideStrip() {
     return;
   }
   strip.classList.add('visible');
-  if (carNav) carNav.style.display='flex';
+  if (carNav) { carNav.style.display='flex'; carNav.style.flexDirection='column'; }
   strip.innerHTML = slides.map((s,i) => `
     <div class="strip-thumb ${i===currentSlide?'active':''}"
          data-idx="${i}"
@@ -3141,9 +3162,9 @@ function renderCarouselContentPanel(container) {
 }
 
 function applySlideToCanvas(idx, s) {
+  if (!slides[idx]) slides[idx] = newSlide();
   if (idx !== currentSlide) loadSlide(idx);
   document.getElementById('canvasBlocks').innerHTML = '';
-  slides[idx] = slides[idx] || newSlide();
   slides[idx].blocks = [];
   if (s.title)   addTextBlock(s.title,   {y:20, w:88, x:6, fontSize:34, bold:true,  color:currentBrand?.font_color||'#fff', align:'center'});
   if (s.content) addTextBlock(s.content, {y:56, w:88, x:6, fontSize:18, bold:false, color:currentBrand?.sub_font_color||'rgba(255,255,255,.85)', align:'center'});
@@ -3153,6 +3174,7 @@ function applySlideToCanvas(idx, s) {
 }
 
 function applyAllSlides(slides_data) {
+  if (!slides_data?.length) return;
   while (slides.length < slides_data.length) slides.push(newSlide(slides[0]?.bg1||'#7C3AED', slides[0]?.bg2||'#F43F5E'));
   slides_data.forEach((s, i) => {
     loadSlide(i);
@@ -4266,6 +4288,9 @@ async function showIgPreview() {
   // Save current state
   saveCurrentBlocks();
   toast('Generando vista previa…','info');
+
+  // Save current slide before starting preview loop
+  saveCurrentBlocks();
 
   // Render all slides to images
   _igPrevSlides = [];
