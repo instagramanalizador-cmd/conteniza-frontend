@@ -1581,6 +1581,16 @@ async function generateContent(event) {
     userCredits = d.credits_remaining ?? userCredits - 1;
     document.getElementById('userCredits').textContent  = userCredits + ' créditos';
     document.getElementById('creditsDisplay').textContent = userCredits;
+    // Update daily usage count from response
+    if (currentUser) {
+      currentUser.credits_remaining = userCredits;
+      if (d.daily_usage?.current !== undefined) {
+        currentUser.daily_usage_count = d.daily_usage.current;
+      } else {
+        currentUser.daily_usage_count = (currentUser.daily_usage_count || 0) + 1;
+      }
+    }
+    updateCreditsBar();  // Refresh "Hoy: X/30" immediately
 
     showProgress(true, 'Abriendo vista previa…', 90);
 

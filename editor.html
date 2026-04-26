@@ -3252,44 +3252,211 @@ function applyAllSlides(slides_data) {
 /* ── STORY ── */
 function renderStoryContentPanel(container) {
   const stories = iaData?.stories || [];
-  const hooks   = iaData?.hooks   || [];
-  const sec = makeSection('📱','Ideas de Story');
-  stories.forEach((s,i) => {
-    const div = document.createElement('div');
-    div.style.cssText = 'padding:10px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surf2);margin-bottom:6px;font-size:12px;color:var(--text2);line-height:1.5;cursor:pointer;';
-    div.innerHTML = `<div style="font-size:10px;font-weight:800;color:var(--brand);margin-bottom:4px;">Story ${i+1}</div>${escHtml(s)}`;
-    sec.appendChild(div);
+
+  // Regenerar button
+  const regenBtn = document.createElement('button');
+  regenBtn.style.cssText = 'width:100%;padding:9px;border-radius:var(--r);border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;';
+  regenBtn.innerHTML = '🔄 Regenerar ideas (-1 crédito)';
+  regenBtn.onclick = () => regenerateFromEditor();
+  container.appendChild(regenBtn);
+
+  // Story cards with IA button per card
+  const lbl = document.createElement('div');
+  lbl.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;';
+  lbl.textContent = '📱 Ideas de Story';
+  container.appendChild(lbl);
+
+  stories.forEach((s, i) => {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'margin-bottom:8px;';
+
+    // Story card
+    const card = document.createElement('div');
+    card.style.cssText = 'padding:10px 12px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surf2);font-size:12px;color:var(--text2);line-height:1.6;';
+    card.innerHTML = '<div style="font-size:10px;font-weight:800;color:var(--brand);margin-bottom:5px;">Story ' + (i+1) + '</div>' + escHtml(s);
+    wrap.appendChild(card);
+
+    // Mejorar con IA button per story
+    const iaBtn = document.createElement('button');
+    iaBtn.style.cssText = 'width:100%;padding:6px;border-radius:0 0 var(--r) var(--r);border:1px solid rgba(139,95,191,.3);border-top:none;background:rgba(139,95,191,.08);color:var(--brand);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;';
+    iaBtn.innerHTML = '🤖 Mejorar esta idea';
+    iaBtn.onclick = () => {
+      copSend('Mejora esta idea de Story: ' + s.substring(0, 100));
+      // Switch to cop panel
+      const copPanel = document.getElementById('iaCop');
+      if (copPanel) copPanel.style.display = 'flex';
+      setTimeout(scrollCopMessages, 100);
+    };
+    wrap.appendChild(iaBtn);
+    container.appendChild(wrap);
   });
-  container.appendChild(sec);
-  if (hooks.length) {
-    const sec2 = makeSection('🎣','Hooks para story');
-    hooks.slice(0,3).forEach(h => {
-      const btn = makeOption(h, () => { addTextBlock(h,{y:25,w:82,x:9,fontSize:42,bold:true,color:'#fff',align:'center'}); toast('✅','success'); });
-      sec2.appendChild(btn);
-    });
-    container.appendChild(sec2);
+
+  if (!stories.length) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'text-align:center;padding:20px;color:var(--text3);font-size:12px;';
+    empty.textContent = 'Genera un Story para ver las ideas aquí';
+    container.appendChild(empty);
   }
 }
 
 /* ── REEL ── */
 function renderReelContentPanel(container) {
-  const hooks = iaData?.hooks || [];
-  const sec = makeSection('🎬','Hooks para Reel');
-  hooks.slice(0,5).forEach(h => {
-    const btn = makeOption(h, () => { addTextBlock(h,{y:20,w:82,x:9,fontSize:38,bold:true,color:'#fff',align:'center'}); toast('✅','success'); });
-    sec.appendChild(btn);
+  const reelData = iaData?.reel_ideas || iaData?.stories || [];
+  // Build 3 reel ideas from hooks + reel structure in iaData
+  const hooks     = iaData?.hooks     || [];
+  const ctas      = iaData?.ctas      || [];
+  const desc      = iaData?.description || '';
+  const niche     = iaData?.detected_niche || '';
+  const hashtags  = iaData?.hashtags  || [];
+
+  // Parse structured reel ideas from stories[] (groqService returns 3 formatted reels there)
+  const rawReels = iaData?.stories || [];
+  const reelIdeas = rawReels.slice(0,3).map((raw, i) => {
+    // Parse sections from formatted reel text
+    const getSection = (label) => {
+      const m = raw.match(new RegExp(label + '[^\n]*\n([^⏱🎵📝]+)', 'i'));
+      return m ? m[1].trim() : '';
+    };
+    const angleM = raw.match(/REEL\s*\d+\s*[—-]\s*([^\n]+)/i);
+    return {
+      raw:   raw,
+      angle: angleM ? angleM[1].trim() : ['PROBLEMA → SOLUCIÓN','SECRETO / DATO','POV / RELATABLE'][i] || ('Ángulo '+(i+1)),
+      hook:  getSection('⏱️? ?0-3s GANCHO:?') || getSection('GANCHO') || hooks[i] || hooks[0] || 'Tu hook aquí',
+      dev:   getSection('⏱️? ?3-15s DESARROLLO:?') || getSection('DESARROLLO') || 'Desarrolla el problema o situación del hook.',
+      valor: getSection('⏱️? ?15-25s VALOR') || getSection('VALOR') || 'Tu solución o dato clave, concreto y accionable.',
+      cta:   getSection('⏱️? ?25-30s CTA:?') || getSection('CTA') || ctas[i] || ctas[0] || 'Sigue para más',
+      music: (raw.match(/🎵[^\n]+/) || [''])[0].replace('🎵','').replace('MUSICA:','').trim() || 'Upbeat 90-110 BPM',
+      caption: (raw.match(/📝[^\n]+/) || [''])[0].replace('📝','').replace('CAPTION:','').trim() || '',
+    };
   });
-  container.appendChild(sec);
-  const niche = iaData?.detected_niche || iaData?.niche || 'coaching';
-  const desc  = iaData?.description?.substring(0,60) || '';
-  const sec2  = makeSection('🎞','Prompt Runway/CapCut');
-  const prompt = `Create a vertical Instagram Reel (1080x1920, 30s) about: "${desc}". Style: ${niche} coach, cinematic, high energy. Hook in first 2s.`;
-  const pDiv = document.createElement('div');
-  pDiv.style.cssText = 'font-size:11px;color:var(--text2);padding:10px;background:var(--surf2);border-radius:var(--r);cursor:pointer;line-height:1.6;';
-  pDiv.textContent = prompt;
-  pDiv.onclick = () => { navigator.clipboard.writeText(prompt); toast('✅ Prompt copiado','success'); };
-  sec2.appendChild(pDiv);
-  container.appendChild(sec2);
+  // Pad to 3 if needed
+  while (reelIdeas.length < 3) {
+    const j = reelIdeas.length;
+    reelIdeas.push({ raw:'', angle:['PROBLEMA→SOLUCIÓN','SECRETO/DATO','POV'][j]||('Ángulo '+(j+1)), hook:hooks[0]||'Hook aquí', dev:'Desarrollo...', valor:'Valor...', cta:ctas[0]||'Sigue', music:'Upbeat 90 BPM', caption:'' });
+  }
+
+  // Navigator
+  let reelIdx = 0;
+
+  const navRow = document.createElement('div');
+  navRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;';
+  const navTitle = document.createElement('div');
+  navTitle.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;';
+  navTitle.textContent = '🎬 Ideas de Reel';
+  const navBtns = document.createElement('div');
+  navBtns.style.cssText = 'display:flex;align-items:center;gap:6px;';
+  const navPrev = document.createElement('button');
+  navPrev.style.cssText = 'width:24px;height:24px;border-radius:50%;border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;';
+  navPrev.textContent = '‹';
+  const navCounter = document.createElement('span');
+  navCounter.style.cssText = 'font-size:11px;color:var(--text3);';
+  navCounter.textContent = '1/3';
+  const navNext = document.createElement('button');
+  navNext.style.cssText = 'width:24px;height:24px;border-radius:50%;border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;';
+  navNext.textContent = '›';
+  navBtns.appendChild(navPrev); navBtns.appendChild(navCounter); navBtns.appendChild(navNext);
+  navRow.appendChild(navTitle); navRow.appendChild(navBtns);
+  container.appendChild(navRow);
+
+  // Reel card
+  const reelCard = document.createElement('div');
+  reelCard.style.cssText = 'border:1.5px solid var(--border2);border-radius:var(--rlg);overflow:hidden;margin-bottom:10px;';
+
+  function renderReelCard(idx) {
+    const idea = reelIdeas[idx];
+    navCounter.textContent = (idx+1) + '/' + reelIdeas.length;
+    reelCard.innerHTML =
+      '<div style="background:var(--grad);padding:8px 12px;">' +
+        '<span style="font-size:11px;font-weight:800;color:#fff;">Reel ' + (idx+1) + ' — ' + idea.angle + '</span>' +
+      '</div>' +
+      '<div style="padding:12px;font-size:12px;color:var(--text2);line-height:1.7;">' +
+        '<div style="margin-bottom:8px;"><span style="font-size:10px;font-weight:800;color:var(--brand);display:block;margin-bottom:3px;">⏱️ 0-3s — GANCHO</span>' +
+        escHtml(idea.hook) + '</div>' +
+        '<div style="margin-bottom:8px;"><span style="font-size:10px;font-weight:800;color:#0EA5E9;display:block;margin-bottom:3px;">⏱️ 3-15s — DESARROLLO</span>' +
+        escHtml(idea.dev) + '</div>' +
+        '<div style="margin-bottom:8px;"><span style="font-size:10px;font-weight:800;color:#10B981;display:block;margin-bottom:3px;">⏱️ 15-25s — VALOR REAL</span>' +
+        escHtml(idea.valor) + '</div>' +
+        '<div style="margin-bottom:8px;"><span style="font-size:10px;font-weight:800;color:#F43F5E;display:block;margin-bottom:3px;">⏱️ 25-30s — CTA</span>' +
+        escHtml(idea.cta) + '</div>' +
+        '<div style="border-top:1px solid var(--border);padding-top:8px;margin-top:4px;font-size:10px;color:var(--text3);">🎵 ' + escHtml(idea.music) + '</div>' +
+      '</div>';
+  }
+  renderReelCard(reelIdx);
+  navPrev.onclick = () => { reelIdx = (reelIdx-1+reelIdeas.length)%reelIdeas.length; renderReelCard(reelIdx); updateReelCaption(reelIdx); };
+  navNext.onclick = () => { reelIdx = (reelIdx+1)%reelIdeas.length; renderReelCard(reelIdx); updateReelCaption(reelIdx); };
+  container.appendChild(reelCard);
+
+  // Caption corto + hashtags
+  const capSec = document.createElement('div');
+  capSec.style.cssText = 'margin-bottom:10px;';
+  const capLbl = document.createElement('div');
+  capLbl.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;';
+  capLbl.innerHTML = '<span style="width:8px;height:8px;background:var(--brand);border-radius:2px;display:inline-block;margin-right:6px;"></span>Caption del Reel';
+  capSec.appendChild(capLbl);
+
+  const capTA = document.createElement('textarea');
+  capTA.className = 'cap-full';
+  capTA.style.cssText = 'min-height:60px;';
+  capTA.placeholder = 'Caption corto para el Reel (1-3 líneas + hashtags)';
+  capTA.oninput = () => { captionFull = capTA.value; updateCaptionPreview(); };
+  capSec.appendChild(capTA);
+
+  // Hashtags
+  const hashRow = document.createElement('div');
+  hashRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;margin-bottom:8px;';
+  const selHash = new Set();
+  hashtags.slice(0,8).forEach(tag => {
+    const chip = document.createElement('button');
+    chip.className = 'hash-chip';
+    chip.textContent = tag.startsWith('#') ? tag : '#'+tag;
+    chip.onclick = () => {
+      if (selHash.has(tag)) { selHash.delete(tag); chip.classList.remove('active'); }
+      else if (selHash.size < 3) { selHash.add(tag); chip.classList.add('active'); }
+      const base = (capTA.value||'').replace(/#\S+/g,'').replace(/\s+$/,'').trim();
+      const tags = [...selHash].map(t=>t.startsWith('#')?t:'#'+t).join(' ');
+      capTA.value = base + (tags ? String.fromCharCode(10)+tags : '');
+      captionFull = capTA.value; updateCaptionPreview();
+    };
+    hashRow.appendChild(chip);
+  });
+  capSec.appendChild(hashRow);
+
+  function updateReelCaption(idx) {
+    const idea = reelIdeas[idx];
+    const cap = idea.caption || idea.hook.substring(0,100);
+    capTA.value = cap;
+    captionFull = cap;
+    updateCaptionPreview();
+  }
+  updateReelCaption(0);
+  container.appendChild(capSec);
+
+  // Prompt CapCut/Runway button
+  const promptBtn = document.createElement('button');
+  promptBtn.style.cssText = 'width:100%;padding:10px;border-radius:var(--r);border:1.5px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:6px;';
+  promptBtn.innerHTML = '🎬 Copiar prompt para CapCut / Runway';
+  promptBtn.onclick = () => {
+    const idea = reelIdeas[reelIdx];
+    const prompt = `Create a vertical Instagram Reel (1080x1920, 30 seconds).
+HOOK (0-3s): "${idea.hook}"
+DEVELOPMENT (3-15s): Show the problem or situation clearly. Fast cuts every 2-3 seconds. High energy.
+VALUE (15-25s): Deliver the key insight or solution. Text overlay recommended.
+CTA (25-30s): "${idea.cta}"
+STYLE: ${niche} content creator, cinematic, authentic. No stock footage.
+MUSIC: Upbeat, 90-110 BPM. No lyrics in first 3 seconds.
+SUBTITLES: Auto-captions, bold white text, black outline.`;
+    navigator.clipboard.writeText(prompt)
+      .then(() => { promptBtn.textContent = '✅ Prompt copiado'; setTimeout(()=>{ promptBtn.innerHTML='🎬 Copiar prompt para CapCut / Runway'; },2000); })
+      .catch(() => toast('Error al copiar','error'));
+  };
+  container.appendChild(promptBtn);
+
+  // Copy caption button
+  const copyBtn = document.createElement('button');
+  copyBtn.style.cssText = 'width:100%;padding:10px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;';
+  copyBtn.innerHTML = '📋 Copiar caption';
+  copyBtn.onclick = () => navigator.clipboard.writeText(capTA.value||captionFull||'').then(()=>toast('✅ Caption copiado','success'));
+  container.appendChild(copyBtn);
 }
 
 /* ── DISEÑO ── */
