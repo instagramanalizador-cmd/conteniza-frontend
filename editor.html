@@ -5327,6 +5327,119 @@ function renderCarouselPanel() {
     };
     container.appendChild(card);
   });
+
+  // ── CAPTION DEL CARRUSEL ──
+  const capSection = document.createElement('div');
+  capSection.style.cssText = 'margin-top:12px;padding-top:12px;border-top:1px solid var(--border);';
+
+  // Caption navigator (from iaData.captions)
+  const captions = iaData?.captions || [];
+  if (captions.length) {
+    let capIdx = 0;
+    const capHeader = document.createElement('div');
+    capHeader.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;';
+    const capLabel = document.createElement('div');
+    capLabel.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:6px;';
+    capLabel.innerHTML = '<span style="width:8px;height:8px;background:var(--brand);border-radius:2px;display:inline-block;"></span> CAPTION DEL CARRUSEL';
+    const capNav = document.createElement('div');
+    capNav.style.cssText = 'display:flex;align-items:center;gap:4px;';
+    const capPrev = document.createElement('button');
+    capPrev.style.cssText = 'width:22px;height:22px;border-radius:50%;border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;';
+    capPrev.textContent = '‹';
+    const capCounter = document.createElement('span');
+    capCounter.style.cssText = 'font-size:10px;color:var(--text3);min-width:30px;text-align:center;';
+    capCounter.textContent = '1/' + captions.length;
+    const capNext = document.createElement('button');
+    capNext.style.cssText = 'width:22px;height:22px;border-radius:50%;border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;';
+    capNext.textContent = '›';
+    capNav.appendChild(capPrev); capNav.appendChild(capCounter); capNav.appendChild(capNext);
+    capHeader.appendChild(capLabel); capHeader.appendChild(capNav);
+    capSection.appendChild(capHeader);
+
+    // Caption text display
+    const capText = document.createElement('div');
+    capText.style.cssText = 'font-size:12px;color:var(--text2);line-height:1.6;padding:8px 10px;background:var(--surf2);border-radius:var(--r);border:1px solid var(--border2);max-height:100px;overflow-y:auto;margin-bottom:8px;';
+
+    function renderCarouselCap() {
+      const raw = (captions[capIdx]||'').replace(/^CAPTION\s*\d+\s*[—-]\s*(Hook:|Descripción:|CTA:)?\s*/i,'').trim();
+      capText.textContent = raw || '—';
+      capCounter.textContent = (capIdx+1) + '/' + captions.length;
+    }
+    renderCarouselCap();
+    capPrev.onclick = () => { capIdx = (capIdx-1+captions.length)%captions.length; renderCarouselCap(); };
+    capNext.onclick = () => { capIdx = (capIdx+1)%captions.length; renderCarouselCap(); };
+    capSection.appendChild(capText);
+
+    // Use this caption button
+    const useCapBtn = document.createElement('button');
+    useCapBtn.style.cssText = 'width:100%;padding:8px;border-radius:var(--r);background:rgba(139,95,191,.15);border:1.5px solid rgba(139,95,191,.4);color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:6px;';
+    useCapBtn.textContent = '✅ Usar este caption';
+    useCapBtn.onclick = () => {
+      const cap = (captions[capIdx]||'').replace(/^CAPTION\s*\d+\s*[—-]\s*(Hook:|Descripción:|CTA:)?\s*/i,'').trim();
+      const capEl = document.getElementById('capFull');
+      if (capEl) { capEl.value = cap; captionFull = cap; updateCaptionPreview(); }
+      toast('✅ Caption del carrusel aplicado','success');
+    };
+    capSection.appendChild(useCapBtn);
+  }
+
+  // Tu caption textarea + Copiar
+  const capLbl2 = document.createElement('div');
+  capLbl2.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;display:flex;align-items:center;gap:6px;';
+  capLbl2.innerHTML = '<span style="width:8px;height:8px;background:var(--brand);border-radius:2px;display:inline-block;"></span> TU CAPTION';
+  capSection.appendChild(capLbl2);
+
+  const capTA = document.createElement('textarea');
+  capTA.id = 'capFull';
+  capTA.className = 'cap-full';
+  capTA.placeholder = 'Se construye con tus elecciones…';
+  capTA.oninput = () => { captionFull = capTA.value; updateCaptionPreview(); };
+  capSection.appendChild(capTA);
+
+  // Hashtags
+  const hashWrap = document.createElement('div');
+  hashWrap.style.cssText = 'margin-top:8px;';
+  const hashLabel = document.createElement('div');
+  hashLabel.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;';
+  hashLabel.textContent = '# Hashtags — elige hasta 3';
+  hashWrap.appendChild(hashLabel);
+  const hashChips = document.createElement('div');
+  hashChips.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px;';
+  const hashtags = iaData?.hashtags || [];
+  const selHashCar = new Set();
+  hashtags.forEach(tag => {
+    const chip = document.createElement('button');
+    chip.className = 'hash-chip';
+    chip.textContent = tag.startsWith('#') ? tag : '#'+tag;
+    chip.onclick = () => {
+      if (selHashCar.has(tag)) { selHashCar.delete(tag); chip.classList.remove('active'); }
+      else if (selHashCar.size < 3) { selHashCar.add(tag); chip.classList.add('active'); }
+      // Append hashtags to caption
+      const capEl = document.getElementById('capFull');
+      if (capEl) {
+        const base = (capEl.value||'').replace(/#\S+/g,'').replace(/\s+$/,'').trim();
+        const tags = [...selHashCar].map(t=>t.startsWith('#')?t:'#'+t).join(' ');
+        capEl.value = base + (tags ? String.fromCharCode(10,10)+tags : '');
+        captionFull = capEl.value; updateCaptionPreview();
+      }
+    };
+    hashChips.appendChild(chip);
+  });
+  hashWrap.appendChild(hashChips);
+  capSection.appendChild(hashWrap);
+
+  // Copy button
+  const copyBtn2 = document.createElement('button');
+  copyBtn2.style.cssText = 'width:100%;padding:11px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:10px;';
+  copyBtn2.innerHTML = '📋 Copiar caption';
+  copyBtn2.onclick = () => {
+    const capEl = document.getElementById('capFull');
+    const text = capEl?.value || captionFull || '';
+    navigator.clipboard.writeText(text).then(() => toast('✅ Caption copiado','success'));
+  };
+  capSection.appendChild(copyBtn2);
+
+  container.appendChild(capSection);
 }
 
 function renderBrandPanel() {

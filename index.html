@@ -1327,12 +1327,13 @@ function detectNicheMismatch(description, savedNiche) {
   const nicheL = savedNiche.toLowerCase();
   const descL  = description.toLowerCase();
   const map = {
-    'finanz':['dinero','ahorro','inversion','presupuesto','deuda','credito','capital','riqueza','banco','bolsa','ingreso','gasto','cripto','retiro'],
+    'finanz':['dinero','ahorro','inversion','invertir','inversiones','invierte','invirtiendo','presupuesto','deuda','credito','capital','riqueza','banco','bolsa','ingreso','gasto','cripto','retiro','financiero','financiera','financieros','rentabilidad','patrimonio','intereses','fondos'],
     'coaching':['habito','meta','objetivo','cambio','transformacion','mindset','liderazgo','exito','motivacion','crecimiento','productividad'],
     'nutricion':['comida','alimento','dieta','calorias','proteina','vitamina','receta','salud','peso','musculo'],
     'fitness':['ejercicio','entrenamiento','gimnasio','musculo','cardio','rutina','fuerza','cuerpo'],
     'marketing':['venta','cliente','marca','redes','contenido','publicidad','conversion','lead'],
-    'negocio':['empresa','emprendimiento','startup','producto','servicio','mercado','revenue'],
+    'negocio':['empresa','emprendimiento','startup','producto','servicio','mercado','revenue','negocio','negocios','empresarial'],
+    'inversion':['invertir','invierte','invirtiendo','inversiones','bolsa','acciones','fondos','activos','rentabilidad','dividendo','cripto','bitcoin'],
     'bienestar':['estres','ansiedad','meditacion','mindfulness','equilibrio','descanso'],
     'psicolog':['mente','emocion','terapia','trauma','autoestima','relacion'],
     'viaje':['destino','turismo','vuelo','hotel','aventura','cultura'],
@@ -1347,7 +1348,13 @@ function detectNicheMismatch(description, savedNiche) {
   for (const [k,v] of Object.entries(map)) {
     if (words.some(w=>w.includes(k)||k.includes(w))) expanded=[...expanded,...v];
   }
-  if (expanded.some(w=>w.length>3&&descL.includes(w))) return false;
+  // Use stem matching — check if any expanded word is contained in desc OR vice versa
+  const descWords = descL.split(/[\s,\/]+/).filter(w=>w.length>3);
+  const matchFound = expanded.some(exp => exp.length>3 && (
+    descL.includes(exp) ||                      // exact match
+    descWords.some(dw => dw.startsWith(exp.substring(0,5)) || exp.startsWith(dw.substring(0,5)))  // stem match
+  ));
+  if (matchFound) return false;
   if (description.trim().split(/\s+/).length < 4) return false;
   return true;
 }
