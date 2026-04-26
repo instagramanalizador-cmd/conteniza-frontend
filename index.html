@@ -1135,7 +1135,14 @@ async function syncCredits() {
     if (d.user) {
       userCredits = d.user.credits_remaining ?? userCredits;
       currentUser.plan_type = d.user.plan_type ?? currentUser.plan_type;
+      // Update daily usage
+      if (d.user.daily_usage_count !== undefined) {
+        currentUser.daily_usage_count = d.user.daily_usage_count;
+        localStorage.setItem('conteniza_daily_usage', String(d.user.daily_usage_count));
+      }
       document.getElementById('userCredits').textContent = userCredits + ' créditos';
+      document.getElementById('creditsDisplay').textContent = userCredits;
+      updateCreditsBar();
       document.getElementById('dropCredits').textContent = userCredits + ' créditos';
       document.getElementById('creditsDisplay').textContent = userCredits;
       updateFormatBadges();

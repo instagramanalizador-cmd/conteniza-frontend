@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Conteniza Editor</title>
+<title>✦ Conteniza — Editor</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1240,6 +1241,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
     <!-- Tabs simplificados -->
     <div class="ia-tabs" id="iaTabs">
       <div class="ia-tab active" data-tab="content" onclick="switchIaTab('content')" id="tabPost">✍️ Post</div>
+      <div class="ia-tab" data-tab="caption" onclick="switchIaTab('caption')" id="tabCaption" style="display:none;">📝 Caption</div>
       <div class="ia-tab" data-tab="carousel" onclick="switchIaTab('carousel')" id="tabCarousel" style="display:none;">🎠 Carrusel</div>
       <div class="ia-tab" data-tab="design" onclick="switchIaTab('design')" id="tabDesign">🎨 Diseño</div>
       <div class="ia-tab" data-tab="brand" onclick="switchIaTab('brand')" id="tabBrand">🏷 Marca</div>
@@ -1256,6 +1258,21 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
     </div>
 
     <!-- ── TAB: DISEÑO ── -->
+    <!-- ── PANEL: CAPTION (for carousel) ── -->
+    <div id="iaCaption" style="display:none;flex-direction:column;height:100%;padding:10px;gap:8px;">
+      <!-- Caption navigator -->
+      <div id="carouselCaptionNav"></div>
+      <!-- capFull reference (actual textarea is in captionZone beside canvas) -->
+      <div style="font-size:10px;color:var(--text3);text-align:center;padding:4px;background:var(--surf2);border-radius:var(--r);border:1px dashed var(--border2);">
+        📝 El caption se edita en la columna de la izquierda
+      </div>
+      <!-- Hashtags -->
+      <div style="font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;"># Hashtags</div>
+      <div id="hashtagChipsCarousel" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
+      <!-- Copy button -->
+      <button onclick="navigator.clipboard.writeText(document.getElementById('capFull')?.value||captionFull||'').then(()=>toast('✅ Caption copiado','success'))" style="width:100%;padding:10px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:auto;">📋 Copiar caption</button>
+    </div>
+
     <!-- ── PANEL: CARRUSEL ── -->
     <div id="iaCarousel" style="display:none;flex-direction:column;height:100%;overflow-y:auto;padding:10px;">
       <div id="carouselPanelContent"></div>
@@ -2829,7 +2846,7 @@ function copPreFill(msg) {
 /* ══ IA PANEL ══ */
 function switchIaTab(tab) {
   document.querySelectorAll('.ia-tab').forEach(t => t.classList.toggle('active', t.dataset.tab===tab));
-  const ids = { content:'iaContent', carousel:'iaCarousel', design:'iaDesign', brand:'iaBrand' };
+  const ids = { content:'iaContent', caption:'iaCaption', carousel:'iaCarousel', design:'iaDesign', brand:'iaBrand' };
   Object.entries(ids).forEach(([k,id]) => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -2838,6 +2855,7 @@ function switchIaTab(tab) {
   });
   if (tab !== 'content') document.querySelectorAll('.tt-bubble').forEach(e=>e.remove());
   if (tab === 'content')  { renderContentPanel(); }
+  if (tab === 'caption')  { renderCarouselCaptionPanel(); }
   if (tab === 'carousel') { renderCarouselPanel(); }
   if (tab === 'design')   { renderDesignPanel(); }
   if (tab === 'brand')    { renderBrandPanel(); }
@@ -2849,10 +2867,12 @@ function updateTabsForFormat(fmt) {
   const fmtLabels  = { post:'✍️ Post', story:'📱 Story', reel:'🎬 Reel', carousel:'🎠 Carrusel' };
   const postTab = document.getElementById('tabPost');
   const carTab  = document.getElementById('tabCarousel');
+  const capTab = document.getElementById('tabCaption');
   if (postTab) {
     postTab.style.display = isCarousel ? 'none' : '';
     postTab.textContent = fmtLabels[fmt] || '✍️ Post';
   }
+  if (capTab) capTab.style.display = isCarousel ? '' : 'none';
   if (carTab) carTab.style.display = isCarousel ? '' : 'none';
   if (isCarousel && document.querySelector('.ia-tab.active')?.dataset?.tab === 'content') {
     switchIaTab('carousel');
@@ -5604,18 +5624,11 @@ function renderCarouselPanel() {
     capSection.appendChild(useCapBtn);
   }
 
-  // Tu caption textarea + Copiar
-  const capLbl2 = document.createElement('div');
-  capLbl2.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;display:flex;align-items:center;gap:6px;';
-  capLbl2.innerHTML = '<span style="width:8px;height:8px;background:var(--brand);border-radius:2px;display:inline-block;"></span> TU CAPTION';
-  capSection.appendChild(capLbl2);
-
-  const capTA = document.createElement('textarea');
-  capTA.id = 'capFull';
-  capTA.className = 'cap-full';
-  capTA.placeholder = 'Se construye con tus elecciones…';
-  capTA.oninput = () => { captionFull = capTA.value; updateCaptionPreview(); };
-  capSection.appendChild(capTA);
+  // Caption reference — actual editing in captionZone beside canvas
+  const capRef = document.createElement('div');
+  capRef.style.cssText = 'font-size:11px;color:var(--text3);padding:8px;background:var(--surf2);border-radius:var(--r);border:1px dashed var(--border2);text-align:center;';
+  capRef.textContent = '📝 Edita el caption en la columna izquierda';
+  capSection.appendChild(capRef);
 
   // Hashtags
   const hashWrap = document.createElement('div');
@@ -5661,6 +5674,87 @@ function renderCarouselPanel() {
   capSection.appendChild(copyBtn2);
 
   container.appendChild(capSection);
+}
+
+function renderCarouselCaptionPanel() {
+  // Populate the iaCaption panel with caption navigator + hashtags
+  const navEl = document.getElementById('carouselCaptionNav');
+  const hashEl = document.getElementById('hashtagChipsCarousel');
+  if (!navEl) return;
+
+  const captions  = iaData?.captions  || [];
+  const hashtags  = iaData?.hashtags  || [];
+
+  // Caption navigator
+  navEl.innerHTML = '';
+  if (captions.length) {
+    let capIdx = 0;
+    const hdr = document.createElement('div');
+    hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;';
+    const lbl = document.createElement('div');
+    lbl.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;';
+    lbl.textContent = '📝 Caption del carrusel';
+    const nav = document.createElement('div');
+    nav.style.cssText = 'display:flex;align-items:center;gap:4px;';
+    const prev = document.createElement('button');
+    prev.style.cssText = 'width:22px;height:22px;border-radius:50%;border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:12px;cursor:pointer;';
+    prev.textContent = '‹';
+    const ctr = document.createElement('span');
+    ctr.style.cssText = 'font-size:10px;color:var(--text3);min-width:30px;text-align:center;';
+    const next = document.createElement('button');
+    next.style.cssText = 'width:22px;height:22px;border-radius:50%;border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:12px;cursor:pointer;';
+    next.textContent = '›';
+    nav.appendChild(prev); nav.appendChild(ctr); nav.appendChild(next);
+    hdr.appendChild(lbl); hdr.appendChild(nav);
+    navEl.appendChild(hdr);
+
+    const txt = document.createElement('div');
+    txt.style.cssText = 'font-size:11px;color:var(--text2);line-height:1.6;padding:8px;background:var(--surf2);border-radius:var(--r);border:1px solid var(--border2);margin-bottom:8px;max-height:90px;overflow-y:auto;';
+
+    function renderCapTxt() {
+      const raw = (captions[capIdx]||'').replace(/^CAPTION\s*\d+\s*[—-]\s*(Hook:|Descripción:|CTA:)?\s*/i,'').trim();
+      txt.textContent = raw || '—';
+      ctr.textContent = (capIdx+1) + '/' + captions.length;
+    }
+    renderCapTxt();
+    prev.onclick = () => { capIdx=(capIdx-1+captions.length)%captions.length; renderCapTxt(); };
+    next.onclick = () => { capIdx=(capIdx+1)%captions.length; renderCapTxt(); };
+    navEl.appendChild(txt);
+
+    const useBtn = document.createElement('button');
+    useBtn.style.cssText = 'width:100%;padding:7px;border-radius:var(--r);background:rgba(139,95,191,.15);border:1.5px solid rgba(139,95,191,.4);color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;';
+    useBtn.textContent = '✅ Usar este caption';
+    useBtn.onclick = () => {
+      const cap = (captions[capIdx]||'').replace(/^CAPTION\s*\d+\s*[—-]\s*(Hook:|Descripción:|CTA:)?\s*/i,'').trim();
+      const capEl = document.getElementById('capFull');
+      if (capEl) { capEl.value = cap; captionFull = cap; updateCaptionPreview(); }
+      toast('Caption aplicado','success');
+    };
+    navEl.appendChild(useBtn);
+  }
+
+  // Hashtags
+  if (hashEl && hashtags.length) {
+    hashEl.innerHTML = '';
+    const selH = new Set();
+    hashtags.forEach(tag => {
+      const chip = document.createElement('button');
+      chip.className = 'hash-chip';
+      chip.textContent = tag.startsWith('#') ? tag : '#'+tag;
+      chip.onclick = () => {
+        if (selH.has(tag)) { selH.delete(tag); chip.classList.remove('active'); }
+        else if (selH.size < 3) { selH.add(tag); chip.classList.add('active'); }
+        const capEl = document.getElementById('capFull');
+        if (capEl) {
+          const base = (capEl.value||'').replace(/#\S+/g,'').replace(/\s+$/,'').trim();
+          const tags = [...selH].map(t=>t.startsWith('#')?t:'#'+t).join(' ');
+          capEl.value = base + (tags ? String.fromCharCode(10,10)+tags : '');
+          captionFull = capEl.value; updateCaptionPreview();
+        }
+      };
+      hashEl.appendChild(chip);
+    });
+  }
 }
 
 function renderBrandPanel() {
