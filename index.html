@@ -992,6 +992,10 @@ async function handleAuth(event) {
       localStorage.setItem('user', JSON.stringify(d.user));
       currentUser = d.user;
       userCredits = d.user.credits_remaining ?? 0;
+      // Store daily usage for quick restore
+      if (d.user.daily_usage_count !== undefined) {
+        localStorage.setItem('conteniza_daily_usage', String(d.user.daily_usage_count));
+      }
       await showMainApp();
       showNotification(_isRegister ? '¡Cuenta creada!' : '¡Bienvenido!', 'success');
     } else {
@@ -1073,12 +1077,22 @@ async function showMainApp() {
     const el = document.getElementById('description');
     if (el && !el.value) el.value = draft;
   }
+  // Restore daily usage from localStorage for immediate display
+  if (currentUser) {
+    const storedDaily = localStorage.getItem('conteniza_daily_usage');
+    if (storedDaily && currentUser.daily_usage_count === undefined) {
+      currentUser.daily_usage_count = parseInt(storedDaily) || 0;
+    }
+  }
+  updateCreditsBar();  // Re-render with restored daily count
+
   // Restore saved niche
   const savedNiche = localStorage.getItem('conteniza_niche');
   if (savedNiche) {
     const el = document.getElementById('niche');
     if (el) el.value = savedNiche;
     updateNicheDisplay(savedNiche);
+    _selectedNiche = savedNiche;
   } else {
     updateNicheDisplay('');
   }
@@ -1338,9 +1352,9 @@ function detectNicheMismatch(description, savedNiche) {
     'inversion':['invertir','invierte','invirtiendo','inversiones','bolsa','acciones','fondos','activos','rentabilidad','dividendo','cripto','bitcoin'],
     'bienestar':['estres','ansiedad','meditacion','mindfulness','equilibrio','descanso'],
     'psicolog':['mente','emocion','terapia','trauma','autoestima','relacion'],
-    'viaje':['destino','turismo','vuelo','hotel','aventura','cultura'],
+    'viaje':['destino','turismo','vuelo','hotel','aventura','cultura','ciudad','ciudades','compras','shopping','lifestyle','viajero','trip','travel','ruta','itinerario','escapada'],
     'fotograf':['camara','imagen','foto','edicion','composicion'],
-    'moda':['ropa','estilo','tendencia','outfit','accesorio','belleza'],
+    'moda':['ropa','estilo','tendencia','outfit','accesorio','belleza','compras','shopping','tienda','marca','fashion'],
     'gastronom':['cocina','receta','sabor','ingrediente','plato'],
     'educacion':['aprendizaje','estudio','curso','habilidad','formacion'],
     'inmobiliar':['propiedad','casa','apartamento','alquiler','hipoteca'],
@@ -1591,6 +1605,10 @@ async function generateContent(event) {
       } else {
         currentUser.daily_usage_count = (currentUser.daily_usage_count || 0) + 1;
       }
+    }
+    // Save updated daily count to localStorage
+    if (currentUser?.daily_usage_count !== undefined) {
+      localStorage.setItem('conteniza_daily_usage', String(currentUser.daily_usage_count));
     }
     updateCreditsBar();  // Refresh "Hoy: X/30" immediately
 
