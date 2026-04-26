@@ -420,6 +420,9 @@
           <button id="dropCancelBtn" onclick="cancelSubscription();closeUbDropdown()" style="display:none;width:100%;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">⚙️ Cancelar suscripción</button>
           <button id="dropAdminBtn" onclick="openAdmin();closeUbDropdown()" style="display:none;width:100%;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:#FCD34D;cursor:pointer;border:none;background:none;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">🛡️ Admin</button>
           <hr style="border:none;border-top:1px solid rgba(255,255,255,.1);margin:4px 0;">
+          <button style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'" onclick="openSidebar();closeUbDropdown()">📜 Historial</button>
+          <button style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'" onclick="showBrandScreen();closeUbDropdown()">🎨 Mi Marca</button>
+          <div style="border-top:1px solid rgba(255,255,255,.08);margin:4px 0;"></div>
           <button onclick="logout()" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:#FCA5A5;cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(252,129,129,.1)'" onmouseout="this.style.background='none'">🚪 Cerrar sesión</button>
         </div>
       </div>
@@ -991,6 +994,7 @@ async function handleAuth(event) {
       localStorage.setItem('token', d.token);
       localStorage.setItem('user', JSON.stringify(d.user));
       currentUser = d.user;
+      if (currentUser.plan_type) currentUser.plan_type = currentUser.plan_type.toLowerCase();
       userCredits = d.user.credits_remaining ?? 0;
       // Store daily usage for quick restore
       if (d.user.daily_usage_count !== undefined) {
@@ -1064,6 +1068,16 @@ async function showMainApp() {
   document.getElementById('authScreen').classList.add('hidden');
   document.getElementById('mainApp').classList.remove('hidden');
   document.getElementById('userBar').classList.add('visible');
+  // Restore niche FIRST — before syncCredits which might trigger onboarding
+  const _earlyNiche = localStorage.getItem('conteniza_niche');
+  if (_earlyNiche) {
+    const _nicheEl = document.getElementById('niche');
+    if (_nicheEl) _nicheEl.value = _earlyNiche;
+    updateNicheDisplay(_earlyNiche);
+    _selectedNiche = _earlyNiche;
+    if (currentUser) currentUser.niche = _earlyNiche;
+  }
+
   updateUserPanel();
   await syncCredits();
   updateFormatBadges();
@@ -1086,16 +1100,8 @@ async function showMainApp() {
   }
   updateCreditsBar();  // Re-render with restored daily count
 
-  // Restore saved niche
-  const savedNiche = localStorage.getItem('conteniza_niche');
-  if (savedNiche) {
-    const el = document.getElementById('niche');
-    if (el) el.value = savedNiche;
-    updateNicheDisplay(savedNiche);
-    _selectedNiche = savedNiche;
-  } else {
-    updateNicheDisplay('');
-  }
+  // Niche already restored at top of showMainApp (before syncCredits)
+  if (!_selectedNiche) updateNicheDisplay('');
 }
 function updateUserPanel() {
   if (!currentUser) return;
@@ -1134,7 +1140,7 @@ async function syncCredits() {
     const d = await r.json();
     if (d.user) {
       userCredits = d.user.credits_remaining ?? userCredits;
-      currentUser.plan_type = d.user.plan_type ?? currentUser.plan_type;
+      currentUser.plan_type = (d.user.plan_type ?? currentUser.plan_type ?? 'free').toLowerCase();
       // Update daily usage
       if (d.user.daily_usage_count !== undefined) {
         currentUser.daily_usage_count = d.user.daily_usage_count;
@@ -1146,6 +1152,8 @@ async function syncCredits() {
       updateFormatBadges();
       updateCreditsBar();
       updateUploadZone();
+      // Save updated user to localStorage so init() has daily_usage_count
+      if (currentUser) localStorage.setItem('user', JSON.stringify(currentUser));
 
       // Sync niche from backend → takes priority over localStorage
       if (d.user.niche) {
@@ -1407,26 +1415,31 @@ function autosaveDesc(val) {
 const PLAN_LIMITS = { free: 5, pro: 100, premium: 300 };
 
 function updateCreditsBar() {
-  const plan   = currentUser?.plan_type || 'free';
-  const limit  = PLAN_LIMITS[plan] || 5;
+  const plan   = (currentUser?.plan_type || 'free').toLowerCase();
+  const limit  = PLAN_LIMITS[plan] || (plan.includes('premium') ? 300 : plan.includes('pro') ? 100 : 5);
   const used   = limit - userCredits;
-  const pct    = Math.max(0, Math.min(100, (userCredits / limit) * 100));
+  const usedPct = Math.max(0, Math.min(100, ((limit - userCredits) / limit) * 100));
 
   const bar    = document.getElementById('creditsBar');
   const usedLb = document.getElementById('creditsUsedLabel');
   const resetLb= document.getElementById('creditsResetLabel');
 
   if (bar) {
-    bar.style.width = pct + '%';
+    bar.style.width = usedPct + '%';
     // Color: green > 50%, amber 20-50%, red < 20%
-    bar.style.background = pct > 50
+    bar.style.background = usedPct < 50
       ? 'linear-gradient(90deg,#8B5FBF,#6366f1)'
-      : pct > 20
+      : usedPct < 80
         ? 'linear-gradient(90deg,#F59E0B,#EF4444)'
         : 'linear-gradient(90deg,#EF4444,#DC2626)';
   }
-  const dailyUsed  = currentUser?.daily_usage_count || 0;
-  const dailyLimit = plan === 'free' ? 2 : plan === 'pro' ? 20 : 30;
+  // Try currentUser first, then localStorage fallback
+  let dailyUsed = currentUser?.daily_usage_count;
+  if (dailyUsed === undefined || dailyUsed === null) {
+    const stored = localStorage.getItem('conteniza_daily_usage');
+    dailyUsed = stored ? parseInt(stored) || 0 : 0;
+  }
+  const dailyLimit = plan === 'free' ? 5 : plan === 'pro' ? 20 : 30;  // free=5,pro=20,premium=30
   if (usedLb) usedLb.textContent = `${used < 0 ? 0 : used} usados de ${limit} este mes  •  Hoy: ${dailyUsed}/${dailyLimit}`;
 
   // Reset date: first day of next month
@@ -1614,6 +1627,7 @@ async function generateContent(event) {
     // Save updated daily count to localStorage
     if (currentUser?.daily_usage_count !== undefined) {
       localStorage.setItem('conteniza_daily_usage', String(currentUser.daily_usage_count));
+      localStorage.setItem('user', JSON.stringify(currentUser));  // Keep user in sync
     }
     updateCreditsBar();  // Refresh "Hoy: X/30" immediately
 
@@ -1678,10 +1692,12 @@ function logout() {
 function toggleUbDropdown(e) {
   e.stopPropagation();
   const d = document.getElementById('ubDropdown');
+  if (!d) return;
   d.style.display = d.style.display === 'none' ? 'block' : 'none';
 }
 function closeUbDropdown() {
-  document.getElementById('ubDropdown').style.display = 'none';
+  const d = document.getElementById('ubDropdown');
+  if (d) d.style.display = 'none';
 }
 document.addEventListener('click', function(e) {
   if (!document.getElementById('ubAvatarWrap')?.contains(e.target)) closeUbDropdown();
@@ -1869,6 +1885,11 @@ async function init() {
     try {
       currentUser = JSON.parse(saved);
       userCredits = currentUser.credits_remaining ?? 0;
+      // Restore daily usage count from localStorage (set by syncCredits/generateContent)
+      const storedDailyInit = localStorage.getItem('conteniza_daily_usage');
+      if (storedDailyInit && currentUser.daily_usage_count === undefined) {
+        currentUser.daily_usage_count = parseInt(storedDailyInit) || 0;
+      }
       await showMainApp();
       // Restaurar formato guardado
       const savedFmt = localStorage.getItem('conteniza_format') || 'post';
@@ -1997,18 +2018,25 @@ function goHome() {
 }
 
 function updateTopbarForLoggedIn() {
+  // Hide "Ver planes" + "Iniciar sesión" buttons
   const actions = document.getElementById('topbarActions');
-  if (!actions) return;
-  actions.innerHTML = '';  // Hide buttons when logged in — userBar takes over
+  if (actions) actions.style.display = 'none';
+  // Show Historial + Mi Marca buttons in userBar
+  const histBtn = document.getElementById('historialBtn');
+  const brandBtn2 = document.getElementById('brandBtn');
+  if (histBtn) histBtn.classList.remove('hidden');
+  if (brandBtn2) brandBtn2.classList.remove('hidden');
 }
 
 function updateTopbarForLoggedOut() {
+  // Show "Ver planes" + "Iniciar sesión" 
   const actions = document.getElementById('topbarActions');
-  if (!actions) return;
-  actions.innerHTML = `
-    <button class="btn btn-outline btn-sm" onclick="showPlansFromTopbar()">Ver planes</button>
-    <button class="btn btn-primary btn-sm" onclick="showAuthFromPlans()">Iniciar sesión</button>
-  `;
+  if (actions) actions.style.display = '';
+  // Hide Historial + Mi Marca
+  const histBtn = document.getElementById('historialBtn');
+  const brandBtn2 = document.getElementById('brandBtn');
+  if (histBtn) histBtn.classList.add('hidden');
+  if (brandBtn2) brandBtn2.classList.add('hidden');
 }
 
 
