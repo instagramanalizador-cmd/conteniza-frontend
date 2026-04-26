@@ -2998,27 +2998,7 @@ function renderPostContentPanel(container) {
     renderCap(); // render first caption and auto-apply hook to canvas
   }
 
-  // ── SECCIÓN 2: HOOKS adicionales ──
-  if (hooks.length) {
-    const sec2 = makeSection('🎣', 'Cambiar hook visual');
-    const hint2 = document.createElement('div');
-    hint2.style.cssText = 'font-size:10px;color:var(--text3);margin-bottom:8px;';
-    hint2.textContent = 'El hook del caption ya está en el canvas — cámbialo aquí si quieres';
-    sec2.appendChild(hint2);
-    hooks.slice(0,5).forEach(h => {
-      const btn = makeOption(h, () => {
-        replaceOrAddBlock('hook-block', h, {
-          y:8, w:88, x:6, fontSize:32, bold:true,
-          color: currentBrand?.font_color||'#fff', align:'center'
-        });
-        sec2.querySelectorAll('.content-option').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        toast('Hook cambiado en el canvas','success');
-      });
-      sec2.appendChild(btn);
-    });
-    container.appendChild(sec2);
-  }
+  
 
   // ── SECCIÓN 3: EMOJIS ──
   if (emojis.length) {
