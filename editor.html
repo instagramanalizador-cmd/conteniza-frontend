@@ -1222,14 +1222,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   <!-- Caption zone — beside canvas -->
   <div class="caption-zone" id="captionZone">
     <div class="caption-zone-lbl"><span></span>Tu Caption</div>
-    <!-- Caption textarea — compact -->
-    <textarea id="capFull" class="cap-full" placeholder="Se construye con tus elecciones…" oninput="captionFull=this.value;updateCaptionPreview();" style="flex:1;min-height:60px;max-height:160px;resize:none;"></textarea>
-    <!-- Emojis + Hashtags — filled dynamically -->
-    <div id="captionZoneEmojis" style="display:flex;flex-wrap:wrap;gap:3px;min-height:0;"></div>
-    <div id="hashtagChips" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
-    <!-- Actions -->
-    <div style="display:flex;gap:5px;padding-top:6px;border-top:1px solid var(--border);margin-top:4px;">
-      <button onclick="const el=document.getElementById('capFull');if(el){el.value='';captionFull='';updateCaptionPreview();}" title="Borrar caption" style="padding:7px 10px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surf2);color:var(--text3);font-size:13px;cursor:pointer;">🗑</button>
+    <textarea id="capFull" class="cap-full" placeholder="Selecciona un caption del panel →" oninput="captionFull=this.value;updateCaptionPreview();" style="flex:1;min-height:80px;max-height:200px;resize:none;"></textarea>
+    <div style="display:flex;gap:5px;padding-top:6px;border-top:1px solid var(--border);margin-top:auto;">
+      <button onclick="const el=document.getElementById('capFull');if(el){el.value='';captionFull='';updateCaptionPreview();}" title="Borrar" style="padding:7px 10px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surf2);color:var(--text3);font-size:13px;cursor:pointer;">🗑</button>
       <button onclick="navigator.clipboard.writeText(document.getElementById('capFull')?.value||captionFull||'').then(()=>toast('✅ Caption copiado','success'))" style="flex:1;padding:7px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">📋 Copiar</button>
     </div>
   </div>
@@ -1251,6 +1246,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
       <div id="iaContentInner">
         <div class="ia-empty"><div class="ia-empty-icon">✨</div>Generando contenido…</div>
       </div>
+      <!-- hashtagChips — populated by renderCaptionTab inside Post panel JS -->
+      <div id="hashtagChips" style="display:none;"></div>
       
 
     </div>
