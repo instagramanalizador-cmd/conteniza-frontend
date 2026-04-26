@@ -191,6 +191,21 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 .prop-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;flex-shrink:0;}
 
 /* ── IA PANEL ── */
+.caption-zone{
+  width:220px;flex-shrink:0;display:flex;flex-direction:column;
+  background:var(--surf);border-left:1px solid var(--border);
+  padding:12px 10px;gap:8px;overflow:hidden;
+}
+.caption-zone-lbl{
+  font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;
+  letter-spacing:.06em;display:flex;align-items:center;gap:6px;
+}
+.caption-zone-lbl span{width:8px;height:8px;background:var(--brand);border-radius:2px;display:inline-block;}
+.caption-zone textarea{
+  flex:1;min-height:120px;resize:none;padding:8px;border-radius:var(--r);
+  border:1px solid var(--border2);background:var(--surf2);color:var(--text);
+  font-family:inherit;font-size:12px;line-height:1.6;
+}
 .ia-panel{
   width:280px;flex-shrink:0;display:flex;flex-direction:column;
   background:var(--surf);border-left:1px solid var(--border);overflow:hidden;
@@ -1201,6 +1216,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   </div>
 
   <!-- ══ IA PANEL ══ -->
+  <!-- Caption zone — beside canvas -->
+  <div class="caption-zone" id="captionZone">
+    <div class="caption-zone-lbl"><span></span>Tu Caption</div>
+    <textarea id="capFull" class="cap-full" placeholder="Se construye con tus elecciones…" oninput="captionFull=this.value;updateCaptionPreview();"></textarea>
+    <div style="font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-top:4px;"># Hashtags</div>
+    <div id="hashtagChips" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
+    <button onclick="navigator.clipboard.writeText(document.getElementById('capFull')?.value||captionFull||'').then(()=>toast('✅ Caption copiado','success'))" style="width:100%;padding:10px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:auto;">📋 Copiar</button>
+  </div>
+
   <div class="ia-panel">
 
     <!-- Tabs simplificados -->
@@ -3763,6 +3787,13 @@ function renderCaptionTab() {
   const chipsEl  = document.getElementById('hashtagChips');
   if (!chipsEl || !iaData) return;
 
+  // Clear capFull if nothing selected yet
+  const capEl = document.getElementById('capFull');
+  if (capEl && !captionFull) {
+    capEl.value = '';
+    capEl.placeholder = 'Se construye con tus elecciones…';
+  }
+
   const MAX = 3;
   const selHash  = new Set();
   const selEmoji = new Set(); // needed by updateCaptionHashEmoji
@@ -3978,7 +4009,7 @@ async function searchUnsplash(q) {
 }
 
 let _stockPhotos = [];
-let _stockPage   = 0;
+let _stockPage    = 0;
 const PHOTOS_PER_PAGE = 8;   // 8 per page = 2x4 grid
 
 function renderStockResults(photos) {
@@ -4045,6 +4076,24 @@ function renderStockPage() {
     nav.appendChild(info);
     nav.appendChild(btnN);
     bank.appendChild(nav);
+
+    // "Cargar más" button — fetch next API page when on last local page
+    if (_stockPage >= total-1 && _stockQuery) {
+      const moreBtn = document.createElement('button');
+      moreBtn.style.cssText = 'width:100%;margin-top:6px;padding:8px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
+      moreBtn.innerHTML = '📷 Cargar más fotos';
+      moreBtn.onclick = async () => {
+        moreBtn.textContent = 'Cargando…'; moreBtn.disabled = true;
+        _stockApiPage++;
+        try {
+          const newPhotos = await fetchStockImages(_stockQuery, _stockApiPage);
+          _stockPhotos = [..._stockPhotos, ...newPhotos];
+          _stockPage = Math.floor((_stockPhotos.length - newPhotos.length) / PHOTOS_PER_PAGE);
+          renderStockPage();
+        } catch(err) { moreBtn.textContent = 'Error. Intenta de nuevo'; moreBtn.disabled = false; }
+      };
+      bank.appendChild(moreBtn);
+    }
   }
 }
 
@@ -4104,8 +4153,11 @@ function renderImgBank() {
     const im = document.createElement('img');
     im.src = img.url; im.loading='lazy';
     im.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
-    im.onerror = () => { im.style.display='none'; div.style.background='var(--surf2)'; div.innerHTML+='<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3);">Error</div>'; };
-    im.onerror = () => { div.style.background='var(--surf2)'; im.style.display='none'; };
+    im.onerror = () => {
+      // Remove broken item from bank and re-render
+      imgBank = imgBank.filter(item => item.url !== img.url);
+      div.remove();
+    };
     div.appendChild(im);
     div.onclick = () => {
       slides[currentSlide].bgImg = img.url;
@@ -4801,25 +4853,30 @@ function applyPropOpacity() {
 let _zCounter = 10;
 
 function bringForward() {
-  const el = document.getElementById(selectedId); if (!el) return;
-  const cur = parseInt(el.style.zIndex) || 2;
-  el.style.zIndex = cur + 1;
-  // Save to block data
+  const el = document.getElementById(selectedId); if (!el) { toast('Selecciona un bloque primero','info'); return; }
+  // Get all blocks and find max z-index
+  const allBlocks = document.querySelectorAll('.eblock');
+  const maxZ = Math.max(...Array.from(allBlocks).map(b => parseInt(b.style.zIndex)||1));
+  const cur  = parseInt(el.style.zIndex) || 1;
+  const newZ = cur >= maxZ ? maxZ + 1 : cur + 1;
+  el.style.zIndex = newZ;
   const blk = slides[currentSlide]?.blocks?.find(b => b.id === selectedId);
-  if (blk) blk.zIndex = cur + 1;
+  if (blk) blk.zIndex = newZ;
+  saveCurrentBlocks();
   historySave();
-  toast('Capa subida','info');
+  toast('↑ Capa subida (z:' + newZ + ')','info');
 }
 
 function sendBackward() {
-  const el = document.getElementById(selectedId); if (!el) return;
-  const cur = parseInt(el.style.zIndex) || 2;
+  const el = document.getElementById(selectedId); if (!el) { toast('Selecciona un bloque primero','info'); return; }
+  const cur  = parseInt(el.style.zIndex) || 1;
   const newZ = Math.max(1, cur - 1);
   el.style.zIndex = newZ;
   const blk = slides[currentSlide]?.blocks?.find(b => b.id === selectedId);
   if (blk) blk.zIndex = newZ;
+  saveCurrentBlocks();
   historySave();
-  toast('Capa bajada','info');
+  toast('↓ Capa bajada (z:' + newZ + ')','info');
 }
 
 /* ══ TEXT SHADOW ══ */
