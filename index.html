@@ -1930,12 +1930,12 @@ function updateNicheDisplay(val) {
   const input   = document.getElementById('niche');
   if (!val) {
     if (text) text.textContent = 'Toca para elegir tu nicho →';
-    if (display) display.style.borderColor = 'rgba(239,68,68,.4)';
+    if (display && display.style) display.style.borderColor = 'rgba(239,68,68,.4)';
     return;
   }
   if (text)  text.textContent = val;
   if (input) input.value = val;
-  if (display) display.style.borderColor = 'rgba(139,95,191,.4)';
+  if (display && display.style) display.style.borderColor = 'rgba(139,95,191,.4)';
 }
 
 function openNicheSelector() {
