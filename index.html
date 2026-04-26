@@ -964,7 +964,7 @@ function toggleAuthMode() {
   document.getElementById('authSubmitBtn').textContent = _isRegister ? 'Crear cuenta' : 'Entrar';
   document.getElementById('authToggleText').textContent = _isRegister ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?';
   document.getElementById('authToggleLink').textContent = _isRegister ? 'Inicia sesión' : 'Regístrate';
-  document.getElementById('nameGroup').style.display = _isRegister ? 'block' : 'none';
+  (document.getElementById('nameGroup')||{style:{}}).style.display = _isRegister ? 'block' : 'none';
 }
 
 async function handleAuth(event) {
@@ -1028,7 +1028,7 @@ async function sendForgotPassword() {
       body: JSON.stringify({ email })
     });
     showNotification('Si el email existe, recibirás instrucciones en tu correo.', 'success');
-    document.getElementById('forgotForm').style.display = 'none';
+    (document.getElementById('forgotForm')||{style:{}}).style.display = 'none';
   } catch(e) { showNotification(e.message, 'error'); }
 }
 
@@ -1117,20 +1117,20 @@ function updateUserPanel() {
   // Admin
   const isAdmin = currentUser.is_admin;
   document.getElementById('adminBtn').classList.toggle('hidden', !isAdmin);
-  document.getElementById('dropAdminBtn').style.display = isAdmin ? 'block' : 'none';
+  (document.getElementById('dropAdminBtn')||{style:{}}).style.display = isAdmin ? 'block' : 'none';
 
   // Upgrade
   const canUpgrade = plan === 'free' || plan === 'pro';
   document.getElementById('upgradePlanBtn').classList.toggle('hidden', !canUpgrade);
-  document.getElementById('dropUpgradeBtn').style.display = canUpgrade ? 'block' : 'none';
+  (document.getElementById('dropUpgradeBtn')||{style:{}}).style.display = canUpgrade ? 'block' : 'none';
 
   // Cancel
   const canCancel = plan !== 'free';
-  document.getElementById('dropCancelBtn').style.display = canCancel ? 'block' : 'none';
+  (document.getElementById('dropCancelBtn')||{style:{}}).style.display = canCancel ? 'block' : 'none';
 
   // Brand (premium)
   const hasBrand = plan === 'premium';
-  document.getElementById('dropBrandBtn').style.display = hasBrand ? 'block' : 'none';
+  (document.getElementById('dropBrandBtn')||{style:{}}).style.display = hasBrand ? 'block' : 'none';
 }
 
 async function syncCredits() {
@@ -1365,7 +1365,7 @@ function detectNicheMismatch(description, savedNiche) {
     'inversion':['invertir','invierte','invirtiendo','inversiones','bolsa','acciones','fondos','activos','rentabilidad','dividendo','cripto','bitcoin'],
     'bienestar':['estres','ansiedad','meditacion','mindfulness','equilibrio','descanso'],
     'psicolog':['mente','emocion','terapia','trauma','autoestima','relacion'],
-    'viaje':['destino','turismo','vuelo','hotel','aventura','cultura','ciudad','ciudades','compras','shopping','lifestyle','viajero','trip','travel','ruta','itinerario','escapada'],
+    'viaje':['destino','turismo','vuelo','hotel','aventura','cultura','ciudad','ciudades','compras','shopping','lifestyle','viajero','trip','travel','ruta','itinerario','escapada','gastronomia','gastronomico','restaurante','comida','cocina','culinario','chef','cuisine','foodie','gourmet','sabor'],
     'fotograf':['camara','imagen','foto','edicion','composicion'],
     'moda':['ropa','estilo','tendencia','outfit','accesorio','belleza','compras','shopping','tienda','marca','fashion'],
     'gastronom':['cocina','receta','sabor','ingrediente','plato'],
@@ -1396,12 +1396,12 @@ function showNicheMismatchModal(desc, niche) {
 }
 
 function closeNicheMismatchModal() {
-  document.getElementById('nicheMismatchModal').style.display = 'none';
+  (document.getElementById('nicheMismatchModal')||{style:{}}).style.display = 'none';
   _pendingGenerateNicheMode = null;
 }
 
 function confirmNicheMode(mode) {
-  document.getElementById('nicheMismatchModal').style.display = 'none';
+  (document.getElementById('nicheMismatchModal')||{style:{}}).style.display = 'none';
   _pendingGenerateNicheMode = mode;
   document.getElementById('generateBtn').click();
 }
@@ -1415,6 +1415,7 @@ function autosaveDesc(val) {
 const PLAN_LIMITS = { free: 5, pro: 100, premium: 300 };
 
 function updateCreditsBar() {
+  if (!currentUser) return;
   const plan   = (currentUser?.plan_type || 'free').toLowerCase();
   const limit  = PLAN_LIMITS[plan] || (plan.includes('premium') ? 300 : plan.includes('pro') ? 100 : 5);
   const used   = limit - userCredits;
@@ -1510,7 +1511,7 @@ function showPreviewModal(editorData) {
     pvCoh.style.display = 'none';
   }
 
-  document.getElementById('previewModal').style.display = 'flex';
+  (document.getElementById('previewModal')||{style:{}}).style.display = 'flex';
 }
 
 function regenerateContent() {
@@ -1520,7 +1521,7 @@ function regenerateContent() {
 }
 
 function closePreviewModal() {
-  document.getElementById('previewModal').style.display = 'none';
+  (document.getElementById('previewModal')||{style:{}}).style.display = 'none';
   _pendingEditorData = null;
   // Re-enable generate button
   const btn = document.getElementById('generateBtn');
@@ -1748,17 +1749,17 @@ function applyBrandToUI() {
   document.getElementById('brandColor2').value   = b.color_secondary || '#E91E8C';
   document.getElementById('brandFontColor').value= b.font_color      || '#ffffff';
   document.getElementById('brandSubColor').value = b.sub_font_color  || '#cccccc';
-  document.getElementById('swatchPrimary').style.background   = b.color_primary   || '#8B5FBF';
-  document.getElementById('swatchSecondary').style.background = b.color_secondary || '#E91E8C';
-  document.getElementById('swatchFontColor').style.background = b.font_color      || '#ffffff';
-  document.getElementById('swatchSubColor').style.background  = b.sub_font_color  || '#cccccc';
+  (document.getElementById('swatchPrimary')||{style:{}}).style.background   = b.color_primary   || '#8B5FBF';
+  (document.getElementById('swatchSecondary')||{style:{}}).style.background = b.color_secondary || '#E91E8C';
+  (document.getElementById('swatchFontColor')||{style:{}}).style.background = b.font_color      || '#ffffff';
+  (document.getElementById('swatchSubColor')||{style:{}}).style.background  = b.sub_font_color  || '#cccccc';
   // Logo
   if (b.logo_url) {
     const prev = document.getElementById('brandLogoPreview');
     prev.innerHTML = `<img src="${b.logo_url}" alt="logo">`;
-    document.getElementById('brandLogoRemoveBtn').style.display = 'block';
+    (document.getElementById('brandLogoRemoveBtn')||{style:{}}).style.display = 'block';
     document.getElementById('brandPreviewLogo').src = b.logo_url;
-    document.getElementById('brandPreviewLogo').style.display = 'block';
+    (document.getElementById('brandPreviewLogo')||{style:{}}).style.display = 'block';
   }
   // Font active state
   document.querySelectorAll('.brand-font-btn').forEach(btn => {
@@ -1788,10 +1789,10 @@ function onBrandColorChange() {
   _brandData.color_secondary = document.getElementById('brandColor2').value;
   _brandData.font_color      = document.getElementById('brandFontColor').value;
   _brandData.sub_font_color  = document.getElementById('brandSubColor').value;
-  document.getElementById('swatchPrimary').style.background   = _brandData.color_primary;
-  document.getElementById('swatchSecondary').style.background = _brandData.color_secondary;
-  document.getElementById('swatchFontColor').style.background = _brandData.font_color;
-  document.getElementById('swatchSubColor').style.background  = _brandData.sub_font_color;
+  (document.getElementById('swatchPrimary')||{style:{}}).style.background   = _brandData.color_primary;
+  (document.getElementById('swatchSecondary')||{style:{}}).style.background = _brandData.color_secondary;
+  (document.getElementById('swatchFontColor')||{style:{}}).style.background = _brandData.font_color;
+  (document.getElementById('swatchSubColor')||{style:{}}).style.background  = _brandData.sub_font_color;
   updateBrandPreview();
 }
 
@@ -1822,9 +1823,9 @@ async function uploadBrandLogo(event) {
     _brandData.logo_url = d.logo_url;
     const prev = document.getElementById('brandLogoPreview');
     prev.innerHTML = `<img src="${d.logo_url}" alt="logo">`;
-    document.getElementById('brandLogoRemoveBtn').style.display = 'block';
+    (document.getElementById('brandLogoRemoveBtn')||{style:{}}).style.display = 'block';
     document.getElementById('brandPreviewLogo').src = d.logo_url;
-    document.getElementById('brandPreviewLogo').style.display = 'block';
+    (document.getElementById('brandPreviewLogo')||{style:{}}).style.display = 'block';
     showNotification('✅ Logo subido','success');
   } catch(e) { showNotification(e.message||'Error subiendo logo','error'); }
   finally { btn.textContent='📷 Subir logo'; btn.disabled=false; event.target.value=''; }
@@ -1836,8 +1837,8 @@ async function removeBrandLogo() {
     await apiFetch(`${API_URL}/brand/logo`, { method:'DELETE' });
     _brandData.logo_url = null;
     document.getElementById('brandLogoPreview').innerHTML = '<span style="font-size:28px;">+</span>';
-    document.getElementById('brandLogoRemoveBtn').style.display = 'none';
-    document.getElementById('brandPreviewLogo').style.display = 'none';
+    (document.getElementById('brandLogoRemoveBtn')||{style:{}}).style.display = 'none';
+    (document.getElementById('brandPreviewLogo')||{style:{}}).style.display = 'none';
     showNotification('Logo eliminado','success');
   } catch(e) { showNotification('Error','error'); }
 }
@@ -2072,7 +2073,7 @@ function shouldShowOnboarding() {
 
 function showOnboarding() {
   renderNicheGrid();
-  document.getElementById('onboardingScreen').style.display = 'block';
+  (document.getElementById('onboardingScreen')||{style:{}}).style.display = 'block';
   // Pre-select current niche if already set (user clicked "cambiar")
   const current = localStorage.getItem('conteniza_niche') || '';
   if (current) {
@@ -2170,14 +2171,14 @@ function saveOnboardingNiche() {
   if (currentUser) currentUser.niche = _selectedNiche;
 
   // 5. Close onboarding
-  document.getElementById('onboardingScreen').style.display = 'none';
+  (document.getElementById('onboardingScreen')||{style:{}}).style.display = 'none';
   showNotification('¡Listo! La IA ya conoce tu nicho 🎯', 'success');
 }
 
 function skipOnboarding() {
   // Don't mark as done — user can come back via the niche badge
   // Only hide the screen this time
-  document.getElementById('onboardingScreen').style.display = 'none';
+  (document.getElementById('onboardingScreen')||{style:{}}).style.display = 'none';
   // Show a hint so user knows where to set niche later
   const nicheDisplay = document.getElementById('nicheDisplay');
   if (nicheDisplay && !localStorage.getItem('conteniza_niche')) {

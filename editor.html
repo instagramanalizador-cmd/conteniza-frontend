@@ -5537,11 +5537,6 @@ function renderCarouselPanel() {
   container.appendChild(applyAll);
 
   // Regenerar btn
-  const regenBtn = document.createElement('button');
-  regenBtn.style.cssText = 'width:100%;padding:8px;border-radius:var(--r);border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:6px;';
-  regenBtn.innerHTML = '🔄 Regenerar slides (-1 crédito)';
-  regenBtn.onclick = () => regenerateFromEditor();
-  container.appendChild(regenBtn);
 
   // IA btn
   const copBtn = document.createElement('button');
@@ -5616,7 +5611,7 @@ function renderCarouselCaptionPanel() {
     navEl.appendChild(hdr);
 
     const txt = document.createElement('div');
-    txt.style.cssText = 'font-size:11px;color:var(--text2);line-height:1.6;padding:8px;background:var(--surf2);border-radius:var(--r);border:1px solid var(--border2);margin-bottom:8px;max-height:160px;overflow-y:auto;';
+    txt.style.cssText = 'font-size:11px;color:var(--text2);line-height:1.6;padding:8px;background:var(--surf2);border-radius:var(--r);border:1px solid var(--border2);margin-bottom:8px;max-height:220px;overflow-y:auto;';
 
     function renderCapTxt() {
       const raw = (captions[capIdx]||'').replace(/^CAPTION\s*\d+\s*[—-]\s*(Hook:|Descripción:|CTA:)?\s*/i,'').trim();
