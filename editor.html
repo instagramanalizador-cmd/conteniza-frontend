@@ -196,7 +196,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 .caption-zone{
   width:190px;flex-shrink:0;display:flex;flex-direction:column;
   background:var(--surf);border-left:1px solid var(--border);
-  padding:8px;gap:5px;overflow-y:auto;overflow-x:hidden;
+  padding:8px;gap:5px;overflow:hidden;
   font-size:11px;
 }
 .caption-zone-lbl{
@@ -205,9 +205,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 }
 .caption-zone-lbl span{width:8px;height:8px;background:var(--brand);border-radius:2px;display:inline-block;}
 .caption-zone textarea{
-  flex:1;min-height:80px;max-height:200px;resize:none;padding:6px 8px;border-radius:var(--r);
+  flex:1;min-height:0;resize:none;padding:8px;border-radius:var(--r);
   border:1px solid var(--border2);background:var(--surf2);color:var(--text);
-  font-family:inherit;font-size:11px;line-height:1.5;
+  font-family:inherit;font-size:11px;line-height:1.6;overflow-y:auto;
 }
 .ia-panel{
   width:280px;flex-shrink:0;display:flex;flex-direction:column;
@@ -1222,7 +1222,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   <!-- Caption zone — beside canvas -->
   <div class="caption-zone" id="captionZone">
     <div class="caption-zone-lbl"><span></span>Tu Caption</div>
-    <textarea id="capFull" class="cap-full" placeholder="Selecciona un caption del panel →" oninput="captionFull=this.value;updateCaptionPreview();" style="flex:1;min-height:80px;max-height:200px;resize:none;"></textarea>
+    <textarea id="capFull" class="cap-full" placeholder="Selecciona un caption del panel →" oninput="captionFull=this.value;updateCaptionPreview();"></textarea>
     <div style="display:flex;gap:5px;padding-top:6px;border-top:1px solid var(--border);margin-top:auto;">
       <button onclick="const el=document.getElementById('capFull');if(el){el.value='';captionFull='';updateCaptionPreview();}" title="Borrar" style="padding:7px 10px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surf2);color:var(--text3);font-size:13px;cursor:pointer;">🗑</button>
       <button onclick="navigator.clipboard.writeText(document.getElementById('capFull')?.value||captionFull||'').then(()=>toast('✅ Caption copiado','success'))" style="flex:1;padding:7px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">📋 Copiar</button>
@@ -1246,8 +1246,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
       <div id="iaContentInner">
         <div class="ia-empty"><div class="ia-empty-icon">✨</div>Generando contenido…</div>
       </div>
-      <!-- hashtagChips — populated by renderCaptionTab inside Post panel JS -->
-      <div id="hashtagChips" style="display:none;"></div>
+      <!-- hashtagChips — populated by renderCaptionTab -->
+      <div id="hashtagChips" style="padding:0 12px 8px;display:flex;flex-wrap:wrap;gap:5px;"></div>
       
 
     </div>
@@ -3841,6 +3841,14 @@ function renderCaptionTab() {
     };
     hashWrap.appendChild(chip);
   });
+  // Make hashtagChips section visible with a label
+  if (chipsEl && !chipsEl.dataset.labeled) {
+    chipsEl.dataset.labeled = '1';
+    const hl = document.createElement('div');
+    hl.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px;width:100%;';
+    hl.textContent = '# Hashtags — elige hasta 3';
+    chipsEl.insertBefore(hl, chipsEl.firstChild);
+  }
   chipsEl.appendChild(hashWrap);
 
   // Sync emoji buttons to caption-zone
