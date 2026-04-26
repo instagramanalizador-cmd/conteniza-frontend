@@ -1067,6 +1067,7 @@ async function showMainApp() {
   document.getElementById('plansScreen').classList.add('hidden');
   document.getElementById('authScreen').classList.add('hidden');
   document.getElementById('mainApp').classList.remove('hidden');
+  document.getElementById('plansScreen').classList.add('hidden');
   document.getElementById('userBar').classList.add('visible');
   // Restore niche FIRST — before syncCredits which might trigger onboarding
   const _earlyNiche = localStorage.getItem('conteniza_niche');

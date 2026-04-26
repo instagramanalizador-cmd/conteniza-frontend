@@ -2054,7 +2054,8 @@ function makeBlock(type, opts={}) {
   el.style.left    = (opts.x ?? 10) + '%';
   el.style.top     = (opts.y ?? 20) + '%';
   el.style.width   = (opts.w ?? 80) + '%';
-  if (opts.zIndex) el.style.zIndex = opts.zIndex;
+  // Set explicit zIndex so bringForward/sendBackward work
+  el.style.zIndex  = opts.zIndex || (++_globalZCounter);
   if (type === 'image') el.style.height = (opts.h ?? 30) + '%';
 
   const inner = document.createElement('div');
@@ -3040,6 +3041,9 @@ function renderPostContentPanel(container) {
 
   
 
+  // ── HASHTAGS (antes de emojis) ──
+  renderCaptionTab();
+
   // ── SECCIÓN 3: EMOJIS ──
   if (emojis.length) {
     const sec3 = makeSection('😊', 'Emojis');
@@ -3067,11 +3071,7 @@ function renderPostContentPanel(container) {
   // Regenerar
   const regenBtn = document.createElement('button');
   regenBtn.style.cssText = 'width:100%;padding:10px;border-radius:var(--r);border:1.5px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;margin-bottom:8px;';
-  regenBtn.innerHTML = '🔄 Regenerar contenido (-1 crédito)';
-  regenBtn.onclick = () => regenerateFromEditor();
-  regenSec.appendChild(regenBtn);
-
-  // Copiloto IA expandible
+  // Copiloto IA expandible (before Regenerar)
   const copBtn = document.createElement('button');
   copBtn.style.cssText = 'width:100%;padding:10px;border-radius:var(--r);background:rgba(139,95,191,.15);border:1.5px solid rgba(139,95,191,.4);color:var(--brand);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;';
   copBtn.innerHTML = '🤖 Mejorar con IA Copiloto';
@@ -3088,10 +3088,13 @@ function renderPostContentPanel(container) {
   };
   regenSec.appendChild(copBtn);
   regenSec.appendChild(copPanel);
+
+  // Regenerar (after Copiloto)
+  regenBtn.innerHTML = '🔄 Regenerar contenido (-1 crédito)';
+  regenBtn.onclick = () => regenerateFromEditor();
+  regenSec.appendChild(regenBtn);
   container.appendChild(regenSec);
 
-  // Hashtags + caption
-  renderCaptionTab();
 }
 
 
@@ -4589,6 +4592,7 @@ function showHelp() {
 /* ══ NAVIGATION ══ */
 function goBack() {
   autoSaveToLocal();
+  sessionStorage.setItem('conteniza_from_editor','1');
   window.location.href='index.html';
 }
 
@@ -5535,8 +5539,6 @@ function renderCarouselPanel() {
   applyAll.innerHTML = '✦ Aplicar todos los slides';
   applyAll.onclick = () => applyAllSlides(slides_data);
   container.appendChild(applyAll);
-
-  // Regenerar btn
 
   // IA btn
   const copBtn = document.createElement('button');
