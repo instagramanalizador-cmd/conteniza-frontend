@@ -935,10 +935,12 @@ async function apiFetch(url, options = {}, timeoutMs = 30000) {
     const res = await fetch(url, options);
     clearTimeout(timer);
     if (res.status === 401) {
-      localStorage.removeItem('token'); localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      sessionStorage.removeItem('conteniza_user');
       currentUser = null;
       showNotification('Tu sesión expiró. Inicia sesión de nuevo.', 'error');
-      setTimeout(() => { showPlansScreen(); }, 1500);
+      setTimeout(() => { showAuthScreen(); }, 1200);
       const err = new Error('Sesión expirada'); err.status = 401; throw err;
     }
     return res;

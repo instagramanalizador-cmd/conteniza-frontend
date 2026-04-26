@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Conteniza Editor</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&family=Montserrat:wght@400;600;700;800&family=Poppins:wght@400;600;700;800&family=Playfair+Display:wght@400;600;700;800&family=Raleway:wght@400;600;700;800&family=Oswald:wght@400;600;700;800&family=Lato:wght@400;600;700;800&family=Roboto:wght@400;600;700;800&family=Inter:wght@400;600;700;800&family=Nunito:wght@400;600;700;800&family=Bebas+Neue:wght@400;600;700;800&family=Abril+Fatface:wght@400;600;700;800&family=Space+Grotesk:wght@400;600;700;800&family=Unbounded:wght@400;600;700;800&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600;700&family=Montserrat:wght@400;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700;800&family=Raleway:wght@400;600;700;800&family=Oswald:wght@400;500;600;700&family=Lato:wght@300;400;700;900&family=Roboto:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600;700;800&family=Nunito:wght@400;600;700;800;900&family=Bebas+Neue:wght@400&family=Abril+Fatface:wght@400&family=Space+Grotesk:wght@400;500;600;700&family=Unbounded:wght@400;600;700;800&family=Merriweather:wght@400;700;900&family=Anton:wght@400&family=Barlow:wght@400;600;700;800;900&family=Josefin+Sans:wght@400;600;700&family=Quicksand:wght@400;500;600;700&family=Exo+2:wght@400;600;700;800&family=Cinzel:wght@400;600;700;900&family=Lobster:wght@400&family=Pacifico:wght@400&family=Dancing+Script:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -1017,22 +1019,40 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
     <div class="props-bar" id="propsBar">
       <div class="prop-group">
         <span class="prop-label">Fuente</span>
-        <select class="prop-select" id="propFont" onchange="applyPropFont()">
-          <option value="DM Sans">DM Sans</option>
-          <option value="Montserrat">Montserrat</option>
-          <option value="Poppins">Poppins</option>
-          <option value="Playfair Display">Playfair Display</option>
-          <option value="Raleway">Raleway</option>
-          <option value="Oswald">Oswald</option>
-          <option value="Lato">Lato</option>
-          <option value="Roboto">Roboto</option>
-          <option value="Inter">Inter</option>
-          <option value="Nunito">Nunito</option>
-          <option value="Bebas Neue">Bebas Neue</option>
-          <option value="Abril Fatface">Abril Fatface</option>
-          <option value="Space Grotesk">Space Grotesk</option>
-          <option value="Unbounded">Unbounded</option>
-          <option value="Syne">Syne</option>
+        <select class="prop-select" id="propFont" onchange="applyPropFont()" style="max-height:160px;">
+          <optgroup label="── Sans Serif ──">
+            <option value="DM Sans">DM Sans</option>
+            <option value="Inter">Inter</option>
+            <option value="Poppins">Poppins</option>
+            <option value="Montserrat">Montserrat</option>
+            <option value="Raleway">Raleway</option>
+            <option value="Nunito">Nunito</option>
+            <option value="Lato">Lato</option>
+            <option value="Roboto">Roboto</option>
+            <option value="Barlow">Barlow</option>
+            <option value="Quicksand">Quicksand</option>
+            <option value="Josefin Sans">Josefin Sans</option>
+            <option value="Exo 2">Exo 2</option>
+            <option value="Space Grotesk">Space Grotesk</option>
+          </optgroup>
+          <optgroup label="── Display / Bold ──">
+            <option value="Syne">Syne</option>
+            <option value="Unbounded">Unbounded</option>
+            <option value="Oswald">Oswald</option>
+            <option value="Bebas Neue">Bebas Neue</option>
+            <option value="Anton">Anton</option>
+          </optgroup>
+          <optgroup label="── Serif / Elegante ──">
+            <option value="Playfair Display">Playfair Display</option>
+            <option value="Merriweather">Merriweather</option>
+            <option value="Abril Fatface">Abril Fatface</option>
+            <option value="Cinzel">Cinzel</option>
+          </optgroup>
+          <optgroup label="── Decorativa ──">
+            <option value="Lobster">Lobster</option>
+            <option value="Pacifico">Pacifico</option>
+            <option value="Dancing Script">Dancing Script</option>
+          </optgroup>
         </select>
       </div>
       <div class="prop-sep"></div>
@@ -1184,10 +1204,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   <div class="ia-panel">
 
     <!-- Tabs simplificados -->
-    <div class="ia-tabs">
-      <div class="ia-tab active" data-tab="content" onclick="switchIaTab('content')">✍️ Contenido</div>
-      <div class="ia-tab"        data-tab="design"  onclick="switchIaTab('design')">🎨 Diseño</div>
-      <div class="ia-tab"        data-tab="brand"   onclick="switchIaTab('brand')">🏷 Marca</div>
+    <div class="ia-tabs" id="iaTabs">
+      <div class="ia-tab active" data-tab="content" onclick="switchIaTab('content')" id="tabPost">✍️ Post</div>
+      <div class="ia-tab" data-tab="carousel" onclick="switchIaTab('carousel')" id="tabCarousel" style="display:none;">🎠 Carrusel</div>
+      <div class="ia-tab" data-tab="design" onclick="switchIaTab('design')" id="tabDesign">🎨 Diseño</div>
+      <div class="ia-tab" data-tab="brand" onclick="switchIaTab('brand')" id="tabBrand">🏷 Marca</div>
 
     </div>
 
@@ -1209,7 +1230,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
     </div>
 
     <!-- ── TAB: DISEÑO ── -->
-    <div id="iaDesign" style="display:none;flex-direction:column;height:100%;overflow:hidden;">
+    <!-- ── PANEL: CARRUSEL ── -->
+    <div id="iaCarousel" style="display:none;flex-direction:column;height:100%;overflow-y:auto;padding:10px;">
+      <div id="carouselPanelContent"></div>
+    </div>
+
+        <div id="iaDesign" style="display:none;flex-direction:column;height:100%;overflow:hidden;">
       <div id="tplContent" style="display:none;"></div>
       <div style="flex:1;overflow-y:auto;padding:10px;">
 
@@ -1378,11 +1404,21 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
               <option value="DM Sans">DM Sans</option>
               <option value="Syne">Syne</option>
               <option value="Inter">Inter</option>
-              <option value="Playfair Display">Playfair Display</option>
-              <option value="Montserrat">Montserrat</option>
-              <option value="Oswald">Oswald</option>
-              <option value="Raleway">Raleway</option>
               <option value="Poppins">Poppins</option>
+              <option value="Montserrat">Montserrat</option>
+              <option value="Raleway">Raleway</option>
+              <option value="Playfair Display">Playfair Display</option>
+              <option value="Merriweather">Merriweather</option>
+              <option value="Oswald">Oswald</option>
+              <option value="Bebas Neue">Bebas Neue</option>
+              <option value="Anton">Anton</option>
+              <option value="Unbounded">Unbounded</option>
+              <option value="Space Grotesk">Space Grotesk</option>
+              <option value="Barlow">Barlow</option>
+              <option value="Josefin Sans">Josefin Sans</option>
+              <option value="Cinzel">Cinzel</option>
+              <option value="Lobster">Lobster</option>
+              <option value="Dancing Script">Dancing Script</option>
             </select>
           </div>
           <!-- Logo -->
@@ -1419,9 +1455,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
       <div class="cop-suggestions">
         <button class="cop-sug" onclick="copSend('Hazlo más corto')">Más corto</button>
         <button class="cop-sug" onclick="copSend('Hazlo más viral')">Más viral</button>
-        <button class="cop-sug" onclick="copSend('Cambia el tono a humor')">Humor</button>
-        <button class="cop-sug" onclick="copSend('Dame 3 hooks nuevos')">Nuevos hooks</button>
+        <button class="cop-sug" onclick="copSend('Dame un nuevo hook')">Nuevo hook</button>
         <button class="cop-sug" onclick="copSend('Mejora el CTA')">Mejor CTA</button>
+        <button class="cop-sug" onclick="copSend('Cambia los hashtags')">Nuevos hashtags</button>
+        <button class="cop-sug" onclick="copSend('Dame un nuevo caption completo')">Nuevo caption</button>
       </div>
       <div class="cop-input-row">
         <textarea class="cop-input" id="copInput" rows="1" placeholder="Ej: hazlo más corto…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();copSend();}"></textarea>
@@ -1769,6 +1806,7 @@ function switchFormat(fmt) {
   document.getElementById('slideStrip').classList.toggle('visible', isCarousel);
   const _carNav = document.getElementById('carouselNav');
   if (_carNav) _carNav.style.display = isCarousel ? 'flex' : 'none';
+  updateTabsForFormat(fmt);
 
   if (isCarousel && iaData?.carousel_slides?.length && slides.length === 1 && !slides[0]._dom?.length) {
     slides = iaData.carousel_slides.map(s => {
@@ -1976,9 +2014,10 @@ function makeBlock(type, opts={}) {
   el.id           = id;
   el.dataset.type = type;
   if (opts.role)  el.dataset.role = opts.role;
-  el.style.left   = (opts.x ?? 10) + '%';
-  el.style.top    = (opts.y ?? 20) + '%';
-  el.style.width  = (opts.w ?? 80) + '%';
+  el.style.left    = (opts.x ?? 10) + '%';
+  el.style.top     = (opts.y ?? 20) + '%';
+  el.style.width   = (opts.w ?? 80) + '%';
+  if (opts.zIndex) el.style.zIndex = opts.zIndex;
   if (type === 'image') el.style.height = (opts.h ?? 30) + '%';
 
   const inner = document.createElement('div');
@@ -2083,20 +2122,19 @@ function addLogoBlock(event) {
 }
 
 function addImageBlock_url(dataUrl, opts) {
-  // Add image block to canvas from a data URL or external URL
-  const id   = 'blk_' + Date.now();
-  const sl   = slides[currentSlide];
-  const blk  = {
-    id, type:'image', src: dataUrl,
-    x: opts?.x ?? 5, y: opts?.y ?? 5,
-    w: opts?.w ?? 40, h: opts?.h ?? 40,
-  };
-  sl.blocks = sl.blocks || [];
-  sl.blocks.push(blk);
-  makeImageBlock(blk);
+  if (!slides[currentSlide]) return;
+  // Use makeBlock which correctly handles image type
+  const blkId = makeBlock('image', {
+    src: dataUrl,
+    x: opts?.x ?? 5,
+    y: opts?.y ?? 5,
+    w: opts?.w ?? 30,
+    h: opts?.h ?? 30,
+  });
+  saveCurrentBlocks();
   updateStripThumb(currentSlide);
   historySave();
-  return id;
+  return blkId;
 }
 
 function addImageBlock(event) {
@@ -2765,18 +2803,36 @@ function copPreFill(msg) {
 /* ══ IA PANEL ══ */
 function switchIaTab(tab) {
   document.querySelectorAll('.ia-tab').forEach(t => t.classList.toggle('active', t.dataset.tab===tab));
-  const ids = { content:'iaContent', design:'iaDesign', brand:'iaBrand' };
+  const ids = { content:'iaContent', carousel:'iaCarousel', design:'iaDesign', brand:'iaBrand' };
   Object.entries(ids).forEach(([k,id]) => {
     const el = document.getElementById(id);
     if (!el) return;
     el.style.display = k===tab ? 'flex' : 'none';
-    if (k===tab) el.style.flexDirection = 'column';
+    if (k===tab && k!=='carousel') el.style.flexDirection = 'column';
   });
-  // Hide tooltips when leaving content tab
   if (tab !== 'content') document.querySelectorAll('.tt-bubble').forEach(e=>e.remove());
-  if (tab === 'content') { renderContentPanel(); }
-  if (tab === 'design')  { renderDesignPanel(); }
-  if (tab === 'brand')   { renderBrandPanel(); }
+  if (tab === 'content')  { renderContentPanel(); }
+  if (tab === 'carousel') { renderCarouselPanel(); }
+  if (tab === 'design')   { renderDesignPanel(); }
+  if (tab === 'brand')    { renderBrandPanel(); }
+}
+
+// Show/hide tabs based on format
+function updateTabsForFormat(fmt) {
+  const isCarousel = fmt === 'carousel';
+  const fmtLabels  = { post:'✍️ Post', story:'📱 Story', reel:'🎬 Reel', carousel:'🎠 Carrusel' };
+  const postTab = document.getElementById('tabPost');
+  const carTab  = document.getElementById('tabCarousel');
+  if (postTab) {
+    postTab.style.display = isCarousel ? 'none' : '';
+    postTab.textContent = fmtLabels[fmt] || '✍️ Post';
+  }
+  if (carTab) carTab.style.display = isCarousel ? '' : 'none';
+  if (isCarousel && document.querySelector('.ia-tab.active')?.dataset?.tab === 'content') {
+    switchIaTab('carousel');
+  } else if (!isCarousel && document.querySelector('.ia-tab.active')?.dataset?.tab === 'carousel') {
+    switchIaTab('content');
+  }
 }
 
 function renderIAPanel() {
@@ -2796,8 +2852,12 @@ function renderContentPanel() {
 
   inner.innerHTML = '';
 
+  updateTabsForFormat(currentFormat);
+
   if (currentFormat === 'carousel') {
-    renderCarouselContentPanel(inner);
+    // Carousel goes to iaCarousel tab — don't fill iaContentInner
+    renderCarouselPanel();
+    return;
   } else if (currentFormat === 'story') {
     renderStoryContentPanel(inner);
   } else if (currentFormat === 'reel') {
@@ -3604,7 +3664,8 @@ function updateCaptionHashEmoji(selHash, selEmoji) {
   const emojiStr = selEmoji.size ? [...selEmoji].join(' ') : '';
   const hashStr  = selHash.size  ? [...selHash].map(t=>t.startsWith('#')?t:'#'+t).join(' ') : '';
   const suffix = [emojiStr, hashStr].filter(Boolean).join('  ');
-  capEl.value  = base + (suffix ? '\n\n' + suffix : '');
+  const _NL2 = String.fromCharCode(10,10);
+  capEl.value  = base + (suffix ? _NL2 + suffix : '');
   captionFull  = capEl.value;
   updateCaptionPreview();
 }
@@ -3621,9 +3682,10 @@ function updateCaptionPreview() {
       preview.textContent = ' Usa un caption del panel →';
       preview.style.color = 'rgba(255,255,255,.4)';
     } else {
-      const short = captionFull.substring(0,125) + (captionFull.length>125?'…':'');
+      // Show first 125 chars — includes emojis
+      const short = captionFull.substring(0,125) + (captionFull.length>125?'… ver más':'');
       preview.textContent = ' ' + short;
-      preview.style.color = 'rgba(255,255,255,.85)';
+      preview.style.color = 'rgba(255,255,255,.9)';
     }
   }
   const capEl = document.getElementById('capFull');
@@ -5183,6 +5245,90 @@ function applyTemplate(id) {
 }
 
 /* ══ BRAND PANEL EN EDITOR ══ */
+function renderCarouselPanel() {
+  const container = document.getElementById('carouselPanelContent');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (!iaData?.carousel_slides?.length) {
+    container.innerHTML = '<div style="text-align:center;padding:30px 16px;color:var(--text3);font-size:13px;"><div style="font-size:32px;margin-bottom:8px;">🎠</div>Genera un carrusel para ver los slides aquí.</div>';
+    return;
+  }
+
+  const slides_data = iaData.carousel_slides;
+
+  // Regenerar btn
+  const regenBtn2 = document.createElement('button');
+  regenBtn2.style.cssText = 'width:100%;padding:9px;border-radius:var(--r);border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:6px;';
+  regenBtn2.innerHTML = '🔄 Regenerar slides <span style="font-size:10px;opacity:.7;">(-1 crédito)</span>';
+  regenBtn2.onclick = () => regenerateFromEditor();
+  container.appendChild(regenBtn2);
+
+  // IA Copiloto
+  const copBtn2 = document.createElement('button');
+  copBtn2.style.cssText = 'width:100%;padding:9px;border-radius:var(--r);background:rgba(139,95,191,.15);border:1.5px solid rgba(139,95,191,.4);color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;';
+  copBtn2.innerHTML = '🤖 Mejorar con IA';
+  let _c2open = false;
+  const cop2 = document.createElement('div');
+  cop2.style.cssText = 'display:none;border:1px solid var(--border2);border-radius:var(--r);overflow:hidden;margin-bottom:8px;max-height:300px;overflow-y:auto;';
+  const copSrc = document.getElementById('iaCop');
+  cop2.innerHTML = copSrc ? copSrc.innerHTML : '';
+  copBtn2.onclick = () => { _c2open=!_c2open; cop2.style.display=_c2open?'block':'none'; };
+  container.appendChild(copBtn2);
+  container.appendChild(cop2);
+
+  // Apply all btn
+  const applyAll = document.createElement('button');
+  applyAll.style.cssText = 'width:100%;padding:10px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;';
+  applyAll.innerHTML = '✦ Aplicar todos los slides';
+  applyAll.onclick = () => applyAllSlides(slides_data);
+  container.appendChild(applyAll);
+
+  // Regenerar btn
+  const regenBtn = document.createElement('button');
+  regenBtn.style.cssText = 'width:100%;padding:8px;border-radius:var(--r);border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:6px;';
+  regenBtn.innerHTML = '🔄 Regenerar slides (-1 crédito)';
+  regenBtn.onclick = () => regenerateFromEditor();
+  container.appendChild(regenBtn);
+
+  // IA btn
+  const copBtn = document.createElement('button');
+  copBtn.style.cssText = 'width:100%;padding:8px;border-radius:var(--r);background:rgba(139,95,191,.15);border:1px solid rgba(139,95,191,.3);color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;';
+  copBtn.innerHTML = '🤖 Mejorar con IA';
+  let _cop2open = false;
+  const cop2Panel = document.createElement('div');
+  cop2Panel.style.cssText = 'display:none;border:1px solid var(--border2);border-radius:var(--r);overflow:hidden;margin-bottom:8px;';
+  cop2Panel.innerHTML = document.getElementById('iaCop')?.innerHTML || '';
+  copBtn.onclick = () => { _cop2open=!_cop2open; cop2Panel.style.display=_cop2open?'block':'none'; if(_cop2open)setTimeout(scrollCopMessages,100); };
+  container.appendChild(copBtn);
+  container.appendChild(cop2Panel);
+
+  // Slide label
+  const lbl = document.createElement('div');
+  lbl.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;';
+  lbl.textContent = 'Slides generados';
+  container.appendChild(lbl);
+
+  slides_data.forEach((s, i) => {
+    const card = document.createElement('div');
+    card.className = 'slide-card2' + (i===currentSlide?' active':'');
+    const roleLabel = {portada:'PORTADA',accion:'ACCIÓN',item:'ÍTEM'}[s.role] || (s.role||'').toUpperCase();
+    card.innerHTML =
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">' +
+        '<span style="font-size:10px;font-weight:800;color:var(--brand);">Slide ' + (i+1) + '</span>' +
+        (roleLabel ? '<span style="font-size:9px;font-weight:700;background:rgba(139,95,191,.2);color:var(--brand);padding:1px 6px;border-radius:4px;">' + roleLabel + '</span>' : '') +
+      '</div>' +
+      '<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:2px;">' + (s.title||'') + '</div>' +
+      '<div style="font-size:11px;color:var(--text3);line-height:1.4;">' + (s.content||'').substring(0,70) + ((s.content||'').length>70?'…':'') + '</div>';
+    card.onclick = () => {
+      document.querySelectorAll('.slide-card2').forEach(c=>c.classList.remove('active'));
+      card.classList.add('active');
+      applySlideToCanvas(i, s);
+    };
+    container.appendChild(card);
+  });
+}
+
 function renderBrandPanel() {
   const emptyEl   = document.getElementById('edBrandEmpty');
   const contentEl = document.getElementById('edBrandContent');
@@ -5361,23 +5507,80 @@ async function copSend(preset) {
     _copHistory.push({ role:'assistant', content:d.reply });
     if (_copHistory.length > 16) _copHistory = _copHistory.slice(-16);
 
-    // Auto-add to canvas if reply looks like a hook/CTA (short, starts with emoji or caps)
-    const isShort  = d.reply.length < 140;
-    const looksLikeHook = /^[🎯🔥💡⚡✅❌🚀👉]|^[A-Z]/.test(d.reply.trim());
-    if (isShort && looksLikeHook) {
-      // Show quick-add button
-      const lastMsg = document.querySelector('#copMessages .cop-msg.ai:last-child');
-      if (lastMsg) {
-        const addBtn = document.createElement('button');
-        addBtn.style.cssText = 'margin-top:6px;padding:4px 10px;border-radius:6px;border:1px solid var(--brand);background:transparent;color:var(--brand);font-size:10px;font-weight:700;cursor:pointer;display:block;font-family:inherit;';
-        addBtn.textContent = '+ Añadir al canvas';
-        addBtn.onclick = () => {
-          addTextBlock(d.reply.trim(), { y:10, w:88, x:6, fontSize:32, bold:true, color:currentBrand?.font_color||'#fff' });
-          toast('✅ Añadido al canvas','success');
-          addBtn.remove();
+    const NL2 = String.fromCharCode(10,10);
+    // Smart apply button
+    const reply = d.reply.trim();
+    const lastMsg = document.querySelector('#copMessages .cop-msg.ai:last-child');
+    if (lastMsg && reply.length > 0) {
+      const msgLower = msg.toLowerCase();
+      const isHashtag = msgLower.includes('hashtag') || reply.includes('#');
+      const isCaption = msgLower.includes('nuevo caption') || msgLower.includes('reescribe') || msgLower.includes('caption completo');
+      const isHook    = msgLower.includes('hook') || msgLower.includes('gancho');
+      const isCTA     = msgLower.includes('cta') || msgLower.includes('llamada a la accion');
+
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'display:flex;gap:5px;margin-top:8px;flex-wrap:wrap;';
+
+      const applyBtn = document.createElement('button');
+      applyBtn.style.cssText = 'flex:1;padding:6px 10px;border-radius:6px;background:var(--brand);border:none;color:#fff;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;';
+
+      if (isHashtag) {
+        applyBtn.textContent = '# Aplicar hashtags';
+        applyBtn.onclick = () => {
+          const tags = reply.match(/#\S+/g) || [];
+          const capEl = document.getElementById('capFull');
+          if (capEl && tags.length) {
+            const base = (capEl.value||captionFull).replace(/#\S+/g,'').replace(/\s+$/,'').trim();
+            capEl.value = base + String.fromCharCode(10,10) + tags.join(' ');
+            captionFull = capEl.value; updateCaptionPreview();
+            toast('Hashtags aplicados','success'); applyBtn.textContent = '✓ Aplicado';
+          }
         };
-        lastMsg.appendChild(addBtn);
+      } else if (isCaption) {
+        applyBtn.textContent = '📝 Reemplazar caption';
+        applyBtn.onclick = () => {
+          const capEl = document.getElementById('capFull');
+          if (capEl) { capEl.value = reply; captionFull = reply; updateCaptionPreview(); toast('Caption reemplazado','success'); applyBtn.textContent = '✓'; }
+        };
+      } else if (isHook) {
+        applyBtn.textContent = '🎣 Aplicar hook';
+        applyBtn.onclick = () => {
+          const capEl = document.getElementById('capFull');
+          if (capEl) {
+            const NL2=String.fromCharCode(10,10); const parts = (capEl.value||captionFull).split(NL2);
+            parts[0] = reply; capEl.value = parts.join(NL2);
+            captionFull = capEl.value; updateCaptionPreview();
+            toast('Hook aplicado','success'); applyBtn.textContent = '✓';
+          }
+        };
+      } else if (isCTA) {
+        applyBtn.textContent = '📣 Aplicar CTA';
+        applyBtn.onclick = () => {
+          const capEl = document.getElementById('capFull');
+          if (capEl) {
+            const NL2=String.fromCharCode(10,10); const parts = (capEl.value||captionFull).split(NL2);
+            parts[parts.length-1] = reply; capEl.value = parts.join(NL2);
+            captionFull = capEl.value; updateCaptionPreview();
+            toast('CTA aplicado','success'); applyBtn.textContent = '✓';
+          }
+        };
+      } else {
+        applyBtn.textContent = '✅ Aplicar al caption';
+        applyBtn.onclick = () => {
+          const capEl = document.getElementById('capFull');
+          if (capEl) { capEl.value = reply; captionFull = reply; updateCaptionPreview(); toast('Aplicado','success'); applyBtn.textContent = '✓'; }
+        };
       }
+      wrap.appendChild(applyBtn);
+
+      if (reply.length < 200) {
+        const canvasBtn = document.createElement('button');
+        canvasBtn.style.cssText = 'padding:6px 10px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;';
+        canvasBtn.textContent = '+ Canvas';
+        canvasBtn.onclick = () => { addTextBlock(reply, {y:10,w:88,x:6,fontSize:28,bold:true,color:currentBrand?.font_color||'#fff'}); toast('Añadido al canvas','success'); canvasBtn.textContent='✓'; };
+        wrap.appendChild(canvasBtn);
+      }
+      lastMsg.appendChild(wrap);
     }
 
   } catch(e) {
