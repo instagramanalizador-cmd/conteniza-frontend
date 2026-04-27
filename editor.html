@@ -202,7 +202,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   width:190px;flex-shrink:0;display:flex;flex-direction:column;
   background:var(--surf);border-left:1px solid var(--border);
   padding:8px;gap:5px;overflow:hidden;
-  font-size:11px;height:260px;align-self:flex-start;
+  font-size:11px;height:320px;align-self:flex-start;
 }
 .caption-zone-lbl{
   font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;
@@ -1812,6 +1812,15 @@ async function loadUser() {
         currentBrand = db.brand;
         applyBrandToCanvas();
         renderBrandPanel(); // update brand tab if open
+        // Re-apply brand colors to carousel slides (built before brand loaded)
+        if (currentFormat === 'carousel' && slides.length > 1) {
+          slides.forEach(sl => {
+            if (currentBrand.color_primary)   sl.bg1 = currentBrand.color_primary;
+            if (currentBrand.color_secondary)  sl.bg2 = currentBrand.color_secondary;
+          });
+          updateCanvasBg();
+          renderSlideStrip();
+        }
       }
     }
     // Load image bank
@@ -3289,7 +3298,12 @@ function renderCarouselContentPanel(container) {
   const applyAll = document.createElement('button');
   applyAll.style.cssText = 'width:100%;padding:10px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;';
   applyAll.innerHTML = '✨ Aplicar todos los slides';
-  applyAll.onclick = () => { applyAllSlides(slides_data); applyAll.textContent='✅ Slides aplicados'; applyAll.style.background='var(--success)'; };
+  applyAll.onclick = () => {
+    applyAllSlides(slides_data);
+    applyAll.textContent = '✅ Slides aplicados';
+    applyAll.style.background = 'var(--success)';
+    setTimeout(() => { applyAll.innerHTML = '✨ Aplicar todos los slides'; applyAll.style.background = ''; }, 2000);
+  };
   container.appendChild(applyAll);
 
   // Regenerar + IA
@@ -3302,6 +3316,7 @@ function renderCarouselContentPanel(container) {
   const carCop = document.createElement('button');
   carCop.style.cssText = 'width:100%;padding:8px;border-radius:var(--r);background:var(--brand-subtle);border:1px solid var(--brand-border);color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;';
   carCop.innerHTML = '🤖 Mejorar con IA';
+  carCop.dataset.carCop = '1';
   let _carCopOpen = false;
   const carCopPanel = document.createElement('div');
   carCopPanel.style.cssText = 'display:none;margin-bottom:8px;border:1px solid var(--border2);border-radius:var(--r);overflow:hidden;';
@@ -6187,8 +6202,13 @@ function renderCarouselCaptionPanel() {
   _ccHint.style.cssText = 'font-size:10px;color:var(--text3);text-align:center;margin-top:3px;';
   _ccHint.textContent = 'Selecciona un caption primero con ✅ Usar este caption';
   iaCCBtn.onclick = () => {
-    const tabs = document.querySelectorAll('.ia-tab');
-    tabs.forEach(t => { if (t.dataset.tab === 'copiloto' || t.textContent.includes('Copiloto')) t.click(); });
+    // Switch to Carrusel tab where the copiloto panel lives
+    switchIaTab('carousel');
+    // Then click the Mejorar con IA button there
+    setTimeout(() => {
+      const carCopBtn = document.querySelector('[data-car-cop]');
+      if (carCopBtn) carCopBtn.click();
+    }, 50);
   };
   navEl.appendChild(iaCCBtn);
 
