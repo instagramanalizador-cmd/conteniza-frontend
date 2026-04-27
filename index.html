@@ -1165,6 +1165,16 @@ async function syncCredits() {
         if (nicheEl) nicheEl.value = d.user.niche;
         updateNicheDisplay(d.user.niche);
       }
+      // Save created_at for renewal date display
+      if (d.user.created_at && currentUser) {
+        currentUser.created_at = d.user.created_at;
+        try {
+          const _u = JSON.parse(localStorage.getItem('user') || '{}');
+          _u.created_at = d.user.created_at;
+          localStorage.setItem('user', JSON.stringify(_u));
+        } catch(_e2) {}
+        updateCreditsBar();
+      }
 
       // Show onboarding if user has no niche anywhere
       if (shouldShowOnboarding()) {
