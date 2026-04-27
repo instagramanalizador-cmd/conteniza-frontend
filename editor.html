@@ -3727,24 +3727,17 @@ function renderReelContentPanel(container) {
       return m ? m[1].trim() : '';
     };
     // Extract angle from "REEL N — ANGULO: nombre" or from first line
-    const angleM = raw.match(/REEL\s*\d+\s*[—\-]\s*[^:]+:\s*([^
-]+)/i);
+    const angleM = raw.match(/REEL\s*\d+\s*[^:]+:\s*([^\n]+)/i);
     const angle  = angleM ? angleM[1].trim() : '';
 
     // Extract each timed section
-    const gancho    = (raw.match(/0-3s\s*(?:\(GANCHO\)|GANCHO)[:\s]+([^
-⏱]+)/i)  || [])[1]?.trim() || '';
-    const desarrollo= (raw.match(/3-15s\s*(?:\(DESARROLLO\)|DESARROLLO)[:\s]+([^
-⏱]+)/i) || [])[1]?.trim() || '';
-    const valor     = (raw.match(/15-25s\s*(?:\(VALOR[^)]*\)|VALOR)[:\s]+([^
-⏱]+)/i)     || [])[1]?.trim() || '';
-    const cta       = (raw.match(/25-30s\s*(?:\(CTA\)|CTA)[:\s]+([^
-⏱🎵📝]+)/i)          || [])[1]?.trim() || '';
-    const musicaM   = raw.match(/🎵\s*MUSICA[:\s]+([^
-]+)/i);
+    const gancho    = (raw.match(/0-3s\s*(?:\(GANCHO\)|GANCHO)[:\s]+([^\n⏱]+)/i) || [])[1]?.trim() || '';
+    const desarrollo= (raw.match(/3-15s\s*(?:\(DESARROLLO\)|DESARROLLO)[:\s]+([^\n⏱]+)/i) || [])[1]?.trim() || '';
+    const valor     = (raw.match(/15-25s\s*(?:\(VALOR[^)]*\)|VALOR)[:\s]+([^\n⏱]+)/i) || [])[1]?.trim() || '';
+    const cta       = (raw.match(/25-30s\s*(?:\(CTA\)|CTA)[:\s]+([^\n⏱🎵📝]+)/i) || [])[1]?.trim() || '';
+    const musicaM   = raw.match(/🎵\s*MUSICA[:\s]+([^\n]+)/i);
     const musica    = musicaM ? musicaM[1].trim() : '';
-    const captionM  = raw.match(/📝\s*CAPTION[^:]*:[:\s]+([^
-]+)/i);
+    const captionM  = raw.match(/📝\s*CAPTION[^:]*:[:\s]+([^\n]+)/i);
     const caption   = captionM ? captionM[1].trim() : '';
 
     return { raw, angle, gancho, desarrollo, valor, cta, musica, caption };
@@ -3825,28 +3818,14 @@ function renderReelContentPanel(container) {
     btnFull.style.cssText = 'flex:1;padding:8px;border-radius:8px;background:var(--grad);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
     btnFull.innerHTML = '📋 Guión completo';
     btnFull.onclick = () => {
-      const script =
-        'REEL ' + (idx+1) + ' — ' + (idea.angle || angleLabels[idx]) + '
-
-' +
-        '⏱️ 0-3s GANCHO:
-'     + (idea.gancho     || '') + '
-
-' +
-        '⏱️ 3-15s DESARROLLO:
-'+ (idea.desarrollo || '') + '
-
-' +
-        '⏱️ 15-25s VALOR:
-'    + (idea.valor      || '') + '
-
-' +
-        '⏱️ 25-30s CTA:
-'      + (idea.cta        || '') + '
-
-' +
-        '🎵 MÚSICA: '           + (idea.musica     || '') + '
-';
+      const script = [
+        'REEL ' + (idx+1) + ' — ' + (idea.angle || angleLabels[idx]),
+        '', '⏱️ 0-3s GANCHO:', idea.gancho || '',
+        '', '⏱️ 3-15s DESARROLLO:', idea.desarrollo || '',
+        '', '⏱️ 15-25s VALOR:', idea.valor || '',
+        '', '⏱️ 25-30s CTA:', idea.cta || '',
+        '', '🎵 Música: ' + (idea.musica || ''),
+      ].join('\n');
       navigator.clipboard.writeText(script).then(() => {
         toast('✅ Guión copiado — pégalo en tu teleprompter', 'success');
         btnFull.textContent = '✓ Copiado';
@@ -3861,9 +3840,7 @@ function renderReelContentPanel(container) {
     btnText.innerHTML = '🎙️ Solo el texto';
     btnText.onclick = () => {
       const textOnly = [idea.gancho, idea.desarrollo, idea.valor, idea.cta]
-        .filter(Boolean).join('
-
-');
+        .filter(Boolean).join('\n');
       navigator.clipboard.writeText(textOnly).then(() => {
         toast('✅ Texto copiado — para grabar de memoria', 'success');
         btnText.textContent = '✓ Copiado';
@@ -3906,8 +3883,7 @@ function renderReelContentPanel(container) {
           else { toast('Máximo 5 hashtags para Reels','info'); return; }
           const base = capTA.value.replace(/#\S+/g,'').replace(/\s+$/,'').trim();
           const tags = [...selH].map(t => t.startsWith('#') ? t : '#'+t).join(' ');
-          capTA.value = base + (tags ? '
-' + tags : '');
+          capTA.value = base + (tags ? '\n' + tags : '');
           captionFull = capTA.value; updateCaptionPreview();
         };
         hashRow.appendChild(chip);
@@ -3928,76 +3904,7 @@ function renderReelContentPanel(container) {
     capSec.appendChild(copyCapBtn);
     card.appendChild(capSec);
 
-    // ── Mejorar con IA ──
-    const iaSection = document.createElement('div');
-    iaSection.style.cssText = 'padding:10px 14px;';
-    let _iaOpen = false;
-    const iaBtn = document.createElement('button');
-    iaBtn.style.cssText = 'width:100%;padding:7px;border-radius:8px;background:var(--brand-subtle);border:1px solid var(--brand-border);color:var(--brand);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;';
-    iaBtn.innerHTML = '🤖 Mejorar este guión con IA';
-
-    const iaChat = document.createElement('div');
-    iaChat.style.cssText = 'display:none;margin-top:8px;';
-
-    const iaInputRow = document.createElement('div');
-    iaInputRow.style.cssText = 'display:flex;gap:6px;';
-    const iaInput = document.createElement('input');
-    iaInput.type = 'text';
-    iaInput.placeholder = 'Ej: hazlo más viral, cambia el gancho, tono más cercano…';
-    iaInput.style.cssText = 'flex:1;padding:7px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surf);color:var(--text);font-size:11px;font-family:inherit;';
-    const iaSendBtn = document.createElement('button');
-    iaSendBtn.style.cssText = 'padding:7px 12px;border-radius:6px;background:var(--brand);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
-    iaSendBtn.textContent = '→';
-    iaInputRow.appendChild(iaInput);
-    iaInputRow.appendChild(iaSendBtn);
-
-    const iaResult = document.createElement('div');
-    iaResult.style.cssText = 'display:none;margin-top:8px;padding:10px;background:var(--surf2);border-radius:8px;border:1px solid var(--border2);font-size:11px;color:var(--text2);line-height:1.6;';
-
-    const sendFn = async () => {
-      const msg = iaInput.value.trim();
-      if (!msg) return;
-      const token = localStorage.getItem(KEYS.token);
-      if (!token) { toast('Inicia sesión primero','error'); return; }
-      iaResult.style.display = 'block';
-      iaResult.textContent   = '✍️ Mejorando guión…';
-      iaInput.disabled = true; iaSendBtn.disabled = true;
-      try {
-        const guionCtx = 'GANCHO: ' + (idea.gancho||'') + '
-DESARROLLO: ' + (idea.desarrollo||'') + '
-VALOR: ' + (idea.valor||'') + '
-CTA: ' + (idea.cta||'');
-        const r = await fetch(API_URL + '/analyze/refine', {
-          method:'POST',
-          headers:{ 'Content-Type':'application/json','Authorization':'Bearer '+token },
-          body: JSON.stringify({
-            message: msg,
-            history: [],
-            ia_context: {
-              niche:            niche,
-              tone:             iaData?.tone || 'Profesional',
-              publication_type: 'reel',
-              current_caption:  guionCtx,
-            }
-          })
-        });
-        const d = await r.json();
-        if (!r.ok || !d.success) throw new Error(d.error || 'Error');
-        const improved = d.reply.trim();
-        iaResult.innerHTML =
-          '<div style="white-space:pre-wrap;margin-bottom:10px;">' + escHtml(improved) + '</div>' +
-          '<div style="display:flex;gap:6px;">' +
-            '<button class="_reelCopyImproved" style="flex:1;padding:6px;border-radius:6px;background:var(--grad);border:none;color:#fff;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;">📋 Copiar guión mejorado</button>' +
-          '</div>';
-        iaResult.querySelector('._reelCopyImproved').onclick = () => {
-          navigator.clipboard.writeText(improved).then(() => toast('✅ Guión mejorado copiado','success'));
-        };
-      } catch(e) {
-        iaResult.textContent = '❌ ' + (e.message || 'Error. Intenta de nuevo.');
-      } finally {
-        iaInput.disabled = false; iaSendBtn.disabled = false; iaInput.value = '';
-      }
-    };
+    // ── Mejorar con IA ──\n    const iaSection = document.createElement('div');\n    iaSection.style.cssText = 'padding:10px 14px;';\n    let _iaOpen = false;\n    const iaBtn = document.createElement('button');\n    iaBtn.style.cssText = 'width:100%;padding:7px;border-radius:8px;background:var(--brand-subtle);border:1px solid var(--brand-border);color:var(--brand);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;';\n    iaBtn.innerHTML = '🤖 Mejorar este guión con IA';\n\n    const iaChat = document.createElement('div');\n    iaChat.style.cssText = 'display:none;margin-top:8px;';\n\n    const iaInputRow = document.createElement('div');\n    iaInputRow.style.cssText = 'display:flex;gap:6px;';\n    const iaInput = document.createElement('input');\n    iaInput.type = 'text';\n    iaInput.placeholder = 'Ej: hazlo más viral, cambia el gancho, tono más cercano…';\n    iaInput.style.cssText = 'flex:1;padding:7px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surf);color:var(--text);font-size:11px;font-family:inherit;';\n    const iaSendBtn = document.createElement('button');\n    iaSendBtn.style.cssText = 'padding:7px 12px;border-radius:6px;background:var(--brand);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';\n    iaSendBtn.textContent = '→';\n    iaInputRow.appendChild(iaInput);\n    iaInputRow.appendChild(iaSendBtn);\n\n    const iaResult = document.createElement('div');\n    iaResult.style.cssText = 'display:none;margin-top:8px;padding:10px;background:var(--surf2);border-radius:8px;border:1px solid var(--border2);font-size:11px;color:var(--text2);line-height:1.6;';\n\n    const sendFn = async () => {\n      const msg = iaInput.value.trim();\n      if (!msg) return;\n      const token = localStorage.getItem(KEYS.token);\n      if (!token) { toast('Inicia sesión primero','error'); return; }\n      iaResult.style.display = 'block';\n      iaResult.textContent   = '✍️ Mejorando guión…';\n      iaInput.disabled = true; iaSendBtn.disabled = true;\n      try {\n        const guionCtx = 'GANCHO: ' + (idea.gancho||'') + '\nDESARROLLO: ' + (idea.desarrollo||'') + '\nVALOR: ' + (idea.valor||'') + '\nCTA: ' + (idea.cta||'');\n        const r = await fetch(API_URL + '/analyze/refine', {\n          method:'POST',\n          headers:{ 'Content-Type':'application/json','Authorization':'Bearer '+token },\n          body: JSON.stringify({\n            message: msg,\n            history: [],\n            ia_context: {\n              niche:            niche,\n              tone:             iaData?.tone || 'Profesional',\n              publication_type: 'reel',\n              current_caption:  guionCtx,\n            }\n          })\n        });\n        const d = await r.json();\n        if (!r.ok || !d.success) throw new Error(d.error || 'Error');\n        const improved = d.reply.trim();\n        iaResult.innerHTML =\n          '<div style="white-space:pre-wrap;margin-bottom:10px;">' + escHtml(improved) + '</div>' +\n          '<div style="display:flex;gap:6px;">' +\n            '<button class="_reelCopyImproved" style="flex:1;padding:6px;border-radius:6px;background:var(--grad);border:none;color:#fff;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;">📋 Copiar guión mejorado</button>' +\n          '</div>';\n        iaResult.querySelector('._reelCopyImproved').onclick = () => {\n          navigator.clipboard.writeText(improved).then(() => toast('✅ Guión mejorado copiado','success'));\n        };\n      } catch(e) {\n        iaResult.textContent = '❌ ' + (e.message || 'Error. Intenta de nuevo.');\n      } finally {\n        iaInput.disabled = false; iaSendBtn.disabled = false; iaInput.value = '';\n      }\n    };
 
     iaSendBtn.onclick = sendFn;
     iaInput.onkeydown = e => { if (e.key === 'Enter') sendFn(); };
