@@ -1546,7 +1546,7 @@ async function generateContent(event) {
     return;
   }
   if (userCredits <= 0) {
-    showNotification('Sin créditos este mes. ¡Mejora tu plan para continuar!', 'error'); return;
+    showNotification('⚡ Sin créditos disponibles este mes — actualiza tu plan para seguir generando contenido.', 'error'); return;
   }
 
   // Niche mismatch check
@@ -1597,8 +1597,15 @@ async function generateContent(event) {
     clearTimeout(_coldStartTimer);
 
     const d = await r.json();
-    if (r.status === 429) throw new Error('⏳ Demasiadas solicitudes. Espera un momento e intenta de nuevo.');
-    if (r.status === 403 && d.error?.includes('créditos')) throw new Error('Sin créditos disponibles este mes. Mejora tu plan para continuar.');
+    if (r.status === 429) {
+      if (d.error?.includes('Límite diario') || d.message?.includes('análisis diarios')) {
+        const limit = d.usage?.limit || 30;
+        throw new Error('Alcanzaste el límite de ' + limit + ' generaciones diarias. Vuelve mañana o actualiza tu plan para obtener más.');
+      }
+      const wait = d.retryAfter ? Math.ceil(d.retryAfter / 60) + ' minuto(s)' : 'un momento';
+      throw new Error('Demasiadas generaciones seguidas. Espera ' + wait + ' e intenta de nuevo.');
+    }
+    if (r.status === 403 && d.error?.includes('créditos')) throw new Error('⚡ Sin créditos disponibles — has usado todos tus créditos del mes. Actualiza tu plan para continuar.');
     if (!r.ok) throw new Error(d.error || 'Error generando contenido');
 
     // Guardar créditos
