@@ -3995,15 +3995,16 @@ async function searchPexels(q, page=1) {
   }));
 }
 
-async function searchUnsplash(q) {
+async function searchUnsplash(q, page=1) {
   if (UNSPLASH_ACCESS === 'UNSPLASH_KEY_HERE') {
     return Array.from({length:12},(_,i) => ({
-      thumb: `https://picsum.photos/seed/${encodeURIComponent(q+'u'+i)}/200/200`,
-      full:  `https://picsum.photos/seed/${encodeURIComponent(q+'u'+i)}/1080/1350`,
+      thumb: `https://picsum.photos/seed/${encodeURIComponent(q+'u'+i+page)}/200/200`,
+      full:  `https://picsum.photos/seed/${encodeURIComponent(q+'u'+i+page)}/1080/1350`,
       author:'Unsplash', link:'https://unsplash.com'
     }));
   }
-  const r = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(q)}&per_page=40&client_id=${UNSPLASH_ACCESS}`);
+  const r = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(q)}&per_page=20&page=${page}&client_id=${UNSPLASH_ACCESS}`);
+  if (!r.ok) throw new Error('Unsplash error: ' + r.status);
   const d = await r.json();
   return (d.results || []).map(p => ({
     thumb:  p.urls.small,
@@ -4093,7 +4094,7 @@ function renderStockPage() {
         _stockApiPage++;
         try {
           const newPhotos = _currentImgTab === 'unsplash'
-            ? await searchUnsplash(_stockQuery + ' ' + _stockApiPage)
+            ? await searchUnsplash(_stockQuery, _stockApiPage)
             : await searchPexels(_stockQuery, _stockApiPage);
           _stockPhotos = [..._stockPhotos, ...newPhotos];
           _stockPage = Math.floor((_stockPhotos.length - newPhotos.length) / PHOTOS_PER_PAGE);
@@ -4211,10 +4212,16 @@ async function uploadToBank(event) {
       const fd = new FormData(); fd.append('file', file);
       const r  = await fetch(API_URL+'/files/upload', { method:'POST', headers:{Authorization:'Bearer '+token}, body:fd });
       const d  = await r.json();
-      if (r.ok && d.file) {
-        imgBank.unshift({ id:d.file.id, url: d.file.public_url||R2_URL+'/'+d.file.storage_path, name:file.name });
+      if (!r.ok) throw new Error(d.error || 'Error del servidor');
+      // Backend returns d.files[] array, not d.file
+      const uploaded = d.file || (d.files && d.files[0]);
+      if (uploaded) {
+        const url = uploaded.public_url || uploaded.url || (R2_URL + '/' + (uploaded.storage_path||''));
+        imgBank.unshift({ id: uploaded.id, url, name: file.name });
         renderImgBank();
         toast('✅ Imagen subida','success');
+      } else {
+        toast('✅ Imagen en proceso…','success');
       }
     } catch(e) { toast('Error subiendo imagen','error'); }
   }
@@ -4766,27 +4773,26 @@ async function regenerateFromEditor() {
   const btn = document.querySelector('[onclick="regenerateFromEditor()"]');
   if (btn) { btn.innerHTML='⏳ Regenerando…'; btn.disabled=true; }
 
-  // Show progress bar overlay in content panel
-  const panel = document.getElementById('contentPanelInner') || document.querySelector('.panel-scroll');
+  // Progress bar in actual panel container
+  const panel = document.getElementById('iaContentInner');
   let progressBar = null;
   if (panel) {
     progressBar = document.createElement('div');
     progressBar.id = '_regenProgress';
-    progressBar.style.cssText = 'position:sticky;top:0;left:0;right:0;z-index:99;background:var(--surf);padding:16px 14px;border-bottom:1px solid var(--border);';
+    progressBar.style.cssText = 'padding:14px 12px 10px;border-bottom:1px solid var(--border);margin-bottom:4px;';
     progressBar.innerHTML = `
       <div style="font-size:11px;font-weight:700;color:var(--brand);margin-bottom:8px;text-align:center;">✨ Generando nuevo contenido…</div>
       <div style="height:4px;background:var(--border);border-radius:4px;overflow:hidden;">
-        <div id="_regenBar" style="height:100%;width:5%;background:linear-gradient(90deg,#8B5FBF,#EC4899);border-radius:4px;transition:width .4s ease;"></div>
+        <div id="_regenBar" style="height:100%;width:5%;background:linear-gradient(90deg,#8B5FBF,#EC4899);border-radius:4px;transition:width .5s ease;"></div>
       </div>`;
     panel.insertBefore(progressBar, panel.firstChild);
-    // Animate progress
     let pct = 5;
-    const barEl = progressBar.querySelector('#_regenBar');
+    const barEl = document.getElementById('_regenBar');
     const ticker = setInterval(() => {
-      pct = Math.min(85, pct + Math.random() * 12);
+      pct = Math.min(85, pct + Math.random() * 10);
       if (barEl) barEl.style.width = pct + '%';
     }, 600);
-    progressBar._ticker = ticker;
+    if (progressBar) progressBar._ticker = ticker;
   }
 
   try {
@@ -5575,20 +5581,26 @@ function renderCarouselPanel() {
 }
 
 function renderCarouselCaptionPanel() {
-  // Populate the iaCaption panel with caption navigator + hashtags
-  const navEl = document.getElementById('carouselCaptionNav');
+  const navEl  = document.getElementById('carouselCaptionNav');
   const hashEl = document.getElementById('hashtagChipsCarousel');
   if (!navEl || !iaData) return;
 
-  const captions  = iaData?.captions  || [];
-  const hashtags  = iaData?.hashtags  || [];
+  const captions = iaData?.captions || [];
+  const hashtags = iaData?.hashtags || [];
+  const emojis   = iaData?.emojis   || [];
 
-  // Caption navigator
+  // Shared selection state
+  const selH = new Set();
+  const selE = new Set();
+
   navEl.innerHTML = '';
+
+  // ── Caption navigator ──
   if (captions.length) {
     let capIdx = 0;
+
     const hdr = document.createElement('div');
-    hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;';
+    hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;';
     const lbl = document.createElement('div');
     lbl.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;';
     lbl.textContent = '📝 Caption del carrusel';
@@ -5607,34 +5619,45 @@ function renderCarouselCaptionPanel() {
     navEl.appendChild(hdr);
 
     const txt = document.createElement('div');
-    txt.style.cssText = 'font-size:11px;color:var(--text2);line-height:1.6;padding:8px;background:var(--surf2);border-radius:var(--r);border:1px solid var(--border2);margin-bottom:8px;max-height:220px;overflow-y:auto;';
+    txt.style.cssText = 'font-size:11px;color:var(--text2);line-height:1.6;padding:8px;background:var(--surf2);border-radius:var(--r);border:1px solid var(--border2);margin-bottom:8px;max-height:180px;overflow-y:auto;';
 
-    function renderCapTxt() {
-      const raw = (captions[capIdx]||'').replace(/^CAPTION\s*\d+\s*[—-]\s*(Hook:|Descripción:|CTA:)?\s*/i,'').trim();
+    const renderCapTxt = () => {
+      const raw = (captions[capIdx]||'')
+        .replace(/^CAPTION\s*\d+\s*[—-]\s*(Hook:|Descripción:|CTA:)?\s*/i,'')
+        .replace(/#\S+/g,'').replace(/[\u{1F300}-\u{1FAFF}]/gu,'')
+        .replace(/\n{3,}/g,'\n\n').trim();
       txt.textContent = raw || '—';
       ctr.textContent = (capIdx+1) + '/' + captions.length;
-    }
+    };
     renderCapTxt();
-    prev.onclick = () => { capIdx=(capIdx-1+captions.length)%captions.length; renderCapTxt(); };
-    next.onclick = () => { capIdx=(capIdx+1)%captions.length; renderCapTxt(); };
+    prev.onclick = () => { capIdx=(capIdx-1+captions.length)%captions.length; renderCapTxt(); resetHashChips(); selH.clear(); };
+    next.onclick = () => { capIdx=(capIdx+1)%captions.length; renderCapTxt(); resetHashChips(); selH.clear(); };
     navEl.appendChild(txt);
 
+    // Usar este caption
     const useBtn = document.createElement('button');
-    useBtn.style.cssText = 'width:100%;padding:7px;border-radius:var(--r);background:rgba(139,95,191,.15);border:1.5px solid rgba(139,95,191,.4);color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;';
+    useBtn.style.cssText = 'width:100%;padding:7px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;';
     useBtn.textContent = '✅ Usar este caption';
     useBtn.onclick = () => {
-      const cap = (captions[capIdx]||'').replace(/^CAPTION\s*\d+\s*[—-]\s*(Hook:|Descripción:|CTA:)?\s*/i,'').trim();
+      const raw = (captions[capIdx]||'').replace(/^CAPTION\s*\d+\s*[—-]\s*(Hook:|Descripción:|CTA:)?\s*/i,'')
+        .replace(/#\S+/g,'').replace(/[\u{1F300}-\u{1FAFF}]/gu,'').replace(/\n{3,}/g,'\n\n').trim();
       const capEl = document.getElementById('capFull');
-      if (capEl) { capEl.value = cap; captionFull = cap; updateCaptionPreview(); }
+      if (capEl) { capEl.value = raw; captionFull = raw; updateCaptionPreview(); }
+      resetHashChips(); selH.clear();
       toast('Caption aplicado','success');
     };
     navEl.appendChild(useBtn);
   }
 
-  // Hashtags
+  // ── Hashtags ──
   if (hashEl && hashtags.length) {
     hashEl.innerHTML = '';
-    const selH = new Set();
+    const hashTitle = document.createElement('div');
+    hashTitle.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;';
+    hashTitle.textContent = '# Hashtags — elige hasta 3';
+    navEl.appendChild(hashTitle);
+    const hashRow = document.createElement('div');
+    hashRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;';
     hashtags.forEach(tag => {
       const chip = document.createElement('button');
       chip.className = 'hash-chip';
@@ -5642,70 +5665,69 @@ function renderCarouselCaptionPanel() {
       chip.onclick = () => {
         if (selH.has(tag)) { selH.delete(tag); chip.classList.remove('active'); }
         else if (selH.size < 3) { selH.add(tag); chip.classList.add('active'); }
-        const capEl = document.getElementById('capFull');
-        if (capEl) {
-          const base = (capEl.value||'').replace(/#\S+/g,'').replace(/\s+$/,'').trim();
-          const tags = [...selH].map(t=>t.startsWith('#')?t:'#'+t).join(' ');
-          capEl.value = base + (tags ? String.fromCharCode(10,10)+tags : '');
-          captionFull = capEl.value; updateCaptionPreview();
-        }
+        else { toast('Máximo 3 hashtags','info'); return; }
+        updateCaptionHashEmoji(selH, selE);
       };
+      hashRow.appendChild(chip);
       hashEl.appendChild(chip);
     });
+    navEl.appendChild(hashRow);
   }
 
-  // Populate emojis in captionZone
-  const zoneEmojis = document.getElementById('captionZoneEmojis');
-  if (zoneEmojis && iaData?.emojis?.length) {
-    zoneEmojis.innerHTML = '';
-    iaData.emojis.forEach(em => {
-      const btn = document.createElement('button');
-      btn.style.cssText = 'font-size:18px;cursor:pointer;background:none;border:none;padding:1px;border-radius:4px;';
-      btn.textContent = em;
-      btn.title = 'Añadir al caption';
-      btn.onclick = () => {
+  // ── Emojis ──
+  if (emojis.length) {
+    const emoTitle = document.createElement('div');
+    emoTitle.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;';
+    emoTitle.textContent = '😊 Emojis';
+    const emoSub = document.createElement('div');
+    emoSub.style.cssText = 'font-size:10px;color:var(--text3);margin-bottom:6px;';
+    emoSub.textContent = 'Toca uno — elige si va en el canvas o en el caption';
+    const emoRow = document.createElement('div');
+    emoRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;';
+    emojis.forEach(em => {
+      const b = document.createElement('button');
+      b.style.cssText = 'font-size:20px;cursor:pointer;background:none;border:none;padding:2px;border-radius:4px;';
+      b.textContent = em;
+      b.onclick = () => {
         const cap = document.getElementById('capFull');
-        if (cap) { cap.value += ' ' + em; captionFull = cap.value; updateCaptionPreview(); }
+        if (cap) { cap.value += ' '+em; captionFull=cap.value; updateCaptionPreview(); }
       };
-      zoneEmojis.appendChild(btn);
+      emoRow.appendChild(b);
     });
-  }
-  // Also populate hashtagChips in captionZone
-  renderCaptionTab();
-  // Emojis
-  if (iaData && iaData.emojis && iaData.emojis.length) {
-    const emoLbl2 = document.createElement('div');
-    emoLbl2.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;margin-top:8px;margin-bottom:4px;';
-    emoLbl2.textContent = 'Emojis';
-    container.appendChild(emoLbl2);
-    const emoRow2 = document.createElement('div');
-    emoRow2.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;';
-    iaData.emojis.forEach(function(em) {
-      const b2 = document.createElement('button');
-      b2.style.cssText = 'font-size:20px;cursor:pointer;background:none;border:none;padding:2px;';
-      b2.textContent = em;
-      b2.onclick = function() {
-        const cap = document.getElementById('capFull');
-        if (cap) { cap.value += ' ' + em; captionFull = cap.value; updateCaptionPreview(); }
-      };
-      emoRow2.appendChild(b2);
-    });
-    container.appendChild(emoRow2);
+    navEl.appendChild(emoTitle);
+    navEl.appendChild(emoSub);
+    navEl.appendChild(emoRow);
   }
 
- 
-  // Mejorar con IA
+  // ── Mejorar con IA Copiloto ──
   const iaCCBtn = document.createElement('button');
-  iaCCBtn.style.cssText = 'width:100%;padding:8px;border-radius:var(--r);background:rgba(139,95,191,.15);border:1.5px solid rgba(139,95,191,.4);color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:6px;';
-  iaCCBtn.innerHTML = '🤖 Mejorar con IA';
-  iaCCBtn.onclick = function() { switchIaTab('content'); };
-  container.appendChild(iaCCBtn);
-  // Regenerar
-  const rgnCCBtn = document.createElement('button');
-  rgnCCBtn.style.cssText = 'width:100%;padding:8px;border-radius:var(--r);border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px;';
-  rgnCCBtn.innerHTML = '🔄 Regenerar (-1 credito)';
-  rgnCCBtn.onclick = function() { regenerateFromEditor(); };
-  container.appendChild(rgnCCBtn);
+  iaCCBtn.style.cssText = 'width:100%;padding:8px;border-radius:var(--r);background:rgba(139,95,191,.15);border:1.5px solid rgba(139,95,191,.4);color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:6px;';
+  iaCCBtn.innerHTML = '🤖 Mejorar con IA Copiloto';
+  iaCCBtn.onclick = () => {
+    const tabs = document.querySelectorAll('.ia-tab');
+    tabs.forEach(t => { if(t.dataset.tab === 'copiloto' || t.textContent.includes('Copiloto')) t.click(); });
+  };
+  navEl.appendChild(iaCCBtn);
+
+  // ── Regenerar ──
+  const regenBtn2 = document.createElement('button');
+  regenBtn2.style.cssText = 'width:100%;padding:8px;border-radius:var(--r);background:rgba(99,102,241,.12);border:1.5px solid rgba(99,102,241,.3);color:#818CF8;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
+  regenBtn2.innerHTML = '🔄 Regenerar contenido (-1 crédito)';
+  regenBtn2.onclick = () => regenerateFromEditor();
+  navEl.appendChild(regenBtn2);
+
+  // Sync captionZone emojis
+  const zoneEmojis = document.getElementById('captionZoneEmojis');
+  if (zoneEmojis && emojis.length) {
+    zoneEmojis.innerHTML = '';
+    emojis.forEach(em => {
+      const b = document.createElement('button');
+      b.style.cssText = 'font-size:18px;cursor:pointer;background:none;border:none;padding:1px;border-radius:4px;';
+      b.textContent = em;
+      b.onclick = () => { const cap=document.getElementById('capFull'); if(cap){cap.value+=' '+em;captionFull=cap.value;updateCaptionPreview();} };
+      zoneEmojis.appendChild(b);
+    });
+  }
 }
 
 function renderBrandPanel() {
@@ -5766,47 +5788,71 @@ async function uploadBrandLogoFromEditor(event) {
 function applyBrandToCurrentSlide() {
   if (!currentBrand) { toast('Sin marca configurada','error'); return; }
   const b = currentBrand;
-  // Apply bg colors
-  slides[currentSlide].bg1 = b.color_primary   || '#8B5FBF';
-  slides[currentSlide].bg2 = b.color_secondary || '#E91E8C';
+  slides[currentSlide].bg1  = b.color_primary   || '#8B5FBF';
+  slides[currentSlide].bg2  = b.color_secondary || '#E91E8C';
   slides[currentSlide].bgImg = null;
   updateCanvasBg();
-  // Apply to existing text blocks
   document.querySelectorAll('.eblock-text').forEach((ta, i) => {
     ta.style.fontFamily = `'${b.font_name||'DM Sans'}',sans-serif`;
     ta.style.color      = i === 0 ? (b.font_color||'#fff') : (b.sub_font_color||'rgba(255,255,255,.85)');
   });
-  // Add logo if configured and no logo block exists
-  if (b.logo_url && !document.querySelector('.eblock-img')) {
-    makeBlock('image', { src:b.logo_url, x:5, y:3, w:25, h:15 });
+  // Add logo only if no logo block already present (check by data-role)
+  const hasLogo = document.querySelector('.eblock[data-role="logo-block"]');
+  if (b.logo_url && !hasLogo) {
+    makeBlock('image', { src:b.logo_url, x:5, y:3, w:22, h:13, role:'logo-block' });
+  } else if (b.logo_url && hasLogo) {
+    // Update existing logo src
+    const img = hasLogo.querySelector('img');
+    if (img) img.src = b.logo_url;
   }
+  saveCurrentBlocks();
   updateStripThumb(currentSlide);
   historySave();
-  toast('✅ Marca aplicada','success');
+  toast('✅ Marca aplicada al slide','success');
 }
 
 function applyBrandToAllSlides() {
   if (!currentBrand) { toast('Sin marca configurada','error'); return; }
-  const b = currentBrand;
+  const b   = currentBrand;
   const orig = currentSlide;
   saveCurrentBlocks();
   const total = slides.length;
+
   for (let i = 0; i < total; i++) {
     slides[i].bg1   = b.color_primary   || '#8B5FBF';
     slides[i].bg2   = b.color_secondary || '#E91E8C';
     slides[i].bgImg = null;
     loadSlide(i);
     updateCanvasBg();
+
+    // Apply font + color to text blocks
     document.querySelectorAll('.eblock-text').forEach(function(ta, di) {
       ta.style.fontFamily = "'" + (b.font_name||'DM Sans') + "',sans-serif";
-      ta.style.color = di===0 ? (b.font_color||'#fff') : (b.sub_font_color||'rgba(255,255,255,.8)');
+      ta.style.color = di === 0 ? (b.font_color||'#fff') : (b.sub_font_color||'rgba(255,255,255,.8)');
     });
+
+    // Add or update logo block
+    if (b.logo_url) {
+      const existingLogo = document.querySelector('.eblock[data-role="logo-block"]');
+      if (existingLogo) {
+        const img = existingLogo.querySelector('img');
+        if (img) img.src = b.logo_url;
+        // Persist in slide data
+        const blk = slides[i]?.blocks?.find(bl => bl.role === 'logo-block');
+        if (blk) blk.src = b.logo_url;
+      } else {
+        makeBlock('image', { src:b.logo_url, x:5, y:3, w:22, h:13, role:'logo-block' });
+      }
+    }
+
     saveCurrentBlocks();
+    updateStripThumb(i);
   }
+
   loadSlide(orig);
   renderSlideStrip();
   historySave();
-  toast('Marca aplicada a ' + total + ' slides','success');
+  toast('✅ Marca aplicada a ' + total + ' slides','success');
 }
 
 /* ══ WIZARD SLIDES (CARRUSEL) ══ */
@@ -5908,12 +5954,16 @@ async function copSend(preset) {
     if (!lastMsg || !reply.length) return;
 
     const isNewCaption = msgLower.includes('nuevo caption') || msgLower.includes('dame un caption') ||
-                         msgLower.includes('caption completo') || msgLower.includes('reescribe el caption');
+                         msgLower.includes('caption completo') || msgLower.includes('reescribe el caption') ||
+                         msgLower.includes('hazme un caption') || msgLower.includes('genera un caption') ||
+                         msgLower.includes('caption mas') || msgLower.includes('caption más') ||
+                         msgLower.includes('caption viral') || msgLower.includes('caption mejor');
     const isHashtag    = !isNewCaption && (msgLower.includes('hashtag') || msgLower.includes('etiqueta') ||
-                         (reply.match(/#\S+/g)||[]).length >= 3);
-    const isHook       = !isNewCaption && !isHashtag && (msgLower.includes('hook') || msgLower.includes('gancho'));
+                         msgLower.includes('nuevos #') ||
+                         (!msgLower.includes('caption') && (reply.match(/#\S+/g)||[]).length >= 4));
+    const isHook       = !isNewCaption && !isHashtag && (msgLower.includes('hook') || msgLower.includes('gancho') || msgLower.includes('primer') && msgLower.includes('linea'));
     const isCTA        = !isNewCaption && !isHashtag && !isHook &&
-                         (msgLower.includes('cta') || msgLower.includes('llamada'));
+                         (msgLower.includes('cta') || msgLower.includes('llamada') || msgLower.includes('call to action'));
 
     const wrap = document.createElement('div');
     wrap.style.cssText = 'margin-top:8px;';
@@ -5954,10 +6004,19 @@ async function copSend(preset) {
         applyBtn.textContent = '✓ Aplicado'; applyBtn.disabled = true;
       };
     } else if (isNewCaption) {
-      const cleanCaption = reply.replace(/#\S+/g,'').replace(/[\u{1F300}-\u{1FAFF}]/gu,'').replace(/\n{3,}/g,'\n\n').trim();
+      // Keep emojis, only strip hashtags — user asked for emojis explicitly
+      const cleanCaption = reply
+        .replace(/#\S+/g, '')           // remove hashtags (user picks from chips)
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
       applyBtn.onclick = () => {
         const capEl = document.getElementById('capFull');
-        if (capEl) { capEl.value = cleanCaption; captionFull = cleanCaption; updateCaptionPreview(); resetHashChips(); }
+        if (capEl) {
+          capEl.value = cleanCaption;
+          captionFull = cleanCaption;
+          updateCaptionPreview();
+          resetHashChips();
+        }
         toast('Caption aplicado','success');
         applyBtn.textContent = '✓ Aplicado'; applyBtn.disabled = true;
       };
@@ -5986,7 +6045,11 @@ async function copSend(preset) {
         applyBtn.textContent = '✓ Aplicado'; applyBtn.disabled = true;
       };
     } else {
-      const cleanReply = reply.replace(/#\S+/g,'').replace(/[\u{1F300}-\u{1FAFF}]/gu,'').replace(/\n{3,}/g,'\n\n').trim();
+      // Generic: apply to caption keeping emojis, only strip hashtags
+      const cleanReply = reply
+        .replace(/#\S+/g, '')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
       applyBtn.onclick = () => {
         const capEl = document.getElementById('capFull');
         if (capEl) { capEl.value = cleanReply; captionFull = cleanReply; updateCaptionPreview(); }

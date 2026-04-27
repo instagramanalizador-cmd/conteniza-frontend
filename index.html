@@ -940,16 +940,18 @@ async function apiFetch(url, options = {}, timeoutMs = 30000) {
     const res = await fetch(url, options);
     clearTimeout(timer);
     if (res.status === 401) {
-      // Only force logout if the main app isn't already showing (prevents redirect after goBack)
       const mainAppVisible = !document.getElementById('mainApp')?.classList.contains('hidden');
+      if (mainAppVisible) {
+        // Token expired while using the app — don't logout, just throw so caller handles gracefully
+        const err = new Error('Sesión expirada'); err.status = 401; throw err;
+      }
+      // Not in the app — do full logout
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       sessionStorage.removeItem('conteniza_user');
       currentUser = null;
-      if (!mainAppVisible) {
-        showNotification('Tu sesión expiró. Inicia sesión de nuevo.', 'error');
-        setTimeout(() => { showAuthScreen(); }, 1200);
-      }
+      showNotification('Tu sesión expiró. Inicia sesión de nuevo.', 'error');
+      setTimeout(() => { showAuthScreen(); }, 1200);
       const err = new Error('Sesión expirada'); err.status = 401; throw err;
     }
     return res;
@@ -1982,53 +1984,56 @@ async function init() {
   const token = localStorage.getItem('token');
   const saved = localStorage.getItem('user');
 
+  // Helper: show app with saved user data, never logout on non-auth errors
+  const showAppWith = async (user) => {
+    currentUser = user;
+    userCredits = user.credits_remaining ?? 0;
+    const daily = localStorage.getItem('conteniza_daily_usage');
+    if (daily && user.daily_usage_count === undefined) user.daily_usage_count = parseInt(daily) || 0;
+    const niche = localStorage.getItem('conteniza_niche');
+    if (niche && !user.niche) { user.niche = niche; _selectedNiche = niche; }
+    else if (user.niche) { _selectedNiche = user.niche; }
+    try { await showMainApp(); } catch(e) { console.warn('showMainApp non-fatal:', e.message); }
+    const fmt = localStorage.getItem('conteniza_format') || 'post';
+    const btn = document.querySelector(`.pub-btn[data-value="${fmt}"]`);
+    if (btn) selectPubType(btn);
+  };
+
   if (token && saved) {
-    try {
-      currentUser = JSON.parse(saved);
-      userCredits = currentUser.credits_remaining ?? 0;
-      const storedDailyInit = localStorage.getItem('conteniza_daily_usage');
-      if (storedDailyInit && currentUser.daily_usage_count === undefined) {
-        currentUser.daily_usage_count = parseInt(storedDailyInit) || 0;
-      }
-      // FIX: restore niche BEFORE showMainApp
-      const storedNicheInit = localStorage.getItem('conteniza_niche');
-      if (storedNicheInit && !currentUser.niche) { currentUser.niche = storedNicheInit; _selectedNiche = storedNicheInit; }
-      else if (currentUser.niche) { _selectedNiche = currentUser.niche; }
-      await showMainApp();
-      const savedFmt = localStorage.getItem('conteniza_format') || 'post';
-      const fmtBtn   = document.querySelector(`.pub-btn[data-value="${savedFmt}"]`);
-      if (fmtBtn) selectPubType(fmtBtn);
-    } catch(e) {
-      logout();
+    let parsedUser = null;
+    try { parsedUser = JSON.parse(saved); } catch(_) { localStorage.removeItem('user'); }
+    if (parsedUser) {
+      await showAppWith(parsedUser);
+      return;
     }
-  } else {
-    // FIX: token existe pero 'user' missing (vuelta del editor) — recuperar perfil sin re-login
-    sessionStorage.removeItem('conteniza_from_editor');
-    if (token) {
-      try {
-        const r = await fetch(`${API_URL}/user/profile`, { headers: { 'Authorization': `Bearer ${token}` } });
-        if (r.ok) {
-          const d = await r.json();
-          if (d.user) {
-            currentUser = d.user;
-            userCredits = d.user.credits_remaining ?? 0;
-            currentUser.credits_remaining = userCredits;
-            if (d.user.daily_usage_count !== undefined) currentUser.daily_usage_count = d.user.daily_usage_count;
-            const storedNiche2 = localStorage.getItem('conteniza_niche');
-            if (storedNiche2 && !currentUser.niche) { currentUser.niche = storedNiche2; _selectedNiche = storedNiche2; }
-            else if (currentUser.niche) { _selectedNiche = currentUser.niche; }
-            localStorage.setItem('user', JSON.stringify(currentUser));
-            await showMainApp();
-            const savedFmt2 = localStorage.getItem('conteniza_format') || 'post';
-            const fmtBtn2   = document.querySelector(`.pub-btn[data-value="${savedFmt2}"]`);
-            if (fmtBtn2) selectPubType(fmtBtn2);
-            return;
-          }
-        }
-      } catch(_) {}
-    }
-    loadPlans();
   }
+
+  // token exists but no valid saved user — recover from backend (handles goBack case)
+  if (token) {
+    sessionStorage.removeItem('conteniza_from_editor');
+    try {
+      const r = await fetch(`${API_URL}/user/profile`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (r.ok) {
+        const d = await r.json();
+        if (d.user) {
+          localStorage.setItem('user', JSON.stringify(d.user));
+          await showAppWith(d.user);
+          return;
+        }
+      } else if (r.status === 401) {
+        // Genuinely invalid token — clear and show plans
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
+      // Other errors (500, network) — fall through to loadPlans
+    } catch(_) {
+      // Network error — show plans, don't destroy session
+    }
+  }
+
+  loadPlans();
 }
 
 // Cerrar modal con Escape
