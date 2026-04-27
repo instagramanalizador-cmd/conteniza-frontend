@@ -2976,6 +2976,10 @@ function renderPostContentPanel(container) {
   const captions = iaData?.captions || [];
   const emojis   = iaData?.emojis   || [];
 
+  // Shared state for hashtag + emoji selection (hoisted so useBtn can reset them)
+  const _selH = new Set();
+  const _selE = new Set();
+
   // ── SECCIÓN 1: CAPTIONS NAVEGABLES (primero — el hook ya está dentro) ──
   if (captions.length) {
     const sec = makeSection('📝', 'Elige tu caption');
@@ -3023,15 +3027,20 @@ function renderPostContentPanel(container) {
       // NO auto-apply on navigation — only on "Usar este caption"
     };
 
-    btnP.onclick = () => { if(capIdx>0){ capIdx--; renderCap(); } };
-    btnN.onclick = () => { if(capIdx<captions.length-1){ capIdx++; renderCap(); } };
+    btnP.onclick = () => { if(capIdx>0){ capIdx--; renderCap(); resetHashChips(); } };
+    btnN.onclick = () => { if(capIdx<captions.length-1){ capIdx++; renderCap(); resetHashChips(); } };
 
     useBtn.onclick = () => {
       const cap = captions[capIdx];
       const capEl = document.getElementById('capFull');
-      if (capEl) { capEl.value = cap; captionFull = cap; updateCaptionPreview(); }
+      // Strip any hashtags from previous caption before applying new one
+      const capClean = cap.replace(/#\S+/g, '').replace(/\s+$/, '').trim();
+      if (capEl) { capEl.value = capClean; captionFull = capClean; updateCaptionPreview(); }
+      // Reset hashtag chips — user picks new ones for this caption
+      resetHashChips();
+      // Reset the local selHash set by re-creating it (chips onclick closure still uses _selH)
+      _selH.clear();
       // Hook (primera línea) al canvas
-      // Hook = primera oración visible en Instagram (antes de "ver más")
       const _firstLine = cap.split('\n')[0].trim();
       const _sentEnd = _firstLine.search(/[.!?]/);
       const fl = (_sentEnd > 20 && _sentEnd < 120) ? _firstLine.substring(0, _sentEnd+1).trim() : _firstLine.substring(0,125).trim();
@@ -3039,7 +3048,7 @@ function renderPostContentPanel(container) {
       useBtn.textContent = '✅ Caption aplicado';
       useBtn.style.background = '#10B981';
       setTimeout(()=>{ useBtn.textContent='✅ Usar este caption'; useBtn.style.background='var(--grad)'; },1500);
-      toast('✅ Hook en canvas + caption listo para copiar','success');
+      toast('✅ Hook en canvas + elige tus hashtags','success');
     };
 
     navBtns.appendChild(btnP); navBtns.appendChild(btnN);
@@ -3057,8 +3066,6 @@ function renderPostContentPanel(container) {
     const _hSec = makeSection('#', 'Hashtags — elige hasta 3');
     const _hRow = document.createElement('div');
     _hRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px;padding:0 12px 8px;';
-    const _selH = new Set();
-    const _selE = new Set(); // local emoji set for updateCaptionHashEmoji
     iaData.hashtags.forEach(function(_tag) {
       const _chip = document.createElement('button');
       _chip.className = 'hash-chip';
@@ -3862,6 +3869,11 @@ function renderCaptionTab() {
       zoneEmojis.appendChild(btn);
     });
   }
+}
+
+function resetHashChips() {
+  // Deselect all hash-chip buttons and clear caption hash suffix
+  document.querySelectorAll('.hash-chip.active').forEach(c => c.classList.remove('active'));
 }
 
 function updateCaptionHashEmoji(selHash, selEmoji) {
@@ -4897,30 +4909,36 @@ function applyPropOpacity() {
 /* ══ LAYER ORDER ══ */
 
 function bringForward() {
-  const el = document.getElementById(selectedId); if (!el) { toast('Selecciona un bloque primero','info'); return; }
-  // Get all blocks and find max z-index
+  const el = document.getElementById(selectedId);
+  if (!el) { toast('Selecciona un bloque primero','info'); return; }
   const allBlocks = document.querySelectorAll('.eblock');
   const maxZ = Math.max(...Array.from(allBlocks).map(b => parseInt(b.style.zIndex)||1));
   const cur  = parseInt(el.style.zIndex) || 1;
   const newZ = cur >= maxZ ? maxZ + 1 : cur + 1;
   el.style.zIndex = newZ;
+  // Visual feedback: flash outline
+  el.style.outline = '2px solid var(--brand)';
+  setTimeout(() => { el.style.outline = ''; }, 400);
   const blk = slides[currentSlide]?.blocks?.find(b => b.id === selectedId);
   if (blk) blk.zIndex = newZ;
   saveCurrentBlocks();
   historySave();
-  toast('↑ Capa subida (z:' + newZ + ')','info');
+  toast('↑ Subido a capa ' + newZ,'info');
 }
 
 function sendBackward() {
-  const el = document.getElementById(selectedId); if (!el) { toast('Selecciona un bloque primero','info'); return; }
+  const el = document.getElementById(selectedId);
+  if (!el) { toast('Selecciona un bloque primero','info'); return; }
   const cur  = parseInt(el.style.zIndex) || 1;
   const newZ = Math.max(1, cur - 1);
   el.style.zIndex = newZ;
+  el.style.outline = '2px solid #F59E0B';
+  setTimeout(() => { el.style.outline = ''; }, 400);
   const blk = slides[currentSlide]?.blocks?.find(b => b.id === selectedId);
   if (blk) blk.zIndex = newZ;
   saveCurrentBlocks();
   historySave();
-  toast('↓ Capa bajada (z:' + newZ + ')','info');
+  toast('↓ Bajado a capa ' + newZ,'info');
 }
 
 /* ══ TEXT SHADOW ══ */
