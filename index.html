@@ -1546,7 +1546,7 @@ async function generateContent(event) {
     return;
   }
   if (userCredits <= 0) {
-    showNotification('⚡ Sin créditos disponibles este mes — actualiza tu plan para seguir generando contenido.', 'error'); return;
+    showUpgradeModal('monthly_credits'); return;
   }
 
   // Niche mismatch check
@@ -1599,13 +1599,12 @@ async function generateContent(event) {
     const d = await r.json();
     if (r.status === 429) {
       if (d.error?.includes('Límite diario') || d.message?.includes('análisis diarios')) {
-        const limit = d.usage?.limit || 30;
-        throw new Error('Alcanzaste el límite de ' + limit + ' generaciones diarias. Vuelve mañana o actualiza tu plan para obtener más.');
+        showUpgradeModal('daily_limit'); throw new Error('daily_limit');
       }
-      const wait = d.retryAfter ? Math.ceil(d.retryAfter / 60) + ' minuto(s)' : 'un momento';
+      const wait = d.retryAfter ? Math.ceil(d.retryAfter / 60) + ' min' : '1 minuto';
       throw new Error('Demasiadas generaciones seguidas. Espera ' + wait + ' e intenta de nuevo.');
     }
-    if (r.status === 403 && d.error?.includes('créditos')) throw new Error('⚡ Sin créditos disponibles — has usado todos tus créditos del mes. Actualiza tu plan para continuar.');
+    if (r.status === 403 && d.error?.includes('créditos')) { showUpgradeModal('monthly_credits'); throw new Error('sin_creditos'); }
     if (!r.ok) throw new Error(d.error || 'Error generando contenido');
 
     // Guardar créditos
@@ -1667,6 +1666,7 @@ async function generateContent(event) {
     btnCont.innerHTML = '<span>✨</span><span>Generar contenido</span>';
 
   } catch(e) {
+    if (e.message === 'sin_creditos' || e.message === 'daily_limit') { /* modal ya mostrado */ return; }
     if (e.status !== 401) showNotification(e.message, 'error');
     btn.disabled  = false;
     btnCont.innerHTML = '<span>✨</span><span>Generar contenido</span>';
@@ -2412,6 +2412,26 @@ function skipOnboarding() {
   </div>
 </div>
 
+
+<!-- ══ UPGRADE MODAL ══ -->
+<div id="upgradeModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px);">
+  <div style="background:#12102a;border-radius:20px;padding:26px 22px 20px;max-width:340px;width:100%;border:1px solid rgba(139,95,191,.3);box-shadow:0 24px 64px rgba(0,0,0,.6);position:relative;">
+    <button onclick="closeUpgradeModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;color:rgba(255,255,255,.35);font-size:18px;cursor:pointer;line-height:1;">✕</button>
+    <div id="umIcon" style="font-size:36px;text-align:center;margin-bottom:10px;"></div>
+    <h3 id="umTitle" style="text-align:center;color:#fff;font-size:17px;font-weight:800;margin:0 0 6px;font-family:'Syne',sans-serif;line-height:1.3;"></h3>
+    <p id="umBody" style="text-align:center;color:rgba(255,255,255,.5);font-size:12px;line-height:1.6;margin:0 0 16px;"></p>
+    <div id="umCard" style="display:none;background:rgba(124,58,237,.1);border:1.5px solid rgba(124,58,237,.35);border-radius:12px;padding:14px 16px;margin-bottom:14px;">
+      <div id="umPlanLabel" style="font-size:10px;font-weight:800;color:#a78bfa;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;"></div>
+      <div style="display:flex;align-items:baseline;gap:4px;">
+        <div id="umPlanPrice" style="font-size:28px;font-weight:800;color:#fff;font-family:'Syne',sans-serif;"></div>
+        <div style="font-size:12px;color:rgba(255,255,255,.4);">/ mes</div>
+      </div>
+      <ul id="umFeatures" style="margin:10px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:5px;"></ul>
+    </div>
+    <button id="umCta" style="display:none;width:100%;padding:13px;border-radius:10px;background:linear-gradient(135deg,#7C3AED,#F43F5E);border:none;color:#fff;font-size:14px;font-weight:800;cursor:pointer;font-family:'Syne',sans-serif;margin-bottom:8px;"></button>
+    <button id="umSecondary" onclick="closeUpgradeModal();showPlansScreen();" style="width:100%;padding:9px;border-radius:10px;background:transparent;border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.4);font-size:11px;cursor:pointer;font-family:inherit;">Ver todos los planes →</button>
+  </div>
+</div>
 <script>
 // Cookie banner
 function acceptCookies(type) {
@@ -2433,4 +2453,129 @@ function acceptCookies(type) {
     }, 1000);
   }
 })();
+
+// ══ UPGRADE MODAL ══════════════════════════════════════════════════════════
+
+function closeUpgradeModal() {
+  document.getElementById('upgradeModal').classList.add('hidden');
+}
+
+async function showUpgradeModal(reason) {
+  // reason: 'monthly_credits' | 'daily_limit'
+  const plan = (currentUser?.plan_type || 'free').toLowerCase();
+  const modal = document.getElementById('upgradeModal');
+  if (!modal) { showPlansScreen(); return; }
+
+  const icon    = document.getElementById('umIcon');
+  const title   = document.getElementById('umTitle');
+  const body    = document.getElementById('umBody');
+  const card    = document.getElementById('umCard');
+  const plLabel = document.getElementById('umPlanLabel');
+  const plPrice = document.getElementById('umPlanPrice');
+  const feats   = document.getElementById('umFeatures');
+  const cta     = document.getElementById('umCta');
+  const sec     = document.getElementById('umSecondary');
+
+  // ── Determine target upgrade plan ──────────────────────────────────────
+  let targetPlan = null;
+
+  if (plan === 'free') {
+    targetPlan = 'pro';
+  } else if (plan === 'pro') {
+    targetPlan = 'premium';
+  }
+  // premium hitting daily limit → no upgrade possible, just inform
+
+  // ── Configure content per scenario ─────────────────────────────────────
+  if (plan === 'premium' && reason === 'daily_limit') {
+    icon.textContent  = '🌙';
+    title.textContent = 'Límite diario alcanzado';
+    body.textContent  = 'Has usado tus 30 generaciones de hoy. Vuelve mañana — tu límite se renueva a medianoche.';
+    card.style.display  = 'none';
+    cta.style.display   = 'none';
+    sec.textContent = 'Entendido';
+    sec.onclick = closeUpgradeModal;
+    modal.classList.remove('hidden');
+    return;
+  }
+
+  if (reason === 'monthly_credits') {
+    if (plan === 'free') {
+      icon.textContent  = '⚡';
+      title.textContent = 'Agotaste tus 5 créditos del mes';
+      body.textContent  = 'Con el plan Free tienes 5 generaciones al mes. Actualiza a Pro y genera 100 contenidos mensuales — 20x más.';
+    } else if (plan === 'pro') {
+      icon.textContent  = '⚡';
+      title.textContent = 'Agotaste tus 100 créditos del mes';
+      body.textContent  = 'Has usado todos tus créditos Pro este mes. Premium te da 300 créditos + Mi Marca con tus colores y logo.';
+    }
+  } else if (reason === 'daily_limit') {
+    if (plan === 'free') {
+      icon.textContent  = '📅';
+      title.textContent = 'Límite diario alcanzado (2/día)';
+      body.textContent  = 'El plan Free permite 2 generaciones por día. Con Pro tienes 20 generaciones diarias — sin esperar a mañana.';
+    } else if (plan === 'pro') {
+      icon.textContent  = '📅';
+      title.textContent = 'Límite diario alcanzado (20/día)';
+      body.textContent  = 'Con Premium tienes 30 generaciones diarias + Mi Marca con tus colores, fuente y logo en cada diseño.';
+    }
+  }
+
+  // ── Plan card ───────────────────────────────────────────────────────────
+  if (targetPlan === 'pro') {
+    plLabel.textContent = '🔥 Plan Pro — Más popular';
+    plPrice.textContent = '11€';
+    feats.innerHTML = [
+      '✅ 100 créditos / mes',
+      '✅ 20 generaciones por día',
+      '✅ Todos los formatos (Post, Carrusel, Story, Reel)',
+      '✅ Banco de imágenes Pexels + Unsplash',
+      '✅ Archivos de referencia 200MB/mes',
+    ].map(f => '<li style="font-size:11px;color:rgba(255,255,255,.7);">' + f + '</li>').join('');
+  } else if (targetPlan === 'premium') {
+    plLabel.textContent = '✨ Plan Premium';
+    plPrice.textContent = '19€';
+    feats.innerHTML = [
+      '✅ 300 créditos / mes',
+      '✅ 30 generaciones por día',
+      '✅ 🎨 Mi Marca — colores, fuente y logo propio',
+      '✅ IA con contexto de tu marca',
+      '✅ 5GB almacenamiento + historial ilimitado',
+    ].map(f => '<li style="font-size:11px;color:rgba(255,255,255,.7);">' + f + '</li>').join('');
+  }
+
+  card.style.display = 'block';
+
+  // ── CTA button → Stripe checkout ───────────────────────────────────────
+  cta.style.display  = 'block';
+  cta.textContent    = 'Actualizar a ' + (targetPlan === 'pro' ? 'Pro — 11€/mes' : 'Premium — 19€/mes');
+  cta.onclick = async () => {
+    cta.textContent = '⏳ Redirigiendo...';
+    cta.disabled    = true;
+    try {
+      const token = localStorage.getItem(KEYS.token);
+      const r = await fetch(API_URL + '/payments/create-checkout', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body:    JSON.stringify({ plan: targetPlan })
+      });
+      const d = await r.json();
+      if (d.success && d.url) {
+        window.location.href = d.url;
+      } else {
+        throw new Error(d.error || 'Error iniciando pago');
+      }
+    } catch(e) {
+      showNotification('Error: ' + e.message, 'error');
+      cta.textContent = 'Actualizar a ' + (targetPlan === 'pro' ? 'Pro — 11€/mes' : 'Premium — 19€/mes');
+      cta.disabled    = false;
+    }
+  };
+
+  sec.textContent = 'Ver todos los planes →';
+  sec.onclick = () => { closeUpgradeModal(); showPlansScreen(); };
+
+  modal.classList.remove('hidden');
+}
+
 </script>
