@@ -305,6 +305,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 
 /* hashtag chips */
 .hashtag-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;}
+.hash-chip{
+  display:inline-block;padding:4px 10px;border-radius:99px;
+  background:transparent;
+  color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;
+  border:1.5px solid var(--border2);transition:all .12s;
+  font-family:inherit;
+}
+.hash-chip:hover{border-color:var(--brand);color:var(--brand);}
+.hash-chip.active{background:rgba(139,95,191,.18);border-color:var(--brand);color:var(--brand);}
 
 /* copiloto */
 .cop-messages{
@@ -3044,10 +3053,11 @@ function renderPostContentPanel(container) {
 
   // Hashtags inline BEFORE emojis
   if (iaData && iaData.hashtags && iaData.hashtags.length) {
-    const _hSec = makeSection('#', 'Hashtags - elige hasta 3');
+    const _hSec = makeSection('#', 'Hashtags — elige hasta 3');
     const _hRow = document.createElement('div');
     _hRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px;padding:0 12px 8px;';
     const _selH = new Set();
+    const _selE = new Set(); // local emoji set for updateCaptionHashEmoji
     iaData.hashtags.forEach(function(_tag) {
       const _chip = document.createElement('button');
       _chip.className = 'hash-chip';
@@ -3055,7 +3065,8 @@ function renderPostContentPanel(container) {
       _chip.onclick = function() {
         if (_selH.has(_tag)) { _selH.delete(_tag); _chip.classList.remove('active'); }
         else if (_selH.size < 3) { _selH.add(_tag); _chip.classList.add('active'); }
-        updateCaptionHashEmoji(_selH, selEmoji);
+        else { toast('Máximo 3 hashtags','info'); return; }
+        updateCaptionHashEmoji(_selH, _selE);
       };
       _hRow.appendChild(_chip);
     });
@@ -3832,46 +3843,8 @@ function renderCaptionTab() {
     capEl.placeholder = 'Se construye con tus elecciones…';
   }
 
-  const MAX = 3;
-  const selHash  = new Set();
-  const selEmoji = new Set(); // needed by updateCaptionHashEmoji
+  // hashtagChips is populated by renderPostContentPanel — clear only if re-rendering
   chipsEl.innerHTML = '';
-
-  // ── Hashtags (max 3) ──
-  const hashTitle = document.createElement('div');
-  hashTitle.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;margin-top:2px;';
-  hashTitle.textContent = '# Hashtags — elige hasta 3';
-  chipsEl.appendChild(hashTitle);
-
-  const hashWrap = document.createElement('div');
-  hashWrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;';
-  (iaData.hashtags||[]).slice(0,10).forEach(tag => {
-    const chip = document.createElement('span');
-    const label = tag.startsWith('#') ? tag : '#'+tag;
-    chip.textContent = label;
-    chip.style.cssText = 'display:inline-block;padding:4px 9px;border-radius:99px;background:var(--surf2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--border2);transition:all .12s;';
-    chip.onclick = () => {
-      if (selHash.has(tag)) {
-        selHash.delete(tag);
-        chip.style.background='var(--surf2)'; chip.style.borderColor='var(--border2)'; chip.style.color='var(--text2)';
-      } else {
-        if (selHash.size >= MAX) { toast('Máximo 3 hashtags','info'); return; }
-        selHash.add(tag);
-        chip.style.background='rgba(139,95,191,.2)'; chip.style.borderColor='var(--brand)'; chip.style.color='var(--brand)';
-      }
-      updateCaptionHashEmoji(selHash, selEmoji);
-    };
-    hashWrap.appendChild(chip);
-  });
-  // Make hashtagChips section visible with a label
-  if (chipsEl && !chipsEl.dataset.labeled) {
-    chipsEl.dataset.labeled = '1';
-    const hl = document.createElement('div');
-    hl.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px;width:100%;';
-    hl.textContent = '# Hashtags — elige hasta 3';
-    chipsEl.insertBefore(hl, chipsEl.firstChild);
-  }
-  chipsEl.appendChild(hashWrap);
 
   // Sync emoji buttons to caption-zone
   const zoneEmojis = document.getElementById('captionZoneEmojis');
