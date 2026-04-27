@@ -17,6 +17,11 @@
   --brand:    #8B5FBF;
   --brand2:   #E91E8C;
   --grad:     linear-gradient(135deg,#8B5FBF,#E91E8C);
+  --brand-subtle:  var(--brand-subtle);
+  --brand-border:  var(--brand-border);
+  --brand-border2: var(--brand-border2);
+  --accent:   #7C3AED;
+  --accent2:  #F43F5E;
   --bg:       #0c0c14;
   --surf:     #13131e;
   --surf2:    #1a1a28;
@@ -365,7 +370,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 }
 .cop-send:disabled{opacity:.4;cursor:not-allowed;}
 .htag{
-  padding:3px 8px;border-radius:20px;border:1px solid rgba(139,95,191,.4);
+  padding:3px 8px;border-radius:20px;border:1px solid var(--brand-border2);
   background:rgba(139,95,191,.1);color:var(--brand);font-size:11px;font-weight:600;
   cursor:pointer;transition:all .15s;
 }
@@ -425,7 +430,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 .eblock-inner{position:relative;width:100%;height:100%;}
 .eblock.selected>.eblock-inner::after{
   content:'';position:absolute;inset:-2px;border:2px solid var(--brand);
-  border-radius:4px;pointer-events:none;box-shadow:0 0 0 1px rgba(139,95,191,.3);
+  border-radius:4px;pointer-events:none;box-shadow:0 0 0 1px var(--brand-border);
 }
 .eblock-text{
   outline:none;word-break:break-word;line-height:1.3;
@@ -510,7 +515,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .toast.success{background:rgba(52,211,153,.15);color:#34d399;border:1px solid rgba(52,211,153,.3);}
 .toast.error{background:rgba(248,113,113,.15);color:#f87171;border:1px solid rgba(248,113,113,.3);}
-.toast.info{background:rgba(139,95,191,.15);color:#c4b5fd;border:1px solid rgba(139,95,191,.3);}
+.toast.info{background:var(--brand-subtle);color:#c4b5fd;border:1px solid var(--brand-border);}
 
 /* MOBILE: ia panel goes bottom */
 @media (max-width: 700px) {
@@ -919,7 +924,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   <button class="tb-btn" onclick="openDesignsModal()" title="Guardar diseño">💾 <span>Guardar</span></button>
   <span id="autoSaveLabel" style="font-size:10px;color:var(--text3);display:none;flex-shrink:0;">⏱</span>
   <button class="tb-btn" onclick="showHelp()" title="Ayuda">❓</button>
-  <button class="tb-btn" onclick="showIgPreview()" title="Vista previa como Instagram" style="background:rgba(139,95,191,.2);border:1px solid rgba(139,95,191,.5);color:var(--brand);">👁 <span>Preview</span></button>
+  <button class="tb-btn" onclick="showIgPreview()" title="Vista previa como Instagram" style="background:var(--brand-subtle);border:1px solid var(--brand-border2);color:var(--brand);">👁 <span>Preview</span></button>
   <button class="tb-btn primary" onclick="exportAll()" title="Exportar">📥 <span>Exportar</span></button>
 </div>
 
@@ -1233,6 +1238,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   <div class="caption-zone" id="captionZone">
     <div class="caption-zone-lbl"><span></span>Tu Caption</div>
     <textarea id="capFull" class="cap-full" placeholder="Selecciona un caption del panel →" oninput="captionFull=this.value;updateCaptionPreview();"></textarea>
+    <div id="captionZoneEmojis" style="display:flex;flex-wrap:wrap;gap:3px;min-height:0;"></div>
     <div style="display:flex;gap:5px;padding-top:6px;border-top:1px solid var(--border);margin-top:auto;">
       <button onclick="const el=document.getElementById('capFull');if(el){el.value='';captionFull='';updateCaptionPreview();}" title="Borrar" style="padding:7px 10px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surf2);color:var(--text3);font-size:13px;cursor:pointer;">🗑</button>
       <button onclick="navigator.clipboard.writeText(document.getElementById('capFull')?.value||captionFull||'').then(()=>toast('✅ Caption copiado','success'))" style="flex:1;padding:7px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">📋 Copiar</button>
@@ -1264,18 +1270,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 
     <!-- ── TAB: DISEÑO ── -->
     <!-- ── PANEL: CAPTION (for carousel) ── -->
-    <div id="iaCaption" style="display:none;flex-direction:column;height:100%;padding:10px;gap:8px;">
-      <!-- Caption navigator -->
+    <div id="iaCaption" style="display:none;flex-direction:column;height:100%;overflow-y:auto;padding:10px;gap:8px;">
       <div id="carouselCaptionNav"></div>
-      <!-- capFull reference (actual textarea is in captionZone beside canvas) -->
-      <div style="font-size:10px;color:var(--text3);text-align:center;padding:4px;background:var(--surf2);border-radius:var(--r);border:1px dashed var(--border2);">
-        📝 El caption se edita en la columna de la izquierda
-      </div>
-      <!-- Hashtags -->
-      <div style="font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;"># Hashtags</div>
-      <div id="hashtagChipsCarousel" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
-      <!-- Copy button -->
-      <button onclick="navigator.clipboard.writeText(document.getElementById('capFull')?.value||captionFull||'').then(()=>toast('✅ Caption copiado','success'))" style="width:100%;padding:10px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:auto;">📋 Copiar caption</button>
+      <div id="hashtagChipsCarousel" style="display:none;"></div>
     </div>
 
     <!-- ── PANEL: CARRUSEL ── -->
@@ -1354,7 +1351,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
     <!-- ── TAB: MARCA ── -->
     <div id="iaBrand" style="display:none;padding:12px;overflow-y:auto;">
       <!-- Header explicativo -->
-      <div style="background:rgba(139,95,191,.1);border-radius:10px;padding:10px 12px;margin-bottom:12px;border-left:3px solid var(--brand);">
+      <div style="background:var(--brand-subtle);border-radius:10px;padding:10px 12px;margin-bottom:12px;border-left:3px solid var(--brand);">
         <div style="font-size:12px;font-weight:800;color:var(--brand);margin-bottom:4px;">🏷 Mi Marca</div>
         <div style="font-size:11px;color:var(--text2);line-height:1.5;">Aplica los colores, fuente y logo de tu marca a este slide con un clic.</div>
       </div>
@@ -3116,7 +3113,7 @@ function renderPostContentPanel(container) {
   regenBtn.style.cssText = 'width:100%;padding:10px;border-radius:var(--r);border:1.5px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;margin-bottom:8px;';
   // Copiloto IA expandible (before Regenerar)
   const copBtn = document.createElement('button');
-  copBtn.style.cssText = 'width:100%;padding:10px;border-radius:var(--r);background:rgba(139,95,191,.15);border:1.5px solid rgba(139,95,191,.4);color:var(--brand);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;';
+  copBtn.style.cssText = 'width:100%;padding:10px;border-radius:var(--r);background:var(--brand-subtle);border:1.5px solid var(--brand-border2);color:var(--brand);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;';
   copBtn.innerHTML = '🤖 Mejorar con IA Copiloto';
   let copOpen = false;
   const copPanel = document.createElement('div');
@@ -3126,7 +3123,7 @@ function renderPostContentPanel(container) {
   copBtn.onclick = () => {
     copOpen = !copOpen;
     copPanel.style.display = copOpen ? 'block' : 'none';
-    copBtn.style.background = copOpen ? 'rgba(139,95,191,.3)' : 'rgba(139,95,191,.15)';
+    copBtn.style.background = copOpen ? 'var(--brand-border)' : 'var(--brand-subtle)';
     if (copOpen) setTimeout(scrollCopMessages, 100);
   };
   regenSec.appendChild(copBtn);
@@ -3182,7 +3179,7 @@ function renderCarouselContentPanel(container) {
   container.appendChild(carRegen);
 
   const carCop = document.createElement('button');
-  carCop.style.cssText = 'width:100%;padding:8px;border-radius:var(--r);background:rgba(139,95,191,.15);border:1px solid rgba(139,95,191,.3);color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;';
+  carCop.style.cssText = 'width:100%;padding:8px;border-radius:var(--r);background:var(--brand-subtle);border:1px solid var(--brand-border);color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;';
   carCop.innerHTML = '🤖 Mejorar con IA';
   let _carCopOpen = false;
   const carCopPanel = document.createElement('div');
@@ -3344,7 +3341,7 @@ function renderStoryContentPanel(container) {
 
     // Mejorar con IA button per story
     const iaBtn = document.createElement('button');
-    iaBtn.style.cssText = 'width:100%;padding:6px;border-radius:0 0 var(--r) var(--r);border:1px solid rgba(139,95,191,.3);border-top:none;background:rgba(139,95,191,.08);color:var(--brand);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;';
+    iaBtn.style.cssText = 'width:100%;padding:6px;border-radius:0 0 var(--r) var(--r);border:1px solid var(--brand-border);border-top:none;background:rgba(139,95,191,.08);color:var(--brand);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;';
     iaBtn.innerHTML = '🤖 Mejorar esta idea';
     iaBtn.onclick = () => {
       copSend('Mejora esta idea de Story: ' + s.substring(0, 100));
@@ -4290,7 +4287,7 @@ function showExportCarouselModal() {
         <button onclick="document.getElementById('exportChoiceModal').remove();exportCarouselZip()" style="padding:12px;border-radius:10px;background:var(--grad);border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
           🗜 Descargar ZIP (PNG por slide)
         </button>
-        <button onclick="document.getElementById('exportChoiceModal').remove();exportCarouselPDF()" style="padding:12px;border-radius:10px;background:rgba(139,95,191,.15);border:1.5px solid var(--brand);color:var(--brand);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
+        <button onclick="document.getElementById('exportChoiceModal').remove();exportCarouselPDF()" style="padding:12px;border-radius:10px;background:var(--brand-subtle);border:1.5px solid var(--brand);color:var(--brand);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
           📄 Descargar PDF (todos en uno)
         </button>
         <button onclick="document.getElementById('exportChoiceModal').remove()" style="padding:10px;border-radius:10px;background:transparent;border:1px solid var(--border2);color:var(--text3);font-size:13px;cursor:pointer;font-family:inherit;">
@@ -5533,7 +5530,7 @@ function renderCarouselPanel() {
 
   // IA Copiloto
   const copBtn2 = document.createElement('button');
-  copBtn2.style.cssText = 'width:100%;padding:9px;border-radius:var(--r);background:rgba(139,95,191,.15);border:1.5px solid rgba(139,95,191,.4);color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;';
+  copBtn2.style.cssText = 'width:100%;padding:9px;border-radius:var(--r);background:var(--brand-subtle);border:1.5px solid var(--brand-border2);color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;';
   copBtn2.innerHTML = '🤖 Mejorar con IA';
   let _c2open = false;
   const cop2 = document.createElement('div');
@@ -5567,7 +5564,7 @@ function renderCarouselPanel() {
     card.innerHTML =
       '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">' +
         '<span style="font-size:10px;font-weight:800;color:var(--brand);">Slide ' + (i+1) + '</span>' +
-        (roleLabel ? '<span style="font-size:9px;font-weight:700;background:rgba(139,95,191,.2);color:var(--brand);padding:1px 6px;border-radius:4px;">' + roleLabel + '</span>' : '') +
+        (roleLabel ? '<span style="font-size:9px;font-weight:700;background:var(--brand-subtle);color:var(--brand);padding:1px 6px;border-radius:4px;">' + roleLabel + '</span>' : '') +
       '</div>' +
       '<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:2px;">' + (s.title||'') + '</div>' +
       '<div style="font-size:11px;color:var(--text3);line-height:1.4;">' + (s.content||'').substring(0,70) + ((s.content||'').length>70?'…':'') + '</div>';
@@ -5583,103 +5580,113 @@ function renderCarouselPanel() {
 }
 
 function renderCarouselCaptionPanel() {
-  const navEl  = document.getElementById('carouselCaptionNav');
-  const hashEl = document.getElementById('hashtagChipsCarousel');
+  const navEl = document.getElementById('carouselCaptionNav');
   if (!navEl || !iaData) return;
 
   const captions = iaData?.captions || [];
   const hashtags = iaData?.hashtags || [];
   const emojis   = iaData?.emojis   || [];
 
-  // Shared selection state
   const selH = new Set();
   const selE = new Set();
 
   navEl.innerHTML = '';
 
-  // ── Caption navigator ──
-  if (captions.length) {
+  // ── 1. Caption label ──
+  const capLabel = document.createElement('div');
+  capLabel.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;';
+  capLabel.textContent = '📝 Caption del carrusel';
+  navEl.appendChild(capLabel);
+
+  if (!captions.length) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'font-size:11px;color:var(--text3);padding:8px;';
+    empty.textContent = 'Sin captions generados.';
+    navEl.appendChild(empty);
+  } else {
     let capIdx = 0;
 
-    const hdr = document.createElement('div');
-    hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;';
-    const lbl = document.createElement('div');
-    lbl.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;';
-    lbl.textContent = '📝 Caption del carrusel';
-    const nav = document.createElement('div');
-    nav.style.cssText = 'display:flex;align-items:center;gap:4px;';
-    const prev = document.createElement('button');
-    prev.style.cssText = 'width:22px;height:22px;border-radius:50%;border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:12px;cursor:pointer;';
-    prev.textContent = '‹';
+    // Counter + arrows row — "1 de 5"
+    const navRow = document.createElement('div');
+    navRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;';
     const ctr = document.createElement('span');
-    ctr.style.cssText = 'font-size:10px;color:var(--text3);min-width:30px;text-align:center;';
+    ctr.style.cssText = 'font-size:11px;font-weight:700;color:var(--text2);';
+    const prev = document.createElement('button');
+    prev.style.cssText = 'width:26px;height:26px;border-radius:50%;border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;';
+    prev.innerHTML = '&#8592;';
     const next = document.createElement('button');
-    next.style.cssText = 'width:22px;height:22px;border-radius:50%;border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:12px;cursor:pointer;';
-    next.textContent = '›';
-    nav.appendChild(prev); nav.appendChild(ctr); nav.appendChild(next);
-    hdr.appendChild(lbl); hdr.appendChild(nav);
-    navEl.appendChild(hdr);
+    next.style.cssText = 'width:26px;height:26px;border-radius:50%;border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;';
+    next.innerHTML = '&#8594;';
+    const arrows = document.createElement('div');
+    arrows.style.cssText = 'display:flex;gap:4px;';
+    arrows.appendChild(prev);
+    arrows.appendChild(next);
+    navRow.appendChild(ctr);
+    navRow.appendChild(arrows);
+    navEl.appendChild(navRow);
 
+    // Caption text box
     const txt = document.createElement('div');
-    txt.style.cssText = 'font-size:11px;color:var(--text2);line-height:1.6;padding:8px;background:var(--surf2);border-radius:var(--r);border:1px solid var(--border2);margin-bottom:8px;max-height:180px;overflow-y:auto;';
+    txt.style.cssText = 'font-size:11px;color:var(--text2);line-height:1.6;padding:8px;background:var(--surf2);border-radius:var(--r);border:1px solid var(--border2);margin-bottom:8px;max-height:200px;overflow-y:auto;white-space:pre-wrap;';
 
-    const renderCapTxt = () => {
-      const raw = (captions[capIdx]||'')
-        .replace(/^CAPTION\s*\d+\s*[—-]\s*(Hook:|Descripción:|CTA:)?\s*/i,'')
-        .replace(/#\S+/g,'').replace(/[\u{1F300}-\u{1FAFF}]/gu,'')
-        .replace(/\n{3,}/g,'\n\n').trim();
+    const renderCap = () => {
+      const raw = (captions[capIdx] || '')
+        .replace(/^CAPTION\s*\d+\s*[—-]\s*(Hook:|Descripción:|CTA:)?\s*/i, '')
+        .replace(/#\S+/g, '').replace(/[\u{1F300}-\u{1FAFF}]/gu, '')
+        .replace(/\n{3,}/g, '\n\n').trim();
       txt.textContent = raw || '—';
-      ctr.textContent = (capIdx+1) + '/' + captions.length;
+      ctr.textContent = (capIdx + 1) + ' de ' + captions.length;
     };
-    renderCapTxt();
-    prev.onclick = () => { capIdx=(capIdx-1+captions.length)%captions.length; renderCapTxt(); resetHashChips(); selH.clear(); };
-    next.onclick = () => { capIdx=(capIdx+1)%captions.length; renderCapTxt(); resetHashChips(); selH.clear(); };
+    renderCap();
+
+    prev.onclick = () => { capIdx = (capIdx - 1 + captions.length) % captions.length; renderCap(); selH.clear(); resetHashChips(); };
+    next.onclick = () => { capIdx = (capIdx + 1) % captions.length; renderCap(); selH.clear(); resetHashChips(); };
     navEl.appendChild(txt);
 
-    // Usar este caption
+    // ── 2. Usar este caption ──
     const useBtn = document.createElement('button');
-    useBtn.style.cssText = 'width:100%;padding:7px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;';
-    useBtn.textContent = '✅ Usar este caption';
+    useBtn.style.cssText = 'width:100%;padding:8px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:12px;';
+    useBtn.innerHTML = '&#9989; Usar este caption';
     useBtn.onclick = () => {
-      const raw = (captions[capIdx]||'').replace(/^CAPTION\s*\d+\s*[—-]\s*(Hook:|Descripción:|CTA:)?\s*/i,'')
-        .replace(/#\S+/g,'').replace(/[\u{1F300}-\u{1FAFF}]/gu,'').replace(/\n{3,}/g,'\n\n').trim();
+      const raw = (captions[capIdx] || '')
+        .replace(/^CAPTION\s*\d+\s*[—-]\s*(Hook:|Descripción:|CTA:)?\s*/i, '')
+        .replace(/#\S+/g, '').replace(/[\u{1F300}-\u{1FAFF}]/gu, '')
+        .replace(/\n{3,}/g, '\n\n').trim();
       const capEl = document.getElementById('capFull');
       if (capEl) { capEl.value = raw; captionFull = raw; updateCaptionPreview(); }
-      resetHashChips(); selH.clear();
-      toast('Caption aplicado','success');
+      selH.clear(); resetHashChips();
+      toast('Caption aplicado', 'success');
     };
     navEl.appendChild(useBtn);
   }
 
-  // ── Hashtags ──
-  if (hashEl && hashtags.length) {
-    hashEl.innerHTML = '';
+  // ── 3. Hashtags — elige hasta 3 ──
+  if (hashtags.length) {
     const hashTitle = document.createElement('div');
     hashTitle.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;';
     hashTitle.textContent = '# Hashtags — elige hasta 3';
     navEl.appendChild(hashTitle);
     const hashRow = document.createElement('div');
-    hashRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;';
+    hashRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;';
     hashtags.forEach(tag => {
       const chip = document.createElement('button');
       chip.className = 'hash-chip';
-      chip.textContent = tag.startsWith('#') ? tag : '#'+tag;
+      chip.textContent = tag.startsWith('#') ? tag : '#' + tag;
       chip.onclick = () => {
         if (selH.has(tag)) { selH.delete(tag); chip.classList.remove('active'); }
         else if (selH.size < 3) { selH.add(tag); chip.classList.add('active'); }
-        else { toast('Máximo 3 hashtags','info'); return; }
+        else { toast('Máximo 3 hashtags', 'info'); return; }
         updateCaptionHashEmoji(selH, selE);
       };
       hashRow.appendChild(chip);
-      hashEl.appendChild(chip);
     });
     navEl.appendChild(hashRow);
   }
 
-  // ── Emojis ──
+  // ── 4. Emojis ──
   if (emojis.length) {
     const emoTitle = document.createElement('div');
-    emoTitle.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;';
+    emoTitle.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px;';
     emoTitle.textContent = '😊 Emojis';
     const emoSub = document.createElement('div');
     emoSub.style.cssText = 'font-size:10px;color:var(--text3);margin-bottom:6px;';
@@ -5692,7 +5699,7 @@ function renderCarouselCaptionPanel() {
       b.textContent = em;
       b.onclick = () => {
         const cap = document.getElementById('capFull');
-        if (cap) { cap.value += ' '+em; captionFull=cap.value; updateCaptionPreview(); }
+        if (cap) { cap.value += ' ' + em; captionFull = cap.value; updateCaptionPreview(); }
       };
       emoRow.appendChild(b);
     });
@@ -5701,22 +5708,22 @@ function renderCarouselCaptionPanel() {
     navEl.appendChild(emoRow);
   }
 
-  // ── Mejorar con IA Copiloto ──
+  // ── 5. Mejorar con IA Copiloto ──
   const iaCCBtn = document.createElement('button');
-  iaCCBtn.style.cssText = 'width:100%;padding:8px;border-radius:var(--r);background:rgba(139,95,191,.15);border:1.5px solid rgba(139,95,191,.4);color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:6px;';
+  iaCCBtn.style.cssText = 'width:100%;padding:8px;border-radius:var(--r);background:var(--brand-subtle);border:1.5px solid var(--brand-border2);color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:6px;';
   iaCCBtn.innerHTML = '🤖 Mejorar con IA Copiloto';
   iaCCBtn.onclick = () => {
     const tabs = document.querySelectorAll('.ia-tab');
-    tabs.forEach(t => { if(t.dataset.tab === 'copiloto' || t.textContent.includes('Copiloto')) t.click(); });
+    tabs.forEach(t => { if (t.dataset.tab === 'copiloto' || t.textContent.includes('Copiloto')) t.click(); });
   };
   navEl.appendChild(iaCCBtn);
 
-  // ── Regenerar ──
-  const regenBtn2 = document.createElement('button');
-  regenBtn2.style.cssText = 'width:100%;padding:8px;border-radius:var(--r);background:rgba(99,102,241,.12);border:1.5px solid rgba(99,102,241,.3);color:#818CF8;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
-  regenBtn2.innerHTML = '🔄 Regenerar contenido (-1 crédito)';
-  regenBtn2.onclick = () => regenerateFromEditor();
-  navEl.appendChild(regenBtn2);
+  // ── 6. Regenerar ──
+  const regenBtn = document.createElement('button');
+  regenBtn.style.cssText = 'width:100%;padding:8px;border-radius:var(--r);background:rgba(99,102,241,.12);border:1.5px solid rgba(99,102,241,.3);color:#818CF8;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
+  regenBtn.innerHTML = '🔄 Regenerar contenido (-1 crédito)';
+  regenBtn.onclick = () => regenerateFromEditor();
+  navEl.appendChild(regenBtn);
 
   // Sync captionZone emojis
   const zoneEmojis = document.getElementById('captionZoneEmojis');
@@ -5726,12 +5733,11 @@ function renderCarouselCaptionPanel() {
       const b = document.createElement('button');
       b.style.cssText = 'font-size:18px;cursor:pointer;background:none;border:none;padding:1px;border-radius:4px;';
       b.textContent = em;
-      b.onclick = () => { const cap=document.getElementById('capFull'); if(cap){cap.value+=' '+em;captionFull=cap.value;updateCaptionPreview();} };
+      b.onclick = () => { const cap = document.getElementById('capFull'); if (cap) { cap.value += ' ' + em; captionFull = cap.value; updateCaptionPreview(); } };
       zoneEmojis.appendChild(b);
     });
   }
 }
-
 function renderBrandPanel() {
   const emptyEl   = document.getElementById('edBrandEmpty');
   const contentEl = document.getElementById('edBrandContent');
