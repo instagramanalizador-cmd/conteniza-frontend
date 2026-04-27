@@ -1357,40 +1357,12 @@ function removeFile(id, chipId) {
 
 /* ── NICHE MISMATCH ── */
 function detectNicheMismatch(description, savedNiche) {
+  // La IA ahora evalúa is_coherent en el resultado — esta función solo hace
+  // una validación mínima para descripciones muy cortas o vacías
   if (!savedNiche || !description) return false;
-  const nicheL = savedNiche.toLowerCase();
-  const descL  = description.toLowerCase();
-  const map = {
-    'finanz':['dinero','ahorro','inversion','invertir','inversiones','invierte','invirtiendo','presupuesto','deuda','credito','capital','riqueza','banco','bolsa','ingreso','gasto','cripto','retiro','financiero','financiera','financieros','rentabilidad','patrimonio','intereses','fondos'],
-    'coaching':['habito','meta','objetivo','cambio','transformacion','mindset','liderazgo','exito','motivacion','crecimiento','productividad'],
-    'nutricion':['comida','alimento','dieta','calorias','proteina','vitamina','receta','salud','peso','musculo'],
-    'fitness':['ejercicio','entrenamiento','gimnasio','musculo','cardio','rutina','fuerza','cuerpo'],
-    'marketing':['venta','cliente','marca','redes','contenido','publicidad','conversion','lead'],
-    'negocio':['empresa','emprendimiento','startup','producto','servicio','mercado','revenue','negocio','negocios','empresarial'],
-    'inversion':['invertir','invierte','invirtiendo','inversiones','bolsa','acciones','fondos','activos','rentabilidad','dividendo','cripto','bitcoin'],
-    'bienestar':['estres','ansiedad','meditacion','mindfulness','equilibrio','descanso'],
-    'psicolog':['mente','emocion','terapia','trauma','autoestima','relacion'],
-    'viaje':['destino','turismo','vuelo','hotel','aventura','cultura','ciudad','ciudades','compras','shopping','lifestyle','viajero','trip','travel','ruta','itinerario','escapada','gastronomia','gastronomico','restaurante','comida','cocina','culinario','chef','cuisine','foodie','gourmet','sabor'],
-    'fotograf':['camara','imagen','foto','edicion','composicion'],
-    'moda':['ropa','estilo','tendencia','outfit','accesorio','belleza','compras','shopping','tienda','marca','fashion'],
-    'gastronom':['cocina','receta','sabor','ingrediente','plato'],
-    'educacion':['aprendizaje','estudio','curso','habilidad','formacion'],
-    'inmobiliar':['propiedad','casa','apartamento','alquiler','hipoteca'],
-  };
-  const words = nicheL.split(/[\s,\/]+/).filter(w=>w.length>3);
-  let expanded = [...words];
-  for (const [k,v] of Object.entries(map)) {
-    if (words.some(w=>w.includes(k)||k.includes(w))) expanded=[...expanded,...v];
-  }
-  // Use stem matching — check if any expanded word is contained in desc OR vice versa
-  const descWords = descL.split(/[\s,\/]+/).filter(w=>w.length>3);
-  const matchFound = expanded.some(exp => exp.length>3 && (
-    descL.includes(exp) ||                      // exact match
-    descWords.some(dw => dw.startsWith(exp.substring(0,5)) || exp.startsWith(dw.substring(0,5)))  // stem match
-  ));
-  if (matchFound) return false;
   if (description.trim().split(/\s+/).length < 4) return false;
-  return true;
+  // Siempre dejar pasar — la IA decide en el resultado si hay mismatch real
+  return false;
 }
 
 function showNicheMismatchModal(desc, niche) {
@@ -1509,7 +1481,9 @@ function showPreviewModal(editorData) {
   const pvCoh = document.getElementById('pvCoherence');
   if (editorData.is_coherent === false) {
     pvCoh.style.display = 'block';
-    pvCoh.textContent   = `⚠️ La IA detectó que el tema no coincide exactamente con tu nicho (${editorData.detected_niche || '–'}). El contenido puede ser menos preciso.`;
+    const detectedNiche = editorData.detected_niche || '–';
+    const userNiche = editorData.niche || _nicheVal || '–';
+    pvCoh.innerHTML = `⚠️ <strong>Nicho no coherente con la búsqueda.</strong><br>Tu nicho es <strong>${userNiche}</strong> pero el tema pertenece a <strong>${detectedNiche}</strong>. El contenido se generó igual — considera actualizar tu nicho si publicas sobre este tema frecuentemente.`;
   } else {
     pvCoh.style.display = 'none';
   }
