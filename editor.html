@@ -170,7 +170,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
     position:fixed;bottom:0;left:0;right:0;top:auto;
     transform:translateY(100%);flex-direction:row;border-radius:12px 12px 0 0;
     max-height:none;overflow-x:auto;overflow-y:hidden;
-  }
+ 
+}
   .props-bar.visible{transform:translateY(0);}
 }
 .props-bar::-webkit-scrollbar{display:none;}
@@ -3041,8 +3042,26 @@ function renderPostContentPanel(container) {
 
   
 
-  // ── HASHTAGS (antes de emojis) ──
-  renderCaptionTab();
+  // Hashtags inline BEFORE emojis
+  if (iaData && iaData.hashtags && iaData.hashtags.length) {
+    const _hSec = makeSection('#', 'Hashtags - elige hasta 3');
+    const _hRow = document.createElement('div');
+    _hRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px;padding:0 12px 8px;';
+    const _selH = new Set();
+    iaData.hashtags.forEach(function(_tag) {
+      const _chip = document.createElement('button');
+      _chip.className = 'hash-chip';
+      _chip.textContent = _tag.startsWith('#') ? _tag : '#'+_tag;
+      _chip.onclick = function() {
+        if (_selH.has(_tag)) { _selH.delete(_tag); _chip.classList.remove('active'); }
+        else if (_selH.size < 3) { _selH.add(_tag); _chip.classList.add('active'); }
+        updateCaptionHashEmoji(_selH, selEmoji);
+      };
+      _hRow.appendChild(_chip);
+    });
+    _hSec.appendChild(_hRow);
+    container.appendChild(_hSec);
+  }
 
   // ── SECCIÓN 3: EMOJIS ──
   if (emojis.length) {
@@ -5541,16 +5560,7 @@ function renderCarouselPanel() {
   container.appendChild(applyAll);
 
   // IA btn
-  const copBtn = document.createElement('button');
-  copBtn.style.cssText = 'width:100%;padding:8px;border-radius:var(--r);background:rgba(139,95,191,.15);border:1px solid rgba(139,95,191,.3);color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;';
-  copBtn.innerHTML = '🤖 Mejorar con IA';
-  let _cop2open = false;
-  const cop2Panel = document.createElement('div');
-  cop2Panel.style.cssText = 'display:none;border:1px solid var(--border2);border-radius:var(--r);overflow:hidden;margin-bottom:8px;';
-  cop2Panel.innerHTML = document.getElementById('iaCop')?.innerHTML || '';
-  copBtn.onclick = () => { _cop2open=!_cop2open; cop2Panel.style.display=_cop2open?'block':'none'; if(_cop2open)setTimeout(scrollCopMessages,100); };
-  container.appendChild(copBtn);
-  container.appendChild(cop2Panel);
+
 
   // Slide label
   const lbl = document.createElement('div');
@@ -5678,6 +5688,40 @@ function renderCarouselCaptionPanel() {
   }
   // Also populate hashtagChips in captionZone
   renderCaptionTab();
+  // Emojis
+  if (iaData && iaData.emojis && iaData.emojis.length) {
+    const emoLbl2 = document.createElement('div');
+    emoLbl2.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;margin-top:8px;margin-bottom:4px;';
+    emoLbl2.textContent = 'Emojis';
+    container.appendChild(emoLbl2);
+    const emoRow2 = document.createElement('div');
+    emoRow2.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;';
+    iaData.emojis.forEach(function(em) {
+      const b2 = document.createElement('button');
+      b2.style.cssText = 'font-size:20px;cursor:pointer;background:none;border:none;padding:2px;';
+      b2.textContent = em;
+      b2.onclick = function() {
+        const cap = document.getElementById('capFull');
+        if (cap) { cap.value += ' ' + em; captionFull = cap.value; updateCaptionPreview(); }
+      };
+      emoRow2.appendChild(b2);
+    });
+    container.appendChild(emoRow2);
+  }
+
+ 
+  // Mejorar con IA
+  const iaCCBtn = document.createElement('button');
+  iaCCBtn.style.cssText = 'width:100%;padding:8px;border-radius:var(--r);background:rgba(139,95,191,.15);border:1.5px solid rgba(139,95,191,.4);color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:6px;';
+  iaCCBtn.innerHTML = '🤖 Mejorar con IA';
+  iaCCBtn.onclick = function() { switchIaTab('content'); };
+  container.appendChild(iaCCBtn);
+  // Regenerar
+  const rgnCCBtn = document.createElement('button');
+  rgnCCBtn.style.cssText = 'width:100%;padding:8px;border-radius:var(--r);border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px;';
+  rgnCCBtn.innerHTML = '🔄 Regenerar (-1 credito)';
+  rgnCCBtn.onclick = function() { regenerateFromEditor(); };
+  container.appendChild(rgnCCBtn);
 }
 
 function renderBrandPanel() {
@@ -5763,34 +5807,22 @@ function applyBrandToAllSlides() {
   const orig = currentSlide;
   saveCurrentBlocks();
   const total = slides.length;
-  // Apply to all slides by switching to each one
   for (let i = 0; i < total; i++) {
     slides[i].bg1   = b.color_primary   || '#8B5FBF';
     slides[i].bg2   = b.color_secondary || '#E91E8C';
     slides[i].bgImg = null;
-    // Apply font/color to stored DOM
-    if (slides[i]._dom?.length) {
-      const tmp = document.createElement('div');
-      slides[i]._dom = slides[i]._dom.map((html, di) => {
-        tmp.innerHTML = html;
-        const ta = tmp.querySelector('.eblock-text');
-        if (ta) {
-          ta.style.fontFamily = `'${b.font_name||'DM Sans'}',sans-serif`;
-          ta.style.color = di === 0 ? (b.font_color||'#fff') : (b.sub_font_color||'rgba(255,255,255,.8)');
-        }
-        return tmp.innerHTML;
-      });
-    }
+    loadSlide(i);
+    updateCanvasBg();
+    document.querySelectorAll('.eblock-text').forEach(function(ta, di) {
+      ta.style.fontFamily = "'" + (b.font_name||'DM Sans') + "',sans-serif";
+      ta.style.color = di===0 ? (b.font_color||'#fff') : (b.sub_font_color||'rgba(255,255,255,.8)');
+    });
+    saveCurrentBlocks();
   }
-  // Apply visually to current slide
-  updateCanvasBg();
-  document.querySelectorAll('.eblock-text').forEach((ta, i) => {
-    ta.style.fontFamily = `'${b.font_name||'DM Sans'}',sans-serif`;
-    ta.style.color = i===0 ? (b.font_color||'#fff') : (b.sub_font_color||'rgba(255,255,255,.8)');
-  });
+  loadSlide(orig);
   renderSlideStrip();
   historySave();
-  toast('✅ Marca aplicada a ' + total + ' slides','success');
+  toast('Marca aplicada a ' + total + ' slides','success');
 }
 
 /* ══ WIZARD SLIDES (CARRUSEL) ══ */
