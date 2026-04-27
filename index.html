@@ -1980,6 +1980,8 @@ async function resendVerification() {
 }
 
 /* ── INIT ── */
+let _selectedNiche = '';  // hoisted — used by init() showAppWith
+
 async function init() {
   const token = localStorage.getItem('token');
   const saved = localStorage.getItem('user');
@@ -2192,7 +2194,7 @@ const NICHE_OPTIONS   = [
   { emoji:'✏️', label:'Otro (escribir)' },
 ];
 
-let _selectedNiche = '';
+// _selectedNiche declared above init()
 
 function shouldShowOnboarding() {
   // Show if: no done flag AND no niche saved anywhere
