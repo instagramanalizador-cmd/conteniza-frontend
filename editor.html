@@ -1663,6 +1663,11 @@ window.addEventListener('DOMContentLoaded', () => {
     startAutoSave(); // autosave every 60s
   });
   document.addEventListener('keydown', handleKeyboard);
+  // Init bg presets
+  document.getElementById('bgPresetRow').innerHTML =
+    BG_PRESETS.map(([c1,c2]) =>
+      `<div class="bg-preset" style="background:linear-gradient(135deg,${c1},${c2});" onclick="applyBgPreset('${c1}','${c2}')"></div>`
+    ).join('');
 });
 
 function setupMobileDetect() {
@@ -2960,9 +2965,8 @@ function showEmojiDestination(em, originEl) {
     document.addEventListener('click',function cp(e){
       if(!picker.contains(e.target)&&e.target!==originEl){
         picker.remove();originEl.style.borderColor='';originEl.style.background='';
-        document.removeEventListener('click',cp);
       }
-    });
+    }, { once: true });
   },100);
 }
 
@@ -5895,6 +5899,129 @@ function copAddMsg(role, text) {
   return div;
 }
 
+// ── copSend helpers ──────────────────────────────────────────────────────
+
+function _copBuildContext() {
+  if (_copAnalysisId) return { analysis_id: _copAnalysisId };
+  return {
+    ia_context: {
+      niche:            iaData.niche || iaData.detected_niche || '',
+      description:      iaData.description || '',
+      publication_type: iaData.publicationType || 'post',
+      tone:             iaData.tone || 'Profesional',
+      hooks:            (iaData.hooks    || []).slice(0, 3),
+      captions:         (iaData.captions || []).slice(0, 2).map(c => c.substring(0, 200)),
+      ctas:             (iaData.ctas     || []).slice(0, 3),
+      hashtags:         (iaData.hashtags || []).slice(0, 8),
+    }
+  };
+}
+
+function _copDetectIntent(msg, reply) {
+  const m = msg.toLowerCase();
+  const r = reply;
+  if (m.includes('nuevo caption') || m.includes('dame un caption') ||
+      m.includes('caption completo') || m.includes('reescribe el caption') ||
+      m.includes('hazme un caption') || m.includes('genera un caption') ||
+      m.includes('caption mas') || m.includes('caption más') ||
+      m.includes('caption viral') || m.includes('caption mejor')) return 'caption';
+  if (m.includes('hashtag') || m.includes('etiqueta') || m.includes('nuevos #') ||
+      (!m.includes('caption') && (r.match(/#\S+/g) || []).length >= 4)) return 'hashtag';
+  if (m.includes('hook') || m.includes('gancho') ||
+      (m.includes('primer') && m.includes('linea'))) return 'hook';
+  if (m.includes('cta') || m.includes('llamada') || m.includes('call to action')) return 'cta';
+  return 'generic';
+}
+
+function _copApplyHashtag(reply) {
+  const tags = reply.match(/#\S+/g) || [];
+  if (!tags.length) { toast('No encontré hashtags en la respuesta', 'info'); return; }
+  const hashRow = document.querySelector('.hash-chip')?.parentElement;
+  if (hashRow) {
+    hashRow.innerHTML = '';
+    const newSelH = new Set();
+    const newSelE = new Set();
+    tags.slice(0, 8).forEach(tag => {
+      const chip = document.createElement('button');
+      chip.className = 'hash-chip';
+      chip.textContent = tag.startsWith('#') ? tag : '#' + tag;
+      chip.onclick = () => {
+        const t = tag.replace(/^#/, '');
+        if (newSelH.has(t)) { newSelH.delete(t); chip.classList.remove('active'); }
+        else if (newSelH.size < 3) { newSelH.add(t); chip.classList.add('active'); }
+        else { toast('Máximo 3 hashtags', 'info'); return; }
+        updateCaptionHashEmoji(newSelH, newSelE);
+      };
+      hashRow.appendChild(chip);
+    });
+  }
+  const capEl = document.getElementById('capFull');
+  if (capEl) {
+    const base = (capEl.value || captionFull).replace(/#\S+/g, '').replace(/\s+$/, '').trim();
+    capEl.value = base + String.fromCharCode(10, 10) + tags.slice(0, 7).join(' ');
+    captionFull = capEl.value; updateCaptionPreview();
+  }
+}
+
+function _copApplyCaption(reply) {
+  const clean = reply.replace(/#\S+/g, '').replace(/\n{3,}/g, '\n\n').trim();
+  const capEl = document.getElementById('capFull');
+  if (capEl) { capEl.value = clean; captionFull = clean; updateCaptionPreview(); resetHashChips(); }
+}
+
+function _copApplyHook(reply) {
+  const capEl = document.getElementById('capFull');
+  if (!capEl) return;
+  const NL2 = String.fromCharCode(10, 10);
+  const parts = (capEl.value || captionFull).split(NL2);
+  parts[0] = reply; capEl.value = parts.join(NL2);
+  captionFull = capEl.value; updateCaptionPreview();
+}
+
+function _copApplyCTA(reply) {
+  const capEl = document.getElementById('capFull');
+  if (!capEl) return;
+  const NL2 = String.fromCharCode(10, 10);
+  const parts = (capEl.value || captionFull).split(NL2);
+  parts[parts.length - 1] = reply; capEl.value = parts.join(NL2);
+  captionFull = capEl.value; updateCaptionPreview();
+}
+
+function _copApplyGeneric(reply) {
+  const clean = reply.replace(/#\S+/g, '').replace(/\n{3,}/g, '\n\n').trim();
+  const capEl = document.getElementById('capFull');
+  if (capEl) { capEl.value = clean; captionFull = clean; updateCaptionPreview(); }
+}
+
+function _copAttachApplyBtn(lastMsg, intent, reply) {
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'margin-top:8px;';
+  const btn = document.createElement('button');
+  btn.style.cssText = 'width:100%;padding:7px 10px;border-radius:6px;background:var(--brand);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
+  btn.textContent = '✅ Aplicar';
+
+  const applyFns = {
+    hashtag: () => _copApplyHashtag(reply),
+    caption: () => _copApplyCaption(reply),
+    hook:    () => _copApplyHook(reply),
+    cta:     () => _copApplyCTA(reply),
+    generic: () => _copApplyGeneric(reply),
+  };
+  const labels = {
+    hashtag: 'Hashtags aplicados', caption: 'Caption aplicado',
+    hook: 'Hook aplicado', cta: 'CTA aplicado', generic: 'Aplicado',
+  };
+
+  btn.onclick = () => {
+    (applyFns[intent] || applyFns.generic)();
+    toast(labels[intent] || 'Aplicado', 'success');
+    btn.textContent = '✓ Aplicado'; btn.disabled = true;
+  };
+  wrap.appendChild(btn);
+  lastMsg.appendChild(wrap);
+}
+
+// ── copSend main ─────────────────────────────────────────────────────────
 async function copSend(preset) {
   if (_copBusy) return;
   const input = document.getElementById('copInput');
@@ -5905,8 +6032,7 @@ async function copSend(preset) {
     copAddMsg('ai', '⚠️ El copiloto necesita un análisis generado. Vuelve al inicio y genera contenido primero.');
     return;
   }
-
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem(KEYS.token);
   if (!token) { copAddMsg('ai', '⚠️ Inicia sesión para usar el copiloto.'); return; }
 
   _copBusy = true;
@@ -5914,160 +6040,38 @@ async function copSend(preset) {
   document.getElementById('copSendBtn').disabled = true;
 
   copAddMsg('user', msg);
-  _copHistory.push({ role:'user', content:msg });
+  _copHistory.push({ role: 'user', content: msg });
   const typing = copAddMsg('typing', '✍️ Escribiendo…');
 
   try {
-    const body = { message: msg, history: _copHistory.slice(-8) };
-    if (_copAnalysisId) {
-      body.analysis_id = _copAnalysisId;
-    } else {
-      body.ia_context = {
-        niche:            iaData.niche || iaData.detected_niche || '',
-        description:      iaData.description || '',
-        publication_type: iaData.publicationType || 'post',
-        tone:             iaData.tone || 'Profesional',
-        hooks:            (iaData.hooks || []).slice(0,3),
-        captions:         (iaData.captions || []).slice(0,2).map(c => c.substring(0,200)),
-        ctas:             (iaData.ctas || []).slice(0,3),
-        hashtags:         (iaData.hashtags || []).slice(0,8),
-      };
-    }
-
     const r = await fetch(API_URL + '/analyze/refine', {
-      method: 'POST',
-      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
-      body: JSON.stringify(body)
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body:    JSON.stringify({ message: msg, history: _copHistory.slice(-8), ..._copBuildContext() }),
     });
     const d = await r.json();
     typing.remove();
 
     if (r.status === 403 && d.upgrade_required) {
-      const msg403 = document.createElement('div');
-      msg403.innerHTML = '🔒 El Copiloto IA es exclusivo de <strong>Pro y Premium</strong>.<br><a href="index.html#planes" style="color:var(--brand);font-weight:700;font-size:11px;margin-top:4px;display:inline-block;">Ver planes →</a>';
+      const el = document.createElement('div');
+      el.innerHTML = '🔒 El Copiloto IA es exclusivo de <strong>Pro y Premium</strong>.<br><a href="index.html#planes" style="color:var(--brand);font-weight:700;font-size:11px;margin-top:4px;display:inline-block;">Ver planes →</a>';
       const bubble = copAddMsg('ai', '');
-      bubble.innerHTML = ''; bubble.appendChild(msg403);
+      bubble.innerHTML = ''; bubble.appendChild(el);
       return;
     }
     if (r.status === 429) throw new Error('⏳ Demasiadas solicitudes. Espera un momento.');
     if (!r.ok || !d.success) throw new Error(d.error || 'Error del servidor');
 
     copAddMsg('ai', d.reply);
-    _copHistory.push({ role:'assistant', content:d.reply });
+    _copHistory.push({ role: 'assistant', content: d.reply });
     if (_copHistory.length > 16) _copHistory = _copHistory.slice(-16);
 
-    const reply    = d.reply.trim();
-    const msgLower = msg.toLowerCase();
-    const lastMsg  = document.querySelector('#copMessages .cop-msg.ai:last-child');
+    const reply   = d.reply.trim();
+    const lastMsg = document.querySelector('#copMessages .cop-msg.ai:last-child');
     if (!lastMsg || !reply.length) return;
 
-    const isNewCaption = msgLower.includes('nuevo caption') || msgLower.includes('dame un caption') ||
-                         msgLower.includes('caption completo') || msgLower.includes('reescribe el caption') ||
-                         msgLower.includes('hazme un caption') || msgLower.includes('genera un caption') ||
-                         msgLower.includes('caption mas') || msgLower.includes('caption más') ||
-                         msgLower.includes('caption viral') || msgLower.includes('caption mejor');
-    const isHashtag    = !isNewCaption && (msgLower.includes('hashtag') || msgLower.includes('etiqueta') ||
-                         msgLower.includes('nuevos #') ||
-                         (!msgLower.includes('caption') && (reply.match(/#\S+/g)||[]).length >= 4));
-    const isHook       = !isNewCaption && !isHashtag && (msgLower.includes('hook') || msgLower.includes('gancho') || msgLower.includes('primer') && msgLower.includes('linea'));
-    const isCTA        = !isNewCaption && !isHashtag && !isHook &&
-                         (msgLower.includes('cta') || msgLower.includes('llamada') || msgLower.includes('call to action'));
-
-    const wrap = document.createElement('div');
-    wrap.style.cssText = 'margin-top:8px;';
-    const applyBtn = document.createElement('button');
-    applyBtn.style.cssText = 'width:100%;padding:7px 10px;border-radius:6px;background:var(--brand);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
-    applyBtn.textContent = '✅ Aplicar';
-
-    if (isHashtag) {
-      const tags = reply.match(/#\S+/g) || [];
-      applyBtn.onclick = () => {
-        if (!tags.length) { toast('No encontré hashtags en la respuesta','info'); return; }
-        const hashRow = document.querySelector('.hash-chip')?.parentElement;
-        if (hashRow) {
-          hashRow.innerHTML = '';
-          const newSelH = new Set();
-          const newSelE = new Set();
-          tags.slice(0,8).forEach(tag => {
-            const chip = document.createElement('button');
-            chip.className = 'hash-chip';
-            chip.textContent = tag.startsWith('#') ? tag : '#'+tag;
-            chip.onclick = () => {
-              const t = tag.replace(/^#/,'');
-              if (newSelH.has(t)) { newSelH.delete(t); chip.classList.remove('active'); }
-              else if (newSelH.size < 3) { newSelH.add(t); chip.classList.add('active'); }
-              else { toast('Máximo 3 hashtags','info'); return; }
-              updateCaptionHashEmoji(newSelH, newSelE);
-            };
-            hashRow.appendChild(chip);
-          });
-        }
-        const capEl = document.getElementById('capFull');
-        if (capEl) {
-          const base = (capEl.value || captionFull).replace(/#\S+/g,'').replace(/\s+$/,'').trim();
-          capEl.value = base + String.fromCharCode(10,10) + tags.slice(0,7).join(' ');
-          captionFull = capEl.value; updateCaptionPreview();
-        }
-        toast('Hashtags aplicados','success');
-        applyBtn.textContent = '✓ Aplicado'; applyBtn.disabled = true;
-      };
-    } else if (isNewCaption) {
-      // Keep emojis, only strip hashtags — user asked for emojis explicitly
-      const cleanCaption = reply
-        .replace(/#\S+/g, '')           // remove hashtags (user picks from chips)
-        .replace(/\n{3,}/g, '\n\n')
-        .trim();
-      applyBtn.onclick = () => {
-        const capEl = document.getElementById('capFull');
-        if (capEl) {
-          capEl.value = cleanCaption;
-          captionFull = cleanCaption;
-          updateCaptionPreview();
-          resetHashChips();
-        }
-        toast('Caption aplicado','success');
-        applyBtn.textContent = '✓ Aplicado'; applyBtn.disabled = true;
-      };
-    } else if (isHook) {
-      applyBtn.onclick = () => {
-        const capEl = document.getElementById('capFull');
-        if (capEl) {
-          const NL2 = String.fromCharCode(10,10);
-          const parts = (capEl.value || captionFull).split(NL2);
-          parts[0] = reply; capEl.value = parts.join(NL2);
-          captionFull = capEl.value; updateCaptionPreview();
-        }
-        toast('Hook aplicado','success');
-        applyBtn.textContent = '✓ Aplicado'; applyBtn.disabled = true;
-      };
-    } else if (isCTA) {
-      applyBtn.onclick = () => {
-        const capEl = document.getElementById('capFull');
-        if (capEl) {
-          const NL2 = String.fromCharCode(10,10);
-          const parts = (capEl.value || captionFull).split(NL2);
-          parts[parts.length-1] = reply; capEl.value = parts.join(NL2);
-          captionFull = capEl.value; updateCaptionPreview();
-        }
-        toast('CTA aplicado','success');
-        applyBtn.textContent = '✓ Aplicado'; applyBtn.disabled = true;
-      };
-    } else {
-      // Generic: apply to caption keeping emojis, only strip hashtags
-      const cleanReply = reply
-        .replace(/#\S+/g, '')
-        .replace(/\n{3,}/g, '\n\n')
-        .trim();
-      applyBtn.onclick = () => {
-        const capEl = document.getElementById('capFull');
-        if (capEl) { capEl.value = cleanReply; captionFull = cleanReply; updateCaptionPreview(); }
-        toast('Aplicado','success');
-        applyBtn.textContent = '✓ Aplicado'; applyBtn.disabled = true;
-      };
-    }
-
-    wrap.appendChild(applyBtn);
-    lastMsg.appendChild(wrap);
+    const intent = _copDetectIntent(msg, reply);
+    _copAttachApplyBtn(lastMsg, intent, reply);
 
   } catch(e) {
     typing.remove();
@@ -6078,12 +6082,8 @@ async function copSend(preset) {
     document.getElementById('copInput')?.focus();
   }
 }
-window.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('bgPresetRow').innerHTML =
-    BG_PRESETS.map(([c1,c2]) =>
-      `<div class="bg-preset" style="background:linear-gradient(135deg,${c1},${c2});" onclick="applyBgPreset('${c1}','${c2}')"></div>`
-    ).join('');
-});
+
+
 </script>
 </body>
 </html>

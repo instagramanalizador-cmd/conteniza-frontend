@@ -795,7 +795,7 @@
         class="form-input"
         placeholder="Ej: coach de vida, nutricionista, finanzas personales…"
         style="font-size:13px;margin-bottom:8px;"
-        oninput="localStorage.setItem('conteniza_niche', this.value)"
+        oninput="localStorage.setItem(KEYS.niche, this.value)"
       >
       <div style="font-size:11px;color:var(--text-3);">
         💡 Si describes un tema distinto a tu nicho, la IA te avisará antes de generar.
@@ -880,6 +880,18 @@
    ═══════════════════════════════════════════════════════ */
 
 const API_URL = 'https://conteniza-backend.onrender.com/api';
+// ── Storage keys — single source of truth ────────────────────────────────
+const KEYS = {
+  token:       'token',
+  user:        'user',
+  niche:       'conteniza_niche',
+  descDraft:   'conteniza_desc_draft',
+  format:      'conteniza_format',
+  history:     'conteniza_history',
+  dailyUsage:  'conteniza_daily_usage',
+  cookies:     'conteniza_cookies',
+  cookiesDate: 'conteniza_cookies_date',
+};
 
 let currentUser   = null;
 let currentPlan   = 'free';
@@ -926,7 +938,7 @@ function toggleCollapse(id, trigger) {
 
 /* ── API FETCH ── */
 async function apiFetch(url, options = {}, timeoutMs = 30000) {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem(KEYS.token);
   const publicPaths = ['/auth/login', '/auth/register', '/auth/plans', '/auth/waitlist', '/auth/forgot-password'];
   const isPublic = publicPaths.some(p => url.includes(p));
   if (!options.headers) options.headers = {};
@@ -946,8 +958,8 @@ async function apiFetch(url, options = {}, timeoutMs = 30000) {
         const err = new Error('Sesión expirada'); err.status = 401; throw err;
       }
       // Not in the app — do full logout
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      localStorage.removeItem(KEYS.token);
+      localStorage.removeItem(KEYS.user);
       sessionStorage.removeItem('conteniza_user');
       currentUser = null;
       showNotification('Tu sesión expiró. Inicia sesión de nuevo.', 'error');
@@ -997,14 +1009,14 @@ async function handleAuth(event) {
     if (!r.ok) throw new Error(d.error || 'Error de autenticación');
 
     if (d.token) {
-      localStorage.setItem('token', d.token);
-      localStorage.setItem('user', JSON.stringify(d.user));
+      localStorage.setItem(KEYS.token, d.token);
+      localStorage.setItem(KEYS.user, JSON.stringify(d.user));
       currentUser = d.user;
       if (currentUser.plan_type) currentUser.plan_type = currentUser.plan_type.toLowerCase();
       userCredits = d.user.credits_remaining ?? 0;
       // Store daily usage for quick restore
       if (d.user.daily_usage_count !== undefined) {
-        localStorage.setItem('conteniza_daily_usage', String(d.user.daily_usage_count));
+        localStorage.setItem(KEYS.dailyUsage, String(d.user.daily_usage_count));
       }
       await showMainApp();
       showNotification(_isRegister ? '¡Cuenta creada!' : '¡Bienvenido!', 'success');
@@ -1077,7 +1089,7 @@ async function showMainApp() {
   document.getElementById('plansScreen').classList.add('hidden');
   document.getElementById('userBar').classList.add('visible');
   // Restore niche FIRST — before syncCredits which might trigger onboarding
-  const _earlyNiche = localStorage.getItem('conteniza_niche');
+  const _earlyNiche = localStorage.getItem(KEYS.niche);
   if (_earlyNiche) {
     const _nicheEl = document.getElementById('niche');
     if (_nicheEl) _nicheEl.value = _earlyNiche;
@@ -1094,14 +1106,14 @@ async function showMainApp() {
   updateUploadZone();
 
   // Restore unsaved description draft
-  const draft = localStorage.getItem('conteniza_desc_draft');
+  const draft = localStorage.getItem(KEYS.descDraft);
   if (draft) {
     const el = document.getElementById('description');
     if (el && !el.value) el.value = draft;
   }
   // Restore daily usage from localStorage for immediate display
   if (currentUser) {
-    const storedDaily = localStorage.getItem('conteniza_daily_usage');
+    const storedDaily = localStorage.getItem(KEYS.dailyUsage);
     if (storedDaily && currentUser.daily_usage_count === undefined) {
       currentUser.daily_usage_count = parseInt(storedDaily) || 0;
     }
@@ -1154,7 +1166,7 @@ async function syncCredits() {
       if (d.user.created_at) currentUser.created_at = d.user.created_at;
       if (d.user.daily_usage_count !== undefined) {
         currentUser.daily_usage_count = d.user.daily_usage_count;
-        localStorage.setItem('conteniza_daily_usage', String(d.user.daily_usage_count));
+        localStorage.setItem(KEYS.dailyUsage, String(d.user.daily_usage_count));
       }
       document.getElementById('userCredits').textContent = userCredits + ' créditos';
       document.getElementById('creditsDisplay').textContent = userCredits;
@@ -1162,9 +1174,9 @@ async function syncCredits() {
       updateFormatBadges();
       updateCreditsBar();
       updateUploadZone();
-      if (currentUser) localStorage.setItem('user', JSON.stringify(currentUser));
+      if (currentUser) localStorage.setItem(KEYS.user, JSON.stringify(currentUser));
       if (d.user.niche) {
-        localStorage.setItem('conteniza_niche', d.user.niche);
+        localStorage.setItem(KEYS.niche, d.user.niche);
         if (currentUser) currentUser.niche = d.user.niche;
         const nicheEl = document.getElementById('niche');
         if (nicheEl) nicheEl.value = d.user.niche;
@@ -1192,7 +1204,7 @@ function selectPubType(btn) {
   btn.classList.add('active');
   selectedPubType = type;
   document.getElementById('publicationType').value = type;
-  localStorage.setItem('conteniza_format', type);
+  localStorage.setItem(KEYS.format, type);
 }
 
 function updateFormatBadges() {
@@ -1272,7 +1284,7 @@ async function loadPlans() {
 function renderPlans(plans) {
   const grid = document.getElementById('plansGrid');
   if (!grid) return;
-  const savedToken = localStorage.getItem('token');
+  const savedToken = localStorage.getItem(KEYS.token);
   grid.innerHTML = plans.map(p => {
     // Normalize price — backend uses price_usd
     const priceVal   = p.price_usd ?? p.price ?? 0;
@@ -1309,11 +1321,11 @@ function renderPlans(plans) {
 }
 
 function selectPlan(plan) {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem(KEYS.token);
   if (token) {
     // Ya logueado → ir al checkout o directo a app
     if (plan === 'free') { showMainApp(); return; }
-    window.location.href = `${API_URL}/payments/checkout?plan=${plan}&token=${localStorage.getItem('token')}`;
+    window.location.href = `${API_URL}/payments/checkout?plan=${plan}&token=${localStorage.getItem(KEYS.token)}`;
   } else {
     showAuthScreen(plan);
   }
@@ -1385,7 +1397,7 @@ function confirmNicheMode(mode) {
 
 /* ── AUTOSAVE DESCRIPTION ── */
 function autosaveDesc(val) {
-  try { localStorage.setItem('conteniza_desc_draft', val); } catch(e) {}
+  try { localStorage.setItem(KEYS.descDraft, val); } catch(e) {}
 }
 
 /* ── CREDITS BAR ── */
@@ -1413,7 +1425,7 @@ function updateCreditsBar() {
   }
   let dailyUsed = currentUser?.daily_usage_count;
   if (dailyUsed === undefined || dailyUsed === null) {
-    const stored = localStorage.getItem('conteniza_daily_usage');
+    const stored = localStorage.getItem(KEYS.dailyUsage);
     dailyUsed = stored ? parseInt(stored) || 0 : 0;
   }
   const dailyLimit = plan === 'free' ? 5 : plan === 'pro' ? 20 : 30;
@@ -1422,7 +1434,7 @@ function updateCreditsBar() {
   if (resetLb) {
     const now = new Date();
     let createdAt = currentUser?.created_at;
-    if (!createdAt) { try { createdAt = JSON.parse(localStorage.getItem('user') || '{}').created_at; } catch(_) {} }
+    if (!createdAt) { try { createdAt = JSON.parse(localStorage.getItem(KEYS.user) || '{}').created_at; } catch(_) {} }
     const joinDate = createdAt ? new Date(createdAt) : now;
     const renewDay = joinDate.getDate();
     let renewDate = new Date(now.getFullYear(), now.getMonth(), renewDay);
@@ -1525,7 +1537,7 @@ async function generateContent(event) {
   if (event) event.preventDefault();
 
   const _descVal  = document.getElementById('description')?.value?.trim() || '';
-  const _nicheVal = document.getElementById('niche')?.value?.trim() || localStorage.getItem('conteniza_niche') || '';
+  const _nicheVal = document.getElementById('niche')?.value?.trim() || localStorage.getItem(KEYS.niche) || '';
 
   if (!_descVal) { showNotification('Describe el tema del contenido', 'error'); return; }
   if (!_nicheVal) {
@@ -1604,8 +1616,8 @@ async function generateContent(event) {
     }
     // Save updated daily count to localStorage
     if (currentUser?.daily_usage_count !== undefined) {
-      localStorage.setItem('conteniza_daily_usage', String(currentUser.daily_usage_count));
-      localStorage.setItem('user', JSON.stringify(currentUser));  // Keep user in sync
+      localStorage.setItem(KEYS.dailyUsage, String(currentUser.daily_usage_count));
+      localStorage.setItem(KEYS.user, JSON.stringify(currentUser));  // Keep user in sync
     }
     updateCreditsBar();  // Refresh "Hoy: X/30" immediately
 
@@ -1631,11 +1643,11 @@ async function generateContent(event) {
     showProgress(false);
     // Guardar en historial local (máx 20 entradas)
     try {
-      const _hist = JSON.parse(localStorage.getItem('conteniza_history') || '[]');
+      const _hist = JSON.parse(localStorage.getItem(KEYS.history) || '[]');
       editorData._savedAt = new Date().toISOString();
       _hist.push(editorData);
       if (_hist.length > 20) _hist.splice(0, _hist.length - 20);
-      localStorage.setItem('conteniza_history', JSON.stringify(_hist));
+      localStorage.setItem(KEYS.history, JSON.stringify(_hist));
     } catch(_) {}
     // Ir directo al editor — sin modal intermedio
     sessionStorage.setItem('conteniza_editor_data', JSON.stringify(editorData));
@@ -1684,7 +1696,7 @@ async function openSidebar() {
 
   const list = document.getElementById('historialList');
   try {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem(KEYS.token);
     const r = await fetch(`${API_URL}/analyze?limit=${fetchLimit}`, { headers: { 'Authorization': `Bearer ${token}` } });
     const d = await r.json();
     if (!r.ok || !d.success) throw new Error(d.error || 'Error');
@@ -1725,7 +1737,7 @@ async function openSidebar() {
 async function reuseAnalysis(item) {
   document.getElementById('historialModal')?.remove();
   try {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem(KEYS.token);
     const r = await fetch(`${API_URL}/analyze/${item.id}`, { headers: { 'Authorization': `Bearer ${token}` } });
     const d = await r.json();
     const analysis = d.analysis || d;
@@ -1758,7 +1770,7 @@ function openAdmin() { window.open('admin.html', '_blank'); }
 
 /* ── LOGOUT ── */
 function logout() {
-  localStorage.removeItem('token'); localStorage.removeItem('user');
+  localStorage.removeItem(KEYS.token); localStorage.removeItem(KEYS.user);
   currentUser = null; uploadedFiles = []; userCredits = 0;
   showPlansScreen();
   updateTopbarForLoggedOut();
@@ -1796,7 +1808,7 @@ function showBrandScreen() {
   loadBrandData();
   renderBrandFonts();
   // Restore saved niche in brand screen input
-  const savedNiche = localStorage.getItem('conteniza_niche') || '';
+  const savedNiche = localStorage.getItem(KEYS.niche) || '';
   const nicheInput = document.getElementById('brandNicheInput');
   if (nicheInput) nicheInput.value = savedNiche;
 }
@@ -1807,7 +1819,7 @@ function closeBrandScreen() {
 
 async function loadBrandData() {
   try {
-    const token = localStorage.getItem('token'); if (!token) return;
+    const token = localStorage.getItem(KEYS.token); if (!token) return;
     const r = await apiFetch(`${API_URL}/brand`);
     if (!r.ok) return;
     const d = await r.json();
@@ -1886,7 +1898,7 @@ function updateBrandPreview() {
 
 async function uploadBrandLogo(event) {
   const file = event.target.files[0]; if (!file) return;
-  const token = localStorage.getItem('token'); if (!token) return;
+  const token = localStorage.getItem(KEYS.token); if (!token) return;
   const btn = document.querySelector('.brand-logo-upload');
   btn.textContent = 'Subiendo…'; btn.disabled = true;
   try {
@@ -1908,7 +1920,7 @@ async function uploadBrandLogo(event) {
 }
 
 async function removeBrandLogo() {
-  const token = localStorage.getItem('token'); if (!token) return;
+  const token = localStorage.getItem(KEYS.token); if (!token) return;
   try {
     await apiFetch(`${API_URL}/brand/logo`, { method:'DELETE' });
     _brandData.logo_url = null;
@@ -1920,7 +1932,7 @@ async function removeBrandLogo() {
 }
 
 async function saveBrand() {
-  const token = localStorage.getItem('token'); if (!token) return;
+  const token = localStorage.getItem(KEYS.token); if (!token) return;
   const btn = document.querySelector('.brand-save-btn');
   btn.textContent = 'Guardando…'; btn.disabled = true;
   try {
@@ -1945,7 +1957,7 @@ async function saveBrand() {
 function cancelSubscription(){ showNotification('Para cancelar escríbenos a soporte@conteniza.com', 'info'); }
 
 async function resendVerification() {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem(KEYS.token);
   if (!token) return;
   try {
     await apiFetch(`${API_URL}/auth/resend-verification`, { method:'POST' });
@@ -1957,27 +1969,27 @@ async function resendVerification() {
 let _selectedNiche = '';  // hoisted — used by init() showAppWith
 
 async function init() {
-  const token = localStorage.getItem('token');
-  const saved = localStorage.getItem('user');
+  const token = localStorage.getItem(KEYS.token);
+  const saved = localStorage.getItem(KEYS.user);
 
   // Helper: show app with saved user data, never logout on non-auth errors
   const showAppWith = async (user) => {
     currentUser = user;
     userCredits = user.credits_remaining ?? 0;
-    const daily = localStorage.getItem('conteniza_daily_usage');
+    const daily = localStorage.getItem(KEYS.dailyUsage);
     if (daily && user.daily_usage_count === undefined) user.daily_usage_count = parseInt(daily) || 0;
-    const niche = localStorage.getItem('conteniza_niche');
+    const niche = localStorage.getItem(KEYS.niche);
     if (niche && !user.niche) { user.niche = niche; _selectedNiche = niche; }
     else if (user.niche) { _selectedNiche = user.niche; }
     try { await showMainApp(); } catch(e) { console.warn('showMainApp non-fatal:', e.message); }
-    const fmt = localStorage.getItem('conteniza_format') || 'post';
+    const fmt = localStorage.getItem(KEYS.format) || 'post';
     const btn = document.querySelector(`.pub-btn[data-value="${fmt}"]`);
     if (btn) selectPubType(btn);
   };
 
   if (token && saved) {
     let parsedUser = null;
-    try { parsedUser = JSON.parse(saved); } catch(_) { localStorage.removeItem('user'); }
+    try { parsedUser = JSON.parse(saved); } catch(_) { localStorage.removeItem(KEYS.user); }
     if (parsedUser) {
       await showAppWith(parsedUser);
       return;
@@ -1994,14 +2006,14 @@ async function init() {
       if (r.ok) {
         const d = await r.json();
         if (d.user) {
-          localStorage.setItem('user', JSON.stringify(d.user));
+          localStorage.setItem(KEYS.user, JSON.stringify(d.user));
           await showAppWith(d.user);
           return;
         }
       } else if (r.status === 401) {
         // Genuinely invalid token — clear and show plans
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        localStorage.removeItem(KEYS.token);
+        localStorage.removeItem(KEYS.user);
       }
       // Other errors (500, network) — fall through to loadPlans
     } catch(_) {
@@ -2075,7 +2087,7 @@ function openNicheSelector() {
   renderNicheGrid(); // ← CRÍTICO: llenar el grid de opciones
   screen.style.display = 'block';
   // Pre-activar botón con nicho actual
-  const current = localStorage.getItem('conteniza_niche') || '';
+  const current = localStorage.getItem(KEYS.niche) || '';
   if (current) {
     _selectedNiche = current;
     const btn = document.getElementById('onboardingBtn');
@@ -2173,7 +2185,7 @@ const NICHE_OPTIONS   = [
 function shouldShowOnboarding() {
   // Show if: no done flag AND no niche saved anywhere
   if (localStorage.getItem(ONBOARDING_KEY)) return false;
-  if (localStorage.getItem('conteniza_niche')) return false;
+  if (localStorage.getItem(KEYS.niche)) return false;
   if (currentUser?.niche) return false;
   return true;
 }
@@ -2182,7 +2194,7 @@ function showOnboarding() {
   renderNicheGrid();
   (document.getElementById('onboardingScreen')||{style:{}}).style.display = 'block';
   // Pre-select current niche if already set (user clicked "cambiar")
-  const current = localStorage.getItem('conteniza_niche') || '';
+  const current = localStorage.getItem(KEYS.niche) || '';
   if (current) {
     _selectedNiche = current;
     const btn = document.getElementById('onboardingBtn');
@@ -2254,12 +2266,12 @@ function saveOnboardingNiche() {
   btn.disabled    = true;
 
   // 1. Save in localStorage (immediate, works offline)
-  localStorage.setItem('conteniza_niche', _selectedNiche);
+  localStorage.setItem(KEYS.niche, _selectedNiche);
   localStorage.setItem(ONBOARDING_KEY, '1');
 
   // 2. Sync to backend (best effort — don't block if fails)
   try {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem(KEYS.token);
     if (token) {
       fetch(`${API_URL}/user/niche`, {
         method:  'PATCH',
@@ -2288,7 +2300,7 @@ function skipOnboarding() {
   (document.getElementById('onboardingScreen')||{style:{}}).style.display = 'none';
   // Show a hint so user knows where to set niche later
   const nicheDisplay = document.getElementById('nicheDisplay');
-  if (nicheDisplay && !localStorage.getItem('conteniza_niche')) {
+  if (nicheDisplay && !localStorage.getItem(KEYS.niche)) {
     nicheDisplay.style.borderColor = 'rgba(239,68,68,.5)';
     nicheDisplay.style.background  = 'rgba(239,68,68,.06)';
     const txt = document.getElementById('nicheDisplayText');
@@ -2396,8 +2408,8 @@ function skipOnboarding() {
 <script>
 // Cookie banner
 function acceptCookies(type) {
-  localStorage.setItem('conteniza_cookies', type);
-  localStorage.setItem('conteniza_cookies_date', new Date().toISOString());
+  localStorage.setItem(KEYS.cookies, type);
+  localStorage.setItem(KEYS.cookiesDate, new Date().toISOString());
   document.getElementById('cookieBanner').style.display = 'none';
   if (type === 'all' && typeof gtag !== 'undefined') {
     gtag('consent', 'update', { analytics_storage:'granted', ad_storage:'granted' });
@@ -2405,7 +2417,7 @@ function acceptCookies(type) {
 }
 
 (function() {
-  const consent = localStorage.getItem('conteniza_cookies');
+  const consent = localStorage.getItem(KEYS.cookies);
   if (!consent) {
     // Show after 1s
     setTimeout(() => {
