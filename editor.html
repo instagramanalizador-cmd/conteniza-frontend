@@ -1324,7 +1324,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
           <button onclick="document.getElementById('bgImgInput').click()" style="flex:1;padding:8px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">📷 Cargar mi imagen</button>
           <button id="bgRemoveBtn" onclick="removeBgImage()" style="display:none;padding:8px 12px;border-radius:var(--r);border:1px solid rgba(248,113,113,.3);background:rgba(248,113,113,.1);color:#F87171;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">✕ Quitar</button>
         </div>
-        <input type="file" id="bgImgInput" accept="image/*" style="display:none" onchange="loadBgImage(event)">
 
         <!-- SECCIÓN 3: BANCO DE IMÁGENES -->
         <div style="font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">🌐 Buscar foto de fondo</div>
@@ -3019,12 +3018,16 @@ function renderPostContentPanel(container) {
     const renderCap = () => {
       const cap = captions[capIdx] || '';
       counter.textContent = (capIdx+1) + ' de ' + captions.length;
-      // Strip any "CAPTION N — Hook:" labels that might come from AI
-      const cleanCap = cap.replace(/^CAPTION\s*\d+\s*[—-]\s*(Hook:|Descripción:|CTA:)?\s*/i, '').trim();
+      // Strip AI labels, hashtags and emojis from the displayed caption
+      const cleanCap = cap
+        .replace(/^CAPTION\s*\d+\s*[—-]\s*(Hook:|Descripción:|CTA:)?\s*/i, '')
+        .replace(/#\S+/g, '')                          // remove hashtags
+        .replace(/[\u{1F300}-\u{1FAFF}]/gu, '')        // remove emojis
+        .replace(/\n{3,}/g, '\n\n')                    // collapse extra blank lines
+        .trim();
       capText.textContent = cleanCap;
       btnP.style.opacity = capIdx === 0 ? '.3' : '1';
       btnN.style.opacity = capIdx === captions.length-1 ? '.3' : '1';
-      // NO auto-apply on navigation — only on "Usar este caption"
     };
 
     btnP.onclick = () => { if(capIdx>0){ capIdx--; renderCap(); resetHashChips(); } };
@@ -4805,7 +4808,30 @@ async function regenerateFromEditor() {
   if (!token) { toast('Inicia sesión primero','error'); return; }
 
   const btn = document.querySelector('[onclick="regenerateFromEditor()"]');
-  if (btn) { btn.textContent='⏳ Regenerando…'; btn.disabled=true; }
+  if (btn) { btn.innerHTML='⏳ Regenerando…'; btn.disabled=true; }
+
+  // Show progress bar overlay in content panel
+  const panel = document.getElementById('contentPanelInner') || document.querySelector('.panel-scroll');
+  let progressBar = null;
+  if (panel) {
+    progressBar = document.createElement('div');
+    progressBar.id = '_regenProgress';
+    progressBar.style.cssText = 'position:sticky;top:0;left:0;right:0;z-index:99;background:var(--surf);padding:16px 14px;border-bottom:1px solid var(--border);';
+    progressBar.innerHTML = `
+      <div style="font-size:11px;font-weight:700;color:var(--brand);margin-bottom:8px;text-align:center;">✨ Generando nuevo contenido…</div>
+      <div style="height:4px;background:var(--border);border-radius:4px;overflow:hidden;">
+        <div id="_regenBar" style="height:100%;width:5%;background:linear-gradient(90deg,#8B5FBF,#EC4899);border-radius:4px;transition:width .4s ease;"></div>
+      </div>`;
+    panel.insertBefore(progressBar, panel.firstChild);
+    // Animate progress
+    let pct = 5;
+    const barEl = progressBar.querySelector('#_regenBar');
+    const ticker = setInterval(() => {
+      pct = Math.min(85, pct + Math.random() * 12);
+      if (barEl) barEl.style.width = pct + '%';
+    }, 600);
+    progressBar._ticker = ticker;
+  }
 
   try {
     const r = await fetch(API_URL+'/analyze', {
@@ -4822,7 +4848,11 @@ async function regenerateFromEditor() {
     if (r.status === 429) throw new Error('Sin créditos disponibles');
     if (!r.ok) throw new Error(d.error || 'Error regenerando');
 
-    // Update iaData with new content
+    // Complete progress bar
+    const barEl = progressBar?.querySelector('#_regenBar');
+    if (barEl) barEl.style.width = '100%';
+    await new Promise(res => setTimeout(res, 300));
+
     iaData = { ...iaData, ...d.analysis,
       hooks: d.analysis?.hooks || [],
       captions: d.analysis?.captions || [],
@@ -4833,20 +4863,21 @@ async function regenerateFromEditor() {
     };
     sessionStorage.setItem('conteniza_editor_data', JSON.stringify(iaData));
 
-    // Update credits and daily usage
     if (currentUser) {
       if (d.credits_remaining !== undefined) currentUser.credits_remaining = d.credits_remaining;
       if (d.daily_usage?.current !== undefined) currentUser.daily_usage_count = d.daily_usage.current;
     }
     updateTopbarUser();
-
-    // Re-render content panel
     renderContentPanel();
     toast('✅ Contenido regenerado','success');
   } catch(e) {
     toast(e.message || 'Error regenerando','error');
   } finally {
-    if (btn) { btn.textContent='🔄 Regenerar contenido (-1 crédito)'; btn.disabled=false; }
+    if (progressBar) {
+      clearInterval(progressBar._ticker);
+      progressBar.remove();
+    }
+    if (btn) { btn.innerHTML='🔄 Regenerar contenido (-1 crédito)'; btn.disabled=false; }
   }
 }
 
@@ -5908,10 +5939,10 @@ async function copSend(preset) {
     const lastMsg = document.querySelector('#copMessages .cop-msg.ai:last-child');
     if (lastMsg && reply.length > 0) {
       const msgLower = msg.toLowerCase();
-      const isHashtag = msgLower.includes('hashtag') || reply.includes('#');
-      const isCaption = msgLower.includes('nuevo caption') || msgLower.includes('reescribe') || msgLower.includes('caption completo');
-      const isHook    = msgLower.includes('hook') || msgLower.includes('gancho');
-      const isCTA     = msgLower.includes('cta') || msgLower.includes('llamada a la accion');
+      const isCaption = msgLower.includes('nuevo caption') || msgLower.includes('reescribe') || msgLower.includes('caption completo') || msgLower.includes('dame un caption');
+      const isHashtag = !isCaption && (msgLower.includes('hashtag') || (reply.match(/#\S+/g)||[]).length >= 3);
+      const isHook    = !isCaption && (msgLower.includes('hook') || msgLower.includes('gancho'));
+      const isCTA     = !isCaption && (msgLower.includes('cta') || msgLower.includes('llamada a la accion'));
 
       const wrap = document.createElement('div');
       wrap.style.cssText = 'display:flex;gap:5px;margin-top:8px;flex-wrap:wrap;';

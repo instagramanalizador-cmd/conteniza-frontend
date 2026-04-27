@@ -1146,7 +1146,6 @@ async function syncCredits() {
       // FIX: persist credits_remaining + created_at en currentUser
       currentUser.credits_remaining = userCredits;
       if (d.user.created_at) currentUser.created_at = d.user.created_at;
-      // Update daily usage
       if (d.user.daily_usage_count !== undefined) {
         currentUser.daily_usage_count = d.user.daily_usage_count;
         localStorage.setItem('conteniza_daily_usage', String(d.user.daily_usage_count));
@@ -1157,10 +1156,7 @@ async function syncCredits() {
       updateFormatBadges();
       updateCreditsBar();
       updateUploadZone();
-      // Save updated user (con credits_remaining + created_at) a localStorage
       if (currentUser) localStorage.setItem('user', JSON.stringify(currentUser));
-
-      // Sync niche from backend → takes priority over localStorage
       if (d.user.niche) {
         localStorage.setItem('conteniza_niche', d.user.niche);
         if (currentUser) currentUser.niche = d.user.niche;
@@ -1168,8 +1164,6 @@ async function syncCredits() {
         if (nicheEl) nicheEl.value = d.user.niche;
         updateNicheDisplay(d.user.niche);
       }
-
-      // Show onboarding if user has no niche anywhere
       if (shouldShowOnboarding()) {
         setTimeout(() => { renderNicheGrid(); showOnboarding(); }, 300);
       }
@@ -1423,7 +1417,6 @@ function updateCreditsBar() {
   if (!currentUser) return;
   const plan   = (currentUser?.plan_type || 'free').toLowerCase();
   const limit  = PLAN_LIMITS[plan] || (plan.includes('premium') ? 300 : plan.includes('pro') ? 100 : 5);
-  // FIX: clamp used to [0, limit] — userCredits es credits_remaining
   const remaining = Math.max(0, userCredits);
   const used   = Math.max(0, Math.min(limit, limit - remaining));
   const usedPct = limit > 0 ? Math.round((used / limit) * 100) : 0;
@@ -1450,11 +1443,8 @@ function updateCreditsBar() {
 
   if (resetLb) {
     const now = new Date();
-    // FIX: fallback a localStorage si currentUser.created_at no está cargado aún
     let createdAt = currentUser?.created_at;
-    if (!createdAt) {
-      try { createdAt = JSON.parse(localStorage.getItem('user') || '{}').created_at; } catch(_) {}
-    }
+    if (!createdAt) { try { createdAt = JSON.parse(localStorage.getItem('user') || '{}').created_at; } catch(_) {} }
     const joinDate = createdAt ? new Date(createdAt) : now;
     const renewDay = joinDate.getDate();
     let renewDate = new Date(now.getFullYear(), now.getMonth(), renewDay);
@@ -1659,6 +1649,14 @@ async function generateContent(event) {
     };
 
     showProgress(false);
+    // Guardar en historial local (máx 20 entradas)
+    try {
+      const _hist = JSON.parse(localStorage.getItem('conteniza_history') || '[]');
+      editorData._savedAt = new Date().toISOString();
+      _hist.push(editorData);
+      if (_hist.length > 20) _hist.splice(0, _hist.length - 20);
+      localStorage.setItem('conteniza_history', JSON.stringify(_hist));
+    } catch(_) {}
     // Ir directo al editor — sin modal intermedio
     sessionStorage.setItem('conteniza_editor_data', JSON.stringify(editorData));
     // Pass user data to editor so it doesn't need /api/auth/me
@@ -1679,9 +1677,54 @@ async function generateContent(event) {
 
 /* ── SIDEBAR (historial) ── */
 function openSidebar() {
-  // El editor.html puede abrir el historial — aquí navegamos a él con flag
-  sessionStorage.setItem('conteniza_open_historial', '1');
-  window.location.href = 'editor.html';
+  // Mostrar modal de historial inline — sin ir al editor
+  let modal = document.getElementById('historialModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'historialModal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.55);';
+    modal.innerHTML = `
+      <div style="background:#1a1a2e;border-radius:20px 20px 0 0;width:100%;max-width:620px;max-height:75vh;overflow-y:auto;padding:20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <span style="font-size:15px;font-weight:700;color:#fff;">📜 Historial reciente</span>
+          <button onclick="document.getElementById('historialModal').remove()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;">✕</button>
+        </div>
+        <div id="historialList" style="display:flex;flex-direction:column;gap:10px;"></div>
+      </div>`;
+    document.body.appendChild(modal);
+    modal.onclick = e => { if (e.target === modal) modal.remove(); };
+  }
+  // Load from localStorage
+  const list = document.getElementById('historialList');
+  let history = [];
+  try { history = JSON.parse(localStorage.getItem('conteniza_history') || '[]'); } catch(_) {}
+  if (!history.length) {
+    list.innerHTML = '<div style="color:rgba(255,255,255,.4);font-size:13px;text-align:center;padding:24px 0;">No hay análisis guardados aún.<br>Genera contenido para verlo aquí.</div>';
+    return;
+  }
+  list.innerHTML = '';
+  history.slice().reverse().forEach((item, i) => {
+    const d = document.createElement('div');
+    d.style.cssText = 'background:rgba(255,255,255,.06);border-radius:12px;padding:12px 14px;cursor:pointer;border:1px solid rgba(255,255,255,.08);transition:background .12s;';
+    d.onmouseover = () => d.style.background = 'rgba(139,95,191,.2)';
+    d.onmouseout  = () => d.style.background = 'rgba(255,255,255,.06)';
+    const fmt = item.publicationType || 'post';
+    const fmtIcon = {post:'📸',carousel:'🎠',story:'📖',reel:'🎬'}[fmt] || '📸';
+    const date = item._savedAt ? new Date(item._savedAt).toLocaleDateString('es-ES',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+    d.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:12px;font-weight:700;color:#8B5FBF;">${fmtIcon} ${fmt.toUpperCase()}</span>
+        <span style="font-size:10px;color:rgba(255,255,255,.35);">${date}</span>
+      </div>
+      <div style="font-size:13px;color:rgba(255,255,255,.8);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.description || '–'}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px;">${item.niche || ''}</div>`;
+    d.onclick = () => {
+      sessionStorage.setItem('conteniza_editor_data', JSON.stringify(item));
+      if (currentUser) sessionStorage.setItem('conteniza_user', JSON.stringify(currentUser));
+      window.location.href = 'editor.html';
+    };
+    list.appendChild(d);
+  });
 }
 
 /* ── ADMIN ── */
@@ -1893,21 +1936,15 @@ async function init() {
     try {
       currentUser = JSON.parse(saved);
       userCredits = currentUser.credits_remaining ?? 0;
-      // Restore daily usage count from localStorage
       const storedDailyInit = localStorage.getItem('conteniza_daily_usage');
       if (storedDailyInit && currentUser.daily_usage_count === undefined) {
         currentUser.daily_usage_count = parseInt(storedDailyInit) || 0;
       }
-      // FIX Bug2: restore niche BEFORE showMainApp so display is immediate
+      // FIX: restore niche BEFORE showMainApp
       const storedNicheInit = localStorage.getItem('conteniza_niche');
-      if (storedNicheInit && !currentUser.niche) {
-        currentUser.niche = storedNicheInit;
-        _selectedNiche = storedNicheInit;
-      } else if (currentUser.niche) {
-        _selectedNiche = currentUser.niche;
-      }
+      if (storedNicheInit && !currentUser.niche) { currentUser.niche = storedNicheInit; _selectedNiche = storedNicheInit; }
+      else if (currentUser.niche) { _selectedNiche = currentUser.niche; }
       await showMainApp();
-      // Restaurar formato guardado
       const savedFmt = localStorage.getItem('conteniza_format') || 'post';
       const fmtBtn   = document.querySelector(`.pub-btn[data-value="${savedFmt}"]`);
       if (fmtBtn) selectPubType(fmtBtn);
@@ -1915,13 +1952,11 @@ async function init() {
       logout();
     }
   } else {
-    // FIX Bug3: token exists but 'user' missing → volver del editor sin re-login
+    // FIX: token existe pero 'user' missing (vuelta del editor) — recuperar perfil sin re-login
     sessionStorage.removeItem('conteniza_from_editor');
     if (token) {
       try {
-        const r = await fetch(`${API_URL}/user/profile`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const r = await fetch(`${API_URL}/user/profile`, { headers: { 'Authorization': `Bearer ${token}` } });
         if (r.ok) {
           const d = await r.json();
           if (d.user) {
