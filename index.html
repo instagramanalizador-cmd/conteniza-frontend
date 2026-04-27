@@ -1143,16 +1143,13 @@ async function syncCredits() {
     if (d.user) {
       userCredits = d.user.credits_remaining ?? userCredits;
       currentUser.plan_type = (d.user.plan_type ?? currentUser.plan_type ?? 'free').toLowerCase();
-      // FIX: persist credits_remaining in currentUser so updateCreditsBar calculates correctly
+      // FIX: persist credits_remaining + created_at en currentUser
       currentUser.credits_remaining = userCredits;
+      if (d.user.created_at) currentUser.created_at = d.user.created_at;
       // Update daily usage
       if (d.user.daily_usage_count !== undefined) {
         currentUser.daily_usage_count = d.user.daily_usage_count;
         localStorage.setItem('conteniza_daily_usage', String(d.user.daily_usage_count));
-      }
-      // FIX: always persist created_at if available
-      if (d.user.created_at) {
-        currentUser.created_at = d.user.created_at;
       }
       document.getElementById('userCredits').textContent = userCredits + ' créditos';
       document.getElementById('creditsDisplay').textContent = userCredits;
@@ -1160,7 +1157,7 @@ async function syncCredits() {
       updateFormatBadges();
       updateCreditsBar();
       updateUploadZone();
-      // Save updated user to localStorage so init() has daily_usage_count + created_at
+      // Save updated user (con credits_remaining + created_at) a localStorage
       if (currentUser) localStorage.setItem('user', JSON.stringify(currentUser));
 
       // Sync niche from backend → takes priority over localStorage
@@ -1171,7 +1168,6 @@ async function syncCredits() {
         if (nicheEl) nicheEl.value = d.user.niche;
         updateNicheDisplay(d.user.niche);
       }
-      // created_at already synced above
 
       // Show onboarding if user has no niche anywhere
       if (shouldShowOnboarding()) {
@@ -1427,10 +1423,10 @@ function updateCreditsBar() {
   if (!currentUser) return;
   const plan   = (currentUser?.plan_type || 'free').toLowerCase();
   const limit  = PLAN_LIMITS[plan] || (plan.includes('premium') ? 300 : plan.includes('pro') ? 100 : 5);
-  // FIX: userCredits is credits_remaining; used = limit - remaining, clamped to [0, limit]
+  // FIX: clamp used to [0, limit] — userCredits es credits_remaining
   const remaining = Math.max(0, userCredits);
   const used   = Math.max(0, Math.min(limit, limit - remaining));
-  const usedPct = limit > 0 ? Math.max(0, Math.min(100, (used / limit) * 100)) : 0;
+  const usedPct = limit > 0 ? Math.round((used / limit) * 100) : 0;
 
   const bar    = document.getElementById('creditsBar');
   const usedLb = document.getElementById('creditsUsedLabel');
@@ -1438,32 +1434,29 @@ function updateCreditsBar() {
 
   if (bar) {
     bar.style.width = usedPct + '%';
-    // Color: green < 50% used, amber 50-80%, red > 80%
     bar.style.background = usedPct < 50
       ? 'linear-gradient(90deg,#8B5FBF,#6366f1)'
       : usedPct < 80
         ? 'linear-gradient(90deg,#F59E0B,#EF4444)'
         : 'linear-gradient(90deg,#EF4444,#DC2626)';
   }
-  // Try currentUser first, then localStorage fallback
   let dailyUsed = currentUser?.daily_usage_count;
   if (dailyUsed === undefined || dailyUsed === null) {
     const stored = localStorage.getItem('conteniza_daily_usage');
     dailyUsed = stored ? parseInt(stored) || 0 : 0;
   }
-  const dailyLimit = plan === 'free' ? 5 : plan === 'pro' ? 20 : 30;  // free=5,pro=20,premium=30
+  const dailyLimit = plan === 'free' ? 5 : plan === 'pro' ? 20 : 30;
   if (usedLb) usedLb.textContent = `${used} usados de ${limit} este mes  •  Hoy: ${dailyUsed}/${dailyLimit}`;
 
-  // Reset date: based on subscription date (same day each month)
   if (resetLb) {
     const now = new Date();
-    // FIX: also check localStorage.user.created_at as fallback
+    // FIX: fallback a localStorage si currentUser.created_at no está cargado aún
     let createdAt = currentUser?.created_at;
     if (!createdAt) {
       try { createdAt = JSON.parse(localStorage.getItem('user') || '{}').created_at; } catch(_) {}
     }
     const joinDate = createdAt ? new Date(createdAt) : now;
-    const renewDay = joinDate.getDate(); // Same day each month
+    const renewDay = joinDate.getDate();
     let renewDate = new Date(now.getFullYear(), now.getMonth(), renewDay);
     if (renewDate <= now) renewDate = new Date(now.getFullYear(), now.getMonth()+1, renewDay);
     const days = Math.ceil((renewDate - now) / 86400000);
@@ -1471,7 +1464,6 @@ function updateCreditsBar() {
     resetLb.textContent = `Renueva el ${renewStr} (${days}d)`;
   }
 
-  // Warnings créditos bajos
   const lowWarn  = document.getElementById('lowCreditsWarning');
   const zeroWarn = document.getElementById('zeroCreditsWarning');
   const genBtn   = document.getElementById('generateBtn');
@@ -1901,12 +1893,12 @@ async function init() {
     try {
       currentUser = JSON.parse(saved);
       userCredits = currentUser.credits_remaining ?? 0;
-      // Restore daily usage count from localStorage (set by syncCredits/generateContent)
+      // Restore daily usage count from localStorage
       const storedDailyInit = localStorage.getItem('conteniza_daily_usage');
       if (storedDailyInit && currentUser.daily_usage_count === undefined) {
         currentUser.daily_usage_count = parseInt(storedDailyInit) || 0;
       }
-      // FIX Bug2: restore niche from localStorage NOW so showMainApp finds it immediately
+      // FIX Bug2: restore niche BEFORE showMainApp so display is immediate
       const storedNicheInit = localStorage.getItem('conteniza_niche');
       if (storedNicheInit && !currentUser.niche) {
         currentUser.niche = storedNicheInit;
@@ -1923,16 +1915,13 @@ async function init() {
       logout();
     }
   } else {
-    // FIX Bug3: if coming back from editor, token may be present but 'saved' missing
-    // Re-check token alone + from_editor flag
-    const fromEditor = sessionStorage.getItem('conteniza_from_editor');
-    if (fromEditor) {
-      sessionStorage.removeItem('conteniza_from_editor');
-    }
+    // FIX Bug3: token exists but 'user' missing → volver del editor sin re-login
+    sessionStorage.removeItem('conteniza_from_editor');
     if (token) {
-      // Token exists but saved user missing — fetch profile
       try {
-        const r = await fetch(`${API_URL}/user/profile`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const r = await fetch(`${API_URL}/user/profile`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
         if (r.ok) {
           const d = await r.json();
           if (d.user) {
@@ -1953,7 +1942,6 @@ async function init() {
         }
       } catch(_) {}
     }
-    // Cargar planes
     loadPlans();
   }
 }
