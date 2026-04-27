@@ -135,8 +135,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   display:none;gap:6px;padding:6px 12px;overflow-x:auto;
   width:100%;flex-shrink:0;background:var(--bg);
   border-top:1px solid var(--border);
+  justify-content:center;
 }
-.slide-strip.visible{display:flex;}
 .slide-strip.visible{display:flex;}
 .slide-strip::-webkit-scrollbar{height:3px;}
 .slide-strip::-webkit-scrollbar-track{background:transparent;}
@@ -936,6 +936,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 
     <!-- Instagram frame -->
     <div class="ig-phone" id="igPhone">
+      <!-- Floating action buttons — inside ig-phone so they stay beside the canvas -->
+      <div id="canvasFloatBtns" style="position:absolute;right:-48px;top:80px;display:flex;flex-direction:column;gap:6px;z-index:50;">
+        <button onclick="addTextBlock('Texto',{x:20,y:40,w:60,fontSize:24,color:'#fff',bold:false})" title="Añadir texto" style="width:36px;height:36px;border-radius:50%;background:var(--brand);border:none;color:#fff;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;">T+</button>
+        <button onclick="document.getElementById('imgBlockInput').click()" title="Añadir imagen" style="width:36px;height:36px;border-radius:50%;background:var(--brand);border:none;color:#fff;font-size:16px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;">🖼</button>
+        <button onclick="document.getElementById('logoBlockInput').click()" title="Añadir logo" style="width:36px;height:36px;border-radius:50%;background:rgba(139,95,191,.7);border:none;color:#fff;font-size:14px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;">🏷</button>
+      </div>
       <div class="ig-frame" id="igFrame">
 
         <!-- IG top bar -->
@@ -999,12 +1005,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
       <div style="text-align:center;font-size:9px;color:var(--text3);padding:2px 0 4px;">Arrastra para reordenar</div>
     </div>
 
-    <!-- Floating action buttons on canvas -->
-    <div id="canvasFloatBtns" style="position:absolute;right:8px;top:20%;display:flex;flex-direction:column;gap:6px;z-index:50;">
-      <button onclick="addTextBlock('Texto',{x:20,y:40,w:60,fontSize:24,color:'#fff',bold:false})" title="Añadir texto" style="width:36px;height:36px;border-radius:50%;background:var(--brand);border:none;color:#fff;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;">T+</button>
-      <button onclick="document.getElementById('imgBlockInput').click()" title="Añadir imagen" style="width:36px;height:36px;border-radius:50%;background:var(--brand);border:none;color:#fff;font-size:16px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;">🖼</button>
-      <button onclick="document.getElementById('logoBlockInput').click()" title="Añadir logo" style="width:36px;height:36px;border-radius:50%;background:rgba(139,95,191,.7);border:none;color:#fff;font-size:14px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;">🏷</button>
-    </div>
     <input type="file" id="logoBlockInput" accept="image/*" style="display:none" onchange="addLogoBlock(event)">
 
     <!-- BG controls (desktop) — hidden, moved to design tab -->
@@ -2973,35 +2973,44 @@ function showEmojiDestination(em, originEl) {
 function _buildSeoBanner(keywordSeo, ctaPriority, onInsert) {
   if (!keywordSeo && !ctaPriority) return null;
   const seoBanner = document.createElement('div');
-  seoBanner.style.cssText = 'display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:8px;padding:5px 10px;margin-bottom:8px;';
+  seoBanner.style.cssText = 'background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:10px;padding:9px 12px;margin-bottom:10px;';
+
   if (keywordSeo) {
-    const kwWrap = document.createElement('div');
-    kwWrap.style.cssText = 'display:flex;align-items:center;gap:5px;flex:1;min-width:0;';
-    const kwLabel = document.createElement('span');
-    kwLabel.style.cssText = 'font-size:10px;font-weight:700;color:#10B981;white-space:nowrap;flex-shrink:0;';
-    kwLabel.textContent = '🔍 Keyword SEO';
-    const kwVal = document.createElement('span');
-    kwVal.style.cssText = 'font-size:10px;color:var(--text2);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
-    kwVal.textContent = keywordSeo;
+    const kwRow = document.createElement('div');
+    kwRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:' + (ctaPriority ? '6px' : '0') + ';';
+    const kwLeft = document.createElement('div');
+    kwLeft.style.cssText = 'display:flex;align-items:center;gap:5px;min-width:0;';
+    const kwIcon = document.createElement('span');
+    kwIcon.textContent = '🔍'; kwIcon.style.cssText = 'font-size:12px;flex-shrink:0;';
+    const kwText = document.createElement('div');
+    kwText.style.cssText = 'font-size:10px;color:var(--text3);line-height:1.3;min-width:0;';
+    kwText.innerHTML = '<span style="font-weight:700;color:#10B981;">Keyword SEO</span><br><span style="color:var(--text2);font-size:11px;font-weight:600;">' + keywordSeo + '</span>';
     const kwBtn = document.createElement('button');
-    kwBtn.style.cssText = 'flex-shrink:0;padding:2px 7px;border-radius:4px;border:1px solid rgba(16,185,129,.4);background:rgba(16,185,129,.12);color:#10B981;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;';
+    kwBtn.style.cssText = 'flex-shrink:0;padding:3px 8px;border-radius:5px;border:1px solid rgba(16,185,129,.4);background:rgba(16,185,129,.12);color:#10B981;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;';
     kwBtn.textContent = '+ Insertar';
     kwBtn.onclick = () => {
       onInsert(keywordSeo);
-      kwBtn.textContent = '✓';
-      setTimeout(() => { kwBtn.textContent = '+ Insertar'; }, 1500);
+      kwBtn.textContent = '✓ Insertado';
+      kwBtn.style.background = 'rgba(16,185,129,.25)';
+      setTimeout(() => { kwBtn.textContent = '+ Insertar'; kwBtn.style.background = 'rgba(16,185,129,.12)'; }, 1500);
     };
-    kwWrap.appendChild(kwLabel); kwWrap.appendChild(kwVal); kwWrap.appendChild(kwBtn);
-    seoBanner.appendChild(kwWrap);
+    kwLeft.appendChild(kwIcon); kwLeft.appendChild(kwText);
+    kwRow.appendChild(kwLeft); kwRow.appendChild(kwBtn);
+    seoBanner.appendChild(kwRow);
   }
+
   if (ctaPriority) {
-    const ctaColors = { guardar:'#10B981', compartir_dm:'#6366F1', comentar:'#F59E0B', like:'#F43F5E' };
-    const ctaLabels = { guardar:'Guardar', compartir_dm:'DM', comentar:'Comentar', like:'Like' };
-    const chip = document.createElement('span');
-    chip.style.cssText = 'flex-shrink:0;font-size:10px;color:var(--text3);white-space:nowrap;';
-    chip.innerHTML = '📊 <span style="color:var(--text2);">CTA:</span> <strong style="color:' + (ctaColors[ctaPriority]||'#8B5FBF') + ';">' + (ctaLabels[ctaPriority]||ctaPriority) + '</strong>';
-    seoBanner.appendChild(chip);
+    const ctaRow = document.createElement('div');
+    ctaRow.style.cssText = 'display:flex;align-items:center;gap:5px;';
+    const ctaMap = { guardar:{label:'Guardar',color:'#10B981',desc:'máximo alcance'}, compartir_dm:{label:'Compartir por DM',color:'#6366F1',desc:'señal fuerte'}, comentar:{label:'Comentar',color:'#F59E0B',desc:'genera debate y alcance'}, like:{label:'Like',color:'#F43F5E',desc:'menor impacto algorítmico'} };
+    const ctaInfo = ctaMap[ctaPriority] || { label: ctaPriority, color: '#8B5FBF', desc: 'CTA sugerido' };
+    const ctaLabel = document.createElement('span');
+    ctaLabel.style.cssText = 'font-size:10px;color:var(--text3);';
+    ctaLabel.innerHTML = '📊 <span style="color:var(--text2);font-weight:600;">CTA prioritario:</span> <span style="font-weight:700;color:' + ctaInfo.color + ';">' + ctaInfo.label + '</span> <span>— ' + ctaInfo.desc + '</span>';
+    ctaRow.appendChild(ctaLabel);
+    seoBanner.appendChild(ctaRow);
   }
+
   return seoBanner;
 }
 
@@ -3350,7 +3359,7 @@ function applyAllSlides(slides_data) {
   slides_data.forEach((s, i) => {
     loadSlide(i);
     document.getElementById('canvasBlocks').innerHTML = '';
-    if (s.title)   addTextBlock(s.title,   {y:20, w:88, x:6, fontSize:34, bold:true,  color:currentBrand?.font_color||'#fff', align:'center'});
+    if (s.title)   addTextBlock(_cleanSlideTitle(s.title),   {y:20, w:88, x:6, fontSize:34, bold:true,  color:currentBrand?.font_color||'#fff', align:'center'});
     if (s.content) addTextBlock(s.content, {y:56, w:88, x:6, fontSize:18, bold:false, color:currentBrand?.sub_font_color||'rgba(255,255,255,.85)', align:'center'});
     saveCurrentBlocks();
   });
@@ -3776,6 +3785,14 @@ function renderPostPanel(container) {
 
 /* CAROUSEL panel */
 
+
+// Strip role labels from slide titles before showing on canvas
+function _cleanSlideTitle(title) {
+  if (!title) return '';
+  return title
+    .replace(/^(TITULO|TÍTULO|PORTADA|INTRO|DOLOR\s*\d*[:\-]?\s*|VALOR\s*\d*[:\-]?\s*|ACCION[:\-]?\s*|ITEM\s*\d*[:\-]?\s*)/i, '')
+    .trim();
+}
 function applySlide(idx) {
   const s = iaData.carousel_slides[idx]; if (!s) return;
   // Navigate to that slide first
@@ -3784,7 +3801,7 @@ function applySlide(idx) {
   document.getElementById('canvasBlocks').innerHTML = '';
   slides[currentSlide].blocks = [];
   // Add title block
-  if (s.title) addTextBlock(s.title, { y:25, w:88, x:6, fontSize:36, bold:true, color:currentBrand?.font_color||'#fff' });
+  if (s.title) addTextBlock(_cleanSlideTitle(s.title), { y:25, w:88, x:6, fontSize:36, bold:true, color:currentBrand?.font_color||'#fff' });
   if (s.content) addTextBlock(s.content, { y:55, w:88, x:6, fontSize:20, color:currentBrand?.sub_font_color||'rgba(255,255,255,.85)' });
   toast('✅ Slide aplicado','success');
 }
