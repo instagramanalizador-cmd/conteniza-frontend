@@ -3372,7 +3372,7 @@ function applySlideToCanvas(idx, s) {
   if (idx !== currentSlide) loadSlide(idx);
   document.getElementById('canvasBlocks').innerHTML = '';
   slides[idx].blocks = [];
-  if (s.title)   addTextBlock(s.title,   {y:20, w:88, x:6, fontSize:34, bold:true,  color:currentBrand?.font_color||'#fff', align:'center'});
+  if (s.title)   addTextBlock(_cleanSlideTitle(s.title),   {y:20, w:88, x:6, fontSize:34, bold:true,  color:currentBrand?.font_color||'#fff', align:'center'});
   if (s.content) addTextBlock(s.content, {y:56, w:88, x:6, fontSize:18, bold:false, color:currentBrand?.sub_font_color||'rgba(255,255,255,.85)', align:'center'});
   saveCurrentBlocks();
   updateSlideNav();
