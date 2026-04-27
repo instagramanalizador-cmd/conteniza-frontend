@@ -111,7 +111,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
                    repeating-linear-gradient(90deg,rgba(255,255,255,.1) 0,rgba(255,255,255,.1) 1px,transparent 1px,transparent 33.33%);
 }
 .canvas-grid.on{opacity:1;}
-.canvas-blocks{position:absolute;inset:0;z-index:2;}
+.canvas-blocks{position:absolute;inset:0;z-index:2;isolation:isolate;}
 
 /* Instagram bottom actions */
 .ig-actions{
@@ -3700,54 +3700,6 @@ function renderPostPanel(container) {
 }
 
 /* CAROUSEL panel */
-function renderCarouselPanel(container) {
-  container.innerHTML = '';
-  if (!iaData.carousel_slides?.length) { renderPostPanel(container); return; }
-
-  const roleLabels = {
-    titulo:'TÍTULO',intro:'INTRO',dolor_1:'DOLOR 1',dolor_2:'DOLOR 2',dolor_3:'DOLOR 3',
-    valor_1:'VALOR 1',valor_2:'VALOR 2',valor_3:'VALOR 3',valor_4:'VALOR 4',accion:'ACCIÓN'
-  };
-  const roleColors = {
-    titulo:'#8B5FBF',intro:'#0EA5E9',dolor_1:'#F43F5E',dolor_2:'#F43F5E',dolor_3:'#F43F5E',
-    valor_1:'#10B981',valor_2:'#10B981',valor_3:'#10B981',valor_4:'#10B981',accion:'#F59E0B'
-  };
-
-  const sec = makeIASection('🎠', `${iaData.carousel_slides.length} slides generados`);
-  iaData.carousel_slides.forEach((s, i) => {
-    const card = document.createElement('div');
-    card.className = 'slide-card' + (i===currentSlide?' active':'');
-    const color = roleColors[s.role]||'#8B5FBF';
-    card.innerHTML = `
-      <div class="slide-card-head" style="border-left:3px solid ${color};padding-left:8px;">
-        <span style="font-size:12px;font-weight:700;color:${color};">Slide ${i+1}</span>
-        <span class="slide-card-role" style="background:${color}22;color:${color};">${roleLabels[s.role]||s.role}</span>
-      </div>
-      <div class="slide-card-body">
-        ${s.title ? `<strong style="color:var(--text);">${escHtml(s.title)}</strong>` : ''}
-        ${s.content ? `<br><span style="font-size:11px;">${escHtml(s.content.substring(0,80))}${s.content.length>80?'…':''}</span>` : ''}
-      </div>
-      <div class="slide-card-apply">
-        <button class="slide-apply-btn" onclick="applySlide(${i})">▶ Aplicar a slide ${i+1}</button>
-        <button class="slide-apply-btn" onclick="loadSlide(${i})">📍 Ir a slide ${i+1}</button>
-      </div>
-    `;
-    sec.appendChild(card);
-  });
-  container.appendChild(sec);
-
-  // Also show hooks and CTAs
-  if (iaData.hooks?.length) {
-    const s2 = makeIASection('🎣','Hooks');
-    iaData.hooks.slice(0,3).forEach(h => {
-      s2.appendChild(makeIAOption(h, () => {
-        addTextBlock(h, { y:10, w:88, x:6, fontSize:32, bold:true, color:currentBrand?.font_color||'#fff' });
-        toast('✅ Hook añadido','success');
-      }));
-    });
-    container.appendChild(s2);
-  }
-}
 
 function applySlide(idx) {
   const s = iaData.carousel_slides[idx]; if (!s) return;
@@ -3882,18 +3834,22 @@ function resetHashChips() {
 function updateCaptionHashEmoji(selHash, selEmoji) {
   const capEl = document.getElementById('capFull');
   if (!capEl) return;
-  // Always sync captionFull from textarea (in case user typed directly)
   if (capEl.value) captionFull = capEl.value;
-  // Base caption — remove previous hashtags and emojis
+  // FIX: Remove only trailing hashtags/emojis — never truncate caption paragraphs
   const rawBase = captionFull || '';
-  const base = rawBase.split('\n\n').slice(0,3).join('\n\n').replace(/#\S+/g,'').replace(/[\u{1F300}-\u{1FFFF}]/gu,'').replace(/\s+$/,'').trim();
-  // Build suffix
+  const base = rawBase
+    .replace(/\n\n[#\s\u{1F300}-\u{1FAFF}][^\n]*/gu, '')  // remove trailing hash/emoji paragraphs
+    .replace(/#\S+/g, '')                                    // remove inline hashtags
+    .replace(/[\u{1F300}-\u{1FAFF}]/gu, '')                 // remove inline emojis
+    .replace(/[ \t]+$/gm, '')                               // trim trailing spaces per line
+    .replace(/\n{3,}/g, '\n\n')                             // collapse excess blank lines
+    .trim();
   const emojiStr = selEmoji.size ? [...selEmoji].join(' ') : '';
   const hashStr  = selHash.size  ? [...selHash].map(t=>t.startsWith('#')?t:'#'+t).join(' ') : '';
-  const suffix = [emojiStr, hashStr].filter(Boolean).join('  ');
-  const _NL2 = String.fromCharCode(10,10);
-  capEl.value  = base + (suffix ? _NL2 + suffix : '');
-  captionFull  = capEl.value;
+  const suffix   = [emojiStr, hashStr].filter(Boolean).join('  ');
+  const NL2      = String.fromCharCode(10,10);
+  capEl.value    = base + (suffix ? NL2 + suffix : '');
+  captionFull    = capEl.value;
   updateCaptionPreview();
 }
 
@@ -4942,34 +4898,40 @@ function applyPropOpacity() {
 function bringForward() {
   const el = document.getElementById(selectedId);
   if (!el) { toast('Selecciona un bloque primero','info'); return; }
-  const allBlocks = document.querySelectorAll('.eblock');
-  const maxZ = Math.max(...Array.from(allBlocks).map(b => parseInt(b.style.zIndex)||1));
-  const cur  = parseInt(el.style.zIndex) || 1;
-  const newZ = cur >= maxZ ? maxZ + 1 : cur + 1;
+  const allBlocks = Array.from(document.querySelectorAll('.eblock'));
+  const zs = allBlocks.map(b => ({ el: b, z: parseInt(b.style.zIndex) || 1 }));
+  const cur = parseInt(el.style.zIndex) || 1;
+  // Find next block above (smallest z > cur)
+  const above = zs.filter(b => b.z > cur && b.el !== el).sort((a,b) => a.z - b.z)[0];
+  const newZ = above ? above.z + 1 : cur + 1;
   el.style.zIndex = newZ;
-  // Visual feedback: flash outline
+  // Visual feedback
   el.style.outline = '2px solid var(--brand)';
-  setTimeout(() => { el.style.outline = ''; }, 400);
+  el.style.outlineOffset = '2px';
+  setTimeout(() => { el.style.outline = ''; el.style.outlineOffset = ''; }, 500);
   const blk = slides[currentSlide]?.blocks?.find(b => b.id === selectedId);
   if (blk) blk.zIndex = newZ;
-  saveCurrentBlocks();
-  historySave();
-  toast('↑ Subido a capa ' + newZ,'info');
+  saveCurrentBlocks(); historySave();
+  toast('↑ Capa ' + newZ, 'info');
 }
 
 function sendBackward() {
   const el = document.getElementById(selectedId);
   if (!el) { toast('Selecciona un bloque primero','info'); return; }
-  const cur  = parseInt(el.style.zIndex) || 1;
-  const newZ = Math.max(1, cur - 1);
+  const allBlocks = Array.from(document.querySelectorAll('.eblock'));
+  const zs = allBlocks.map(b => ({ el: b, z: parseInt(b.style.zIndex) || 1 }));
+  const cur = parseInt(el.style.zIndex) || 1;
+  // Find next block below (largest z < cur)
+  const below = zs.filter(b => b.z < cur && b.el !== el).sort((a,b) => b.z - a.z)[0];
+  const newZ = below ? Math.max(1, below.z - 1) : Math.max(1, cur - 1);
   el.style.zIndex = newZ;
   el.style.outline = '2px solid #F59E0B';
-  setTimeout(() => { el.style.outline = ''; }, 400);
+  el.style.outlineOffset = '2px';
+  setTimeout(() => { el.style.outline = ''; el.style.outlineOffset = ''; }, 500);
   const blk = slides[currentSlide]?.blocks?.find(b => b.id === selectedId);
   if (blk) blk.zIndex = newZ;
-  saveCurrentBlocks();
-  historySave();
-  toast('↓ Bajado a capa ' + newZ,'info');
+  saveCurrentBlocks(); historySave();
+  toast('↓ Capa ' + newZ, 'info');
 }
 
 /* ══ TEXT SHADOW ══ */
@@ -5885,7 +5847,7 @@ async function copSend(preset) {
   const msg   = preset || input?.value?.trim();
   if (!msg) return;
 
-  if (!_copAnalysisId) {
+  if (!iaData) {
     copAddMsg('ai', '⚠️ El copiloto necesita un análisis generado. Vuelve al inicio y genera contenido primero.');
     return;
   }
@@ -5899,33 +5861,40 @@ async function copSend(preset) {
 
   copAddMsg('user', msg);
   _copHistory.push({ role:'user', content:msg });
-
   const typing = copAddMsg('typing', '✍️ Escribiendo…');
 
   try {
+    const body = { message: msg, history: _copHistory.slice(-8) };
+    if (_copAnalysisId) {
+      body.analysis_id = _copAnalysisId;
+    } else {
+      body.ia_context = {
+        niche:            iaData.niche || iaData.detected_niche || '',
+        description:      iaData.description || '',
+        publication_type: iaData.publicationType || 'post',
+        tone:             iaData.tone || 'Profesional',
+        hooks:            (iaData.hooks || []).slice(0,3),
+        captions:         (iaData.captions || []).slice(0,2).map(c => c.substring(0,200)),
+        ctas:             (iaData.ctas || []).slice(0,3),
+        hashtags:         (iaData.hashtags || []).slice(0,8),
+      };
+    }
+
     const r = await fetch(API_URL + '/analyze/refine', {
       method: 'POST',
       headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
-      body: JSON.stringify({
-        analysis_id: _copAnalysisId,
-        message:     msg,
-        history:     _copHistory.slice(-8)
-      })
+      body: JSON.stringify(body)
     });
     const d = await r.json();
     typing.remove();
 
-    // Handle plan restriction clearly
     if (r.status === 403 && d.upgrade_required) {
       const msg403 = document.createElement('div');
-      msg403.innerHTML = `🔒 El Copiloto IA es exclusivo de <strong>Pro y Premium</strong>.<br>
-        <a href="index.html#planes" style="color:var(--brand);font-weight:700;font-size:11px;margin-top:4px;display:inline-block;">Ver planes →</a>`;
+      msg403.innerHTML = '🔒 El Copiloto IA es exclusivo de <strong>Pro y Premium</strong>.<br><a href="index.html#planes" style="color:var(--brand);font-weight:700;font-size:11px;margin-top:4px;display:inline-block;">Ver planes →</a>';
       const bubble = copAddMsg('ai', '');
-      bubble.innerHTML = '';
-      bubble.appendChild(msg403);
+      bubble.innerHTML = ''; bubble.appendChild(msg403);
       return;
     }
-
     if (r.status === 429) throw new Error('⏳ Demasiadas solicitudes. Espera un momento.');
     if (!r.ok || !d.success) throw new Error(d.error || 'Error del servidor');
 
@@ -5933,81 +5902,101 @@ async function copSend(preset) {
     _copHistory.push({ role:'assistant', content:d.reply });
     if (_copHistory.length > 16) _copHistory = _copHistory.slice(-16);
 
-    const NL2 = String.fromCharCode(10,10);
-    // Smart apply button
-    const reply = d.reply.trim();
-    const lastMsg = document.querySelector('#copMessages .cop-msg.ai:last-child');
-    if (lastMsg && reply.length > 0) {
-      const msgLower = msg.toLowerCase();
-      const isCaption = msgLower.includes('nuevo caption') || msgLower.includes('reescribe') || msgLower.includes('caption completo') || msgLower.includes('dame un caption');
-      const isHashtag = !isCaption && (msgLower.includes('hashtag') || (reply.match(/#\S+/g)||[]).length >= 3);
-      const isHook    = !isCaption && (msgLower.includes('hook') || msgLower.includes('gancho'));
-      const isCTA     = !isCaption && (msgLower.includes('cta') || msgLower.includes('llamada a la accion'));
+    const reply    = d.reply.trim();
+    const msgLower = msg.toLowerCase();
+    const lastMsg  = document.querySelector('#copMessages .cop-msg.ai:last-child');
+    if (!lastMsg || !reply.length) return;
 
-      const wrap = document.createElement('div');
-      wrap.style.cssText = 'display:flex;gap:5px;margin-top:8px;flex-wrap:wrap;';
+    const isNewCaption = msgLower.includes('nuevo caption') || msgLower.includes('dame un caption') ||
+                         msgLower.includes('caption completo') || msgLower.includes('reescribe el caption');
+    const isHashtag    = !isNewCaption && (msgLower.includes('hashtag') || msgLower.includes('etiqueta') ||
+                         (reply.match(/#\S+/g)||[]).length >= 3);
+    const isHook       = !isNewCaption && !isHashtag && (msgLower.includes('hook') || msgLower.includes('gancho'));
+    const isCTA        = !isNewCaption && !isHashtag && !isHook &&
+                         (msgLower.includes('cta') || msgLower.includes('llamada'));
 
-      const applyBtn = document.createElement('button');
-      applyBtn.style.cssText = 'flex:1;padding:6px 10px;border-radius:6px;background:var(--brand);border:none;color:#fff;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;';
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'margin-top:8px;';
+    const applyBtn = document.createElement('button');
+    applyBtn.style.cssText = 'width:100%;padding:7px 10px;border-radius:6px;background:var(--brand);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
+    applyBtn.textContent = '✅ Aplicar';
 
-      if (isHashtag) {
-        applyBtn.textContent = '# Aplicar hashtags';
-        applyBtn.onclick = () => {
-          const tags = reply.match(/#\S+/g) || [];
-          const capEl = document.getElementById('capFull');
-          if (capEl && tags.length) {
-            const base = (capEl.value||captionFull).replace(/#\S+/g,'').replace(/\s+$/,'').trim();
-            capEl.value = base + String.fromCharCode(10,10) + tags.join(' ');
-            captionFull = capEl.value; updateCaptionPreview();
-            toast('Hashtags aplicados','success'); applyBtn.textContent = '✓ Aplicado';
-          }
-        };
-      } else if (isCaption) {
-        applyBtn.textContent = '📝 Reemplazar caption';
-        applyBtn.onclick = () => {
-          const capEl = document.getElementById('capFull');
-          if (capEl) { capEl.value = reply; captionFull = reply; updateCaptionPreview(); toast('Caption reemplazado','success'); applyBtn.textContent = '✓'; }
-        };
-      } else if (isHook) {
-        applyBtn.textContent = '🎣 Aplicar hook';
-        applyBtn.onclick = () => {
-          const capEl = document.getElementById('capFull');
-          if (capEl) {
-            const NL2=String.fromCharCode(10,10); const parts = (capEl.value||captionFull).split(NL2);
-            parts[0] = reply; capEl.value = parts.join(NL2);
-            captionFull = capEl.value; updateCaptionPreview();
-            toast('Hook aplicado','success'); applyBtn.textContent = '✓';
-          }
-        };
-      } else if (isCTA) {
-        applyBtn.textContent = '📣 Aplicar CTA';
-        applyBtn.onclick = () => {
-          const capEl = document.getElementById('capFull');
-          if (capEl) {
-            const NL2=String.fromCharCode(10,10); const parts = (capEl.value||captionFull).split(NL2);
-            parts[parts.length-1] = reply; capEl.value = parts.join(NL2);
-            captionFull = capEl.value; updateCaptionPreview();
-            toast('CTA aplicado','success'); applyBtn.textContent = '✓';
-          }
-        };
-      } else {
-        applyBtn.textContent = '✅ Aplicar al caption';
-        applyBtn.onclick = () => {
-          const capEl = document.getElementById('capFull');
-          if (capEl) { capEl.value = reply; captionFull = reply; updateCaptionPreview(); toast('Aplicado','success'); applyBtn.textContent = '✓'; }
-        };
-      }
-      wrap.appendChild(applyBtn);
-
-      if (reply.length < 200) {
-        const canvasBtn = document.createElement('button');
-        canvasBtn.style.cssText = 'padding:6px 10px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;';
-        canvasBtn.textContent = '+ Canvas';
-        canvasBtn.onclick = () => { addTextBlock(reply, {y:10,w:88,x:6,fontSize:28,bold:true,color:currentBrand?.font_color||'#fff'}); toast('Añadido al canvas','success'); canvasBtn.textContent='✓'; };
-        wrap.appendChild(canvasBtn);
-      }
-      lastMsg.appendChild(wrap);
+    if (isHashtag) {
+      const tags = reply.match(/#\S+/g) || [];
+      applyBtn.onclick = () => {
+        if (!tags.length) { toast('No encontré hashtags en la respuesta','info'); return; }
+        const hashRow = document.querySelector('.hash-chip')?.parentElement;
+        if (hashRow) {
+          hashRow.innerHTML = '';
+          const newSelH = new Set();
+          const newSelE = new Set();
+          tags.slice(0,8).forEach(tag => {
+            const chip = document.createElement('button');
+            chip.className = 'hash-chip';
+            chip.textContent = tag.startsWith('#') ? tag : '#'+tag;
+            chip.onclick = () => {
+              const t = tag.replace(/^#/,'');
+              if (newSelH.has(t)) { newSelH.delete(t); chip.classList.remove('active'); }
+              else if (newSelH.size < 3) { newSelH.add(t); chip.classList.add('active'); }
+              else { toast('Máximo 3 hashtags','info'); return; }
+              updateCaptionHashEmoji(newSelH, newSelE);
+            };
+            hashRow.appendChild(chip);
+          });
+        }
+        const capEl = document.getElementById('capFull');
+        if (capEl) {
+          const base = (capEl.value || captionFull).replace(/#\S+/g,'').replace(/\s+$/,'').trim();
+          capEl.value = base + String.fromCharCode(10,10) + tags.slice(0,7).join(' ');
+          captionFull = capEl.value; updateCaptionPreview();
+        }
+        toast('Hashtags aplicados','success');
+        applyBtn.textContent = '✓ Aplicado'; applyBtn.disabled = true;
+      };
+    } else if (isNewCaption) {
+      const cleanCaption = reply.replace(/#\S+/g,'').replace(/[\u{1F300}-\u{1FAFF}]/gu,'').replace(/\n{3,}/g,'\n\n').trim();
+      applyBtn.onclick = () => {
+        const capEl = document.getElementById('capFull');
+        if (capEl) { capEl.value = cleanCaption; captionFull = cleanCaption; updateCaptionPreview(); resetHashChips(); }
+        toast('Caption aplicado','success');
+        applyBtn.textContent = '✓ Aplicado'; applyBtn.disabled = true;
+      };
+    } else if (isHook) {
+      applyBtn.onclick = () => {
+        const capEl = document.getElementById('capFull');
+        if (capEl) {
+          const NL2 = String.fromCharCode(10,10);
+          const parts = (capEl.value || captionFull).split(NL2);
+          parts[0] = reply; capEl.value = parts.join(NL2);
+          captionFull = capEl.value; updateCaptionPreview();
+        }
+        toast('Hook aplicado','success');
+        applyBtn.textContent = '✓ Aplicado'; applyBtn.disabled = true;
+      };
+    } else if (isCTA) {
+      applyBtn.onclick = () => {
+        const capEl = document.getElementById('capFull');
+        if (capEl) {
+          const NL2 = String.fromCharCode(10,10);
+          const parts = (capEl.value || captionFull).split(NL2);
+          parts[parts.length-1] = reply; capEl.value = parts.join(NL2);
+          captionFull = capEl.value; updateCaptionPreview();
+        }
+        toast('CTA aplicado','success');
+        applyBtn.textContent = '✓ Aplicado'; applyBtn.disabled = true;
+      };
+    } else {
+      const cleanReply = reply.replace(/#\S+/g,'').replace(/[\u{1F300}-\u{1FAFF}]/gu,'').replace(/\n{3,}/g,'\n\n').trim();
+      applyBtn.onclick = () => {
+        const capEl = document.getElementById('capFull');
+        if (capEl) { capEl.value = cleanReply; captionFull = cleanReply; updateCaptionPreview(); }
+        toast('Aplicado','success');
+        applyBtn.textContent = '✓ Aplicado'; applyBtn.disabled = true;
+      };
     }
+
+    wrap.appendChild(applyBtn);
+    lastMsg.appendChild(wrap);
 
   } catch(e) {
     typing.remove();
@@ -6018,9 +6007,6 @@ async function copSend(preset) {
     document.getElementById('copInput')?.focus();
   }
 }
-
-
-// Inject presets after DOM ready (since function is called in template literal before JS runs)
 window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('bgPresetRow').innerHTML =
     BG_PRESETS.map(([c1,c2]) =>

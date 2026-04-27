@@ -940,12 +940,16 @@ async function apiFetch(url, options = {}, timeoutMs = 30000) {
     const res = await fetch(url, options);
     clearTimeout(timer);
     if (res.status === 401) {
+      // Only force logout if the main app isn't already showing (prevents redirect after goBack)
+      const mainAppVisible = !document.getElementById('mainApp')?.classList.contains('hidden');
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       sessionStorage.removeItem('conteniza_user');
       currentUser = null;
-      showNotification('Tu sesión expiró. Inicia sesión de nuevo.', 'error');
-      setTimeout(() => { showAuthScreen(); }, 1200);
+      if (!mainAppVisible) {
+        showNotification('Tu sesión expiró. Inicia sesión de nuevo.', 'error');
+        setTimeout(() => { showAuthScreen(); }, 1200);
+      }
       const err = new Error('Sesión expirada'); err.status = 401; throw err;
     }
     return res;
@@ -1081,7 +1085,7 @@ async function showMainApp() {
   }
 
   updateUserPanel();
-  await syncCredits();
+  syncCredits();   // FIX: no await — muestra la app inmediatamente con datos del localStorage, sincroniza en background
   updateFormatBadges();
   updateCreditsBar();
   updateTopbarForLoggedIn();
@@ -1137,7 +1141,7 @@ function updateUserPanel() {
 
 async function syncCredits() {
   try {
-    const r = await apiFetch(`${API_URL}/user/profile`);
+    const r = await apiFetch(`${API_URL}/user/profile`, {}, 45000); // 45s — Render cold start puede tardar 30s
     if (!r.ok) return;
     const d = await r.json();
     if (d.user) {
@@ -1676,55 +1680,101 @@ async function generateContent(event) {
 }
 
 /* ── SIDEBAR (historial) ── */
-function openSidebar() {
-  // Mostrar modal de historial inline — sin ir al editor
-  let modal = document.getElementById('historialModal');
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'historialModal';
-    modal.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.55);';
-    modal.innerHTML = `
-      <div style="background:#1a1a2e;border-radius:20px 20px 0 0;width:100%;max-width:620px;max-height:75vh;overflow-y:auto;padding:20px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-          <span style="font-size:15px;font-weight:700;color:#fff;">📜 Historial reciente</span>
-          <button onclick="document.getElementById('historialModal').remove()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;">✕</button>
+async function openSidebar() {
+  document.getElementById('historialModal')?.remove();
+  const plan = (currentUser?.plan_type || 'free').toLowerCase();
+  const limitLabel = plan === 'premium' ? 'Ilimitado' : plan === 'pro' ? 'Últimos 50' : 'Últimos 5';
+  const fetchLimit = plan === 'premium' ? 200 : plan === 'pro' ? 50 : 5;
+
+  const modal = document.createElement('div');
+  modal.id = 'historialModal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;justify-content:flex-end;background:rgba(0,0,0,.5);';
+  modal.innerHTML = `
+    <style>@keyframes slideInRight{from{transform:translateX(100%)}to{transform:translateX(0)}}</style>
+    <div style="background:#1a1a2e;width:min(420px,100vw);height:100%;display:flex;flex-direction:column;box-shadow:-4px 0 24px rgba(0,0,0,.4);animation:slideInRight .2s ease;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0;">
+        <div>
+          <div style="font-size:15px;font-weight:800;color:#fff;">📜 Historial</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px;">${limitLabel} · Plan ${plan.toUpperCase()}</div>
         </div>
-        <div id="historialList" style="display:flex;flex-direction:column;gap:10px;"></div>
-      </div>`;
-    document.body.appendChild(modal);
-    modal.onclick = e => { if (e.target === modal) modal.remove(); };
-  }
-  // Load from localStorage
-  const list = document.getElementById('historialList');
-  let history = [];
-  try { history = JSON.parse(localStorage.getItem('conteniza_history') || '[]'); } catch(_) {}
-  if (!history.length) {
-    list.innerHTML = '<div style="color:rgba(255,255,255,.4);font-size:13px;text-align:center;padding:24px 0;">No hay análisis guardados aún.<br>Genera contenido para verlo aquí.</div>';
-    return;
-  }
-  list.innerHTML = '';
-  history.slice().reverse().forEach((item, i) => {
-    const d = document.createElement('div');
-    d.style.cssText = 'background:rgba(255,255,255,.06);border-radius:12px;padding:12px 14px;cursor:pointer;border:1px solid rgba(255,255,255,.08);transition:background .12s;';
-    d.onmouseover = () => d.style.background = 'rgba(139,95,191,.2)';
-    d.onmouseout  = () => d.style.background = 'rgba(255,255,255,.06)';
-    const fmt = item.publicationType || 'post';
-    const fmtIcon = {post:'📸',carousel:'🎠',story:'📖',reel:'🎬'}[fmt] || '📸';
-    const date = item._savedAt ? new Date(item._savedAt).toLocaleDateString('es-ES',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
-    d.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:space-between;">
-        <span style="font-size:12px;font-weight:700;color:#8B5FBF;">${fmtIcon} ${fmt.toUpperCase()}</span>
-        <span style="font-size:10px;color:rgba(255,255,255,.35);">${date}</span>
+        <button onclick="document.getElementById('historialModal').remove()" style="background:rgba(255,255,255,.08);border:none;color:rgba(255,255,255,.6);width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer;">✕</button>
       </div>
-      <div style="font-size:13px;color:rgba(255,255,255,.8);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.description || '–'}</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px;">${item.niche || ''}</div>`;
-    d.onclick = () => {
-      sessionStorage.setItem('conteniza_editor_data', JSON.stringify(item));
-      if (currentUser) sessionStorage.setItem('conteniza_user', JSON.stringify(currentUser));
-      window.location.href = 'editor.html';
+      <div id="historialList" style="flex:1;overflow-y:auto;padding:12px;">
+        <div style="text-align:center;padding:40px 0;color:rgba(255,255,255,.3);font-size:13px;">⏳ Cargando…</div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+
+  const list = document.getElementById('historialList');
+  try {
+    const token = localStorage.getItem('token');
+    const r = await fetch(`${API_URL}/analyze?limit=${fetchLimit}`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const d = await r.json();
+    if (!r.ok || !d.success) throw new Error(d.error || 'Error');
+    const analyses = d.analyses || [];
+    if (!analyses.length) {
+      list.innerHTML = '<div style="text-align:center;padding:40px 16px;color:rgba(255,255,255,.35);font-size:13px;line-height:1.6;">No hay análisis guardados aún.<br>Genera tu primer contenido para verlo aquí.</div>';
+      return;
+    }
+    list.innerHTML = '';
+    const fmtIcon = { post:'📸', carousel:'🎠', story:'📖', reel:'🎬' };
+    analyses.forEach(item => {
+      const card = document.createElement('div');
+      card.style.cssText = 'background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:13px 14px;margin-bottom:8px;cursor:pointer;transition:all .15s;';
+      card.onmouseover = () => { card.style.background='rgba(139,95,191,.15)'; card.style.borderColor='rgba(139,95,191,.4)'; };
+      card.onmouseout  = () => { card.style.background='rgba(255,255,255,.05)'; card.style.borderColor='rgba(255,255,255,.08)'; };
+      const pubType = item.publication_type || 'post';
+      const icon = fmtIcon[pubType] || '📸';
+      const date = item.created_at ? new Date(item.created_at).toLocaleDateString('es-ES',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+      const desc = (item.input_description || item.description || '–').substring(0,80);
+      card.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-size:11px;font-weight:800;color:#8B5FBF;letter-spacing:.04em;">${icon} ${pubType.toUpperCase()}</span>
+          <span style="font-size:10px;color:rgba(255,255,255,.3);">${date}</span>
+        </div>
+        <div style="font-size:13px;color:rgba(255,255,255,.85);line-height:1.4;margin-bottom:5px;">${desc}${desc.length>=80?'…':''}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:10px;color:rgba(255,255,255,.35);">${item.niche||''}</span>
+          <span style="font-size:10px;color:#8B5FBF;font-weight:700;">Usar este →</span>
+        </div>`;
+      card.onclick = () => reuseAnalysis(item);
+      list.appendChild(card);
+    });
+  } catch(e) {
+    list.innerHTML = `<div style="text-align:center;padding:32px 16px;color:rgba(255,255,255,.35);font-size:13px;">Error cargando historial.<br><small>${e.message}</small></div>`;
+  }
+}
+
+async function reuseAnalysis(item) {
+  document.getElementById('historialModal')?.remove();
+  try {
+    const token = localStorage.getItem('token');
+    const r = await fetch(`${API_URL}/analyze/${item.id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const d = await r.json();
+    const analysis = d.analysis || d;
+    const safeArr = v => { try { const p = JSON.parse(v||'[]'); return Array.isArray(p)?p:[]; } catch { return Array.isArray(v)?v:[]; } };
+    const editorData = {
+      id:              item.id,
+      publicationType: item.publication_type || 'post',
+      niche:           item.niche || '',
+      description:     item.input_description || '',
+      tone:            item.tone || 'Profesional',
+      hooks:           safeArr(analysis.hooks),
+      captions:        safeArr(analysis.captions),
+      ctas:            safeArr(analysis.ctas),
+      hashtags:        safeArr(analysis.hashtags),
+      emojis:          safeArr(analysis.emojis),
+      carousel_slides: safeArr(analysis.carousel_slides),
+      stories:         safeArr(analysis.stories),
+      thumbnails:      safeArr(analysis.thumbnails),
     };
-    list.appendChild(d);
-  });
+    sessionStorage.setItem('conteniza_editor_data', JSON.stringify(editorData));
+    if (currentUser) sessionStorage.setItem('conteniza_user', JSON.stringify(currentUser));
+    window.location.href = 'editor.html';
+  } catch(e) {
+    showNotification('Error cargando el análisis: ' + e.message, 'error');
+  }
 }
 
 /* ── ADMIN ── */
