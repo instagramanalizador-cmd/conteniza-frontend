@@ -1594,6 +1594,7 @@ let currentUser     = null;
 let currentBrand    = null;
 let imgBank         = [];
 let blockIdCounter  = 0;
+let _globalZCounter = 10;   // FIX: was missing — used by makeBlock for z-index
 let captionFull     = '';
 let selectedHashtags = new Set();
 
@@ -4894,7 +4895,6 @@ function applyPropOpacity() {
 }
 
 /* ══ LAYER ORDER ══ */
-let _zCounter = 10;
 
 function bringForward() {
   const el = document.getElementById(selectedId); if (!el) { toast('Selecciona un bloque primero','info'); return; }
