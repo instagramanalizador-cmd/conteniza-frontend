@@ -1576,6 +1576,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
    CONTENIZA EDITOR V3
 ══════════════════════════════════════════════════ */
 const API_URL = 'https://conteniza-backend.onrender.com/api';
+const KEYS = {
+  token:   'token',
+  user:    'user',
+  editorData: 'conteniza_editor_data',
+};
 const R2_URL  = 'https://pub-da9915580c9244c6b6b7808979bce9e9.r2.dev';
 
 const FORMATS = {
@@ -1739,6 +1744,8 @@ function loadIAData() {
       });
       if (!slides.length) slides = [newSlide()];
       currentSlide = 0;
+      loadSlide(0);
+      updateCanvasBg();
     }
 
     // Caption starts empty — user selects manually
@@ -1746,10 +1753,14 @@ function loadIAData() {
     const _capEl = document.getElementById('capFull');
     if (_capEl) _capEl.value = '';
 
+    // ── Apply slide to canvas BEFORE rendering panels ──
+    loadSlide(0);        // renders bg gradient + any saved blocks
+    updateCanvasBg();    // ensures gradient is painted
     renderIAPanel();
     updateSlideNav();
     renderSlideStrip();
     resizeCanvas();
+    positionCanvasButtons();
     setTimeout(initCopiloto, 100);
     // Show reset wizard btn if tutorial was already done
     if (localStorage.getItem(WIZARD_KEY)) {
