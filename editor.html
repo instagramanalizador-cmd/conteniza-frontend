@@ -132,10 +132,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 
 /* ── SLIDE STRIP ── */
 .slide-strip{
-  display:none;gap:6px;padding:6px 12px;overflow-x:auto;
-  width:100%;flex-shrink:0;background:var(--bg);
-  border-top:1px solid var(--border);
-  justify-content:center;
+  display:none;gap:6px;padding:6px 8px;overflow-x:auto;
+  flex:1;min-width:0;background:var(--bg);
+  justify-content:center;align-items:center;
 }
 .slide-strip.visible{display:flex;}
 .slide-strip::-webkit-scrollbar{height:3px;}
@@ -999,7 +998,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
     <div style="display:none;flex-direction:column;width:100%;flex-shrink:0;" id="carouselNav">
       <div style="display:flex;align-items:center;gap:6px;padding:4px 12px;border-top:1px solid var(--border);background:var(--bg);">
         <button onclick="prevSlide()" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:14px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;">‹</button>
-        <div class="slide-strip" id="slideStrip" style="flex:1;"></div>
+        <div class="slide-strip" id="slideStrip"></div>
         <button onclick="nextSlide()" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:14px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;">›</button>
         <button onclick="addSlide()" title="Añadir slide" style="width:28px;height:28px;border-radius:50%;border:1.5px dashed var(--border2);background:transparent;color:var(--text3);font-size:16px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;">+</button>
       </div>
@@ -1250,10 +1249,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
     <!-- Tabs simplificados -->
     <div class="ia-tabs" id="iaTabs">
       <div class="ia-tab active" data-tab="content" onclick="switchIaTab('content')" id="tabPost">✍️ Post</div>
-      <div class="ia-tab" data-tab="caption" onclick="switchIaTab('caption')" id="tabCaption" style="display:none;">📝 Caption</div>
       <div class="ia-tab" data-tab="carousel" onclick="switchIaTab('carousel')" id="tabCarousel" style="display:none;">🎠 Carrusel</div>
+      <div class="ia-tab" data-tab="caption" onclick="switchIaTab('caption')" id="tabCaption" style="display:none;">📝 Caption</div>
       <div class="ia-tab" data-tab="design" onclick="switchIaTab('design')" id="tabDesign">🎨 Diseño</div>
-      <div class="ia-tab" data-tab="brand" onclick="switchIaTab('brand')" id="tabBrand">🏷 Marca</div>
+      <div class="ia-tab" data-tab="brand" onclick="switchIaTab('brand')" id="tabBrand" style="display:none;">🏷 Marca</div>
 
     </div>
 
@@ -1465,6 +1464,24 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
               <option value="Dancing Script">Dancing Script</option>
             </select>
           </div>
+          <!-- Colores de texto -->
+          <div style="margin-bottom:12px;">
+            <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px;">Color del texto principal</div>
+            <div style="display:flex;align-items:center;gap:10px;background:var(--surf2);padding:8px 10px;border-radius:var(--r);border:1px solid var(--border2);">
+              <input type="color" id="ovFontColor" value="#ffffff" oninput="document.getElementById('ovFontColorSwatch').style.background=this.value" style="width:32px;height:32px;border:none;border-radius:6px;cursor:pointer;padding:0;">
+              <div id="ovFontColorSwatch" style="width:28px;height:28px;border-radius:6px;background:#ffffff;border:1px solid var(--border2);"></div>
+              <span style="font-size:11px;color:var(--text3);">Hooks, títulos</span>
+            </div>
+          </div>
+          <div style="margin-bottom:16px;">
+            <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px;">Color del texto secundario</div>
+            <div style="display:flex;align-items:center;gap:10px;background:var(--surf2);padding:8px 10px;border-radius:var(--r);border:1px solid var(--border2);">
+              <input type="color" id="ovSubFontColor" value="#cccccc" oninput="document.getElementById('ovSubFontColorSwatch').style.background=this.value" style="width:32px;height:32px;border:none;border-radius:6px;cursor:pointer;padding:0;">
+              <div id="ovSubFontColorSwatch" style="width:28px;height:28px;border-radius:6px;background:#cccccc;border:1px solid var(--border2);"></div>
+              <span style="font-size:11px;color:var(--text3);">Subtítulos, contenido</span>
+            </div>
+          </div>
+
           <!-- Logo -->
           <div style="margin-bottom:16px;">
             <div style="font-size:11px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">🏷 Logo</div>
@@ -1654,16 +1671,15 @@ window.addEventListener('DOMContentLoaded', () => {
   setupMobileDetect();
   loadIAData();
   loadUser();
-  // Use rAF to ensure flex layout has rendered before measuring
   requestAnimationFrame(() => {
     initFormatTabs(currentFormat);
     resizeCanvas();
-    window.addEventListener('resize', () => requestAnimationFrame(resizeCanvas));
-    historySave(); // save initial empty state
-    startAutoSave(); // autosave every 60s
+    positionCanvasButtons();
+    window.addEventListener('resize', () => requestAnimationFrame(() => { resizeCanvas(); positionCanvasButtons(); }));
+    historySave();
+    startAutoSave();
   });
   document.addEventListener('keydown', handleKeyboard);
-  // Init bg presets
   document.getElementById('bgPresetRow').innerHTML =
     BG_PRESETS.map(([c1,c2]) =>
       `<div class="bg-preset" style="background:linear-gradient(135deg,${c1},${c2});" onclick="applyBgPreset('${c1}','${c2}')"></div>`
@@ -2887,15 +2903,24 @@ function switchIaTab(tab) {
 function updateTabsForFormat(fmt) {
   const isCarousel = fmt === 'carousel';
   const fmtLabels  = { post:'✍️ Post', story:'📱 Story', reel:'🎬 Reel', carousel:'🎠 Carrusel' };
-  const postTab = document.getElementById('tabPost');
-  const carTab  = document.getElementById('tabCarousel');
-  const capTab = document.getElementById('tabCaption');
+  const postTab  = document.getElementById('tabPost');
+  const carTab   = document.getElementById('tabCarousel');
+  const capTab   = document.getElementById('tabCaption');
+  const brandTab = document.getElementById('tabBrand');
+
   if (postTab) {
     postTab.style.display = isCarousel ? 'none' : '';
     postTab.textContent = fmtLabels[fmt] || '✍️ Post';
   }
-  if (capTab) capTab.style.display = isCarousel ? '' : 'none';
-  if (carTab) carTab.style.display = isCarousel ? '' : 'none';
+  if (capTab)  capTab.style.display  = isCarousel ? '' : 'none';
+  if (carTab)  carTab.style.display  = isCarousel ? '' : 'none';
+
+  // Marca tab: solo Premium
+  if (brandTab) {
+    const isPremium = currentUser?.plan_type === 'premium';
+    brandTab.style.display = isPremium ? '' : 'none';
+  }
+
   if (isCarousel && document.querySelector('.ia-tab.active')?.dataset?.tab === 'content') {
     switchIaTab('carousel');
   } else if (!isCarousel && document.querySelector('.ia-tab.active')?.dataset?.tab === 'carousel') {
@@ -3197,6 +3222,9 @@ function renderPostContentPanel(container) {
   const copBtn = document.createElement('button');
   copBtn.style.cssText = 'width:100%;padding:10px;border-radius:var(--r);background:var(--brand-subtle);border:1.5px solid var(--brand-border2);color:var(--brand);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;';
   copBtn.innerHTML = '🤖 Mejorar con IA Copiloto';
+  const copHint = document.createElement('div');
+  copHint.style.cssText = 'font-size:10px;color:var(--text3);text-align:center;margin-top:3px;';
+  copHint.textContent = 'Selecciona un caption primero con ✅ Usar este caption';
   let copOpen = false;
   const copPanel = document.createElement('div');
   copPanel.style.cssText = 'display:none;margin-top:8px;border:1px solid var(--border2);border-radius:var(--rlg);overflow:hidden;';
@@ -3267,7 +3295,19 @@ function renderCarouselContentPanel(container) {
   const carCopPanel = document.createElement('div');
   carCopPanel.style.cssText = 'display:none;margin-bottom:8px;border:1px solid var(--border2);border-radius:var(--r);overflow:hidden;';
   carCopPanel.innerHTML = document.getElementById('iaCop')?.innerHTML || '';
-  carCop.onclick = () => { _carCopOpen=!_carCopOpen; carCopPanel.style.display=_carCopOpen?'block':'none'; if(_carCopOpen)setTimeout(scrollCopMessages,100); };
+  carCop.onclick = () => {
+    _carCopOpen = !_carCopOpen;
+    carCopPanel.style.display = _carCopOpen ? 'block' : 'none';
+    if (_carCopOpen) {
+      setTimeout(scrollCopMessages, 100);
+      // Pre-fill input with slide context hint
+      const inp = carCopPanel.querySelector('#copInput') || document.getElementById('copInput');
+      const curSlide = iaData?.carousel_slides?.[currentSlide];
+      if (inp && !inp.value && curSlide) {
+        inp.placeholder = 'Ej: mejora el texto del slide ' + (currentSlide+1) + ', hazlo más impactante…';
+      }
+    }
+  };
   container.appendChild(carCop);
   container.appendChild(carCopPanel);
 
@@ -3284,7 +3324,7 @@ function renderCarouselContentPanel(container) {
         '<span class="slide-role-badge" style="background:' + color + '22;color:' + color + ';">' + label + '</span>' +
       '</div>' +
       '<div class="slide-card2-body">' +
-        (s.title   ? '<strong style="color:var(--text);font-size:12px;">' + escHtml(s.title) + '</strong>' : '') +
+        (s.title   ? '<strong style="color:var(--text);font-size:12px;">' + escHtml(_cleanSlideTitle(s.title)) + '</strong>' : '') +
         (s.content ? '<br><span style="font-size:11px;">' + escHtml(s.content.substring(0,80)) + (s.content.length>80?'…':'') + '</span>' : '') +
       '</div>';
     card.onclick = () => {
@@ -3372,7 +3412,7 @@ function applySlideToCanvas(idx, s) {
   if (idx !== currentSlide) loadSlide(idx);
   document.getElementById('canvasBlocks').innerHTML = '';
   slides[idx].blocks = [];
-  if (s.title)   addTextBlock(_cleanSlideTitle(s.title),   {y:20, w:88, x:6, fontSize:34, bold:true,  color:currentBrand?.font_color||'#fff', align:'center'});
+  if (s.title)   addTextBlock(s.title,   {y:20, w:88, x:6, fontSize:34, bold:true,  color:currentBrand?.font_color||'#fff', align:'center'});
   if (s.content) addTextBlock(s.content, {y:56, w:88, x:6, fontSize:18, bold:false, color:currentBrand?.sub_font_color||'rgba(255,255,255,.85)', align:'center'});
   saveCurrentBlocks();
   updateSlideNav();
@@ -3398,211 +3438,582 @@ function applyAllSlides(slides_data) {
 function renderStoryContentPanel(container) {
   const stories = iaData?.stories || [];
 
-  // Regenerar button
+  // ── Header explicativo ──
+  const header = document.createElement('div');
+  header.style.cssText = 'background:var(--brand-subtle);border-radius:10px;padding:10px 12px;margin-bottom:12px;border-left:3px solid var(--brand);';
+  header.innerHTML = '<div style="font-size:11px;font-weight:800;color:var(--brand);margin-bottom:3px;">📱 Cómo usar estas ideas</div>' +
+    '<div style="font-size:10px;color:var(--text3);line-height:1.5;">Aplica el texto al canvas → descarga la story → súbela a Instagram → añade los stickers interactivos desde la app.</div>';
+  container.appendChild(header);
+
+  // ── Helper: parse story string into parts ──
+  function parseStory(raw) {
+    if (!raw) return { tipo:'', tipoIcon:'📱', canvasText:'', stickerText:'', fondo:'' };
+    const parts = raw.split('|').map(p => p.trim());
+
+    // Detect type from first part
+    const first = parts[0] || '';
+    let tipoIcon = '📱', tipo = 'IDEA', canvasText = '', stickerText = '', fondo = '';
+
+    if (first.startsWith('📊')) {
+      tipoIcon = '📊'; tipo = 'ENCUESTA';
+      // ENCUESTA: [pregunta] | OPCION A: [a] | OPCION B: [b] | FONDO: ... | TIP: ...
+      canvasText = first.replace(/^📊\s*ENCUESTA:\s*/i, '').trim();
+      const optA = (parts.find(p => /OPCION\s*A:/i.test(p)) || '').replace(/OPCION\s*A:\s*/i,'').trim();
+      const optB = (parts.find(p => /OPCION\s*B:/i.test(p)) || '').replace(/OPCION\s*B:\s*/i,'').trim();
+      stickerText = (optA && optB) ? 'A: ' + optA + '\nB: ' + optB : '';
+      fondo = (parts.find(p => /FONDO:/i.test(p)) || '').replace(/.*FONDO:\s*/i,'').trim();
+
+    } else if (first.startsWith('💬')) {
+      tipoIcon = '💬'; tipo = 'PREGUNTA ABIERTA';
+      canvasText = first.replace(/^💬\s*PREGUNTA ABIERTA:\s*/i, '').trim();
+      const ej = (parts.find(p => /EJEMPLO\s*RESPUESTA:/i.test(p)) || '').replace(/EJEMPLO\s*RESPUESTA:\s*/i,'').trim();
+      stickerText = canvasText + (ej ? '\nEj: ' + ej : '');
+      fondo = (parts.find(p => /FONDO:/i.test(p)) || '').replace(/.*FONDO:\s*/i,'').trim();
+
+    } else if (first.startsWith('📈')) {
+      tipoIcon = '📈'; tipo = 'DATO IMPACTANTE';
+      canvasText = first.replace(/^📈\s*DATO IMPACTANTE:\s*/i, '').trim();
+      const slider = (parts.find(p => /REACCION\s*SLIDER:/i.test(p)) || '').replace(/.*REACCION\s*SLIDER:\s*/i,'').trim();
+      const emoji  = (parts.find(p => /EMOJI\s*SUGERIDO:/i.test(p)) || '').replace(/.*EMOJI\s*SUGERIDO:\s*/i,'').trim();
+      stickerText = (slider ? slider : '') + (emoji ? ' ' + emoji : '');
+      fondo = (parts.find(p => /FONDO:/i.test(p)) || '').replace(/.*FONDO:\s*/i,'').trim();
+
+    } else if (first.startsWith('💡')) {
+      tipoIcon = '💡'; tipo = 'TIP GUARDABLE';
+      canvasText = first.replace(/^💡\s*TIP GUARDABLE:\s*/i, '').trim();
+      const accion = (parts.find(p => /^ACCION:/i.test(p)) || '').replace(/^ACCION:\s*/i,'').trim();
+      stickerText = accion || 'Guarda esta story para recordarlo';
+      fondo = (parts.find(p => /FONDO:/i.test(p)) || '').replace(/.*FONDO:\s*/i,'').trim();
+
+    } else if (first.startsWith('📩')) {
+      tipoIcon = '📩'; tipo = 'CTA DM';
+      canvasText = first.replace(/^📩\s*CTA DM:\s*/i, '').trim();
+      const palabra = (parts.find(p => /PALABRA\s*CLAVE:/i.test(p)) || '').replace(/.*PALABRA\s*CLAVE:\s*/i,'').trim();
+      stickerText = palabra || canvasText;
+      fondo = (parts.find(p => /FONDO:/i.test(p)) || '').replace(/.*FONDO:\s*/i,'').trim();
+
+    } else {
+      // Fallback: use raw text as canvas text
+      canvasText = raw.substring(0, 120);
+      stickerText = '';
+    }
+
+    return { tipo, tipoIcon, canvasText, stickerText, fondo };
+  }
+
+  // ── Story cards ──
+  const storyTypeColors = {
+    'ENCUESTA':       '#8B5FBF',
+    'PREGUNTA ABIERTA': '#0EA5E9',
+    'DATO IMPACTANTE':  '#F43F5E',
+    'TIP GUARDABLE':    '#10B981',
+    'CTA DM':           '#F59E0B',
+    'IDEA':             '#6366F1',
+  };
+
+  if (stories.length) {
+    stories.forEach((raw, idx) => {
+      const { tipo, tipoIcon, canvasText, stickerText, fondo } = parseStory(raw);
+      const color = storyTypeColors[tipo] || '#8B5FBF';
+
+      const card = document.createElement('div');
+      card.style.cssText = 'border:1.5px solid var(--border2);border-radius:12px;overflow:hidden;margin-bottom:12px;';
+
+      // ── Card header ──
+      const hdr = document.createElement('div');
+      hdr.style.cssText = 'padding:8px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);';
+      hdr.style.background = color + '18';
+      hdr.innerHTML =
+        '<span style="font-size:16px;">' + tipoIcon + '</span>' +
+        '<div>' +
+          '<div style="font-size:10px;font-weight:800;color:' + color + ';text-transform:uppercase;letter-spacing:.06em;">Story ' + (idx+1) + ' — ' + tipo + '</div>' +
+          (fondo ? '<div style="font-size:9px;color:var(--text3);">🎨 ' + fondo + '</div>' : '') +
+        '</div>';
+      card.appendChild(hdr);
+
+      // ── Canvas text section ──
+      const canvasSec = document.createElement('div');
+      canvasSec.style.cssText = 'padding:10px 12px;border-bottom:1px solid var(--border);';
+      const canvasLbl = document.createElement('div');
+      canvasLbl.style.cssText = 'font-size:9px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;';
+      canvasLbl.textContent = '🎨 TEXTO PARA EL CANVAS';
+      const canvasTxt = document.createElement('div');
+      canvasTxt.style.cssText = 'font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:8px;';
+      canvasTxt.textContent = canvasText || raw;
+      const applyBtn = document.createElement('button');
+      applyBtn.style.cssText = 'width:100%;padding:7px;border-radius:6px;background:var(--grad);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
+      applyBtn.textContent = '✅ Aplicar al canvas';
+      applyBtn.onclick = () => {
+        const text = canvasText || raw.substring(0,120);
+        // Clear canvas and apply text
+        document.getElementById('canvasBlocks').innerHTML = '';
+        if (slides[currentSlide]) slides[currentSlide].blocks = [];
+        addTextBlock(text, { y:30, w:86, x:7, fontSize:28, bold:true,
+          color: currentBrand?.font_color || '#fff', align:'center' });
+        historySave();
+        toast('✅ Texto aplicado al canvas', 'success');
+        applyBtn.textContent = '✓ Aplicado';
+        applyBtn.style.background = '#10B981';
+        setTimeout(() => { applyBtn.textContent = '✅ Aplicar al canvas'; applyBtn.style.background = 'var(--grad)'; }, 1500);
+      };
+      canvasSec.appendChild(canvasLbl);
+      canvasSec.appendChild(canvasTxt);
+      canvasSec.appendChild(applyBtn);
+      card.appendChild(canvasSec);
+
+      // ── Sticker text section (only if has content) ──
+      if (stickerText) {
+        const stickerSec = document.createElement('div');
+        stickerSec.style.cssText = 'padding:10px 12px;border-bottom:1px solid var(--border);background:var(--surf2);';
+        const stickerLbl = document.createElement('div');
+        stickerLbl.style.cssText = 'font-size:9px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;';
+        // Label depends on type
+        const stickerLabels = {
+          'ENCUESTA': '📊 OPCIONES PARA EL STICKER DE ENCUESTA',
+          'PREGUNTA ABIERTA': '💬 TEXTO PARA STICKER DE PREGUNTA',
+          'DATO IMPACTANTE': '😱 TEXTO PARA SLIDER DE EMOJI',
+          'TIP GUARDABLE': '💾 LLAMADA A GUARDAR',
+          'CTA DM': '📩 TEXTO PARA STICKER DE DM',
+        };
+        stickerLbl.textContent = stickerLabels[tipo] || '📋 TEXTO PARA STICKER';
+        const stickerTxt = document.createElement('div');
+        stickerTxt.style.cssText = 'font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:6px;white-space:pre-line;';
+        stickerTxt.textContent = stickerText;
+        const copyBtn = document.createElement('button');
+        copyBtn.style.cssText = 'padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--surf);color:var(--text2);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;';
+        copyBtn.textContent = '📋 Copiar';
+        copyBtn.onclick = () => {
+          navigator.clipboard.writeText(stickerText.replace(/\n/g, '\n')).then(() => {
+            toast('✅ Copiado — pégalo como sticker en Instagram', 'success');
+            copyBtn.textContent = '✓ Copiado';
+            setTimeout(() => { copyBtn.textContent = '📋 Copiar'; }, 1500);
+          });
+        };
+        stickerSec.appendChild(stickerLbl);
+        stickerSec.appendChild(stickerTxt);
+        stickerSec.appendChild(copyBtn);
+        card.appendChild(stickerSec);
+      }
+
+      // ── Mejorar con IA ──
+      const iaSection = document.createElement('div');
+      iaSection.style.cssText = 'padding:8px 12px;';
+
+      let _iaOpen = false;
+      const iaBtn = document.createElement('button');
+      iaBtn.style.cssText = 'width:100%;padding:7px;border-radius:6px;background:var(--brand-subtle);border:1px solid var(--brand-border);color:var(--brand);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:5px;';
+      iaBtn.innerHTML = '🤖 Mejorar esta idea con IA';
+
+      // Inline mini-chat per story
+      const iaChat = document.createElement('div');
+      iaChat.style.cssText = 'display:none;margin-top:8px;';
+      iaChat.innerHTML =
+        '<div style="display:flex;gap:6px;">' +
+          '<input id="storyCopInput_' + idx + '" type="text" placeholder="Ej: hazla más viral, cambia el tono…" ' +
+          'style="flex:1;padding:7px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surf);color:var(--text);font-size:11px;font-family:inherit;">' +
+          '<button onclick="_storyCopSend(' + idx + ',\`' + canvasText.replace(/`/g,"'").substring(0,100) + '\`)" ' +
+          'style="padding:7px 12px;border-radius:6px;background:var(--brand);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">→</button>' +
+        '</div>' +
+        '<div id="storyCopResult_' + idx + '" style="display:none;margin-top:8px;padding:8px;background:var(--surf2);border-radius:8px;border:1px solid var(--border2);font-size:11px;color:var(--text2);line-height:1.6;"></div>';
+
+      iaBtn.onclick = () => {
+        _iaOpen = !_iaOpen;
+        iaChat.style.display = _iaOpen ? 'block' : 'none';
+        iaBtn.style.background = _iaOpen ? 'var(--brand-border)' : 'var(--brand-subtle)';
+      };
+
+      iaSection.appendChild(iaBtn);
+      iaSection.appendChild(iaChat);
+      card.appendChild(iaSection);
+      container.appendChild(card);
+    });
+  } else {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'text-align:center;padding:30px 20px;color:var(--text3);font-size:12px;line-height:1.6;';
+    empty.innerHTML = '<div style="font-size:32px;margin-bottom:8px;">📱</div><div style="font-weight:700;color:var(--text2);margin-bottom:4px;">Sin ideas de Story</div>Genera contenido tipo Story para ver las ideas aquí.';
+    container.appendChild(empty);
+  }
+
+  // ── Regenerar al fondo ──
   const regenBtn = document.createElement('button');
-  regenBtn.style.cssText = 'width:100%;padding:9px;border-radius:var(--r);border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;';
+  regenBtn.style.cssText = 'width:100%;padding:9px;border-radius:var(--r);border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px;';
   regenBtn.innerHTML = '🔄 Regenerar ideas (-1 crédito)';
   regenBtn.onclick = () => regenerateFromEditor();
   container.appendChild(regenBtn);
+}
 
-  // Story cards with IA button per card
-  const lbl = document.createElement('div');
-  lbl.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;';
-  lbl.textContent = '📱 Ideas de Story';
-  container.appendChild(lbl);
+// ── Story copiloto per-card ──
+async function _storyCopSend(idx, storyText) {
+  const input  = document.getElementById('storyCopInput_' + idx);
+  const result = document.getElementById('storyCopResult_' + idx);
+  const msg    = input?.value?.trim();
+  if (!msg || !result) return;
 
-  stories.forEach((s, i) => {
-    const wrap = document.createElement('div');
-    wrap.style.cssText = 'margin-bottom:8px;';
+  const token = localStorage.getItem(KEYS.token);
+  if (!token) { toast('Inicia sesión primero', 'error'); return; }
 
-    // Story card
-    const card = document.createElement('div');
-    card.style.cssText = 'padding:10px 12px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surf2);font-size:12px;color:var(--text2);line-height:1.6;';
-    card.innerHTML = '<div style="font-size:10px;font-weight:800;color:var(--brand);margin-bottom:5px;">Story ' + (i+1) + '</div>' + escHtml(s);
-    wrap.appendChild(card);
+  result.style.display = 'block';
+  result.textContent   = '✍️ Mejorando…';
+  input.disabled       = true;
 
-    // Mejorar con IA button per story
-    const iaBtn = document.createElement('button');
-    iaBtn.style.cssText = 'width:100%;padding:6px;border-radius:0 0 var(--r) var(--r);border:1px solid var(--brand-border);border-top:none;background:rgba(139,95,191,.08);color:var(--brand);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;';
-    iaBtn.innerHTML = '🤖 Mejorar esta idea';
-    iaBtn.onclick = () => {
-      copSend('Mejora esta idea de Story: ' + s.substring(0, 100));
-      // Switch to cop panel
-      const copPanel = document.getElementById('iaCop');
-      if (copPanel) copPanel.style.display = 'flex';
-      setTimeout(scrollCopMessages, 100);
+  try {
+    const r = await fetch(API_URL + '/analyze/refine', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({
+        message: msg,
+        history: [],
+        ia_context: {
+          niche:            iaData?.niche || iaData?.detected_niche || '',
+          tone:             iaData?.tone  || 'Profesional',
+          publication_type: 'story',
+          current_caption:  storyText,
+        }
+      })
+    });
+    const d = await r.json();
+    if (!r.ok || !d.success) throw new Error(d.error || 'Error');
+
+    const improved = d.reply.trim();
+    result.innerHTML =
+      '<div style="margin-bottom:8px;">' + escHtml(improved) + '</div>' +
+      '<button onclick="_storyApplyImproved(' + idx + ',\`' + '' + '\`)" ' +
+      'data-improved="' + improved.replace(/"/g,'&quot;') + '" ' +
+      'style="width:100%;padding:6px;border-radius:6px;background:var(--grad);border:none;color:#fff;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;">✅ Aplicar al canvas</button>';
+
+    // Wire apply button
+    const applyImproved = result.querySelector('button');
+    applyImproved.onclick = () => {
+      document.getElementById('canvasBlocks').innerHTML = '';
+      if (slides[currentSlide]) slides[currentSlide].blocks = [];
+      addTextBlock(improved, { y:30, w:86, x:7, fontSize:28, bold:true,
+        color: currentBrand?.font_color || '#fff', align:'center' });
+      historySave();
+      toast('✅ Texto mejorado aplicado al canvas', 'success');
     };
-    wrap.appendChild(iaBtn);
-    container.appendChild(wrap);
-  });
 
-  if (!stories.length) {
-    const empty = document.createElement('div');
-    empty.style.cssText = 'text-align:center;padding:20px;color:var(--text3);font-size:12px;';
-    empty.textContent = 'Genera un Story para ver las ideas aquí';
-    container.appendChild(empty);
+  } catch(e) {
+    result.textContent = '❌ ' + (e.message || 'Error. Intenta de nuevo.');
+  } finally {
+    input.disabled = false;
+    input.value    = '';
   }
 }
+
 
 /* ── REEL ── */
 function renderReelContentPanel(container) {
-  const reelData = iaData?.reel_ideas || iaData?.stories || [];
-  // Build 3 reel ideas from hooks + reel structure in iaData
-  const hooks     = iaData?.hooks     || [];
-  const ctas      = iaData?.ctas      || [];
-  const desc      = iaData?.description || '';
-  const niche     = iaData?.detected_niche || '';
-  const hashtags  = iaData?.hashtags  || [];
+  // ── Reels come from captions[] — 3 structured guiones ──
+  const rawReels = iaData?.captions || [];
+  const hashtags = iaData?.hashtags || [];
+  const niche    = iaData?.detected_niche || iaData?.niche || '';
 
-  // Parse structured reel ideas from stories[] (groqService returns 3 formatted reels there)
-  const rawReels = iaData?.stories || [];
-  const reelIdeas = rawReels.slice(0,3).map((raw, i) => {
-    // Parse sections from formatted reel text
-    const getSection = (label) => {
+  // ── Parser: extract sections from groqService reel format ──
+  function parseReel(raw) {
+    if (!raw) return null;
+    const get = (label) => {
       const m = raw.match(new RegExp(label + '[^\n]*\n([^⏱🎵📝]+)', 'i'));
       return m ? m[1].trim() : '';
     };
-    const angleM = raw.match(/REEL\s*\d+\s*[—-]\s*([^\n]+)/i);
-    return {
-      raw:   raw,
-      angle: angleM ? angleM[1].trim() : ['PROBLEMA → SOLUCIÓN','SECRETO / DATO','POV / RELATABLE'][i] || ('Ángulo '+(i+1)),
-      hook:  getSection('⏱️? ?0-3s GANCHO:?') || getSection('GANCHO') || hooks[i] || hooks[0] || 'Tu hook aquí',
-      dev:   getSection('⏱️? ?3-15s DESARROLLO:?') || getSection('DESARROLLO') || 'Desarrolla el problema o situación del hook.',
-      valor: getSection('⏱️? ?15-25s VALOR') || getSection('VALOR') || 'Tu solución o dato clave, concreto y accionable.',
-      cta:   getSection('⏱️? ?25-30s CTA:?') || getSection('CTA') || ctas[i] || ctas[0] || 'Sigue para más',
-      music: (raw.match(/🎵[^\n]+/) || [''])[0].replace('🎵','').replace('MUSICA:','').trim() || 'Upbeat 90-110 BPM',
-      caption: (raw.match(/📝[^\n]+/) || [''])[0].replace('📝','').replace('CAPTION:','').trim() || '',
-    };
-  });
-  // Pad to 3 if needed
+    // Extract angle from "REEL N — ANGULO: nombre" or from first line
+    const angleM = raw.match(/REEL\s*\d+\s*[—\-]\s*[^:]+:\s*([^
+]+)/i);
+    const angle  = angleM ? angleM[1].trim() : '';
+
+    // Extract each timed section
+    const gancho    = (raw.match(/0-3s\s*(?:\(GANCHO\)|GANCHO)[:\s]+([^
+⏱]+)/i)  || [])[1]?.trim() || '';
+    const desarrollo= (raw.match(/3-15s\s*(?:\(DESARROLLO\)|DESARROLLO)[:\s]+([^
+⏱]+)/i) || [])[1]?.trim() || '';
+    const valor     = (raw.match(/15-25s\s*(?:\(VALOR[^)]*\)|VALOR)[:\s]+([^
+⏱]+)/i)     || [])[1]?.trim() || '';
+    const cta       = (raw.match(/25-30s\s*(?:\(CTA\)|CTA)[:\s]+([^
+⏱🎵📝]+)/i)          || [])[1]?.trim() || '';
+    const musicaM   = raw.match(/🎵\s*MUSICA[:\s]+([^
+]+)/i);
+    const musica    = musicaM ? musicaM[1].trim() : '';
+    const captionM  = raw.match(/📝\s*CAPTION[^:]*:[:\s]+([^
+]+)/i);
+    const caption   = captionM ? captionM[1].trim() : '';
+
+    return { raw, angle, gancho, desarrollo, valor, cta, musica, caption };
+  }
+
+  const reelIdeas = rawReels.slice(0,3).map(parseReel).filter(Boolean);
+  // Pad to 3 if fewer came back
+  const angleLabels = ['TUTORIAL / CÓMO HACER','SECRETO / DATO SORPRENDENTE','POV / RELATABLE'];
   while (reelIdeas.length < 3) {
     const j = reelIdeas.length;
-    reelIdeas.push({ raw:'', angle:['PROBLEMA→SOLUCIÓN','SECRETO/DATO','POV'][j]||('Ángulo '+(j+1)), hook:hooks[0]||'Hook aquí', dev:'Desarrollo...', valor:'Valor...', cta:ctas[0]||'Sigue', music:'Upbeat 90 BPM', caption:'' });
+    reelIdeas.push({ raw:'', angle: angleLabels[j] || 'Ángulo '+(j+1),
+      gancho:'', desarrollo:'', valor:'', cta:'', musica:'', caption:'' });
   }
 
-  // Navigator
+  // ── Header ──
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'background:var(--brand-subtle);border-radius:10px;padding:10px 12px;margin-bottom:12px;border-left:3px solid var(--brand);';
+  hdr.innerHTML =
+    '<div style="font-size:11px;font-weight:800;color:var(--brand);margin-bottom:3px;">🎬 3 guiones listos para grabar</div>' +
+    '<div style="font-size:10px;color:var(--text3);line-height:1.5;">Copia el guión → pégalo en tu app de teleprompter → graba en un toma.</div>';
+  container.appendChild(hdr);
+
+  // ── Cards ──
   let reelIdx = 0;
+  const angleColors = ['#8B5FBF','#F43F5E','#0EA5E9'];
 
-  const navRow = document.createElement('div');
-  navRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;';
-  const navTitle = document.createElement('div');
-  navTitle.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;';
-  navTitle.textContent = '🎬 Ideas de Reel';
-  const navBtns = document.createElement('div');
-  navBtns.style.cssText = 'display:flex;align-items:center;gap:6px;';
-  const navPrev = document.createElement('button');
-  navPrev.style.cssText = 'width:24px;height:24px;border-radius:50%;border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;';
-  navPrev.textContent = '‹';
-  const navCounter = document.createElement('span');
-  navCounter.style.cssText = 'font-size:11px;color:var(--text3);';
-  navCounter.textContent = '1/3';
-  const navNext = document.createElement('button');
-  navNext.style.cssText = 'width:24px;height:24px;border-radius:50%;border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;';
-  navNext.textContent = '›';
-  navBtns.appendChild(navPrev); navBtns.appendChild(navCounter); navBtns.appendChild(navNext);
-  navRow.appendChild(navTitle); navRow.appendChild(navBtns);
-  container.appendChild(navRow);
+  reelIdeas.forEach((idea, idx) => {
+    const color = angleColors[idx] || '#8B5FBF';
+    const card  = document.createElement('div');
+    card.style.cssText = 'border:1.5px solid var(--border2);border-radius:12px;overflow:hidden;margin-bottom:14px;';
 
-  // Reel card
-  const reelCard = document.createElement('div');
-  reelCard.style.cssText = 'border:1.5px solid var(--border2);border-radius:var(--rlg);overflow:hidden;margin-bottom:10px;';
-
-  function renderReelCard(idx) {
-    const idea = reelIdeas[idx];
-    navCounter.textContent = (idx+1) + '/' + reelIdeas.length;
-    reelCard.innerHTML =
-      '<div style="background:var(--grad);padding:8px 12px;">' +
-        '<span style="font-size:11px;font-weight:800;color:#fff;">Reel ' + (idx+1) + ' — ' + idea.angle + '</span>' +
-      '</div>' +
-      '<div style="padding:12px;font-size:12px;color:var(--text2);line-height:1.7;">' +
-        '<div style="margin-bottom:8px;"><span style="font-size:10px;font-weight:800;color:var(--brand);display:block;margin-bottom:3px;">⏱️ 0-3s — GANCHO</span>' +
-        escHtml(idea.hook) + '</div>' +
-        '<div style="margin-bottom:8px;"><span style="font-size:10px;font-weight:800;color:#0EA5E9;display:block;margin-bottom:3px;">⏱️ 3-15s — DESARROLLO</span>' +
-        escHtml(idea.dev) + '</div>' +
-        '<div style="margin-bottom:8px;"><span style="font-size:10px;font-weight:800;color:#10B981;display:block;margin-bottom:3px;">⏱️ 15-25s — VALOR REAL</span>' +
-        escHtml(idea.valor) + '</div>' +
-        '<div style="margin-bottom:8px;"><span style="font-size:10px;font-weight:800;color:#F43F5E;display:block;margin-bottom:3px;">⏱️ 25-30s — CTA</span>' +
-        escHtml(idea.cta) + '</div>' +
-        '<div style="border-top:1px solid var(--border);padding-top:8px;margin-top:4px;font-size:10px;color:var(--text3);">🎵 ' + escHtml(idea.music) + '</div>' +
+    // ── Card header ──
+    const cardHdr = document.createElement('div');
+    cardHdr.style.cssText = `padding:10px 14px;background:${color}18;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;`;
+    cardHdr.innerHTML =
+      '<div style="width:28px;height:28px;border-radius:50%;background:' + color + ';display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;">' + (idx+1) + '</div>' +
+      '<div>' +
+        '<div style="font-size:11px;font-weight:800;color:' + color + ';">Reel ' + (idx+1) + '</div>' +
+        '<div style="font-size:10px;color:var(--text3);">' + (idea.angle || angleLabels[idx]) + '</div>' +
       '</div>';
-  }
-  renderReelCard(reelIdx);
-  navPrev.onclick = () => { reelIdx = (reelIdx-1+reelIdeas.length)%reelIdeas.length; renderReelCard(reelIdx); updateReelCaption(reelIdx); };
-  navNext.onclick = () => { reelIdx = (reelIdx+1)%reelIdeas.length; renderReelCard(reelIdx); updateReelCaption(reelIdx); };
-  container.appendChild(reelCard);
+    card.appendChild(cardHdr);
 
-  // Caption corto + hashtags
-  const capSec = document.createElement('div');
-  capSec.style.cssText = 'margin-bottom:10px;';
-  const capLbl = document.createElement('div');
-  capLbl.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;';
-  capLbl.innerHTML = '<span style="width:8px;height:8px;background:var(--brand);border-radius:2px;display:inline-block;margin-right:6px;"></span>Caption del Reel';
-  capSec.appendChild(capLbl);
+    // ── Guión section ──
+    const guionSec = document.createElement('div');
+    guionSec.style.cssText = 'padding:12px 14px;border-bottom:1px solid var(--border);';
 
-  const capTA = document.createElement('textarea');
-  capTA.className = 'cap-full';
-  capTA.style.cssText = 'min-height:60px;';
-  capTA.placeholder = 'Caption corto para el Reel (1-3 líneas + hashtags)';
-  capTA.oninput = () => { captionFull = capTA.value; updateCaptionPreview(); };
-  capSec.appendChild(capTA);
+    const blocks = [
+      { label:'⏱️ 0-3s — GANCHO',      color:'#8B5FBF', text: idea.gancho    },
+      { label:'⏱️ 3-15s — DESARROLLO', color:'#0EA5E9', text: idea.desarrollo },
+      { label:'⏱️ 15-25s — VALOR REAL',color:'#10B981', text: idea.valor     },
+      { label:'⏱️ 25-30s — CTA',       color:'#F43F5E', text: idea.cta       },
+    ];
 
-  // Hashtags
-  const hashRow = document.createElement('div');
-  hashRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;margin-bottom:8px;';
-  const selHash = new Set();
-  hashtags.slice(0,8).forEach(tag => {
-    const chip = document.createElement('button');
-    chip.className = 'hash-chip';
-    chip.textContent = tag.startsWith('#') ? tag : '#'+tag;
-    chip.onclick = () => {
-      if (selHash.has(tag)) { selHash.delete(tag); chip.classList.remove('active'); }
-      else if (selHash.size < 3) { selHash.add(tag); chip.classList.add('active'); }
-      const base = (capTA.value||'').replace(/#\S+/g,'').replace(/\s+$/,'').trim();
-      const tags = [...selHash].map(t=>t.startsWith('#')?t:'#'+t).join(' ');
-      capTA.value = base + (tags ? String.fromCharCode(10)+tags : '');
-      captionFull = capTA.value; updateCaptionPreview();
+    blocks.forEach(b => {
+      if (!b.text) return;
+      const row = document.createElement('div');
+      row.style.cssText = 'margin-bottom:10px;';
+      row.innerHTML =
+        '<div style="font-size:9px;font-weight:800;color:' + b.color + ';text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">' + b.label + '</div>' +
+        '<div style="font-size:12px;color:var(--text2);line-height:1.6;">' + escHtml(b.text) + '</div>';
+      guionSec.appendChild(row);
+    });
+
+    if (idea.musica) {
+      const musicRow = document.createElement('div');
+      musicRow.style.cssText = 'margin-top:6px;padding-top:8px;border-top:1px solid var(--border);font-size:10px;color:var(--text3);';
+      musicRow.textContent = '🎵 ' + idea.musica;
+      guionSec.appendChild(musicRow);
+    }
+    card.appendChild(guionSec);
+
+    // ── Copy buttons ──
+    const btnRow = document.createElement('div');
+    btnRow.style.cssText = 'padding:10px 14px;display:flex;gap:8px;border-bottom:1px solid var(--border);';
+
+    // Full script for teleprompter
+    const btnFull = document.createElement('button');
+    btnFull.style.cssText = 'flex:1;padding:8px;border-radius:8px;background:var(--grad);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
+    btnFull.innerHTML = '📋 Guión completo';
+    btnFull.onclick = () => {
+      const script =
+        'REEL ' + (idx+1) + ' — ' + (idea.angle || angleLabels[idx]) + '
+
+' +
+        '⏱️ 0-3s GANCHO:
+'     + (idea.gancho     || '') + '
+
+' +
+        '⏱️ 3-15s DESARROLLO:
+'+ (idea.desarrollo || '') + '
+
+' +
+        '⏱️ 15-25s VALOR:
+'    + (idea.valor      || '') + '
+
+' +
+        '⏱️ 25-30s CTA:
+'      + (idea.cta        || '') + '
+
+' +
+        '🎵 MÚSICA: '           + (idea.musica     || '') + '
+';
+      navigator.clipboard.writeText(script).then(() => {
+        toast('✅ Guión copiado — pégalo en tu teleprompter', 'success');
+        btnFull.textContent = '✓ Copiado';
+        btnFull.style.background = '#10B981';
+        setTimeout(() => { btnFull.innerHTML = '📋 Guión completo'; btnFull.style.background = 'var(--grad)'; }, 2000);
+      });
     };
-    hashRow.appendChild(chip);
+
+    // Clean text only (no timestamps)
+    const btnText = document.createElement('button');
+    btnText.style.cssText = 'flex:1;padding:8px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
+    btnText.innerHTML = '🎙️ Solo el texto';
+    btnText.onclick = () => {
+      const textOnly = [idea.gancho, idea.desarrollo, idea.valor, idea.cta]
+        .filter(Boolean).join('
+
+');
+      navigator.clipboard.writeText(textOnly).then(() => {
+        toast('✅ Texto copiado — para grabar de memoria', 'success');
+        btnText.textContent = '✓ Copiado';
+        setTimeout(() => { btnText.innerHTML = '🎙️ Solo el texto'; }, 2000);
+      });
+    };
+
+    btnRow.appendChild(btnFull);
+    btnRow.appendChild(btnText);
+    card.appendChild(btnRow);
+
+    // ── Caption section ──
+    const capSec = document.createElement('div');
+    capSec.style.cssText = 'padding:10px 14px;border-bottom:1px solid var(--border);';
+
+    const capLbl = document.createElement('div');
+    capLbl.style.cssText = 'font-size:9px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;';
+    capLbl.textContent = '📝 CAPTION DEL REEL (va debajo del video en Instagram)';
+    capSec.appendChild(capLbl);
+
+    const capTA = document.createElement('textarea');
+    capTA.style.cssText = 'width:100%;min-height:70px;padding:8px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--surf);color:var(--text);font-size:11px;font-family:inherit;resize:none;box-sizing:border-box;line-height:1.5;';
+    capTA.placeholder = 'Caption corto con hook + hashtags';
+    capTA.value = idea.caption || '';
+    capTA.oninput = () => { captionFull = capTA.value; updateCaptionPreview(); };
+    capSec.appendChild(capTA);
+
+    // Hashtag chips
+    if (hashtags.length) {
+      const hashRow = document.createElement('div');
+      hashRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;margin-bottom:6px;';
+      const selH = new Set();
+      hashtags.slice(0,8).forEach(tag => {
+        const chip = document.createElement('button');
+        chip.className = 'hash-chip';
+        chip.textContent = tag.startsWith('#') ? tag : '#'+tag;
+        chip.onclick = () => {
+          if (selH.has(tag)) { selH.delete(tag); chip.classList.remove('active'); }
+          else if (selH.size < 5) { selH.add(tag); chip.classList.add('active'); }
+          else { toast('Máximo 5 hashtags para Reels','info'); return; }
+          const base = capTA.value.replace(/#\S+/g,'').replace(/\s+$/,'').trim();
+          const tags = [...selH].map(t => t.startsWith('#') ? t : '#'+t).join(' ');
+          capTA.value = base + (tags ? '
+' + tags : '');
+          captionFull = capTA.value; updateCaptionPreview();
+        };
+        hashRow.appendChild(chip);
+      });
+      capSec.appendChild(hashRow);
+    }
+
+    const copyCapBtn = document.createElement('button');
+    copyCapBtn.style.cssText = 'width:100%;padding:7px;border-radius:8px;border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px;';
+    copyCapBtn.innerHTML = '📋 Copiar caption';
+    copyCapBtn.onclick = () => {
+      navigator.clipboard.writeText(capTA.value || '').then(() => {
+        toast('✅ Caption copiado', 'success');
+        copyCapBtn.textContent = '✓ Copiado';
+        setTimeout(() => { copyCapBtn.innerHTML = '📋 Copiar caption'; }, 1500);
+      });
+    };
+    capSec.appendChild(copyCapBtn);
+    card.appendChild(capSec);
+
+    // ── Mejorar con IA ──
+    const iaSection = document.createElement('div');
+    iaSection.style.cssText = 'padding:10px 14px;';
+    let _iaOpen = false;
+    const iaBtn = document.createElement('button');
+    iaBtn.style.cssText = 'width:100%;padding:7px;border-radius:8px;background:var(--brand-subtle);border:1px solid var(--brand-border);color:var(--brand);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;';
+    iaBtn.innerHTML = '🤖 Mejorar este guión con IA';
+
+    const iaChat = document.createElement('div');
+    iaChat.style.cssText = 'display:none;margin-top:8px;';
+
+    const iaInputRow = document.createElement('div');
+    iaInputRow.style.cssText = 'display:flex;gap:6px;';
+    const iaInput = document.createElement('input');
+    iaInput.type = 'text';
+    iaInput.placeholder = 'Ej: hazlo más viral, cambia el gancho, tono más cercano…';
+    iaInput.style.cssText = 'flex:1;padding:7px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surf);color:var(--text);font-size:11px;font-family:inherit;';
+    const iaSendBtn = document.createElement('button');
+    iaSendBtn.style.cssText = 'padding:7px 12px;border-radius:6px;background:var(--brand);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
+    iaSendBtn.textContent = '→';
+    iaInputRow.appendChild(iaInput);
+    iaInputRow.appendChild(iaSendBtn);
+
+    const iaResult = document.createElement('div');
+    iaResult.style.cssText = 'display:none;margin-top:8px;padding:10px;background:var(--surf2);border-radius:8px;border:1px solid var(--border2);font-size:11px;color:var(--text2);line-height:1.6;';
+
+    const sendFn = async () => {
+      const msg = iaInput.value.trim();
+      if (!msg) return;
+      const token = localStorage.getItem(KEYS.token);
+      if (!token) { toast('Inicia sesión primero','error'); return; }
+      iaResult.style.display = 'block';
+      iaResult.textContent   = '✍️ Mejorando guión…';
+      iaInput.disabled = true; iaSendBtn.disabled = true;
+      try {
+        const guionCtx = 'GANCHO: ' + (idea.gancho||'') + '
+DESARROLLO: ' + (idea.desarrollo||'') + '
+VALOR: ' + (idea.valor||'') + '
+CTA: ' + (idea.cta||'');
+        const r = await fetch(API_URL + '/analyze/refine', {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json','Authorization':'Bearer '+token },
+          body: JSON.stringify({
+            message: msg,
+            history: [],
+            ia_context: {
+              niche:            niche,
+              tone:             iaData?.tone || 'Profesional',
+              publication_type: 'reel',
+              current_caption:  guionCtx,
+            }
+          })
+        });
+        const d = await r.json();
+        if (!r.ok || !d.success) throw new Error(d.error || 'Error');
+        const improved = d.reply.trim();
+        iaResult.innerHTML =
+          '<div style="white-space:pre-wrap;margin-bottom:10px;">' + escHtml(improved) + '</div>' +
+          '<div style="display:flex;gap:6px;">' +
+            '<button class="_reelCopyImproved" style="flex:1;padding:6px;border-radius:6px;background:var(--grad);border:none;color:#fff;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;">📋 Copiar guión mejorado</button>' +
+          '</div>';
+        iaResult.querySelector('._reelCopyImproved').onclick = () => {
+          navigator.clipboard.writeText(improved).then(() => toast('✅ Guión mejorado copiado','success'));
+        };
+      } catch(e) {
+        iaResult.textContent = '❌ ' + (e.message || 'Error. Intenta de nuevo.');
+      } finally {
+        iaInput.disabled = false; iaSendBtn.disabled = false; iaInput.value = '';
+      }
+    };
+
+    iaSendBtn.onclick = sendFn;
+    iaInput.onkeydown = e => { if (e.key === 'Enter') sendFn(); };
+
+    iaBtn.onclick = () => {
+      _iaOpen = !_iaOpen;
+      iaChat.style.display = _iaOpen ? 'block' : 'none';
+      iaBtn.style.background = _iaOpen ? 'var(--brand-border)' : 'var(--brand-subtle)';
+      if (_iaOpen) iaInput.focus();
+    };
+
+    iaChat.appendChild(iaInputRow);
+    iaChat.appendChild(iaResult);
+    iaSection.appendChild(iaBtn);
+    iaSection.appendChild(iaChat);
+    card.appendChild(iaSection);
+    container.appendChild(card);
   });
-  capSec.appendChild(hashRow);
 
-  function updateReelCaption(idx) {
-    const idea = reelIdeas[idx];
-    const cap = idea.caption || idea.hook.substring(0,100);
-    capTA.value = cap;
-    captionFull = cap;
-    updateCaptionPreview();
-  }
-  updateReelCaption(0);
-  container.appendChild(capSec);
-
-  // Prompt CapCut/Runway button
-  const promptBtn = document.createElement('button');
-  promptBtn.style.cssText = 'width:100%;padding:10px;border-radius:var(--r);border:1.5px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:6px;';
-  promptBtn.innerHTML = '🎬 Copiar prompt para CapCut / Runway';
-  promptBtn.onclick = () => {
-    const idea = reelIdeas[reelIdx];
-    const prompt = `Create a vertical Instagram Reel (1080x1920, 30 seconds).
-HOOK (0-3s): "${idea.hook}"
-DEVELOPMENT (3-15s): Show the problem or situation clearly. Fast cuts every 2-3 seconds. High energy.
-VALUE (15-25s): Deliver the key insight or solution. Text overlay recommended.
-CTA (25-30s): "${idea.cta}"
-STYLE: ${niche} content creator, cinematic, authentic. No stock footage.
-MUSIC: Upbeat, 90-110 BPM. No lyrics in first 3 seconds.
-SUBTITLES: Auto-captions, bold white text, black outline.`;
-    navigator.clipboard.writeText(prompt)
-      .then(() => { promptBtn.textContent = '✅ Prompt copiado'; setTimeout(()=>{ promptBtn.innerHTML='🎬 Copiar prompt para CapCut / Runway'; },2000); })
-      .catch(() => toast('Error al copiar','error'));
-  };
-  container.appendChild(promptBtn);
-
-  // Copy caption button
-  const copyBtn = document.createElement('button');
-  copyBtn.style.cssText = 'width:100%;padding:10px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;';
-  copyBtn.innerHTML = '📋 Copiar caption';
-  copyBtn.onclick = () => navigator.clipboard.writeText(capTA.value||captionFull||'').then(()=>toast('✅ Caption copiado','success'));
-  container.appendChild(copyBtn);
+  // ── Regenerar al fondo ──
+  const regenBtn = document.createElement('button');
+  regenBtn.style.cssText = 'width:100%;padding:9px;border-radius:var(--r);border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px;';
+  regenBtn.innerHTML = '🔄 Regenerar guiones (-1 crédito)';
+  regenBtn.onclick   = () => regenerateFromEditor();
+  container.appendChild(regenBtn);
 }
+
 
 /* ── DISEÑO ── */
 function renderDesignPanel() {
@@ -4796,6 +5207,10 @@ function openBrandOverlay() {
     const fn = currentBrand.font_name       || 'DM Sans';
     document.getElementById('ovColor1').value = c1;
     document.getElementById('ovColor2').value = c2;
+    const fc  = currentBrand.font_color     || '#ffffff';
+    const sfc = currentBrand.sub_font_color || 'rgba(255,255,255,0.8)';
+    if (document.getElementById('ovFontColor'))        { document.getElementById('ovFontColor').value = fc; document.getElementById('ovFontColorSwatch').style.background = fc; }
+    if (document.getElementById('ovSubFontColor'))     { document.getElementById('ovSubFontColor').value = sfc; document.getElementById('ovSubFontColorSwatch').style.background = sfc; }
     document.getElementById('ovColor1Swatch').style.background = c1;
     document.getElementById('ovColor2Swatch').style.background = c2;
     document.getElementById('ovColor1Text').textContent = c1;
@@ -4872,11 +5287,24 @@ async function saveBrandOverlay() {
     const r = await fetch(API_URL+'/brand',{
       method:'PUT',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-      body: JSON.stringify({color_primary:c1,color_secondary:c2,font_name:fn})
+      body: JSON.stringify({
+        color_primary:   c1,
+        color_secondary: c2,
+        font_name:       fn,
+        font_color:      document.getElementById('ovFontColor')?.value     || '#ffffff',
+        sub_font_color:  document.getElementById('ovSubFontColor')?.value  || 'rgba(255,255,255,0.8)',
+      })
     });
     const d = await r.json();
     if (!r.ok) throw new Error(d.error||'Error');
-    currentBrand = {...(currentBrand||{}), color_primary:c1, color_secondary:c2, font_name:fn};
+    currentBrand = {
+      ...(currentBrand||{}),
+      color_primary:   c1,
+      color_secondary: c2,
+      font_name:       fn,
+      font_color:      document.getElementById('ovFontColor')?.value     || '#ffffff',
+      sub_font_color:  document.getElementById('ovSubFontColor')?.value  || 'rgba(255,255,255,0.8)',
+    };
     renderBrandPanel();
     closeBrandOverlay();
     toast('✅ Marca guardada y aplicada','success');
@@ -5825,10 +6253,7 @@ function renderCarouselCaptionPanel() {
       const b = document.createElement('button');
       b.style.cssText = 'font-size:20px;cursor:pointer;background:none;border:none;padding:2px;border-radius:4px;';
       b.textContent = em;
-      b.onclick = () => {
-        const cap = document.getElementById('capFull');
-        if (cap) { cap.value += ' ' + em; captionFull = cap.value; updateCaptionPreview(); }
-      };
+      b.onclick = () => { showEmojiDestination(em, b); };
       emoRow.appendChild(b);
     });
     navEl.appendChild(emoTitle);
@@ -5840,6 +6265,9 @@ function renderCarouselCaptionPanel() {
   const iaCCBtn = document.createElement('button');
   iaCCBtn.style.cssText = 'width:100%;padding:8px;border-radius:var(--r);background:var(--brand-subtle);border:1.5px solid var(--brand-border2);color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:6px;';
   iaCCBtn.innerHTML = '🤖 Mejorar con IA Copiloto';
+  const _ccHint = document.createElement('div');
+  _ccHint.style.cssText = 'font-size:10px;color:var(--text3);text-align:center;margin-top:3px;';
+  _ccHint.textContent = 'Selecciona un caption primero con ✅ Usar este caption';
   iaCCBtn.onclick = () => {
     const tabs = document.querySelectorAll('.ia-tab');
     tabs.forEach(t => { if (t.dataset.tab === 'copiloto' || t.textContent.includes('Copiloto')) t.click(); });
@@ -6023,129 +6451,9 @@ function copAddMsg(role, text) {
   return div;
 }
 
-// ── copSend helpers ──────────────────────────────────────────────────────
+// ── Copiloto IA — versión simplificada ──────────────────────────────────
+// Trabaja SIEMPRE sobre el caption activo en "Tu Caption" (capFull)
 
-function _copBuildContext() {
-  if (_copAnalysisId) return { analysis_id: _copAnalysisId };
-  return {
-    ia_context: {
-      niche:            iaData.niche || iaData.detected_niche || '',
-      description:      iaData.description || '',
-      publication_type: iaData.publicationType || 'post',
-      tone:             iaData.tone || 'Profesional',
-      hooks:            (iaData.hooks    || []).slice(0, 3),
-      captions:         (iaData.captions || []).slice(0, 2).map(c => c.substring(0, 200)),
-      ctas:             (iaData.ctas     || []).slice(0, 3),
-      hashtags:         (iaData.hashtags || []).slice(0, 8),
-    }
-  };
-}
-
-function _copDetectIntent(msg, reply) {
-  const m = msg.toLowerCase();
-  const r = reply;
-  if (m.includes('nuevo caption') || m.includes('dame un caption') ||
-      m.includes('caption completo') || m.includes('reescribe el caption') ||
-      m.includes('hazme un caption') || m.includes('genera un caption') ||
-      m.includes('caption mas') || m.includes('caption más') ||
-      m.includes('caption viral') || m.includes('caption mejor')) return 'caption';
-  if (m.includes('hashtag') || m.includes('etiqueta') || m.includes('nuevos #') ||
-      (!m.includes('caption') && (r.match(/#\S+/g) || []).length >= 4)) return 'hashtag';
-  if (m.includes('hook') || m.includes('gancho') ||
-      (m.includes('primer') && m.includes('linea'))) return 'hook';
-  if (m.includes('cta') || m.includes('llamada') || m.includes('call to action')) return 'cta';
-  return 'generic';
-}
-
-function _copApplyHashtag(reply) {
-  const tags = reply.match(/#\S+/g) || [];
-  if (!tags.length) { toast('No encontré hashtags en la respuesta', 'info'); return; }
-  const hashRow = document.querySelector('.hash-chip')?.parentElement;
-  if (hashRow) {
-    hashRow.innerHTML = '';
-    const newSelH = new Set();
-    const newSelE = new Set();
-    tags.slice(0, 8).forEach(tag => {
-      const chip = document.createElement('button');
-      chip.className = 'hash-chip';
-      chip.textContent = tag.startsWith('#') ? tag : '#' + tag;
-      chip.onclick = () => {
-        const t = tag.replace(/^#/, '');
-        if (newSelH.has(t)) { newSelH.delete(t); chip.classList.remove('active'); }
-        else if (newSelH.size < 3) { newSelH.add(t); chip.classList.add('active'); }
-        else { toast('Máximo 3 hashtags', 'info'); return; }
-        updateCaptionHashEmoji(newSelH, newSelE);
-      };
-      hashRow.appendChild(chip);
-    });
-  }
-  const capEl = document.getElementById('capFull');
-  if (capEl) {
-    const base = (capEl.value || captionFull).replace(/#\S+/g, '').replace(/\s+$/, '').trim();
-    capEl.value = base + String.fromCharCode(10, 10) + tags.slice(0, 7).join(' ');
-    captionFull = capEl.value; updateCaptionPreview();
-  }
-}
-
-function _copApplyCaption(reply) {
-  const clean = reply.replace(/#\S+/g, '').replace(/\n{3,}/g, '\n\n').trim();
-  const capEl = document.getElementById('capFull');
-  if (capEl) { capEl.value = clean; captionFull = clean; updateCaptionPreview(); resetHashChips(); }
-}
-
-function _copApplyHook(reply) {
-  const capEl = document.getElementById('capFull');
-  if (!capEl) return;
-  const NL2 = String.fromCharCode(10, 10);
-  const parts = (capEl.value || captionFull).split(NL2);
-  parts[0] = reply; capEl.value = parts.join(NL2);
-  captionFull = capEl.value; updateCaptionPreview();
-}
-
-function _copApplyCTA(reply) {
-  const capEl = document.getElementById('capFull');
-  if (!capEl) return;
-  const NL2 = String.fromCharCode(10, 10);
-  const parts = (capEl.value || captionFull).split(NL2);
-  parts[parts.length - 1] = reply; capEl.value = parts.join(NL2);
-  captionFull = capEl.value; updateCaptionPreview();
-}
-
-function _copApplyGeneric(reply) {
-  const clean = reply.replace(/#\S+/g, '').replace(/\n{3,}/g, '\n\n').trim();
-  const capEl = document.getElementById('capFull');
-  if (capEl) { capEl.value = clean; captionFull = clean; updateCaptionPreview(); }
-}
-
-function _copAttachApplyBtn(lastMsg, intent, reply) {
-  const wrap = document.createElement('div');
-  wrap.style.cssText = 'margin-top:8px;';
-  const btn = document.createElement('button');
-  btn.style.cssText = 'width:100%;padding:7px 10px;border-radius:6px;background:var(--brand);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
-  btn.textContent = '✅ Aplicar';
-
-  const applyFns = {
-    hashtag: () => _copApplyHashtag(reply),
-    caption: () => _copApplyCaption(reply),
-    hook:    () => _copApplyHook(reply),
-    cta:     () => _copApplyCTA(reply),
-    generic: () => _copApplyGeneric(reply),
-  };
-  const labels = {
-    hashtag: 'Hashtags aplicados', caption: 'Caption aplicado',
-    hook: 'Hook aplicado', cta: 'CTA aplicado', generic: 'Aplicado',
-  };
-
-  btn.onclick = () => {
-    (applyFns[intent] || applyFns.generic)();
-    toast(labels[intent] || 'Aplicado', 'success');
-    btn.textContent = '✓ Aplicado'; btn.disabled = true;
-  };
-  wrap.appendChild(btn);
-  lastMsg.appendChild(wrap);
-}
-
-// ── copSend main ─────────────────────────────────────────────────────────
 async function copSend(preset) {
   if (_copBusy) return;
   const input = document.getElementById('copInput');
@@ -6159,19 +6467,55 @@ async function copSend(preset) {
   const token = localStorage.getItem(KEYS.token);
   if (!token) { copAddMsg('ai', '⚠️ Inicia sesión para usar el copiloto.'); return; }
 
+  // Leer el caption activo del textarea
+  const capEl      = document.getElementById('capFull');
+  const currentCap = capEl?.value?.trim() || captionFull?.trim() || '';
+
+  // Si no hay caption activo, avisar al usuario
+  if (!currentCap) {
+    copAddMsg('ai', '⚠️ Primero selecciona un caption con el botón "✅ Usar este caption" — así el copiloto sabe qué mejorar.');
+    return;
+  }
+
   _copBusy = true;
   if (input) input.value = '';
   document.getElementById('copSendBtn').disabled = true;
 
   copAddMsg('user', msg);
   _copHistory.push({ role: 'user', content: msg });
-  const typing = copAddMsg('typing', '✍️ Escribiendo…');
+  const typing = copAddMsg('typing', '✍️ Mejorando tu caption…');
 
   try {
+    // Contexto: caption activo + nicho + tono + instrucción
+    // Si es carrusel, incluir también el slide activo
+    const activeSlide = iaData.publicationType === 'carousel' || currentFormat === 'carousel'
+      ? iaData?.carousel_slides?.[currentSlide] || null
+      : null;
+
+    const context = {
+      ia_context: {
+        niche:            iaData.niche || iaData.detected_niche || '',
+        description:      iaData.description || '',
+        publication_type: iaData.publicationType || 'post',
+        tone:             iaData.tone || 'Profesional',
+        current_caption:  currentCap,
+        current_slide:    activeSlide ? {
+          index:   currentSlide + 1,
+          role:    activeSlide.role || '',
+          title:   _cleanSlideTitle(activeSlide.title || ''),
+          content: activeSlide.content || '',
+        } : null,
+      }
+    };
+
     const r = await fetch(API_URL + '/analyze/refine', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body:    JSON.stringify({ message: msg, history: _copHistory.slice(-8), ..._copBuildContext() }),
+      body:    JSON.stringify({
+        message: msg,
+        history: _copHistory.slice(-6),
+        ...context,
+      }),
     });
     const d = await r.json();
     typing.remove();
@@ -6188,14 +6532,102 @@ async function copSend(preset) {
 
     copAddMsg('ai', d.reply);
     _copHistory.push({ role: 'assistant', content: d.reply });
-    if (_copHistory.length > 16) _copHistory = _copHistory.slice(-16);
+    if (_copHistory.length > 12) _copHistory = _copHistory.slice(-12);
 
-    const reply   = d.reply.trim();
-    const lastMsg = document.querySelector('#copMessages .cop-msg.ai:last-child');
+    const reply    = d.reply.trim();
+    const newTags  = Array.isArray(d.hashtags) ? d.hashtags : [];
+    const newEmoji = Array.isArray(d.emojis)   ? d.emojis   : [];
+    const lastMsg  = document.querySelector('#copMessages .cop-msg.ai:last-child');
     if (!lastMsg || !reply.length) return;
 
-    const intent = _copDetectIntent(msg, reply);
-    _copAttachApplyBtn(lastMsg, intent, reply);
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'margin-top:10px;display:flex;flex-direction:column;gap:8px;';
+
+    // ── Botón aplicar caption ──
+    const btnCap = document.createElement('button');
+    btnCap.style.cssText = 'width:100%;padding:8px 10px;border-radius:6px;background:var(--grad);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
+    btnCap.textContent = '✅ Aplicar caption en Tu Caption';
+    btnCap.onclick = () => {
+      const clean = reply.replace(/#\S+/g, '').replace(/\n{3,}/g, '\n\n').trim();
+      const capEl = document.getElementById('capFull');
+      if (capEl) { capEl.value = clean; captionFull = clean; updateCaptionPreview(); resetHashChips(); }
+      toast('✅ Caption actualizado', 'success');
+      btnCap.textContent = '✓ Aplicado'; btnCap.style.background = '#10B981'; btnCap.disabled = true;
+    };
+    wrap.appendChild(btnCap);
+
+    // ── Nuevos hashtags como chips ──
+    if (newTags.length) {
+      const tagSec = document.createElement('div');
+      tagSec.style.cssText = 'background:var(--surf2);border-radius:8px;padding:8px;';
+      const tagTitle = document.createElement('div');
+      tagTitle.style.cssText = 'font-size:10px;font-weight:700;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;';
+      tagTitle.textContent = '# Hashtags sugeridos — toca para añadir';
+      tagSec.appendChild(tagTitle);
+      const tagRow = document.createElement('div');
+      tagRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;';
+      newTags.forEach(tag => {
+        const chip = document.createElement('button');
+        chip.className = 'hash-chip';
+        chip.textContent = tag.startsWith('#') ? tag : '#' + tag;
+        chip.onclick = () => {
+          const capEl = document.getElementById('capFull');
+          if (!capEl) return;
+          if (chip.classList.contains('active')) {
+            chip.classList.remove('active');
+            capEl.value = capEl.value.replace(new RegExp('\\s*' + tag.replace('#','\\#') + '\\b', 'g'), '').trim();
+          } else {
+            chip.classList.add('active');
+            const sep = capEl.value && !capEl.value.endsWith('\n') ? ' ' : '';
+            capEl.value = capEl.value + sep + (tag.startsWith('#') ? tag : '#' + tag);
+          }
+          captionFull = capEl.value; updateCaptionPreview();
+        };
+        tagRow.appendChild(chip);
+      });
+      // Botón reemplazar todos
+      const replaceBtn = document.createElement('button');
+      replaceBtn.style.cssText = 'width:100%;padding:5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:10px;cursor:pointer;font-family:inherit;margin-top:2px;';
+      replaceBtn.textContent = '↺ Reemplazar todos los hashtags del panel';
+      replaceBtn.onclick = () => {
+        // Update iaData hashtags so the panel refreshes
+        iaData.hashtags = newTags;
+        renderContentPanel();
+        toast('Hashtags actualizados en el panel', 'success');
+        replaceBtn.textContent = '✓ Panel actualizado'; replaceBtn.disabled = true;
+      };
+      tagSec.appendChild(tagRow);
+      tagSec.appendChild(replaceBtn);
+      wrap.appendChild(tagSec);
+    }
+
+    // ── Nuevos emojis como chips ──
+    if (newEmoji.length) {
+      const emoSec = document.createElement('div');
+      emoSec.style.cssText = 'background:var(--surf2);border-radius:8px;padding:8px;';
+      const emoTitle = document.createElement('div');
+      emoTitle.style.cssText = 'font-size:10px;font-weight:700;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;';
+      emoTitle.textContent = '😊 Emojis sugeridos — toca para añadir al caption';
+      emoSec.appendChild(emoTitle);
+      const emoRow = document.createElement('div');
+      emoRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;';
+      newEmoji.forEach(em => {
+        const b = document.createElement('button');
+        b.style.cssText = 'font-size:22px;cursor:pointer;background:none;border:1px solid var(--border2);border-radius:6px;padding:3px 6px;';
+        b.textContent = em;
+        b.onclick = () => {
+          const capEl = document.getElementById('capFull');
+          if (capEl) { capEl.value += ' ' + em; captionFull = capEl.value; updateCaptionPreview(); }
+          b.style.borderColor = 'var(--brand)'; b.style.background = 'var(--brand-subtle)';
+          toast('Emoji añadido al caption', 'success');
+        };
+        emoRow.appendChild(b);
+      });
+      emoSec.appendChild(emoRow);
+      wrap.appendChild(emoSec);
+    }
+
+    lastMsg.appendChild(wrap);
 
   } catch(e) {
     typing.remove();
@@ -6208,6 +6640,3 @@ async function copSend(preset) {
 }
 
 
-</script>
-</body>
-</html>
