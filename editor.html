@@ -3045,7 +3045,9 @@ function renderPostContentPanel(container) {
       _selH.clear();
       // Hook (primera línea) al canvas
       const _firstLine = cap.split('\n')[0].trim();
-      const _sentEnd = _firstLine.search(/[.!?]/);
+      // Match sentence-ending punctuation NOT followed by a digit (avoids cutting $1.500)
+      const _sentMatch = _firstLine.match(/[.!?](?!\d)/);
+      const _sentEnd = _sentMatch ? _sentMatch.index : -1;
       const fl = (_sentEnd > 20 && _sentEnd < 120) ? _firstLine.substring(0, _sentEnd+1).trim() : _firstLine.substring(0,125).trim();
       if (fl) replaceOrAddBlock('hook-block', fl, {y:8,w:88,x:6,fontSize:28,bold:true,color:currentBrand?.font_color||'#fff',align:'center'});
       useBtn.textContent = '✅ Caption aplicado';
