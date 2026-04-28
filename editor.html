@@ -1818,8 +1818,9 @@ async function loadUser() {
             if (currentBrand.color_primary)   sl.bg1 = currentBrand.color_primary;
             if (currentBrand.color_secondary) sl.bg2 = currentBrand.color_secondary;
           });
+          loadSlide(currentSlide);
           updateCanvasBg();
-          if (currentFormat === 'carousel') renderSlideStrip();
+          renderSlideStrip();
         }
       }
     }
