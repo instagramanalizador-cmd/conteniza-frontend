@@ -199,7 +199,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 
 /* ── IA PANEL ── */
 .caption-zone{
-  width:240px;flex-shrink:0;display:flex;flex-direction:column;
+  width:300px;flex-shrink:0;display:flex;flex-direction:column;
   background:var(--surf);border-left:1px solid var(--border);
   padding:10px;gap:10px;overflow-y:auto;
   font-size:11px;height:auto;max-height:calc(100vh - 100px);min-height:340px;align-self:flex-start;
@@ -227,7 +227,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   text-transform:uppercase;margin-bottom:4px;
 }
 .ia-panel{
-  width:280px;flex-shrink:0;display:flex;flex-direction:column;
+  width:300px;flex-shrink:0;display:flex;flex-direction:column;
   background:var(--surf);border-left:1px solid var(--border);overflow:hidden;
 }
 .ia-tabs{display:flex;border-bottom:1px solid var(--border);}
@@ -4071,9 +4071,26 @@ function renderDesignPanel() {
 }
 
 /* ── HELPERS ── */
+// Reemplaza el texto de un bloque con role específico (ej: 'hook-block'), o lo crea si no existe.
+// Usa data-role (que sí persiste cuando se reconstruye el slide desde slides[].blocks)
+// en lugar de data-block-role para evitar bugs de stacking al cambiar de caption.
 function replaceOrAddBlock(role, text, opts) {
+  // Defensivo: si ya hay 2+ bloques con el mismo role (bug histórico), eliminar duplicados
+  // y quedarnos solo con el primero. Esto sana caps anteriores que crearon stacking.
+  const allWithRole = document.querySelectorAll('.eblock[data-role="' + role + '"]');
+  if (allWithRole.length > 1) {
+    // Conservar el primero, eliminar el resto + sus entries en slides[].blocks
+    for (let i = 1; i < allWithRole.length; i++) {
+      const dupId = allWithRole[i].id;
+      allWithRole[i].remove();
+      if (slides[currentSlide]?.blocks) {
+        slides[currentSlide].blocks = slides[currentSlide].blocks.filter(b => b.id !== dupId);
+      }
+    }
+  }
+
   // Find existing block with this role and REPLACE its text
-  const existing = document.querySelector('[data-block-role="' + role + '"]');
+  const existing = document.querySelector('.eblock[data-role="' + role + '"]');
   if (existing) {
     const ta = existing.querySelector('.eblock-text');
     if (ta) {
@@ -4087,10 +4104,8 @@ function replaceOrAddBlock(role, text, opts) {
       return id;
     }
   }
-  // No existing — add new block
-  const id = addTextBlock(text, opts);
-  const el = document.getElementById(id);
-  if (el) el.dataset.blockRole = role;
+  // No existing — add new block with role baked in (persiste en slides[].blocks via dataset)
+  const id = addTextBlock(text, { ...opts, role });
   return id;
 }
 
@@ -6472,7 +6487,24 @@ function renderBrandPanel() {
   const fc = b.font_color      || '#fff';
 
   if (prev) prev.style.background = `linear-gradient(135deg,${c1},${c2})`;
-  if (logo) { if (b.logo_url) { logo.src=b.logo_url; logo.style.display='block'; } else logo.style.display='none'; }
+  if (logo) {
+    if (b.logo_url) {
+      // CRÍTICO: crossOrigin antes de src para que CORS funcione con R2
+      logo.crossOrigin = 'anonymous';
+      // Cache-bust para forzar recarga si la URL es la misma pero cambió el contenido
+      const sep = b.logo_url.includes('?') ? '&' : '?';
+      logo.src = b.logo_url + sep + '_t=' + Date.now();
+      logo.style.display = 'block';
+      // Aumentar tamaño visible del logo en el preview (32px era muy pequeño y causaba sensación de "no aparece")
+      logo.style.width  = '48px';
+      logo.style.height = '48px';
+      logo.style.marginBottom = '6px';
+      // Si carga falla (CORS u otro), al menos no romper el layout
+      logo.onerror = () => { logo.style.display = 'none'; };
+    } else {
+      logo.style.display = 'none';
+    }
+  }
   if (title) { title.style.fontFamily=`'${fn}',sans-serif`; title.style.color=fc; }
   if (sub)   { sub.style.fontFamily=`'${fn}',sans-serif`; sub.style.color=b.sub_font_color||'rgba(255,255,255,.8)'; }
 
@@ -6868,10 +6900,37 @@ function renderCaptionZoneCopilot() {
         emojis:      iaData?.emojis   || [],
       };
     },
-    applyHook:        (newHook) => { setCaptionZoneValue({ ...readCaptionZoneParts(), hook: newHook }); },
-    applyDescription: (newDesc) => { setCaptionZoneValue({ ...readCaptionZoneParts(), description: newDesc }); },
-    applyCta:         (newCta)  => { setCaptionZoneValue({ ...readCaptionZoneParts(), cta: newCta }); },
-    applyFull:        (newCap)  => { setCaptionZoneValue(newCap); },
+    applyHook: (newHook) => {
+      // Actualiza el bloque editable del caption-zone
+      setCaptionZoneValue({ ...readCaptionZoneParts(), hook: newHook });
+      // Sincroniza también el canvas: reemplaza el bloque hook-block del slide actual
+      const fl = String(newHook || '').substring(0, 125).trim();
+      if (fl && typeof replaceOrAddBlock === 'function') {
+        replaceOrAddBlock('hook-block', fl, {
+          y: 8, w: 88, x: 6, fontSize: 28, bold: true,
+          color: currentBrand?.font_color || '#fff', align: 'center',
+        });
+      }
+    },
+    applyDescription: (newDesc) => {
+      // La description NO va al canvas — solo al caption (queda debajo del post en Instagram)
+      setCaptionZoneValue({ ...readCaptionZoneParts(), description: newDesc });
+    },
+    applyCta: (newCta) => {
+      // El CTA tampoco va al canvas — es texto del caption (Instagram lo muestra debajo)
+      setCaptionZoneValue({ ...readCaptionZoneParts(), cta: newCta });
+    },
+    applyFull: (newCap) => {
+      // Caption nuevo entero: actualiza los 3 bloques editables + sincroniza el hook al canvas
+      setCaptionZoneValue(newCap);
+      const fl = String(newCap?.hook || '').substring(0, 125).trim();
+      if (fl && typeof replaceOrAddBlock === 'function') {
+        replaceOrAddBlock('hook-block', fl, {
+          y: 8, w: 88, x: 6, fontSize: 28, bold: true,
+          color: currentBrand?.font_color || '#fff', align: 'center',
+        });
+      }
+    },
     applyHashtags:    (newTags) => {
       if (Array.isArray(newTags) && newTags.length) {
         iaData.hashtags = newTags;
@@ -6894,7 +6953,16 @@ function renderCaptionZoneHashtags() {
   const container = document.getElementById('capZoneHashtags');
   if (!container) return;
   container.innerHTML = '';
-  const hashtags = (iaData?.hashtags || []).slice(0, 8);
+  // Filtro defensivo: deduplicar hashtags (case-insensitive) y filtrar vacíos
+  const rawHashtags = iaData?.hashtags || [];
+  const seen = new Set();
+  const hashtags = rawHashtags.filter(t => {
+    if (!t || typeof t !== 'string') return false;
+    const norm = t.toLowerCase().replace(/^#/, '').trim();
+    if (!norm || seen.has(norm)) return false;
+    seen.add(norm);
+    return true;
+  }).slice(0, 8);
   if (!hashtags.length) return;
 
   const wrap = document.createElement('div');
@@ -6939,7 +7007,9 @@ function renderCaptionZoneEmojis() {
   const container = document.getElementById('capZoneEmojis');
   if (!container) return;
   container.innerHTML = '';
-  const emojis = (iaData?.emojis || []).slice(0, 8);
+  // Filtro defensivo: deduplicar emojis (el groqService a veces devuelve duplicados pese al schema)
+  const rawEmojis = iaData?.emojis || [];
+  const emojis = [...new Set(rawEmojis.filter(e => e && typeof e === 'string'))].slice(0, 8);
   if (!emojis.length) return;
 
   const wrap = document.createElement('div');
