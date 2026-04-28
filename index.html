@@ -1395,6 +1395,96 @@ function confirmNicheMode(mode) {
   document.getElementById('generateBtn').click();
 }
 
+/* ── MODAL DE INCOHERENCIA DESDE BACKEND (422) ─────────────────────────────
+   Reusa nicheMismatchModal cuando el backend devuelve 422 incoherent_niche.
+   Adapta los textos con datos del modelo (detectedNiche, reason) y añade
+   un botón extra "Cambiar a [detectedNiche]". El crédito NO se descontó.    */
+let _pendingDetectedNiche = null;
+
+function showServerNicheMismatchModal(d) {
+  const modal = document.getElementById('nicheMismatchModal');
+  if (!modal) return;
+
+  // Rellenar slots existentes con los datos del backend
+  const niche  = d.userNiche     || 'desconocido';
+  const topic  = d.description   || '';
+  const detect = d.detectedNiche || '';
+
+  document.getElementById('nmNiche').textContent = niche.length > 30 ? niche.substring(0,30)+'…' : niche;
+  document.getElementById('nmTopic').textContent = topic.length  > 45 ? topic.substring(0,45)+'…'  : topic;
+
+  // Memorizar el nicho detectado para el botón "Cambiar a X"
+  _pendingDetectedNiche = detect;
+
+  // Inyectar (o actualizar) el banner con la razón del modelo y el botón
+  // "Cambiar a [detectedNiche]". Si el banner ya existe (por una llamada previa),
+  // lo actualizamos; si no, lo creamos antes del grid de botones existente.
+  let extra = document.getElementById('nmExtraSection');
+  const reasonText = d.reason ? ('Razón: ' + d.reason) : '';
+  const detectedHTML = detect ? (
+    '<button id="nmChangeNicheBtn" onclick="applyDetectedNiche()" style="' +
+    'width:100%;background:linear-gradient(135deg,#10B981,#059669);border:none;border-radius:12px;' +
+    'padding:14px 12px;cursor:pointer;color:#fff;font-size:14px;font-weight:800;margin-bottom:10px;' +
+    'box-shadow:0 4px 12px rgba(16,185,129,.35);">' +
+    '🎯 Cambiar nicho a "' + (detect.length > 24 ? detect.substring(0,24)+'…' : detect) + '"' +
+    '</button>'
+  ) : '';
+
+  if (!extra) {
+    extra = document.createElement('div');
+    extra.id = 'nmExtraSection';
+    extra.style.cssText = 'padding:0 24px 8px;';
+    // Insertar antes del grid de botones (el div que tiene 1fr 1fr)
+    const grid = modal.querySelector('div[style*="grid-template-columns"]');
+    if (grid && grid.parentNode) {
+      grid.parentNode.insertBefore(extra, grid);
+    }
+  }
+  extra.innerHTML =
+    detectedHTML +
+    (reasonText
+      ? ('<div style="font-size:11px;color:var(--text-3);text-align:center;margin-bottom:10px;font-style:italic;">' + reasonText + '</div>')
+      : ''
+    );
+
+  modal.style.display = 'flex';
+}
+
+/* Cambia el nicho del usuario al detectado por el modelo y reintenta generar.
+   No consume crédito extra — la llamada anterior fue bloqueada antes del cobro. */
+function applyDetectedNiche() {
+  if (!_pendingDetectedNiche) return;
+  const newNiche = _pendingDetectedNiche;
+  _pendingDetectedNiche = null;
+
+  // Actualizar input y storage
+  const nicheInput = document.getElementById('niche');
+  if (nicheInput) nicheInput.value = newNiche;
+  try { localStorage.setItem(KEYS.niche, newNiche); } catch(_) {}
+  // Refrescar el chip "Tu nicho" si tu UI lo tiene
+  if (typeof renderNicheChip === 'function') { try { renderNicheChip(); } catch(_) {} }
+
+  // Ocultar modal y limpiar banner extra
+  (document.getElementById('nicheMismatchModal')||{style:{}}).style.display = 'none';
+  const extra = document.getElementById('nmExtraSection');
+  if (extra) extra.remove();
+
+  showNotification('✅ Nicho cambiado a "' + newNiche + '" — generando…', 'info');
+  // Modo "exact" para ignorar lógica de mezcla y respetar el nuevo nicho
+  _pendingGenerateNicheMode = 'adapt';
+  // Pequeño delay para que el usuario vea la notification antes de generar
+  setTimeout(() => document.getElementById('generateBtn').click(), 300);
+}
+
+/* Sobrescribir closeNicheMismatchModal para limpiar el banner extra también */
+const _origCloseNicheMismatchModal = closeNicheMismatchModal;
+closeNicheMismatchModal = function() {
+  _pendingDetectedNiche = null;
+  const extra = document.getElementById('nmExtraSection');
+  if (extra) extra.remove();
+  return _origCloseNicheMismatchModal.apply(this, arguments);
+};
+
 /* ── AUTOSAVE DESCRIPTION ── */
 function autosaveDesc(val) {
   try { localStorage.setItem(KEYS.descDraft, val); } catch(e) {}
@@ -1605,6 +1695,17 @@ async function generateContent(event) {
       throw new Error('Demasiadas generaciones seguidas. Espera ' + wait + ' e intenta de nuevo.');
     }
     if (r.status === 403 && d.error?.includes('créditos')) { showUpgradeModal('monthly_credits'); throw new Error('sin_creditos'); }
+
+    // ── INCOHERENCIA TEMA/NICHO (422) — el backend bloqueó por incoherencia
+    // OBVIA detectada ANTES de gastar el crédito. NO se descontó nada.
+    if (r.status === 422 && d.error === 'incoherent_niche') {
+      btn.disabled  = false;
+      btnCont.innerHTML = '<span>✨</span><span>Generar contenido</span>';
+      showProgress(false);
+      showServerNicheMismatchModal(d);
+      return; // No throw — el modal toma el control del flujo
+    }
+
     if (!r.ok) throw new Error(d.error || 'Error generando contenido');
 
     // Guardar créditos
