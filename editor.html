@@ -1892,7 +1892,7 @@ function applyBrandToCanvas() {
       const img = existingLogo.querySelector('img');
       if (img) img.src = b.logo_url;
     } else if (typeof makeBlock === 'function' && document.getElementById('canvasBlocks')) {
-      try { makeBlock('image', { src:b.logo_url, x:5, y:3, w:22, h:13, role:'logo-block' }); } catch(_e) {}
+      try { makeBlock('image', { src:b.logo_url, x:5, y:3, w:22, h:13, role:'logo-block', _noSelect:true }); } catch(_e) {}
     }
   }
 
@@ -2195,6 +2195,9 @@ function makeBlock(type, opts={}) {
     inner.appendChild(ta);
   } else if (type === 'image') {
     const imgEl = document.createElement('img');
+    // CRÍTICO: crossOrigin DEBE setearse ANTES de src para que CORS funcione
+    // (R2 envía Access-Control-Allow-Origin pero el navegador solo lo respeta si ya tenía crossOrigin antes del request)
+    imgEl.crossOrigin = 'anonymous';
     imgEl.src = opts.src || '';
     imgEl.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;border-radius:4px;';
     inner.appendChild(imgEl);
@@ -2250,7 +2253,9 @@ function makeBlock(type, opts={}) {
   el.appendChild(dragHandle);
 
   document.getElementById('canvasBlocks').appendChild(el);
-  selectBlock(id);
+  // Auto-seleccionar el bloque recién creado, salvo que se pida explícitamente lo contrario
+  // (ej: al aplicar Mi Marca o un slide entero, no queremos robar el foco al usuario)
+  if (!opts._noSelect) selectBlock(id);
   requestAnimationFrame(historySave);
   return el;
 }
@@ -2333,6 +2338,16 @@ function selectBlock(id) {
   document.querySelectorAll('.eblock').forEach(b => b.classList.remove('selected'));
   const el = document.getElementById(id);
   if (el) { el.classList.add('selected'); selectedId = id; updatePropsBar(id); }
+}
+
+// Deselecciona cualquier bloque seleccionado y oculta la barra de propiedades.
+// Se usa cuando aplicamos contenido masivo (un slide entero, todos los slides) y
+// no queremos dejar un bloque marcado al usuario.
+function deselectBlock() {
+  document.querySelectorAll('.eblock').forEach(b => b.classList.remove('selected'));
+  selectedId = null;
+  const pb = document.getElementById('propsBar');
+  if (pb) pb.classList.remove('visible');
 }
 
 function handleCanvasClick(e) {
@@ -3509,9 +3524,11 @@ function applySlideToCanvas(idx, s) {
   if (idx !== currentSlide) loadSlide(idx);
   document.getElementById('canvasBlocks').innerHTML = '';
   slides[idx].blocks = [];
-  if (s.title)   addTextBlock(s.title,   {y:20, w:88, x:6, fontSize:34, bold:true,  color:currentBrand?.font_color||'#fff', align:'center'});
-  if (s.content) addTextBlock(s.content, {y:56, w:88, x:6, fontSize:18, bold:false, color:currentBrand?.sub_font_color||'rgba(255,255,255,.85)', align:'center'});
+  if (s.title)   addTextBlock(s.title,   {y:20, w:88, x:6, fontSize:34, bold:true,  color:currentBrand?.font_color||'#fff', align:'center', _noSelect:true});
+  if (s.content) addTextBlock(s.content, {y:56, w:88, x:6, fontSize:18, bold:false, color:currentBrand?.sub_font_color||'rgba(255,255,255,.85)', align:'center', _noSelect:true});
   saveCurrentBlocks();
+  // Deseleccionar para que el usuario vea el slide limpio sin un bloque marcado
+  if (typeof deselectBlock === 'function') deselectBlock();
   updateSlideNav();
   toast(`Slide ${idx+1} cargado — edítalo en el canvas`,'success');
 }
@@ -3522,11 +3539,13 @@ function applyAllSlides(slides_data, silent = false) {
   slides_data.forEach((s, i) => {
     loadSlide(i);
     document.getElementById('canvasBlocks').innerHTML = '';
-    if (s.title)   addTextBlock(_cleanSlideTitle(s.title),   {y:20, w:88, x:6, fontSize:34, bold:true,  color:currentBrand?.font_color||'#fff', align:'center'});
-    if (s.content) addTextBlock(s.content, {y:56, w:88, x:6, fontSize:18, bold:false, color:currentBrand?.sub_font_color||'rgba(255,255,255,.85)', align:'center'});
+    if (s.title)   addTextBlock(_cleanSlideTitle(s.title),   {y:20, w:88, x:6, fontSize:34, bold:true,  color:currentBrand?.font_color||'#fff', align:'center', _noSelect:true});
+    if (s.content) addTextBlock(s.content, {y:56, w:88, x:6, fontSize:18, bold:false, color:currentBrand?.sub_font_color||'rgba(255,255,255,.85)', align:'center', _noSelect:true});
     saveCurrentBlocks();
   });
   loadSlide(0);
+  // Deseleccionar después de aplicar todo: el usuario debe ver el carrusel completo, no un bloque seleccionado
+  if (typeof deselectBlock === 'function') deselectBlock();
   updateCanvasBg();
   updateSlideNav(); renderSlideStrip();
   if (!silent) {
@@ -3804,42 +3823,54 @@ async function _storyCopSend(idx, storyText) {
 
 /* ── REEL ── */
 function renderReelContentPanel(container) {
-  // ── Reels come from captions[] — 3 structured guiones ──
-  const rawReels = iaData?.captions || [];
+  // ── Reels: groqService v2 separa los guiones (stories[]) del caption del post (captions[]) ──
+  // - iaData.stories[]  = 3 guiones formateados con timestamps (PAIN+PROMISE / PROOF / REFRAME)
+  // - iaData.captions[] = 3 captions {hook, description, cta} para acompañar el post-Reel
+  //   (el shim de loadIAData ya los normalizó a strings concatenados si vinieron como objetos)
+  const rawReels    = iaData?.stories || [];
+  const captionsArr = iaData?.captions || [];
+  const captionsLegacy = iaData?._captions_legacy || []; // strings originales concatenados
   const hashtags = iaData?.hashtags || [];
   const niche    = iaData?.detected_niche || iaData?.niche || '';
 
-  // ── Parser: extract sections from groqService reel format ──
+  // ── Parser: extract sections from groqService v2 reel format ──
+  // Formato esperado:
+  //   REEL 1 PAIN+PROMISE — 25s
+  //   🎯 HOOK 0-3s (TEXT OVERLAY): «texto»
+  //   📢 PROBLEM 3-10s: «texto»
+  //   💡 SOLUTION 10-22s: «texto»
+  //   🎬 CTA 22-25s: «texto»
+  //   🎵 MUSICA: «texto»
+  //   📝 TEXT OVERLAYS: «texto»
   function parseReel(raw) {
-    if (!raw) return null;
-    const get = (label) => {
-      const m = raw.match(new RegExp(label + '[^\n]*\n([^⏱🎵📝]+)', 'i'));
+    if (!raw || typeof raw !== 'string') return null;
+    // Captura la línea completa después del label hasta el siguiente emoji o fin de línea
+    const grab = (re) => {
+      const m = raw.match(re);
       return m ? m[1].trim() : '';
     };
-    // Extract angle from "REEL N — ANGULO: nombre" or from first line
-    const angleM = raw.match(/REEL\s*\d+\s*[^:]+:\s*([^\n]+)/i);
+    // Ángulo: "REEL 1 PAIN+PROMISE — 25s" → "PAIN+PROMISE"
+    const angleM = raw.match(/REEL\s*\d+\s+([A-ZÁÉÍÓÚÑ][\w+\s]*?)\s*[—\-–]\s*\d/i);
     const angle  = angleM ? angleM[1].trim() : '';
 
-    // Extract each timed section
-    const gancho    = (raw.match(/0-3s\s*(?:\(GANCHO\)|GANCHO)[:\s]+([^\n⏱]+)/i) || [])[1]?.trim() || '';
-    const desarrollo= (raw.match(/3-15s\s*(?:\(DESARROLLO\)|DESARROLLO)[:\s]+([^\n⏱]+)/i) || [])[1]?.trim() || '';
-    const valor     = (raw.match(/15-25s\s*(?:\(VALOR[^)]*\)|VALOR)[:\s]+([^\n⏱]+)/i) || [])[1]?.trim() || '';
-    const cta       = (raw.match(/25-30s\s*(?:\(CTA\)|CTA)[:\s]+([^\n⏱🎵📝]+)/i) || [])[1]?.trim() || '';
-    const musicaM   = raw.match(/🎵\s*MUSICA[:\s]+([^\n]+)/i);
-    const musica    = musicaM ? musicaM[1].trim() : '';
-    const captionM  = raw.match(/📝\s*CAPTION[^:]*:[:\s]+([^\n]+)/i);
-    const caption   = captionM ? captionM[1].trim() : '';
+    // Cada timed section — regex permisiva para variaciones de timing (22-25s vs 22-30s)
+    const hook       = grab(/🎯\s*HOOK\s*\d+\s*[-–]\s*\d+\s*s[^:]*:\s*([^\n]+)/i);
+    const problem    = grab(/📢\s*PROBLEM\s*\d+\s*[-–]\s*\d+\s*s[^:]*:\s*([^\n]+)/i);
+    const solution   = grab(/💡\s*SOLUTION\s*\d+\s*[-–]\s*\d+\s*s[^:]*:\s*([^\n]+)/i);
+    const cta        = grab(/🎬\s*CTA\s*\d+\s*[-–]\s*\d+\s*s[^:]*:\s*([^\n]+)/i);
+    const musica     = grab(/🎵\s*M[UÚ]SICA[^:]*:\s*([^\n]+)/i);
+    const overlays   = grab(/📝\s*TEXT\s*OVERLAYS[^:]*:\s*([^\n]+)/i);
 
-    return { raw, angle, gancho, desarrollo, valor, cta, musica, caption };
+    return { raw, angle, hook, problem, solution, cta, musica, overlays };
   }
 
   const reelIdeas = rawReels.slice(0,3).map(parseReel).filter(Boolean);
-  // Pad to 3 if fewer came back
-  const angleLabels = ['TUTORIAL / CÓMO HACER','SECRETO / DATO SORPRENDENTE','POV / RELATABLE'];
+  // Pad to 3 if fewer came back — ángulos 2026 alineados con el groqService v2
+  const angleLabels = ['PAIN+PROMISE','PROOF','REFRAME'];
   while (reelIdeas.length < 3) {
     const j = reelIdeas.length;
     reelIdeas.push({ raw:'', angle: angleLabels[j] || 'Ángulo '+(j+1),
-      gancho:'', desarrollo:'', valor:'', cta:'', musica:'', caption:'' });
+      hook:'', problem:'', solution:'', cta:'', musica:'', overlays:'' });
   }
 
   // ── Header ──
@@ -3847,7 +3878,7 @@ function renderReelContentPanel(container) {
   hdr.style.cssText = 'background:var(--brand-subtle);border-radius:10px;padding:10px 12px;margin-bottom:12px;border-left:3px solid var(--brand);';
   hdr.innerHTML =
     '<div style="font-size:11px;font-weight:800;color:var(--brand);margin-bottom:3px;">🎬 3 guiones listos para grabar</div>' +
-    '<div style="font-size:10px;color:var(--text3);line-height:1.5;">Copia el guión → pégalo en tu app de teleprompter → graba en un toma.</div>';
+    '<div style="font-size:10px;color:var(--text3);line-height:1.5;">Copia el guión → pégalo en tu app de teleprompter → graba en una toma.</div>';
   container.appendChild(hdr);
 
   // ── Cards ──
@@ -3875,10 +3906,10 @@ function renderReelContentPanel(container) {
     guionSec.style.cssText = 'padding:12px 14px;border-bottom:1px solid var(--border);';
 
     const blocks = [
-      { label:'⏱️ 0-3s — GANCHO',      color:'#8B5FBF', text: idea.gancho    },
-      { label:'⏱️ 3-15s — DESARROLLO', color:'#0EA5E9', text: idea.desarrollo },
-      { label:'⏱️ 15-25s — VALOR REAL',color:'#10B981', text: idea.valor     },
-      { label:'⏱️ 25-30s — CTA',       color:'#F43F5E', text: idea.cta       },
+      { label:'⏱️ 0-3s — HOOK (text overlay)', color:'#8B5FBF', text: idea.hook     },
+      { label:'⏱️ 3-10s — PROBLEMA',           color:'#F43F5E', text: idea.problem  },
+      { label:'⏱️ 10-22s — SOLUCIÓN',          color:'#10B981', text: idea.solution },
+      { label:'⏱️ 22-25s — CTA',                color:'#0EA5E9', text: idea.cta      },
     ];
 
     blocks.forEach(b => {
@@ -3891,6 +3922,12 @@ function renderReelContentPanel(container) {
       guionSec.appendChild(row);
     });
 
+    if (idea.overlays) {
+      const ovRow = document.createElement('div');
+      ovRow.style.cssText = 'margin-top:6px;padding:8px 10px;background:var(--surf2);border-radius:6px;font-size:10px;color:var(--text3);';
+      ovRow.innerHTML = '<strong style="color:var(--text2);">📝 Text overlays:</strong> ' + escHtml(idea.overlays);
+      guionSec.appendChild(ovRow);
+    }
     if (idea.musica) {
       const musicRow = document.createElement('div');
       musicRow.style.cssText = 'margin-top:6px;padding-top:8px;border-top:1px solid var(--border);font-size:10px;color:var(--text3);';
@@ -3910,12 +3947,13 @@ function renderReelContentPanel(container) {
     btnFull.onclick = () => {
       const script = [
         'REEL ' + (idx+1) + ' — ' + (idea.angle || angleLabels[idx]),
-        '', '⏱️ 0-3s GANCHO:', idea.gancho || '',
-        '', '⏱️ 3-15s DESARROLLO:', idea.desarrollo || '',
-        '', '⏱️ 15-25s VALOR:', idea.valor || '',
-        '', '⏱️ 25-30s CTA:', idea.cta || '',
+        '', '⏱️ 0-3s HOOK:', idea.hook || '',
+        '', '⏱️ 3-10s PROBLEMA:', idea.problem || '',
+        '', '⏱️ 10-22s SOLUCIÓN:', idea.solution || '',
+        '', '⏱️ 22-25s CTA:', idea.cta || '',
         '', '🎵 Música: ' + (idea.musica || ''),
-      ].join('\n');
+        idea.overlays ? '📝 Text overlays: ' + idea.overlays : '',
+      ].filter(Boolean).join('\n');
       navigator.clipboard.writeText(script).then(() => {
         toast('✅ Guión copiado — pégalo en tu teleprompter', 'success');
         btnFull.textContent = '✓ Copiado';
@@ -3929,7 +3967,7 @@ function renderReelContentPanel(container) {
     btnText.style.cssText = 'flex:1;padding:8px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
     btnText.innerHTML = '🎙️ Solo el texto';
     btnText.onclick = () => {
-      const textOnly = [idea.gancho, idea.desarrollo, idea.valor, idea.cta]
+      const textOnly = [idea.hook, idea.problem, idea.solution, idea.cta]
         .filter(Boolean).join('\n');
       navigator.clipboard.writeText(textOnly).then(() => {
         toast('✅ Texto copiado — para grabar de memoria', 'success');
@@ -3943,6 +3981,8 @@ function renderReelContentPanel(container) {
     card.appendChild(btnRow);
 
     // ── Caption section ──
+    // El caption del reel viene en iaData.captions[idx] como objeto {hook, description, cta}
+    // o como string concatenado (después del shim de loadIAData). Soportamos ambos.
     const capSec = document.createElement('div');
     capSec.style.cssText = 'padding:10px 14px;border-bottom:1px solid var(--border);';
 
@@ -3951,10 +3991,24 @@ function renderReelContentPanel(container) {
     capLbl.textContent = '📝 CAPTION DEL REEL (va debajo del video en Instagram)';
     capSec.appendChild(capLbl);
 
+    // Resolver el caption para este reel
+    let captionStr = '';
+    const c = captionsArr[idx];
+    if (c && typeof c === 'object' && !Array.isArray(c)) {
+      // Objeto {hook, description, cta} — concatenamos
+      captionStr = [c.hook, c.description, c.cta].filter(p => p && String(p).trim()).join('\n\n');
+    } else if (typeof c === 'string') {
+      // Ya es string (el shim ya lo convirtió o vino legacy)
+      captionStr = c;
+    } else if (captionsLegacy[idx]) {
+      // Fallback: legacy original
+      captionStr = String(captionsLegacy[idx]);
+    }
+
     const capTA = document.createElement('textarea');
     capTA.style.cssText = 'width:100%;min-height:70px;padding:8px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--surf);color:var(--text);font-size:11px;font-family:inherit;resize:none;box-sizing:border-box;line-height:1.5;';
     capTA.placeholder = 'Caption corto con hook + hashtags';
-    capTA.value = idea.caption || '';
+    capTA.value = captionStr;
     capTA.oninput = () => { captionFull = capTA.value; updateCaptionPreview(); };
     capSec.appendChild(capTA);
 
@@ -4029,7 +4083,7 @@ function renderReelContentPanel(container) {
       iaResult.textContent   = '✍️ Mejorando guión…';
       iaInput.disabled = true; iaSendBtn.disabled = true;
       try {
-        const guionCtx = 'GANCHO: ' + (idea.gancho||'') + '\nDESARROLLO: ' + (idea.desarrollo||'') + '\nVALOR: ' + (idea.valor||'') + '\nCTA: ' + (idea.cta||'');
+        const guionCtx = 'HOOK: ' + (idea.hook||'') + '\nPROBLEMA: ' + (idea.problem||'') + '\nSOLUCIÓN: ' + (idea.solution||'') + '\nCTA: ' + (idea.cta||'');
         const r = await fetch(API_URL + '/analyze/refine', {
           method:'POST',
           headers:{ 'Content-Type':'application/json','Authorization':'Bearer '+token },
@@ -5203,10 +5257,22 @@ async function showIgPreview() {
 
   for (let i = 0; i < total; i++) {
     if (total > 1) loadSlide(i);
+    // Esperar a que TODAS las imágenes del wrap estén cargadas (R2 puede tardar >150ms)
+    // sin esto, html2canvas captura placeholders vacíos y el preview sale sin logo
     await new Promise(r => setTimeout(r, 150));
+    const imgs = wrap.querySelectorAll('img');
+    await Promise.all(Array.from(imgs).map(img => {
+      if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+      return new Promise(resolve => {
+        const t = setTimeout(resolve, 3000); // hard cap 3s para no bloquear
+        img.addEventListener('load',  () => { clearTimeout(t); resolve(); }, { once:true });
+        img.addEventListener('error', () => { clearTimeout(t); resolve(); }, { once:true });
+      });
+    }));
     try {
-      const hasBg = !!slides[i]?.bgImg;
-      const c = await html2canvas(wrap, {scale:1/scale, useCORS:true, allowTaint:hasBg, backgroundColor:null});
+      // allowTaint:true siempre — más permisivo y resuelve el caso "solo logo, sin bgImg"
+      // donde hasBg=false dejaba allowTaint=false y bloqueaba CORS
+      const c = await html2canvas(wrap, {scale:1/scale, useCORS:true, allowTaint:true, backgroundColor:null});
       const out = document.createElement('canvas');
       out.width=realW; out.height=realH;
       out.getContext('2d').drawImage(c, 0, 0, realW, realH);
@@ -5402,8 +5468,10 @@ async function regenerateFromEditor() {
   const btn = document.querySelector('[onclick="regenerateFromEditor()"]');
   if (btn) { btn.innerHTML='⏳ Regenerando…'; btn.disabled=true; }
 
-  // Progress bar in actual panel container
-  const panel = document.getElementById('iaContentInner');
+  // Progress bar — detectar panel visible (carrusel usa carouselPanelContent, otros usan iaContentInner)
+  const panel = currentFormat === 'carousel'
+    ? document.getElementById('carouselPanelContent')
+    : document.getElementById('iaContentInner');
   let progressBar = null;
   if (panel) {
     progressBar = document.createElement('div');
@@ -5433,6 +5501,9 @@ async function regenerateFromEditor() {
         description:     iaData.description || '',
         tone:            iaData.tone || 'Profesional',
         publicationType: currentFormat,
+        contentType:     iaData.contentType || '',
+        title:           iaData.title || '',
+        files:           Array.isArray(iaData.files) ? iaData.files : [],
       })
     });
     const d = await r.json();
@@ -6467,13 +6538,15 @@ function applyBrandToCurrentSlide() {
   // Add logo only if no logo block already present (check by data-role)
   const hasLogo = document.querySelector('.eblock[data-role="logo-block"]');
   if (b.logo_url && !hasLogo) {
-    makeBlock('image', { src:b.logo_url, x:5, y:3, w:22, h:13, role:'logo-block' });
+    makeBlock('image', { src:b.logo_url, x:5, y:3, w:22, h:13, role:'logo-block', _noSelect:true });
   } else if (b.logo_url && hasLogo) {
     // Update existing logo src
     const img = hasLogo.querySelector('img');
     if (img) img.src = b.logo_url;
   }
   saveCurrentBlocks();
+  // Deseleccionar para que el usuario vea la marca aplicada sin un bloque marcado
+  deselectBlock();
   updateStripThumb(currentSlide);
   historySave();
   toast('✅ Marca aplicada al slide','success');
@@ -6509,7 +6582,7 @@ function applyBrandToAllSlides() {
         const blk = slides[i]?.blocks?.find(bl => bl.role === 'logo-block');
         if (blk) blk.src = b.logo_url;
       } else {
-        makeBlock('image', { src:b.logo_url, x:5, y:3, w:22, h:13, role:'logo-block' });
+        makeBlock('image', { src:b.logo_url, x:5, y:3, w:22, h:13, role:'logo-block', _noSelect:true });
       }
     }
 
@@ -6518,6 +6591,8 @@ function applyBrandToAllSlides() {
   }
 
   loadSlide(orig);
+  // Deseleccionar después de aplicar la marca a todos los slides
+  deselectBlock();
   renderSlideStrip();
   historySave();
   toast('✅ Marca aplicada a ' + total + ' slides','success');
