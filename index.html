@@ -1220,8 +1220,8 @@ function updateFormatBadges() {
 // Features locales — fuente de verdad para el frontend
 const PLAN_FEATURES = {
   free: [
-    '✅ 15 análisis / mes',
-    '✅ 3 análisis por día',
+    '✅ 5 análisis / mes',
+    '✅ 2 análisis por día',
     '✅ Formato Post',
     '✅ Hooks, captions y hashtags',
     '✅ Editor visual básico',
@@ -1350,7 +1350,7 @@ async function uploadFiles(files) {
     preview.appendChild(chip);
 
     try {
-      const fd = new FormData(); fd.append('file', file);
+      const fd = new FormData(); fd.append('files', file);
       const r  = await apiFetch(`${API_URL}/files/upload`, { method:'POST', body:fd });
       const d  = await r.json();
       if (!r.ok) throw new Error(d.error || 'Error');
@@ -1401,7 +1401,7 @@ function autosaveDesc(val) {
 }
 
 /* ── CREDITS BAR ── */
-const PLAN_LIMITS = { free: 15, pro: 100, premium: 300 };
+const PLAN_LIMITS = { free: 5, pro: 100, premium: 300 };
 
 function updateCreditsBar() {
   if (!currentUser) return;
@@ -2502,7 +2502,7 @@ async function showUpgradeModal(reason) {
   if (reason === 'monthly_credits') {
     if (plan === 'free') {
       icon.textContent  = '⚡';
-      title.textContent = 'Agotaste tus 15 créditos del mes';
+      title.textContent = 'Agotaste tus 5 créditos del mes';
       body.textContent  = 'Con el plan Free tienes 5 generaciones al mes. Actualiza a Pro y genera 100 contenidos mensuales — 20x más.';
     } else if (plan === 'pro') {
       icon.textContent  = '⚡';
