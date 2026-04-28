@@ -1735,10 +1735,7 @@ function loadIAData() {
 
     if (currentFormat === 'carousel' && iaData.carousel_slides?.length) {
       slides = iaData.carousel_slides.map((s,i) => {
-        const sl = newSlide(
-          currentBrand?.color_primary || '#7C3AED',
-          currentBrand?.color_secondary || '#F43F5E'
-        );
+        const sl = newSlide('#7C3AED', '#F43F5E'); // defaults — Mi Marca solo se aplica si el usuario lo pide
         sl.iaSlide = s;
         return sl;
       });
@@ -1815,18 +1812,9 @@ async function loadUser() {
       const db = await rb.json();
       if (db.brand) {
         currentBrand = db.brand;
-        applyBrandToCanvas();
-        renderBrandPanel(); // update brand tab if open
-        // Re-apply brand colors to ALL slides (built before brand loaded async)
-        if (slides.length > 0) {
-          slides.forEach(sl => {
-            if (currentBrand.color_primary)   sl.bg1 = currentBrand.color_primary;
-            if (currentBrand.color_secondary) sl.bg2 = currentBrand.color_secondary;
-          });
-          loadSlide(currentSlide);
-          updateCanvasBg();
-          renderSlideStrip();
-        }
+        // Brand loaded into memory only — NOT auto-applied to canvas.
+        // User must explicitly press "Aplicar al slide" / "Aplicar a todos" in the Marca tab.
+        renderBrandPanel(); // update brand tab preview if open
       }
     }
     // Load image bank
@@ -5350,9 +5338,9 @@ async function saveBrandOverlay() {
       sub_font_color:  document.getElementById('ovSubFontColor')?.value  || 'rgba(255,255,255,0.8)',
     };
     renderBrandPanel();
-    applyBrandToCanvas();   // ← FIX: refrescar canvas tras guardar (post/reel/story/carrusel)
+    // Brand saved — canvas is NOT auto-updated. User must press "Aplicar" in the Marca tab.
     closeBrandOverlay();
-    toast('✅ Marca guardada y aplicada','success');
+    toast('✅ Marca guardada','success');
   } catch(err) { toast('Error: '+err.message,'error'); }
 }
 
