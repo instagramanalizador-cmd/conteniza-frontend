@@ -126,9 +126,23 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 .ig-action-icons span{font-size:20px;opacity:.9;}
 .ig-bookmark{font-size:20px;opacity:.9;}
 .ig-likes{font-size:12px;font-weight:700;color:#fff;padding:0 12px 6px;background:#000;}
-.ig-caption-preview{font-size:12px;color:rgba(255,255,255,.85);padding:6px 12px 12px;background:#000;line-height:1.6;max-height:64px;overflow:hidden;cursor:pointer;border-top:1px solid rgba(255,255,255,.08);}
-.ig-caption-preview::-webkit-scrollbar{width:2px;}
-.ig-caption-preview::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);}
+.ig-caption-preview{font-size:12px;color:rgba(255,255,255,.85);padding:6px 12px 12px;background:#000;line-height:1.6;border-top:1px solid rgba(255,255,255,.08);}
+/* Caption content: max-height + fade-out (simula Instagram cuando hay "ver más") */
+.ig-caption-content{
+  display:block;max-height:48px;overflow:hidden;position:relative;
+  /* Fade-out degradado al final para indicar que hay más texto */
+  -webkit-mask-image:linear-gradient(to bottom, #000 60%, transparent 100%);
+          mask-image:linear-gradient(to bottom, #000 60%, transparent 100%);
+  white-space:pre-wrap;word-wrap:break-word;
+  transition:max-height .25s ease;
+}
+.ig-caption-content.expanded{
+  max-height:none;
+  -webkit-mask-image:none;
+          mask-image:none;
+}
+.ig-caption-content strong{margin-right:6px;}
+#igCaptionToggle:hover{color:rgba(255,255,255,.85)!important;}
 
 /* ── SLIDE STRIP ── */
 .slide-strip{
@@ -947,13 +961,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
         <div class="ig-likes">
           <strong style="color:#fff;">248 Me gusta</strong>
         </div>
-        <div class="ig-caption-preview" id="igCaptionPreview"
-             onclick="expandCaptionPreview()"
-             title="Clic para ver más">
-          <div style="display:flex;gap:6px;align-items:flex-start;">
+        <div class="ig-caption-preview" id="igCaptionPreview">
+          <div class="ig-caption-content" id="igCaptionContent">
             <strong style="color:#fff;white-space:nowrap;" id="igCaptionUser">tu_usuario</strong>
             <span id="igCaptionText" style="color:rgba(255,255,255,.85);"> Usa un caption del panel →</span>
           </div>
+          <button id="igCaptionToggle" onclick="expandCaptionPreview()"
+                  style="display:none;background:none;border:none;color:rgba(255,255,255,.55);font-size:12px;font-weight:600;cursor:pointer;padding:4px 0 0;font-family:inherit;letter-spacing:.01em;">
+            ver más
+          </button>
         </div>
 
       </div>
@@ -1497,7 +1513,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
             </div>
           </div>
           <!-- Save button -->
-          <button onclick="saveBrandOverlay()" style="width:100%;padding:14px;border-radius:10px;background:var(--grad);border:none;color:#fff;font-size:14px;font-weight:800;cursor:pointer;font-family:'Syne',sans-serif;">✅ Guardar Mi Marca</button>
+          <button onclick="saveBrandOverlay()" style="width:100%;padding:10px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.02em;">✅ Guardar Mi Marca</button>
         </div>
       </div>
     </div>
@@ -3023,9 +3039,35 @@ function renderContentPanel() {
     return;
   } else if (currentFormat === 'story') {
     renderStoryContentPanel(inner);
+    // ── B1.7: ocultar caption-zone en stories (Instagram Stories no tienen caption como tal) ──
+    const cz = document.getElementById('captionZone');
+    if (cz) cz.style.display = 'none';
   } else if (currentFormat === 'reel') {
+    // Asegurar que el caption-zone está visible en reel/post/carousel
+    const cz = document.getElementById('captionZone');
+    if (cz) cz.style.display = '';
     renderReelContentPanel(inner);
+    // ── B1.6: pre-fill cover con el primer hook del reel si el canvas está vacío ──
+    // Solo lo hace si NO hay ya un hook-block en el canvas (para no pisar ediciones del usuario)
+    setTimeout(() => {
+      const hasHook = document.querySelector('.eblock[data-role="hook-block"]');
+      const firstHook = iaData?.stories?.[0];
+      if (!hasHook && firstHook) {
+        // Extraer hook del primer guion (formato "🎯 HOOK 0-3s: …")
+        const m = String(firstHook).match(/🎯\s*HOOK\s*\d+\s*[-–]\s*\d+\s*s[^:]*:\s*([^\n]+)/i);
+        const hookText = m ? m[1].trim().substring(0, 125) : '';
+        if (hookText && typeof replaceOrAddBlock === 'function') {
+          replaceOrAddBlock('hook-block', hookText, {
+            y: 8, w: 88, x: 6, fontSize: 28, bold: true,
+            color: currentBrand?.font_color || '#fff', align: 'center',
+          });
+        }
+      }
+    }, 200);
   } else {
+    // post o carousel — caption-zone visible
+    const cz = document.getElementById('captionZone');
+    if (cz) cz.style.display = '';
     renderPostContentPanel(inner);
   }
 
@@ -3822,6 +3864,14 @@ function renderReelContentPanel(container) {
     '<div style="font-size:10px;color:var(--text3);line-height:1.5;">Copia el guión → pégalo en tu app de teleprompter → graba en una toma.</div>';
   container.appendChild(hdr);
 
+  // ── B1.6: Header cover del Reel ──
+  const coverHdr = document.createElement('div');
+  coverHdr.style.cssText = 'background:linear-gradient(135deg,rgba(139,95,191,.18),rgba(233,30,140,.12));border-left:3px solid var(--brand2);border-radius:8px;padding:10px 12px;margin-bottom:14px;';
+  coverHdr.innerHTML =
+    '<div style="font-size:11px;font-weight:800;color:var(--brand2);margin-bottom:3px;letter-spacing:.04em;">🎬 Diseña la PORTADA de tu Reel</div>' +
+    '<div style="font-size:10px;color:var(--text2);line-height:1.5;">El canvas de la izquierda es el <strong>cover</strong> que verán antes de pulsar play. Aplica un hook con el botón "🎨 Aplicar HOOK al canvas" debajo de cada guión.</div>';
+  container.appendChild(coverHdr);
+
   // ── Cards ──
   let reelIdx = 0;
   const angleColors = ['#8B5FBF','#F43F5E','#0EA5E9'];
@@ -3861,6 +3911,34 @@ function renderReelContentPanel(container) {
         '<div style="font-size:9px;font-weight:800;color:' + b.color + ';text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">' + b.label + '</div>' +
         '<div style="font-size:12px;color:var(--text2);line-height:1.6;">' + escHtml(b.text) + '</div>';
       guionSec.appendChild(row);
+      // ── B1.6: botón "Aplicar HOOK al canvas" debajo del hook ──
+      if (b.label.includes('HOOK')) {
+        const applyHookBtn = document.createElement('button');
+        applyHookBtn.style.cssText = 'width:100%;padding:7px;margin-top:6px;border-radius:6px;background:rgba(139,95,191,.12);border:1px solid var(--brand-border);color:var(--brand);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;';
+        applyHookBtn.innerHTML = '🎨 Aplicar HOOK al canvas (cover del Reel)';
+        applyHookBtn.onclick = () => {
+          const fl = String(b.text || '').substring(0, 125).trim();
+          if (!fl) { toast('No hay hook para aplicar', 'info'); return; }
+          if (typeof replaceOrAddBlock === 'function') {
+            replaceOrAddBlock('hook-block', fl, {
+              y: 8, w: 88, x: 6, fontSize: 28, bold: true,
+              color: currentBrand?.font_color || '#fff', align: 'center',
+            });
+            applyHookBtn.textContent = '✅ HOOK aplicado al cover';
+            applyHookBtn.style.background = 'rgba(16,185,129,.12)';
+            applyHookBtn.style.borderColor = '#10B981';
+            applyHookBtn.style.color = '#10B981';
+            setTimeout(() => {
+              applyHookBtn.innerHTML = '🎨 Aplicar HOOK al canvas (cover del Reel)';
+              applyHookBtn.style.background = 'rgba(139,95,191,.12)';
+              applyHookBtn.style.borderColor = 'var(--brand-border)';
+              applyHookBtn.style.color = 'var(--brand)';
+            }, 1500);
+            toast('✅ HOOK del reel aplicado al cover', 'success');
+          }
+        };
+        guionSec.appendChild(applyHookBtn);
+      }
     });
 
     if (idea.overlays) {
@@ -3946,52 +4024,61 @@ function renderReelContentPanel(container) {
       captionStr = String(captionsLegacy[idx]);
     }
 
-    const capTA = document.createElement('textarea');
-    capTA.style.cssText = 'width:100%;min-height:70px;padding:8px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--surf);color:var(--text);font-size:11px;font-family:inherit;resize:none;box-sizing:border-box;line-height:1.5;';
-    capTA.placeholder = 'Caption corto con hook + hashtags';
-    capTA.value = captionStr;
-    capTA.oninput = () => { captionFull = capTA.value; updateCaptionPreview(); };
-    capSec.appendChild(capTA);
+    // ── REEL caption: 3 bloques editables (hook/desc/cta) — patrón consistente con POST y CARRUSEL ──
+    // Parsear el caption a partes
+    const initialParts = (typeof parseCaption === 'function')
+      ? parseCaption(captionStr)
+      : { hook:'', description: String(captionStr||''), cta:'' };
 
-    // Hashtag chips
-    if (hashtags.length) {
-      const hashRow = document.createElement('div');
-      hashRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;margin-bottom:6px;';
-      const selH = new Set();
-      hashtags.slice(0,8).forEach(tag => {
-        const chip = document.createElement('button');
-        chip.className = 'hash-chip';
-        chip.textContent = tag.startsWith('#') ? tag : '#'+tag;
-        chip.onclick = () => {
-          if (selH.has(tag)) { selH.delete(tag); chip.classList.remove('active'); }
-          else if (selH.size < 5) { selH.add(tag); chip.classList.add('active'); }
-          else { toast('Máximo 5 hashtags para Reels','info'); return; }
-          const base = capTA.value.replace(/#\S+/g,'').replace(/\s+$/,'').trim();
-          const tags = [...selH].map(t => t.startsWith('#') ? t : '#'+t).join(' ');
-          capTA.value = base + (tags ? '\n' + tags : '');
-          captionFull = capTA.value; updateCaptionPreview();
-        };
-        hashRow.appendChild(chip);
-      });
-      capSec.appendChild(hashRow);
-    }
-
-    const copyCapBtn = document.createElement('button');
-    copyCapBtn.style.cssText = 'width:100%;padding:7px;border-radius:8px;border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px;';
-    copyCapBtn.innerHTML = '📋 Copiar caption';
-    copyCapBtn.onclick = () => {
-      navigator.clipboard.writeText(capTA.value || '').then(() => {
-        toast('✅ Caption copiado', 'success');
-        copyCapBtn.textContent = '✓ Copiado';
-        setTimeout(() => { copyCapBtn.innerHTML = '📋 Copiar caption'; }, 1500);
-      });
+    const mkReelBlock = (label, minH) => {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'margin-bottom:7px;';
+      const lbl = document.createElement('div');
+      lbl.style.cssText = 'font-size:8px;font-weight:800;color:var(--brand);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px;';
+      lbl.textContent = label;
+      const ed = document.createElement('div');
+      ed.contentEditable = 'true';
+      ed.style.cssText = 'font-size:10px;line-height:1.45;color:var(--text);padding:5px 7px;background:var(--surf);border-radius:5px;border:1px solid var(--border2);min-height:' + minH + 'px;outline:none;';
+      ed.spellcheck = false;
+      wrap.appendChild(lbl); wrap.appendChild(ed);
+      return { wrap, ed };
     };
-    capSec.appendChild(copyCapBtn);
+
+    const reelHook = mkReelBlock('🪝 Hook', 26);
+    const reelDesc = mkReelBlock('📝 Description', 50);
+    const reelCta  = mkReelBlock('🎯 CTA', 26);
+    reelHook.ed.innerText = initialParts.hook || '';
+    reelDesc.ed.innerText = initialParts.description || '';
+    reelCta.ed.innerText  = initialParts.cta || '';
+
+    capSec.appendChild(reelHook.wrap);
+    capSec.appendChild(reelDesc.wrap);
+    capSec.appendChild(reelCta.wrap);
+
+    // Botón "✅ Usar este caption" (NUEVO en B1.4 — el reel no lo tenía)
+    const useReelBtn = document.createElement('button');
+    useReelBtn.style.cssText = 'width:100%;padding:8px;border-radius:7px;background:var(--grad);border:none;color:#fff;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.02em;margin-top:4px;margin-bottom:6px;';
+    useReelBtn.innerHTML = '✅ Usar este caption';
+    useReelBtn.onclick = () => {
+      const parts = {
+        hook:        reelHook.ed.innerText.trim(),
+        description: reelDesc.ed.innerText.trim(),
+        cta:         reelCta.ed.innerText.trim(),
+      };
+      // Escribir al caption-zone (también sincroniza captionFull + #capFull)
+      if (typeof setCaptionZoneValue === 'function') {
+        setCaptionZoneValue(parts);
+      }
+      useReelBtn.textContent = '✅ Caption aplicado';
+      useReelBtn.style.background = '#10B981';
+      setTimeout(() => { useReelBtn.innerHTML = '✅ Usar este caption'; useReelBtn.style.background = 'var(--grad)'; }, 1500);
+      toast('✅ Caption en el panel lateral — edítalo o usa el Copiloto', 'success');
+    };
+    capSec.appendChild(useReelBtn);
+
     card.appendChild(capSec);
 
-    // ── Copiloto v2: el botón "Mejorar este guion con IA" se elimina aquí.
-    //    En B1.4 se renderiza el Copiloto v2 (6 botones preset) bajo el caption del reel,
-    //    con la misma UX que en POST y CARRUSEL.
+    // El Copiloto v2 vive en el caption-zone (lateral 300px) — no se duplica aquí.
     container.appendChild(card);
   });
 
@@ -4534,32 +4621,42 @@ function onCaptionInput() {
 
 function updateCaptionPreview() {
   const preview = document.getElementById('igCaptionText');
+  const content = document.getElementById('igCaptionContent');
+  const toggle  = document.getElementById('igCaptionToggle');
   if (preview) {
     if (!captionFull) {
       preview.textContent = ' Usa un caption del panel →';
       preview.style.color = 'rgba(255,255,255,.4)';
     } else {
-      // Show first 125 chars — includes emojis
-      const short = captionFull.substring(0,125) + (captionFull.length>125?'… ver más':'');
-      preview.textContent = ' ' + short;
+      // YA NO truncamos: el caption completo se renderiza, el fade-out CSS hace el corte visual
+      preview.textContent = ' ' + captionFull;
       preview.style.color = 'rgba(255,255,255,.9)';
+    }
+  }
+  // Decidir si mostrar el botón "ver más": solo si el contenido overflowa el max-height
+  if (content && toggle) {
+    // En estado colapsado, comparar scrollHeight (alto real) con clientHeight (alto visible).
+    // Si scrollHeight > clientHeight → hay más contenido oculto → mostrar "ver más".
+    if (content.classList.contains('expanded')) {
+      toggle.style.display = 'inline-block';
+      toggle.textContent   = 'ver menos';
+    } else {
+      // Esperar al próximo frame para que el navegador termine el layout antes de medir
+      requestAnimationFrame(() => {
+        const overflows = content.scrollHeight > content.clientHeight + 2; // +2 por redondeo
+        toggle.style.display = overflows ? 'inline-block' : 'none';
+        toggle.textContent   = 'ver más';
+      });
     }
   }
 }
 
 function expandCaptionPreview() {
-  const prev = document.getElementById('igCaptionPreview');
-  if (!prev) return;
-  const isExpanded = prev.dataset.expanded === '1';
-  if (isExpanded) {
-    prev.style.maxHeight = '64px';
-    prev.style.overflow  = 'hidden';
-    prev.dataset.expanded = '0';
-  } else {
-    prev.style.maxHeight = 'none';
-    prev.style.overflow  = 'visible';
-    prev.dataset.expanded = '1';
-  }
+  const content = document.getElementById('igCaptionContent');
+  const toggle  = document.getElementById('igCaptionToggle');
+  if (!content || !toggle) return;
+  const isExpanded = content.classList.toggle('expanded');
+  toggle.textContent = isExpanded ? 'ver menos' : 'ver más';
 }
 
 // Update the section previews in caption tab
@@ -5372,8 +5469,22 @@ function openBrandOverlay() {
     document.getElementById('ovColor2Text').textContent = c2;
     document.getElementById('ovFontSelect').value = fn;
     if (currentBrand.logo_url) {
+      // Cache-bust para que se vea el último logo aunque la URL no haya cambiado
+      const cb = currentBrand.logo_url + (currentBrand.logo_url.includes('?') ? '&' : '?') + '_t=' + Date.now();
+      // Thumb pequeño junto al botón "Subir logo"
       const lp = document.getElementById('ovLogoPreview');
-      if (lp) lp.innerHTML = `<img src="${currentBrand.logo_url}" style="width:100%;height:100%;object-fit:contain;">`;
+      if (lp) lp.innerHTML = `<img src="${cb}" crossOrigin="anonymous" style="width:100%;height:100%;object-fit:contain;">`;
+      // Imagen dentro de la Vista Previa grande (era el bug)
+      const pl = document.getElementById('ovPreviewLogo');
+      if (pl) {
+        pl.crossOrigin = 'anonymous';
+        pl.src = cb;
+        pl.style.display = 'block';
+      }
+    } else {
+      // Sin logo: ocultar imagen del preview grande
+      const pl = document.getElementById('ovPreviewLogo');
+      if (pl) pl.style.display = 'none';
     }
     updateOvPreview();
   }
@@ -5420,10 +5531,47 @@ async function onOvLogoUpload(event) {
     const r  = await fetch(API_URL+'/brand/logo',{method:'POST',headers:{Authorization:'Bearer '+token},body:fd});
     const d  = await r.json();
     if (r.ok && d.logo_url) {
+      // Cache-bust: el navegador a veces cachea por URL aunque cambie el contenido
+      const cb = d.logo_url + (d.logo_url.includes('?') ? '&' : '?') + '_t=' + Date.now();
+
+      // Thumb pequeño junto al botón "Subir logo" en el overlay
       const lp = document.getElementById('ovLogoPreview');
-      if (lp) lp.innerHTML = `<img src="${d.logo_url}" style="width:100%;height:100%;object-fit:contain;">`;
+      if (lp) lp.innerHTML = `<img src="${cb}" crossOrigin="anonymous" style="width:100%;height:100%;object-fit:contain;">`;
+
+      // Vista Previa grande del overlay (era invisible antes)
       const pl = document.getElementById('ovPreviewLogo');
-      if (pl) { pl.src=d.logo_url; pl.style.display='block'; }
+      if (pl) {
+        pl.crossOrigin = 'anonymous';
+        pl.src = cb;
+        pl.style.display = 'block';
+      }
+
+      // Sincronizar también el preview del panel Mi Marca (fuera del overlay)
+      const edLogo = document.getElementById('edBrandLogo');
+      if (edLogo) {
+        edLogo.crossOrigin = 'anonymous';
+        edLogo.src = cb;
+        edLogo.style.display = 'block';
+      }
+      const edThumb = document.getElementById('edLogoPreviewThumb');
+      if (edThumb) edThumb.innerHTML = `<img src="${cb}" crossOrigin="anonymous" style="width:100%;height:100%;object-fit:contain;">`;
+
+      // Actualizar el logo block en el canvas si ya existe (el usuario ya había aplicado marca antes)
+      const existingLogo = document.querySelector('.eblock[data-role="logo-block"]');
+      if (existingLogo) {
+        const img = existingLogo.querySelector('img');
+        if (img) {
+          img.crossOrigin = 'anonymous';
+          img.src = cb;
+        }
+        // Sincronizar slides[].blocks para que al cambiar de slide se restaure el nuevo
+        if (slides[currentSlide]?.blocks) {
+          const blk = slides[currentSlide].blocks.find(bl => bl.role === 'logo-block');
+          if (blk) blk.src = d.logo_url; // sin cache-bust en datos persistidos
+        }
+        saveCurrentBlocks();
+      }
+
       if (!currentBrand) currentBrand = {};
       currentBrand.logo_url = d.logo_url;
       toast('✅ Logo subido','success');
@@ -6327,7 +6475,7 @@ function renderCarouselCaptionPanel() {
 
   // ── 1. Caption label ──
   const capLabel = document.createElement('div');
-  capLabel.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;';
+  capLabel.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;';
   capLabel.textContent = '📝 Caption del carrusel';
   navEl.appendChild(capLabel);
 
@@ -6338,109 +6486,108 @@ function renderCarouselCaptionPanel() {
     navEl.appendChild(empty);
   } else {
     let capIdx = 0;
+    // Editado local por caption (cuando el usuario modifica los bloques o aplica copiloto)
+    const editedCaptions = captions.map(() => null);
+    // Ángulos 2026 (mismos que POST)
+    const ANGLES = ['PAIN+PROMISE', 'PROOF', 'REFRAME'];
 
-    // Counter + arrows row — "1 de 5"
+    const card = document.createElement('div');
+    card.style.cssText = 'border:1px solid var(--border2);border-radius:var(--r);background:var(--surf2);overflow:hidden;margin-bottom:12px;';
+
+    // Counter + arrows
     const navRow = document.createElement('div');
-    navRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;';
+    navRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid var(--border);';
     const ctr = document.createElement('span');
     ctr.style.cssText = 'font-size:11px;font-weight:700;color:var(--text2);';
-    const prev = document.createElement('button');
-    prev.style.cssText = 'width:26px;height:26px;border-radius:50%;border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;';
-    prev.innerHTML = '&#8592;';
-    const next = document.createElement('button');
-    next.style.cssText = 'width:26px;height:26px;border-radius:50%;border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;';
-    next.innerHTML = '&#8594;';
-    const arrows = document.createElement('div');
-    arrows.style.cssText = 'display:flex;gap:4px;';
-    arrows.appendChild(prev);
-    arrows.appendChild(next);
-    navRow.appendChild(ctr);
-    navRow.appendChild(arrows);
-    navEl.appendChild(navRow);
+    const navBtns = document.createElement('div');
+    navBtns.style.cssText = 'display:flex;gap:5px;';
+    const btnP = document.createElement('button');
+    btnP.style.cssText = 'width:24px;height:24px;border-radius:5px;border:1px solid var(--border2);background:var(--surf);color:var(--text);font-size:12px;cursor:pointer;';
+    btnP.textContent = '←';
+    const btnN = document.createElement('button');
+    btnN.style.cssText = 'width:24px;height:24px;border-radius:5px;border:1px solid var(--border2);background:var(--surf);color:var(--text);font-size:12px;cursor:pointer;';
+    btnN.textContent = '→';
+    navBtns.appendChild(btnP); navBtns.appendChild(btnN);
+    navRow.appendChild(ctr); navRow.appendChild(navBtns);
+    card.appendChild(navRow);
 
-    // Caption text box
-    const txt = document.createElement('div');
-    txt.style.cssText = 'font-size:11px;color:var(--text2);line-height:1.6;padding:8px;background:var(--surf2);border-radius:var(--r);border:1px solid var(--border2);margin-bottom:8px;max-height:200px;overflow-y:auto;white-space:pre-wrap;';
+    // 3 bloques editables (compactos para panel derecho)
+    const body = document.createElement('div');
+    body.style.cssText = 'padding:10px;';
+
+    const mkBlock = (label, minH) => {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'margin-bottom:8px;';
+      const lbl = document.createElement('div');
+      lbl.style.cssText = 'font-size:8px;font-weight:800;color:var(--brand);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px;';
+      lbl.textContent = label;
+      const ed = document.createElement('div');
+      ed.contentEditable = 'true';
+      ed.style.cssText = 'font-size:10px;line-height:1.4;color:var(--text);padding:5px 7px;background:var(--surf);border-radius:5px;border:1px solid var(--border2);min-height:' + minH + 'px;outline:none;';
+      ed.spellcheck = false;
+      wrap.appendChild(lbl); wrap.appendChild(ed);
+      return { wrap, ed };
+    };
+
+    const hookBlk = mkBlock('🪝 Hook', 28);
+    const descBlk = mkBlock('📝 Description', 60);
+    const ctaBlk  = mkBlock('🎯 CTA', 28);
+
+    body.appendChild(hookBlk.wrap);
+    body.appendChild(descBlk.wrap);
+    body.appendChild(ctaBlk.wrap);
+
+    const saveEdits = () => {
+      editedCaptions[capIdx] = {
+        hook:        hookBlk.ed.innerText.trim(),
+        description: descBlk.ed.innerText.trim(),
+        cta:         ctaBlk.ed.innerText.trim(),
+      };
+    };
+    [hookBlk.ed, descBlk.ed, ctaBlk.ed].forEach(ed => ed.addEventListener('input', saveEdits));
 
     const renderCap = () => {
-      const raw = (captions[capIdx] || '')
-        .replace(/^CAPTION\s*\d+\s*[—-]\s*(Hook:|Descripción:|CTA:)?\s*/i, '')
-        .replace(/#\S+/g, '').replace(/[\u{1F300}-\u{1FAFF}]/gu, '')
-        .replace(/\n{3,}/g, '\n\n').trim();
-      txt.textContent = raw || '—';
-      ctr.textContent = (capIdx + 1) + ' de ' + captions.length;
+      const cap = captions[capIdx];
+      const parsed = editedCaptions[capIdx] || (typeof parseCaption === 'function' ? parseCaption(cap) : { hook:'', description: String(cap||''), cta:'' });
+      const angle = ANGLES[capIdx] || ('Caption ' + (capIdx + 1));
+      ctr.innerHTML = (capIdx + 1) + ' de ' + captions.length + ' <span style="color:var(--brand2);font-weight:800;">— ' + angle + '</span>';
+      hookBlk.ed.innerText = parsed.hook || '';
+      descBlk.ed.innerText = parsed.description || '';
+      ctaBlk.ed.innerText  = parsed.cta || '';
+      btnP.style.opacity = capIdx === 0 ? '.3' : '1';
+      btnN.style.opacity = capIdx === captions.length - 1 ? '.3' : '1';
     };
-    renderCap();
 
-    prev.onclick = () => { capIdx = (capIdx - 1 + captions.length) % captions.length; renderCap(); selH.clear(); resetHashChips(); };
-    next.onclick = () => { capIdx = (capIdx + 1) % captions.length; renderCap(); selH.clear(); resetHashChips(); };
-    navEl.appendChild(txt);
+    btnP.onclick = () => { if (capIdx > 0) { saveEdits(); capIdx--; renderCap(); selH.clear(); resetHashChips(); } };
+    btnN.onclick = () => { if (capIdx < captions.length - 1) { saveEdits(); capIdx++; renderCap(); selH.clear(); resetHashChips(); } };
 
-    // ── 2. Usar este caption ──
+    // Botón "Usar este caption"
     const useBtn = document.createElement('button');
-    useBtn.style.cssText = 'width:100%;padding:8px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:12px;';
-    useBtn.innerHTML = '&#9989; Usar este caption';
+    useBtn.style.cssText = 'width:100%;padding:9px;border-radius:0;background:var(--grad);border:none;color:#fff;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.02em;border-top:1px solid var(--border);';
+    useBtn.innerHTML = '✅ Usar este caption';
     useBtn.onclick = () => {
-      const raw = (captions[capIdx] || '')
-        .replace(/^CAPTION\s*\d+\s*[—-]\s*(Hook:|Descripción:|CTA:)?\s*/i, '')
-        .replace(/#\S+/g, '').replace(/[\u{1F300}-\u{1FAFF}]/gu, '')
-        .replace(/\n{3,}/g, '\n\n').trim();
-      const capEl = document.getElementById('capFull');
-      if (capEl) { capEl.value = raw; captionFull = raw; updateCaptionPreview(); }
+      saveEdits();
+      const parts = editedCaptions[capIdx];
+      // Escribir los 3 bloques del caption-zone (también sincroniza captionFull + #capFull)
+      if (typeof setCaptionZoneValue === 'function') {
+        setCaptionZoneValue(parts);
+      }
       selH.clear(); resetHashChips();
-      toast('Caption aplicado', 'success');
+      // No aplicamos hook al canvas en carrusel — cada slide tiene su propio título
+      useBtn.textContent = '✅ Caption aplicado';
+      useBtn.style.background = '#10B981';
+      setTimeout(() => { useBtn.innerHTML = '✅ Usar este caption'; useBtn.style.background = 'var(--grad)'; }, 1500);
+      toast('✅ Caption en el panel lateral — edítalo o usa el Copiloto', 'success');
     };
-    navEl.appendChild(useBtn);
+
+    card.appendChild(body);
+    card.appendChild(useBtn);
+    navEl.appendChild(card);
+    renderCap();
   }
 
-  // ── 3. Hashtags — elige hasta 3 ──
-  if (hashtags.length) {
-    const hashTitle = document.createElement('div');
-    hashTitle.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;';
-    hashTitle.textContent = '# Hashtags — elige hasta 3';
-    navEl.appendChild(hashTitle);
-    const hashRow = document.createElement('div');
-    hashRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;';
-    hashtags.forEach(tag => {
-      const chip = document.createElement('button');
-      chip.className = 'hash-chip';
-      chip.textContent = tag.startsWith('#') ? tag : '#' + tag;
-      chip.onclick = () => {
-        if (selH.has(tag)) { selH.delete(tag); chip.classList.remove('active'); }
-        else if (selH.size < 3) { selH.add(tag); chip.classList.add('active'); }
-        else { toast('Máximo 3 hashtags', 'info'); return; }
-        updateCaptionHashEmoji(selH, selE);
-      };
-      hashRow.appendChild(chip);
-    });
-    navEl.appendChild(hashRow);
-  }
-
-  // ── 4. Emojis ──
-  if (emojis.length) {
-    const emoTitle = document.createElement('div');
-    emoTitle.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px;';
-    emoTitle.textContent = '😊 Emojis';
-    const emoSub = document.createElement('div');
-    emoSub.style.cssText = 'font-size:10px;color:var(--text3);margin-bottom:6px;';
-    emoSub.textContent = 'Toca uno — elige si va en el canvas o en el caption';
-    const emoRow = document.createElement('div');
-    emoRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;';
-    emojis.forEach(em => {
-      const b = document.createElement('button');
-      b.style.cssText = 'font-size:20px;cursor:pointer;background:none;border:none;padding:2px;border-radius:4px;';
-      b.textContent = em;
-      b.onclick = () => { showEmojiDestination(em, b); };
-      emoRow.appendChild(b);
-    });
-    navEl.appendChild(emoTitle);
-    navEl.appendChild(emoSub);
-    navEl.appendChild(emoRow);
-  }
-
-  // ── Copiloto v2: el botón "Mejorar con IA Copiloto" se elimina aquí.
-  //    En B1.3 se renderiza el Copiloto v2 (6 botones preset) bajo cada caption del carrusel,
-  //    con la misma UX que en POST y REEL.
+  // Hashtags y Emojis ya están en el caption-zone (lateral 300px) — eliminados de aquí
+  // para evitar duplicación.
 
   // ── Regenerar ──
   const regenBtn = document.createElement('button');
@@ -6448,19 +6595,6 @@ function renderCarouselCaptionPanel() {
   regenBtn.innerHTML = '🔄 Regenerar todo (-1 crédito)';
   regenBtn.onclick = () => regenerateFromEditor();
   navEl.appendChild(regenBtn);
-
-  // Sync captionZone emojis
-  const zoneEmojis = document.getElementById('captionZoneEmojis');
-  if (zoneEmojis && emojis.length) {
-    zoneEmojis.innerHTML = '';
-    emojis.forEach(em => {
-      const b = document.createElement('button');
-      b.style.cssText = 'font-size:18px;cursor:pointer;background:none;border:none;padding:1px;border-radius:4px;';
-      b.textContent = em;
-      b.onclick = () => { const cap = document.getElementById('capFull'); if (cap) { cap.value += ' ' + em; captionFull = cap.value; updateCaptionPreview(); } };
-      zoneEmojis.appendChild(b);
-    });
-  }
 }
 function renderBrandPanel() {
   const emptyEl   = document.getElementById('edBrandEmpty');
@@ -6496,9 +6630,9 @@ function renderBrandPanel() {
       logo.src = b.logo_url + sep + '_t=' + Date.now();
       logo.style.display = 'block';
       // Aumentar tamaño visible del logo en el preview (32px era muy pequeño y causaba sensación de "no aparece")
-      logo.style.width  = '48px';
-      logo.style.height = '48px';
-      logo.style.marginBottom = '6px';
+      logo.style.width  = '64px';
+      logo.style.height = '64px';
+      logo.style.marginBottom = '8px';
       // Si carga falla (CORS u otro), al menos no romper el layout
       logo.onerror = () => { logo.style.display = 'none'; };
     } else {
@@ -6507,6 +6641,19 @@ function renderBrandPanel() {
   }
   if (title) { title.style.fontFamily=`'${fn}',sans-serif`; title.style.color=fc; }
   if (sub)   { sub.style.fontFamily=`'${fn}',sans-serif`; sub.style.color=b.sub_font_color||'rgba(255,255,255,.8)'; }
+
+  // Thumb pequeño junto al botón "📷 Cambiar logo" — antes solo se actualizaba al SUBIR un logo nuevo,
+  // ahora también al renderizar el panel con un logo ya guardado.
+  const thumb = document.getElementById('edLogoPreviewThumb');
+  if (thumb) {
+    if (b.logo_url) {
+      const sep2 = b.logo_url.includes('?') ? '&' : '?';
+      const cb = b.logo_url + sep2 + '_t=' + Date.now();
+      thumb.innerHTML = `<img src="${cb}" crossOrigin="anonymous" style="width:100%;height:100%;object-fit:contain;">`;
+    } else {
+      thumb.innerHTML = '🏷';
+    }
+  }
 
   if (infoEl) infoEl.innerHTML =
     `<span style="display:inline-block;width:16px;height:16px;border-radius:4px;background:linear-gradient(135deg,${c1},${c2});vertical-align:middle;margin-right:5px;border:1px solid rgba(255,255,255,.1);"></span><strong>Colores</strong> configurados<br>` +
@@ -6545,14 +6692,25 @@ function applyBrandToCurrentSlide() {
     ta.style.fontFamily = `'${b.font_name||'DM Sans'}',sans-serif`;
     ta.style.color      = i === 0 ? (b.font_color||'#fff') : (b.sub_font_color||'rgba(255,255,255,.85)');
   });
-  // Add logo only if no logo block already present (check by data-role)
+  // Logo: añadir si no existe, o actualizar si ya hay uno (con cache-bust para forzar recarga del navegador)
   const hasLogo = document.querySelector('.eblock[data-role="logo-block"]');
   if (b.logo_url && !hasLogo) {
-    makeBlock('image', { src:b.logo_url, x:5, y:3, w:22, h:13, role:'logo-block', _noSelect:true });
+    const cb = b.logo_url + (b.logo_url.includes('?') ? '&' : '?') + '_t=' + Date.now();
+    makeBlock('image', { src:cb, x:5, y:3, w:22, h:13, role:'logo-block', _noSelect:true });
   } else if (b.logo_url && hasLogo) {
-    // Update existing logo src
+    // Actualizar src del block existente con cache-bust
+    const cb = b.logo_url + (b.logo_url.includes('?') ? '&' : '?') + '_t=' + Date.now();
     const img = hasLogo.querySelector('img');
-    if (img) img.src = b.logo_url;
+    if (img) {
+      img.crossOrigin = 'anonymous';
+      img.src = cb;
+    }
+    // CRÍTICO: actualizar también slides[].blocks para que al cambiar de slide y volver,
+    // se restaure con la URL nueva (sin cache-bust para no inflar el storage con timestamps obsoletos)
+    if (slides[currentSlide]?.blocks) {
+      const blk = slides[currentSlide].blocks.find(bl => bl.role === 'logo-block');
+      if (blk) blk.src = b.logo_url;
+    }
   }
   saveCurrentBlocks();
   // Deseleccionar para que el usuario vea la marca aplicada sin un bloque marcado
@@ -6582,21 +6740,32 @@ function applyBrandToAllSlides() {
       ta.style.color = di === 0 ? (b.font_color||'#fff') : (b.sub_font_color||'rgba(255,255,255,.8)');
     });
 
-    // Add or update logo block
+    // Logo: añadir o actualizar (con cache-bust para forzar recarga visual)
     if (b.logo_url) {
+      const cb = b.logo_url + (b.logo_url.includes('?') ? '&' : '?') + '_t=' + Date.now() + '_' + i;
       const existingLogo = document.querySelector('.eblock[data-role="logo-block"]');
       if (existingLogo) {
         const img = existingLogo.querySelector('img');
-        if (img) img.src = b.logo_url;
-        // Persist in slide data
+        if (img) {
+          img.crossOrigin = 'anonymous';
+          img.src = cb;
+        }
+        // Persist en slide data SIN cache-bust (la URL persistida debe ser la limpia)
         const blk = slides[i]?.blocks?.find(bl => bl.role === 'logo-block');
         if (blk) blk.src = b.logo_url;
       } else {
-        makeBlock('image', { src:b.logo_url, x:5, y:3, w:22, h:13, role:'logo-block', _noSelect:true });
+        makeBlock('image', { src:cb, x:5, y:3, w:22, h:13, role:'logo-block', _noSelect:true });
+        // Tras makeBlock, saveCurrentBlocks abajo persiste el block con URL+cache-bust;
+        // lo limpiamos en blocks[] para que la persistencia no incluya el timestamp efímero.
       }
     }
 
     saveCurrentBlocks();
+    // Limpiar cache-bust de slides[i].blocks tras saveCurrentBlocks (queda la URL pura para futuros loads)
+    if (b.logo_url && slides[i]?.blocks) {
+      const blk = slides[i].blocks.find(bl => bl.role === 'logo-block');
+      if (blk && blk.src && blk.src.includes('_t=')) blk.src = b.logo_url;
+    }
     updateStripThumb(i);
   }
 
