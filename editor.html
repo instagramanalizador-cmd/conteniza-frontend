@@ -199,10 +199,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 
 /* ── IA PANEL ── */
 .caption-zone{
-  width:190px;flex-shrink:0;display:flex;flex-direction:column;
+  width:240px;flex-shrink:0;display:flex;flex-direction:column;
   background:var(--surf);border-left:1px solid var(--border);
-  padding:8px;gap:5px;overflow:visible;
-  font-size:11px;height:50vh;min-height:340px;align-self:flex-start;
+  padding:10px;gap:10px;overflow-y:auto;
+  font-size:11px;height:auto;max-height:calc(100vh - 100px);min-height:340px;align-self:flex-start;
 }
 .caption-zone-lbl{
   font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;
@@ -213,6 +213,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   flex:1;min-height:0;resize:none;padding:8px;border-radius:var(--r);
   border:1px solid var(--border2);background:var(--surf2);color:var(--text);
   font-family:inherit;font-size:11px;line-height:1.6;overflow-y:auto;min-height:180px;
+}
+/* Bloques editables del caption activo (3 bloques: hook/desc/cta) */
+.cap-zone-block{
+  font-size:11px;line-height:1.45;color:var(--text);padding:7px 9px;
+  background:var(--surf2);border-radius:var(--r);border:1px solid var(--border2);
+  outline:none;
+}
+.cap-zone-block:focus{border-color:var(--brand);}
+.cap-zone-block.cap-desc{min-height:70px;line-height:1.5;color:rgba(240,240,248,.85);}
+.cap-zone-label{
+  font-size:9px;font-weight:800;color:var(--brand);letter-spacing:.06em;
+  text-transform:uppercase;margin-bottom:4px;
 }
 .ia-panel{
   width:280px;flex-shrink:0;display:flex;flex-direction:column;
@@ -1187,14 +1199,43 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   </div>
 
   <!-- ══ IA PANEL ══ -->
-  <!-- Caption zone — beside canvas -->
+  <!-- Caption zone — beside canvas (caption activo + Copiloto + Hashtags + Emojis) -->
   <div class="caption-zone" id="captionZone">
     <div class="caption-zone-lbl"><span></span>Tu Caption</div>
-    <textarea id="capFull" class="cap-full" placeholder="Selecciona un caption del panel →" oninput="captionFull=this.value;updateCaptionPreview();"></textarea>
-    <div style="display:flex;gap:5px;padding-top:6px;border-top:1px solid var(--border);margin-top:auto;">
-      <button onclick="const el=document.getElementById('capFull');if(el){el.value='';captionFull='';updateCaptionPreview();}" title="Borrar" style="padding:7px 10px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surf2);color:var(--text3);font-size:13px;cursor:pointer;">🗑</button>
-      <button onclick="navigator.clipboard.writeText(document.getElementById('capFull')?.value||captionFull||'').then(()=>toast('✅ Caption copiado','success'))" style="flex:1;padding:7px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">📋 Copiar</button>
+
+    <!-- 3 bloques editables del caption activo -->
+    <div id="capZoneHookWrap">
+      <div class="cap-zone-label">🪝 Hook</div>
+      <div id="capZoneHook" class="cap-zone-block" contenteditable="true" spellcheck="false"></div>
     </div>
+    <div id="capZoneDescWrap">
+      <div class="cap-zone-label">📝 Description</div>
+      <div id="capZoneDesc" class="cap-zone-block cap-desc" contenteditable="true" spellcheck="false"></div>
+    </div>
+    <div id="capZoneCtaWrap">
+      <div class="cap-zone-label">🎯 CTA</div>
+      <div id="capZoneCta" class="cap-zone-block" contenteditable="true" spellcheck="false"></div>
+    </div>
+
+    <!-- Botones [Borrar] [Copiar] -->
+    <div style="display:flex;gap:5px;">
+      <button onclick="clearCaptionZone()" title="Borrar caption" style="padding:7px 10px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surf2);color:var(--text3);font-size:13px;cursor:pointer;">🗑</button>
+      <button onclick="copyCaptionZoneSmart()" style="flex:1;padding:7px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.02em;">📋 Copiar</button>
+    </div>
+
+    <!-- Copiloto IA — se inyecta aquí por renderCaptionZoneCopilot() -->
+    <div id="capZoneCopilot"></div>
+
+    <!-- Hashtags — se inyecta aquí por renderCaptionZoneHashtags() -->
+    <div id="capZoneHashtags"></div>
+
+    <!-- Emojis — se inyecta aquí por renderCaptionZoneEmojis() -->
+    <div id="capZoneEmojis"></div>
+
+    <!-- Compat shim: textarea oculto #capFull. Mantiene retrocompatibilidad con código
+         que aún lee/escribe document.getElementById('capFull').value. Se sincroniza
+         bidireccionalmente con los 3 bloques editables del caption-zone. -->
+    <textarea id="capFull" style="display:none;" oninput="captionFull=this.value;_syncFromCapFull();updateCaptionPreview();"></textarea>
   </div>
 
   <div class="ia-panel">
@@ -1726,6 +1767,12 @@ function loadIAData() {
     resizeCanvas();
     positionCanvasButtons();
     // initCopiloto eliminado en B1.1 — el Copiloto v2 no tiene init global, se renderiza por caption.
+    // Activar listeners del caption-zone (3 bloques editables sincronizados con captionFull)
+    if (typeof _attachCapZoneListeners === 'function') _attachCapZoneListeners();
+    // Renderizar Copiloto + Hashtags + Emojis dentro del caption-zone
+    if (typeof renderCaptionZoneCopilot   === 'function') renderCaptionZoneCopilot();
+    if (typeof renderCaptionZoneHashtags  === 'function') renderCaptionZoneHashtags();
+    if (typeof renderCaptionZoneEmojis    === 'function') renderCaptionZoneEmojis();
     // Show reset wizard btn if tutorial was already done
     if (localStorage.getItem(WIZARD_KEY)) {
       // wizard removed
@@ -3195,10 +3242,16 @@ function renderPostContentPanel(container) {
     useBtn.onclick = () => {
       saveEdits();
       const parts = editedCaptions[capIdx];
-      const joined = joinCaption(parts);
-      const capEl = document.getElementById('capFull');
-      if (capEl) { capEl.value = joined; captionFull = joined; updateCaptionPreview(); }
-      // Reset hashtag/emoji chips — el caption nuevo ya no los lleva
+      // Escribir los 3 bloques editables del caption-zone (también sincroniza captionFull + #capFull)
+      if (typeof setCaptionZoneValue === 'function') {
+        setCaptionZoneValue(parts);
+      } else {
+        // Fallback al shim viejo si la función nueva no existe (no debería pasar)
+        const joined = joinCaption(parts);
+        const capEl = document.getElementById('capFull');
+        if (capEl) { capEl.value = joined; captionFull = joined; updateCaptionPreview(); }
+      }
+      // Reset hashtag/emoji chips del panel derecho (los del caption-zone no se afectan)
       resetHashChips();
       _selH.clear();
       // Hook al canvas (texto del bloque editable)
@@ -3207,102 +3260,27 @@ function renderPostContentPanel(container) {
       useBtn.textContent = '✅ Caption aplicado';
       useBtn.style.background = '#10B981';
       setTimeout(() => { useBtn.textContent = '✅ Usar este caption'; useBtn.style.background = 'var(--grad)'; }, 1500);
-      toast('✅ Hook en canvas + caption en el panel lateral', 'success');
+      toast('✅ Caption en el panel lateral — edítalo o usa el Copiloto', 'success');
     };
 
     card.appendChild(body);
     card.appendChild(useBtn);
 
-    // ── Copiloto v2 — 6 botones preset bajo el caption ──
-    renderCopilotoPanel(card, {
-      format: 'post',
-      captionIndex: capIdx,
-      getCurrent: () => {
-        saveEdits();
-        return {
-          hook:        hookBlk.ed.innerText.trim(),
-          description: descBlk.ed.innerText.trim(),
-          cta:         ctaBlk.ed.innerText.trim(),
-          hashtags:    iaData?.hashtags || [],
-          emojis:      iaData?.emojis   || [],
-        };
-      },
-      applyHook: (newHook) => { hookBlk.ed.innerText = newHook; saveEdits(); },
-      applyDescription: (newDesc) => { descBlk.ed.innerText = newDesc; saveEdits(); },
-      applyCta: (newCta) => { ctaBlk.ed.innerText = newCta; saveEdits(); },
-      applyFull: (newCap) => {
-        hookBlk.ed.innerText = newCap.hook || '';
-        descBlk.ed.innerText = newCap.description || '';
-        ctaBlk.ed.innerText  = newCap.cta || '';
-        saveEdits();
-      },
-      applyHashtags: (newTags) => {
-        // Actualiza iaData.hashtags y re-pinta los chips de la sección Hashtags
-        if (Array.isArray(newTags)) {
-          iaData.hashtags = newTags;
-          // Re-renderizar la sección sin perder el resto del panel: forzar reload de panel
-          renderContentPanel();
-          toast('✅ Hashtags actualizados — selecciónalos abajo', 'success');
-        }
-      },
-      applyEmojis: (newEmojis) => {
-        if (Array.isArray(newEmojis)) {
-          iaData.emojis = newEmojis;
-          renderContentPanel();
-          toast('✅ Emojis actualizados — selecciónalos abajo', 'success');
-        }
-      },
-    });
+    // El Copiloto v2 ya NO se renderiza aquí — vive en el caption-zone (lateral 240px)
+    // para que opere sobre el caption activo (el que el usuario seleccionó con "Usar este caption").
 
     sec.appendChild(card);
     container.appendChild(sec);
     renderCap();
   }
 
-  
 
-  // Hashtags inline BEFORE emojis
-  if (iaData && iaData.hashtags && iaData.hashtags.length) {
-    const _hSec = makeSection('#', 'Hashtags — elige hasta 3');
-    const _hRow = document.createElement('div');
-    _hRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px;padding:0 12px 8px;';
-    iaData.hashtags.forEach(function(_tag) {
-      const _chip = document.createElement('button');
-      _chip.className = 'hash-chip';
-      _chip.textContent = _tag.startsWith('#') ? _tag : '#'+_tag;
-      _chip.onclick = function() {
-        if (_selH.has(_tag)) { _selH.delete(_tag); _chip.classList.remove('active'); }
-        else if (_selH.size < 3) { _selH.add(_tag); _chip.classList.add('active'); }
-        else { toast('Máximo 3 hashtags','info'); return; }
-        updateCaptionHashEmoji(_selH, _selE);
-      };
-      _hRow.appendChild(_chip);
-    });
-    _hSec.appendChild(_hRow);
-    container.appendChild(_hSec);
-  }
 
-  // ── SECCIÓN 3: EMOJIS ──
-  if (emojis.length) {
-    const sec3 = makeSection('😊', 'Emojis');
-    const hint3 = document.createElement('div');
-    hint3.style.cssText = 'font-size:10px;color:var(--text3);margin-bottom:8px;';
-    hint3.textContent = 'Toca uno — elige si va en el canvas o en el caption';
-    sec3.appendChild(hint3);
-    const grid = document.createElement('div');
-    grid.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px;';
-    emojis.slice(0,8).forEach(em => {
-      const chip = document.createElement('div');
-      chip.style.cssText = 'width:40px;height:40px;border-radius:10px;background:var(--surf2);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;transition:all .12s;';
-      chip.textContent = em;
-      chip.onclick = () => showEmojiDestination(em, chip);
-      grid.appendChild(chip);
-    });
-    sec3.appendChild(grid);
-    container.appendChild(sec3);
-  }
+  // Hashtags y Emojis se renderizan ahora en el caption-zone (lateral 240px) por
+  // renderCaptionZoneHashtags() y renderCaptionZoneEmojis() — eliminados de aquí
+  // para evitar duplicación.
 
-  // ── Botón Regenerar + Copiloto IA expandible ──
+  // ── Botón Regenerar todo ──
   const regenSec = document.createElement('div');
   regenSec.style.cssText = 'margin-top:12px;padding-top:12px;border-top:1px solid var(--border);';
 
@@ -3310,9 +3288,9 @@ function renderPostContentPanel(container) {
   const regenBtn = document.createElement('button');
   regenBtn.style.cssText = 'width:100%;padding:10px;border-radius:var(--r);border:1.5px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;margin-bottom:8px;';
   // Nota: el viejo botón "Mejorar con IA Copiloto" se eliminó.
-  // El Copiloto v2 (6 botones preset) se renderiza ahora INLINE bajo cada caption en renderCopilotoPanel().
+  // El Copiloto v2 (6 botones preset) se renderiza ahora en el caption-zone.
 
-  regenBtn.innerHTML = '🔄 Regenerar contenido (-1 crédito)';
+  regenBtn.innerHTML = '🔄 Regenerar todo (-1 crédito)';
   regenBtn.onclick = () => regenerateFromEditor();
   regenSec.appendChild(regenBtn);
   container.appendChild(regenSec);
@@ -4401,8 +4379,141 @@ function updateCaptionHashEmoji(selHash, selEmoji) {
   updateCaptionPreview();
 }
 
+// ── HELPERS DEL CAPTION-ZONE (3 bloques editables + Copiloto + Hashtags + Emojis) ──
+// captionFull es la única fuente de verdad del caption activo (string concatenado).
+// Los 3 bloques editables (#capZoneHook, #capZoneDesc, #capZoneCta) se sincronizan con captionFull.
+
+// Lee el caption desde los 3 bloques editables y devuelve {hook, description, cta}
+function readCaptionZoneParts() {
+  const h = document.getElementById('capZoneHook');
+  const d = document.getElementById('capZoneDesc');
+  const c = document.getElementById('capZoneCta');
+  return {
+    hook:        h ? h.innerText.trim() : '',
+    description: d ? d.innerText.trim() : '',
+    cta:         c ? c.innerText.trim() : '',
+  };
+}
+
+// Asigna un caption (string concatenado o objeto {hook, description, cta}) al caption-zone.
+// Sincroniza los 3 bloques + captionFull + #capFull (compat shim) + preview.
+function setCaptionZoneValue(input) {
+  const parts = (typeof input === 'object' && input && !Array.isArray(input))
+    ? { hook: input.hook||'', description: input.description||'', cta: input.cta||'' }
+    : (typeof parseCaption === 'function' ? parseCaption(input) : { hook:'', description: String(input||''), cta:'' });
+  const h = document.getElementById('capZoneHook');
+  const d = document.getElementById('capZoneDesc');
+  const c = document.getElementById('capZoneCta');
+  if (h) h.innerText = parts.hook;
+  if (d) d.innerText = parts.description;
+  if (c) c.innerText = parts.cta;
+  captionFull = (typeof joinCaption === 'function') ? joinCaption(parts) : [parts.hook, parts.description, parts.cta].filter(Boolean).join('\n\n');
+  // Compat: mantener el shim oculto #capFull en sincronía con captionFull
+  const capFullEl = document.getElementById('capFull');
+  if (capFullEl) capFullEl.value = captionFull;
+  updateCaptionPreview();
+}
+
+// Cuando código viejo escribe en #capFull (oculto), parseamos su valor y poblamos los 3 bloques.
+function _syncFromCapFull() {
+  const el = document.getElementById('capFull');
+  if (!el) return;
+  const v = el.value || '';
+  const parts = (typeof parseCaption === 'function') ? parseCaption(v) : { hook:'', description: v, cta:'' };
+  const h = document.getElementById('capZoneHook');
+  const d = document.getElementById('capZoneDesc');
+  const c = document.getElementById('capZoneCta');
+  if (h) h.innerText = parts.hook;
+  if (d) d.innerText = parts.description;
+  if (c) c.innerText = parts.cta;
+}
+
+// Borra todo el caption-zone (vacía los 3 bloques + captionFull)
+function clearCaptionZone() {
+  setCaptionZoneValue({ hook: '', description: '', cta: '' });
+  toast('Caption borrado', 'info');
+}
+
+// Copia inteligente: concatena los 3 bloques + emojis seleccionados + hashtags seleccionados
+// con el formato listo para pegar en Instagram (líneas en blanco entre bloques, hashtags al final)
+function copyCaptionZoneSmart() {
+  const parts = readCaptionZoneParts();
+  const captionStr = [parts.hook, parts.description, parts.cta]
+    .filter(p => p && p.trim())
+    .join('\n\n');
+  // Emojis seleccionados (los que tienen .active en el caption-zone)
+  const emojiBtns = document.querySelectorAll('#capZoneEmojis .emo-chip-active');
+  const emojiStr = Array.from(emojiBtns).map(b => b.dataset.emoji || b.textContent).join(' ').trim();
+  // Hashtags seleccionados (los que tienen .active en el caption-zone)
+  const hashBtns = document.querySelectorAll('#capZoneHashtags .hash-chip.active');
+  const hashStr = Array.from(hashBtns).map(b => {
+    const t = (b.dataset.tag || b.textContent || '').trim();
+    return t.startsWith('#') ? t : '#' + t;
+  }).join(' ').trim();
+  // Composición final estilo Instagram
+  let final = captionStr;
+  if (emojiStr) final += '\n\n' + emojiStr;
+  if (hashStr)  final += '\n\n' + hashStr;
+  if (!final.trim()) {
+    toast('No hay contenido para copiar', 'info');
+    return;
+  }
+  navigator.clipboard.writeText(final).then(() => {
+    toast('✅ Caption copiado — listo para pegar en Instagram', 'success');
+  }).catch(() => {
+    toast('❌ Error al copiar', 'error');
+  });
+}
+
+// Listener para sincronizar captionFull cuando el usuario edita los bloques
+function _attachCapZoneListeners() {
+  ['capZoneHook', 'capZoneDesc', 'capZoneCta'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el.dataset.listenerAttached) {
+      el.addEventListener('input', () => {
+        const parts = readCaptionZoneParts();
+        captionFull = (typeof joinCaption === 'function')
+          ? joinCaption(parts)
+          : [parts.hook, parts.description, parts.cta].filter(Boolean).join('\n\n');
+        // Compat: sincronizar el shim oculto #capFull
+        const capFullEl = document.getElementById('capFull');
+        if (capFullEl) capFullEl.value = captionFull;
+        updateCaptionPreview();
+      });
+      el.dataset.listenerAttached = '1';
+    }
+  });
+
+  // ── Interceptar escrituras a #capFull.value desde código viejo ──
+  // Cuando código viejo hace capEl.value = X, los <textarea> NO disparan 'input' event
+  // (solo se dispara cuando el usuario teclea). Necesitamos sincronizar manualmente.
+  // Solución: interceptar el setter del .value con un Proxy via Object.defineProperty.
+  const capFullEl = document.getElementById('capFull');
+  if (capFullEl && !capFullEl.dataset.proxiedValue) {
+    const proto = Object.getPrototypeOf(capFullEl);
+    const desc  = Object.getOwnPropertyDescriptor(proto, 'value');
+    if (desc && desc.set) {
+      Object.defineProperty(capFullEl, 'value', {
+        get() { return desc.get.call(this); },
+        set(v) {
+          desc.set.call(this, v);
+          // Sincronizar los 3 bloques con el nuevo valor
+          if (typeof _syncFromCapFull === 'function') _syncFromCapFull();
+          if (typeof updateCaptionPreview === 'function') updateCaptionPreview();
+        },
+        configurable: true,
+      });
+      capFullEl.dataset.proxiedValue = '1';
+    }
+  }
+}
+
 function onCaptionInput() {
-  captionFull = document.getElementById('capFull').value;
+  // Compat con código viejo: ahora lee de los bloques editables
+  const parts = readCaptionZoneParts();
+  captionFull = (typeof joinCaption === 'function')
+    ? joinCaption(parts)
+    : [parts.hook, parts.description, parts.cta].filter(Boolean).join('\n\n');
   updateCaptionPreview();
 }
 
@@ -4419,8 +4530,6 @@ function updateCaptionPreview() {
       preview.style.color = 'rgba(255,255,255,.9)';
     }
   }
-  const capEl = document.getElementById('capFull');
-  if (capEl && capEl.value !== captionFull) capEl.value = captionFull;
 }
 
 function expandCaptionPreview() {
@@ -5414,6 +5523,11 @@ async function regenerateFromEditor() {
     }
     updateTopbarUser();
     renderContentPanel();
+    // Re-renderizar las secciones del caption-zone: copiloto + hashtags + emojis
+    // (porque iaData.hashtags / iaData.emojis cambiaron tras la regeneración)
+    if (typeof renderCaptionZoneCopilot   === 'function') renderCaptionZoneCopilot();
+    if (typeof renderCaptionZoneHashtags  === 'function') renderCaptionZoneHashtags();
+    if (typeof renderCaptionZoneEmojis    === 'function') renderCaptionZoneEmojis();
     toast('✅ Contenido regenerado','success');
   } catch(e) {
     toast(e.message || 'Error regenerando','error');
@@ -5422,7 +5536,7 @@ async function regenerateFromEditor() {
       clearInterval(progressBar._ticker);
       progressBar.remove();
     }
-    if (btn) { btn.innerHTML='🔄 Regenerar contenido (-1 crédito)'; btn.disabled=false; }
+    if (btn) { btn.innerHTML='🔄 Regenerar todo (-1 crédito)'; btn.disabled=false; }
   }
 }
 
@@ -6316,7 +6430,7 @@ function renderCarouselCaptionPanel() {
   // ── Regenerar ──
   const regenBtn = document.createElement('button');
   regenBtn.style.cssText = 'width:100%;padding:8px;border-radius:var(--r);background:rgba(99,102,241,.12);border:1.5px solid rgba(99,102,241,.3);color:#818CF8;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
-  regenBtn.innerHTML = '🔄 Regenerar contenido (-1 crédito)';
+  regenBtn.innerHTML = '🔄 Regenerar todo (-1 crédito)';
   regenBtn.onclick = () => regenerateFromEditor();
   navEl.appendChild(regenBtn);
 
@@ -6574,13 +6688,6 @@ function renderCopilotoPanel(container, ctx) {
     { mode: 'emojis',      label: '😀 Emojis'          },
   ];
 
-  // Input de instrucción opcional
-  const instrInput = document.createElement('input');
-  instrInput.type = 'text';
-  instrInput.placeholder = 'Instrucción opcional (ej: más vendedor)';
-  instrInput.maxLength = 500;
-  instrInput.style.cssText = 'width:100%;padding:7px 10px;font-size:11px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surf);color:var(--text);box-sizing:border-box;font-family:inherit;outline:none;';
-
   // Container del preview (vacío hasta que el usuario pulsa un botón)
   const previewContainer = document.createElement('div');
   previewContainer.style.cssText = 'margin-top:10px;';
@@ -6605,7 +6712,8 @@ function renderCopilotoPanel(container, ctx) {
 
       try {
         const current = ctx.getCurrent();
-        const result = await callRefine(p.mode, current, instrInput.value.trim());
+        // Sin instrucción del usuario — el sistema usa los frameworks coach por defecto
+        const result = await callRefine(p.mode, current, '');
         showCopilotoPreview(previewContainer, p.mode, result, ctx);
       } catch (e) {
         toast('❌ ' + (e.message || 'Error en el copiloto'), 'error');
@@ -6619,7 +6727,6 @@ function renderCopilotoPanel(container, ctx) {
   });
 
   wrap.appendChild(grid);
-  wrap.appendChild(instrInput);
   wrap.appendChild(previewContainer);
   container.appendChild(wrap);
 }
@@ -6733,6 +6840,146 @@ function showCopilotoPreview(container, mode, result, ctx) {
   box.appendChild(btnRow);
 
   container.appendChild(box);
+}
+
+/* ══ CAPTION-ZONE BLOCKS (Copiloto + Hashtags + Emojis dentro del caption-zone) ══════
+   Renderizan los 3 bloques inferiores del caption-zone (240px). Se llaman al cargar
+   el editor y cada vez que se regenera contenido (regenerateFromEditor).
+*/
+
+// Copiloto v2 dentro del caption-zone — opera sobre los 3 bloques editables
+function renderCaptionZoneCopilot() {
+  const container = document.getElementById('capZoneCopilot');
+  if (!container) return;
+  container.innerHTML = '';
+  // Solo mostrar copiloto si hay análisis cargado (necesita iaData)
+  if (!iaData) return;
+
+  renderCopilotoPanel(container, {
+    format: currentFormat || 'post',
+    captionIndex: 0,
+    getCurrent: () => {
+      const parts = readCaptionZoneParts();
+      return {
+        hook:        parts.hook,
+        description: parts.description,
+        cta:         parts.cta,
+        hashtags:    iaData?.hashtags || [],
+        emojis:      iaData?.emojis   || [],
+      };
+    },
+    applyHook:        (newHook) => { setCaptionZoneValue({ ...readCaptionZoneParts(), hook: newHook }); },
+    applyDescription: (newDesc) => { setCaptionZoneValue({ ...readCaptionZoneParts(), description: newDesc }); },
+    applyCta:         (newCta)  => { setCaptionZoneValue({ ...readCaptionZoneParts(), cta: newCta }); },
+    applyFull:        (newCap)  => { setCaptionZoneValue(newCap); },
+    applyHashtags:    (newTags) => {
+      if (Array.isArray(newTags) && newTags.length) {
+        iaData.hashtags = newTags;
+        renderCaptionZoneHashtags();
+        toast('✅ Hashtags actualizados — selecciónalos abajo', 'success');
+      }
+    },
+    applyEmojis:      (newEmojis) => {
+      if (Array.isArray(newEmojis) && newEmojis.length) {
+        iaData.emojis = newEmojis;
+        renderCaptionZoneEmojis();
+        toast('✅ Emojis actualizados — selecciónalos abajo', 'success');
+      }
+    },
+  });
+}
+
+// Hashtags chips dentro del caption-zone
+function renderCaptionZoneHashtags() {
+  const container = document.getElementById('capZoneHashtags');
+  if (!container) return;
+  container.innerHTML = '';
+  const hashtags = (iaData?.hashtags || []).slice(0, 8);
+  if (!hashtags.length) return;
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'border-top:1px solid var(--border);padding-top:10px;';
+
+  const lbl = document.createElement('div');
+  lbl.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;';
+  lbl.innerHTML = '#️⃣ Hashtags <span style="color:var(--text3);font-weight:700;">— elige hasta 3</span>';
+  wrap.appendChild(lbl);
+
+  const chipsRow = document.createElement('div');
+  chipsRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;';
+
+  // Set local de seleccionados (3 max)
+  const selH = new Set();
+
+  hashtags.forEach(tag => {
+    const chip = document.createElement('button');
+    chip.className = 'hash-chip';
+    chip.dataset.tag = tag.startsWith('#') ? tag : '#' + tag;
+    chip.textContent = chip.dataset.tag;
+    chip.onclick = () => {
+      if (selH.has(chip.dataset.tag)) {
+        selH.delete(chip.dataset.tag);
+        chip.classList.remove('active');
+      } else if (selH.size < 3) {
+        selH.add(chip.dataset.tag);
+        chip.classList.add('active');
+      } else {
+        toast('Máximo 3 hashtags', 'info');
+      }
+    };
+    chipsRow.appendChild(chip);
+  });
+
+  wrap.appendChild(chipsRow);
+  container.appendChild(wrap);
+}
+
+// Emojis chips dentro del caption-zone
+function renderCaptionZoneEmojis() {
+  const container = document.getElementById('capZoneEmojis');
+  if (!container) return;
+  container.innerHTML = '';
+  const emojis = (iaData?.emojis || []).slice(0, 8);
+  if (!emojis.length) return;
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'border-top:1px solid var(--border);padding-top:10px;';
+
+  const lbl = document.createElement('div');
+  lbl.style.cssText = 'font-size:10px;font-weight:800;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;';
+  lbl.textContent = '😀 Emojis';
+  wrap.appendChild(lbl);
+
+  const sub = document.createElement('div');
+  sub.style.cssText = 'font-size:9px;color:var(--text3);margin-bottom:6px;';
+  sub.textContent = 'Toca uno — se añade al copiar el caption';
+  wrap.appendChild(sub);
+
+  const chipsRow = document.createElement('div');
+  chipsRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
+
+  emojis.forEach(em => {
+    const chip = document.createElement('button');
+    chip.dataset.emoji = em;
+    chip.textContent = em;
+    chip.style.cssText = 'font-size:22px;cursor:pointer;background:none;border:1px solid transparent;border-radius:6px;padding:2px 6px;line-height:1;';
+    chip.onclick = () => {
+      const isActive = chip.classList.contains('emo-chip-active');
+      if (isActive) {
+        chip.classList.remove('emo-chip-active');
+        chip.style.borderColor = 'transparent';
+        chip.style.background  = 'none';
+      } else {
+        chip.classList.add('emo-chip-active');
+        chip.style.borderColor = 'var(--brand)';
+        chip.style.background  = 'rgba(139,95,191,.12)';
+      }
+    };
+    chipsRow.appendChild(chip);
+  });
+
+  wrap.appendChild(chipsRow);
+  container.appendChild(wrap);
 }
 
 </script>
