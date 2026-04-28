@@ -319,55 +319,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 .hash-chip:hover{border-color:var(--brand);color:var(--brand);}
 .hash-chip.active{background:rgba(139,95,191,.18);border-color:var(--brand);color:var(--brand);}
 
-/* copiloto */
-.cop-messages{
-  display:flex;flex-direction:column;gap:8px;
-  max-height:220px;overflow-y:auto;margin-bottom:8px;
-  padding-right:2px;
-}
-.cop-messages::-webkit-scrollbar{width:3px;}
-.cop-messages::-webkit-scrollbar-thumb{background:var(--brand);border-radius:2px;}
-.cop-msg{
-  padding:8px 10px;border-radius:10px;font-size:12px;
-  line-height:1.5;max-width:90%;white-space:pre-wrap;word-break:break-word;
-}
-.cop-msg.user{
-  align-self:flex-end;
-  background:linear-gradient(135deg,#8B5FBF,#E91E8C);
-  color:#fff;border-radius:10px 10px 2px 10px;
-}
-.cop-msg.ai{
-  align-self:flex-start;
-  background:var(--surf2);color:var(--text2);
-  border:1px solid var(--border2);border-radius:10px 10px 10px 2px;
-}
-.cop-msg.typing{
-  align-self:flex-start;background:var(--surf2);
-  border:1px solid var(--border2);border-radius:10px 10px 10px 2px;
-  color:var(--text3);font-style:italic;padding:8px 10px;
-}
-.cop-suggestions{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;}
-.cop-sug{
-  padding:4px 10px;border-radius:20px;border:1px solid var(--border2);
-  background:var(--surf2);color:var(--text3);font-size:10px;font-weight:600;
-  cursor:pointer;transition:all .15s;font-family:inherit;
-}
-.cop-sug:hover{border-color:var(--brand);color:var(--brand);background:rgba(139,95,191,.1);}
-.cop-input-row{display:flex;gap:6px;}
-.cop-input{
-  flex:1;padding:8px 10px;border-radius:var(--r);border:1px solid var(--border2);
-  background:var(--surf2);color:var(--text);font-size:12px;font-family:inherit;
-  outline:none;resize:none;max-height:60px;line-height:1.4;
-}
-.cop-input:focus{border-color:var(--brand);}
-.cop-send{
-  width:34px;height:34px;border-radius:var(--r);
-  background:linear-gradient(135deg,#8B5FBF,#E91E8C);
-  border:none;color:#fff;font-size:16px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;transition:opacity .15s;
-}
-.cop-send:disabled{opacity:.4;cursor:not-allowed;}
+/* CSS del Copiloto viejo (.cop-*) eliminado en B1.1 — el nuevo Copiloto v2 usa estilos inline. */
+
 .htag{
   padding:3px 8px;border-radius:20px;border:1px solid var(--brand-border2);
   background:rgba(139,95,191,.1);color:var(--brand);font-size:11px;font-weight:600;
@@ -1508,24 +1461,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
       </div>
     </div>
 
-    <!-- ── TAB: COPILOTO ── -->
-    <div class="ia-body" id="iaCop" style="display:none;flex-direction:column;height:100%;">
-      <div id="copMessages" class="cop-messages">
-        <div class="cop-msg ai">¡Hola! Soy tu copiloto. ¿Qué quieres cambiar?</div>
-      </div>
-      <div class="cop-suggestions">
-        <button class="cop-sug" onclick="copSend('Hazlo más corto')">Más corto</button>
-        <button class="cop-sug" onclick="copSend('Hazlo más viral')">Más viral</button>
-        <button class="cop-sug" onclick="copSend('Dame un nuevo hook')">Nuevo hook</button>
-        <button class="cop-sug" onclick="copSend('Mejora el CTA')">Mejor CTA</button>
-        <button class="cop-sug" onclick="copSend('Cambia los hashtags')">Nuevos hashtags</button>
-        <button class="cop-sug" onclick="copSend('Dame un nuevo caption completo')">Nuevo caption</button>
-      </div>
-      <div class="cop-input-row">
-        <textarea class="cop-input" id="copInput" rows="1" placeholder="Ej: hazlo más corto…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();copSend();}"></textarea>
-        <button class="cop-send" id="copSendBtn" onclick="copSend()">➤</button>
-      </div>
-    </div>
+    <!-- ── TAB: COPILOTO ELIMINADO en B1.1 ──
+         El viejo Copiloto (chat con bocadillos) tenía 4 bugs:
+         - ReferenceError en initCopiloto (tab undefined)
+         - IDs duplicados al clonar iaCop.innerHTML en 3 sitios
+         - Solo modificaba caption global, no slide/reel específico
+         - Bloqueaba sin caption seleccionado (Story/Reel pre-aplicación inutilizables)
+         Reemplazado por renderCopilotoPanel() inline con 6 botones preset. -->
 
     <!-- Mobile bg controls -->
     <div class="bg-controls" id="bgControlsMobile" style="display:none;">
@@ -1783,7 +1725,7 @@ function loadIAData() {
     renderSlideStrip();
     resizeCanvas();
     positionCanvasButtons();
-    setTimeout(initCopiloto, 100);
+    // initCopiloto eliminado en B1.1 — el Copiloto v2 no tiene init global, se renderiza por caption.
     // Show reset wizard btn if tutorial was already done
     if (localStorage.getItem(WIZARD_KEY)) {
       // wizard removed
@@ -2948,13 +2890,8 @@ const WIZARD_KEY = 'conteniza_wizard_done';
 
 
 
-// Helper: pre-fill copiloto input and open its tab
-function copPreFill(msg) {
-  const input = document.getElementById('copInput');
-  if (input) input.value = msg;
-  switchIaTab('cop');
-  setTimeout(() => { if (input) input.focus(); }, 100);
-}
+// Función copPreFill eliminada en B1.1 — referenciaba el viejo input del chat copiloto.
+// El Copiloto v2 no usa pre-fill globales (se construye por caption).
 
 
 
@@ -3159,103 +3096,167 @@ function renderPostContentPanel(container) {
   });
   if (_seoBanner) container.appendChild(_seoBanner);
 
-  // ── SECCIÓN 1: CAPTIONS NAVEGABLES (primero — el hook ya está dentro) ──
+  // ── SECCIÓN 1: CAPTIONS NAVEGABLES (3 bloques editables + Copiloto v2) ──
   if (captions.length) {
     const sec = makeSection('📝', 'Elige tu caption');
     const hint = document.createElement('div');
     hint.style.cssText = 'font-size:10px;color:var(--text3);margin-bottom:8px;line-height:1.5;';
-    hint.textContent = 'Cada caption ya incluye hook, desarrollo y CTA — navega y elige el que más te guste';
+    hint.textContent = 'Cada caption tiene hook, descripción y CTA editables — el Copiloto IA puede mejorar cada parte por separado';
     sec.appendChild(hint);
 
     let capIdx = 0;
+    // Estado local de los 3 bloques editados (puede divergir del caption original si el usuario edita o usa Copiloto)
+    // Estructura: editedCaptions[i] = {hook, description, cta} o null si no hay ediciones (usar el original)
+    const editedCaptions = captions.map(() => null);
+
+    // Ángulos 2026: PAIN+PROMISE / PROOF / REFRAME (orden coincide con el del schema en groqService)
+    const ANGLES = ['PAIN+PROMISE', 'PROOF', 'REFRAME'];
+
     const card = document.createElement('div');
     card.style.cssText = 'border:1.5px solid var(--border2);border-radius:12px;background:var(--surf2);overflow:hidden;';
 
+    // ── Header: navegación X de N + ángulo ──
     const nav = document.createElement('div');
-    nav.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid var(--border);';
+    nav.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border);';
 
     const counter = document.createElement('span');
-    counter.style.cssText = 'font-size:10px;font-weight:800;color:var(--brand);';
+    counter.style.cssText = 'font-size:11px;font-weight:700;color:var(--text2);';
 
     const navBtns = document.createElement('div');
-    navBtns.style.cssText = 'display:flex;gap:4px;';
-
+    navBtns.style.cssText = 'display:flex;gap:6px;';
     const btnP = document.createElement('button');
-    btnP.style.cssText = 'width:28px;height:28px;border-radius:6px;border:1px solid var(--border2);background:var(--surf);color:var(--text2);font-size:14px;cursor:pointer;';
+    btnP.style.cssText = 'width:26px;height:26px;border-radius:6px;border:1px solid var(--border2);background:var(--surf);color:var(--text);font-size:13px;font-weight:700;cursor:pointer;';
     btnP.textContent = '←';
-
     const btnN = document.createElement('button');
-    btnN.style.cssText = 'width:28px;height:28px;border-radius:6px;border:1px solid var(--border2);background:var(--surf);color:var(--text2);font-size:14px;cursor:pointer;';
+    btnN.style.cssText = 'width:26px;height:26px;border-radius:6px;border:1px solid var(--border2);background:var(--surf);color:var(--text);font-size:13px;font-weight:700;cursor:pointer;';
     btnN.textContent = '→';
-
-    const capText = document.createElement('div');
-    capText.style.cssText = 'font-size:12px;color:var(--text2);line-height:1.7;white-space:pre-wrap;max-height:220px;overflow-y:auto;padding:10px;';
-
-    const useBtn = document.createElement('button');
-    useBtn.style.cssText = 'width:100%;padding:10px;border-radius:0 0 10px 10px;background:var(--grad);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;border-top:1px solid var(--border);';
-    useBtn.textContent = '✅ Usar este caption';
-
-    const renderCap = () => {
-      const cap = captions[capIdx] || '';
-      counter.textContent = (capIdx+1) + ' de ' + captions.length;
-      // Strip AI labels, hashtags and emojis from the displayed caption
-      const cleanCap = cap
-        .replace(/^CAPTION\s*\d+\s*[—-]\s*(Hook:|Descripción:|CTA:)?\s*/i, '')
-        .replace(/#\S+/g, '')                          // remove hashtags
-        .replace(/[\u{1F300}-\u{1FAFF}]/gu, '')        // remove emojis
-        .replace(/\n{3,}/g, '\n\n')                    // collapse extra blank lines
-        .trim();
-      // Detect if model returned schema placeholder instead of real content
-      const isPlaceholder = /^\[.{5,60}\]$/.test(cleanCap.split('\n')[0]) ||
-                            cleanCap.includes('[Hook') || cleanCap.includes('[DOLOR') ||
-                            cleanCap.includes('[historia') || cleanCap.includes('125c+') ||
-                            cleanCap.includes('HOOK 1 DOLOR') || cleanCap.includes('punto de dolor real') ||
-                            cleanCap.includes('CTA 1 CONVERSION') || cleanCap.includes('ensenanza practica') ||
-                            cleanCap.includes('ángulo DOLOR') || cleanCap.includes('angulo DOLOR') ||
-                            /^HOOK \d/.test(cleanCap) || /^CTA \d/.test(cleanCap);
-      if (isPlaceholder) {
-        capText.style.color = 'var(--text3)';
-        capText.textContent = '⚠️ La IA devolvió un placeholder en vez de texto real. Regenera el contenido para obtener captions completos.';
-      } else {
-        capText.style.color = 'var(--text2)';
-        capText.textContent = cleanCap;
-      }
-      btnP.style.opacity = capIdx === 0 ? '.3' : '1';
-      btnN.style.opacity = capIdx === captions.length-1 ? '.3' : '1';
-    };
-
-    btnP.onclick = () => { if(capIdx>0){ capIdx--; renderCap(); resetHashChips(); } };
-    btnN.onclick = () => { if(capIdx<captions.length-1){ capIdx++; renderCap(); resetHashChips(); } };
-
-    useBtn.onclick = () => {
-      const cap = captions[capIdx];
-      const capEl = document.getElementById('capFull');
-      // Strip any hashtags from previous caption before applying new one
-      const capClean = cap.replace(/\s+$/, '').trim();
-      if (capEl) { capEl.value = capClean; captionFull = capClean; updateCaptionPreview(); }
-      // Reset hashtag chips — user picks new ones for this caption
-      resetHashChips();
-      // Reset the local selHash set by re-creating it (chips onclick closure still uses _selH)
-      _selH.clear();
-      // Hook (primera línea) al canvas
-      const _firstLine = cap.split('\n')[0].trim();
-      // Match sentence-ending punctuation NOT followed by a digit (avoids cutting $1.500)
-      const _sentMatch = _firstLine.match(/[.!?](?!\d)/);
-      const _sentEnd = _sentMatch ? _sentMatch.index : -1;
-      const fl = (_sentEnd > 20 && _sentEnd < 120) ? _firstLine.substring(0, _sentEnd+1).trim() : _firstLine.substring(0,125).trim();
-      if (fl) replaceOrAddBlock('hook-block', fl, {y:8,w:88,x:6,fontSize:28,bold:true,color:currentBrand?.font_color||'#fff',align:'center'});
-      useBtn.textContent = '✅ Caption aplicado';
-      useBtn.style.background = '#10B981';
-      setTimeout(()=>{ useBtn.textContent='✅ Usar este caption'; useBtn.style.background='var(--grad)'; },1500);
-      toast('✅ Hook en canvas + elige tus hashtags','success');
-    };
-
     navBtns.appendChild(btnP); navBtns.appendChild(btnN);
     nav.appendChild(counter); nav.appendChild(navBtns);
-    card.appendChild(nav); card.appendChild(capText); card.appendChild(useBtn);
+    card.appendChild(nav);
+
+    // ── Body: 3 bloques editables (hook/description/cta) ──
+    const body = document.createElement('div');
+    body.style.cssText = 'padding:14px;';
+
+    // Helper: crea un bloque editable con label
+    const mkBlock = (label, color, minH) => {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'margin-bottom:12px;';
+      const lbl = document.createElement('div');
+      lbl.style.cssText = 'font-size:9px;font-weight:800;color:' + color + ';letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px;';
+      lbl.textContent = label;
+      const ed = document.createElement('div');
+      ed.contentEditable = 'true';
+      ed.style.cssText = 'font-size:12px;line-height:1.5;color:var(--text);padding:8px 10px;background:var(--surf);border-radius:var(--r);border:1px solid var(--border2);min-height:' + minH + 'px;outline:none;';
+      ed.spellcheck = false;
+      wrap.appendChild(lbl); wrap.appendChild(ed);
+      return { wrap, ed };
+    };
+
+    const hookBlk = mkBlock('🪝 Hook', 'var(--brand)', 36);
+    const descBlk = mkBlock('📝 Description', 'var(--brand)', 80);
+    const ctaBlk  = mkBlock('🎯 CTA', 'var(--brand)', 36);
+
+    body.appendChild(hookBlk.wrap);
+    body.appendChild(descBlk.wrap);
+    body.appendChild(ctaBlk.wrap);
+
+    // Persistir cambios manuales al editar
+    const saveEdits = () => {
+      editedCaptions[capIdx] = {
+        hook:        hookBlk.ed.innerText.trim(),
+        description: descBlk.ed.innerText.trim(),
+        cta:         ctaBlk.ed.innerText.trim(),
+      };
+    };
+    [hookBlk.ed, descBlk.ed, ctaBlk.ed].forEach(ed => ed.addEventListener('input', saveEdits));
+
+    // Render del caption activo (carga objeto o parsea string legacy)
+    const renderCap = () => {
+      const cap = captions[capIdx];
+      // Prefer edited version if exists
+      const parsed = editedCaptions[capIdx] || parseCaption(cap);
+      const angle = ANGLES[capIdx] || ('Caption ' + (capIdx + 1));
+      counter.innerHTML = (capIdx + 1) + ' de ' + captions.length + ' <span style="color:var(--brand2);font-weight:800;">— ' + angle + '</span>';
+      hookBlk.ed.innerText = parsed.hook || '';
+      descBlk.ed.innerText = parsed.description || '';
+      ctaBlk.ed.innerText  = parsed.cta || '';
+      btnP.style.opacity = capIdx === 0 ? '.3' : '1';
+      btnN.style.opacity = capIdx === captions.length - 1 ? '.3' : '1';
+    };
+
+    btnP.onclick = () => { if (capIdx > 0)              { saveEdits(); capIdx--; renderCap(); resetHashChips(); _selH.clear(); } };
+    btnN.onclick = () => { if (capIdx < captions.length - 1) { saveEdits(); capIdx++; renderCap(); resetHashChips(); _selH.clear(); } };
+
+    // ── Botón "✓ Usar este caption" ──
+    const useBtn = document.createElement('button');
+    useBtn.style.cssText = 'width:100%;padding:11px;border-radius:0;background:var(--grad);border:none;color:#fff;font-size:12px;font-weight:800;letter-spacing:.02em;cursor:pointer;font-family:inherit;border-top:1px solid var(--border);';
+    useBtn.textContent = '✅ Usar este caption';
+    useBtn.onclick = () => {
+      saveEdits();
+      const parts = editedCaptions[capIdx];
+      const joined = joinCaption(parts);
+      const capEl = document.getElementById('capFull');
+      if (capEl) { capEl.value = joined; captionFull = joined; updateCaptionPreview(); }
+      // Reset hashtag/emoji chips — el caption nuevo ya no los lleva
+      resetHashChips();
+      _selH.clear();
+      // Hook al canvas (texto del bloque editable)
+      const fl = (parts.hook || '').substring(0, 125).trim();
+      if (fl) replaceOrAddBlock('hook-block', fl, { y: 8, w: 88, x: 6, fontSize: 28, bold: true, color: currentBrand?.font_color || '#fff', align: 'center' });
+      useBtn.textContent = '✅ Caption aplicado';
+      useBtn.style.background = '#10B981';
+      setTimeout(() => { useBtn.textContent = '✅ Usar este caption'; useBtn.style.background = 'var(--grad)'; }, 1500);
+      toast('✅ Hook en canvas + caption en el panel lateral', 'success');
+    };
+
+    card.appendChild(body);
+    card.appendChild(useBtn);
+
+    // ── Copiloto v2 — 6 botones preset bajo el caption ──
+    renderCopilotoPanel(card, {
+      format: 'post',
+      captionIndex: capIdx,
+      getCurrent: () => {
+        saveEdits();
+        return {
+          hook:        hookBlk.ed.innerText.trim(),
+          description: descBlk.ed.innerText.trim(),
+          cta:         ctaBlk.ed.innerText.trim(),
+          hashtags:    iaData?.hashtags || [],
+          emojis:      iaData?.emojis   || [],
+        };
+      },
+      applyHook: (newHook) => { hookBlk.ed.innerText = newHook; saveEdits(); },
+      applyDescription: (newDesc) => { descBlk.ed.innerText = newDesc; saveEdits(); },
+      applyCta: (newCta) => { ctaBlk.ed.innerText = newCta; saveEdits(); },
+      applyFull: (newCap) => {
+        hookBlk.ed.innerText = newCap.hook || '';
+        descBlk.ed.innerText = newCap.description || '';
+        ctaBlk.ed.innerText  = newCap.cta || '';
+        saveEdits();
+      },
+      applyHashtags: (newTags) => {
+        // Actualiza iaData.hashtags y re-pinta los chips de la sección Hashtags
+        if (Array.isArray(newTags)) {
+          iaData.hashtags = newTags;
+          // Re-renderizar la sección sin perder el resto del panel: forzar reload de panel
+          renderContentPanel();
+          toast('✅ Hashtags actualizados — selecciónalos abajo', 'success');
+        }
+      },
+      applyEmojis: (newEmojis) => {
+        if (Array.isArray(newEmojis)) {
+          iaData.emojis = newEmojis;
+          renderContentPanel();
+          toast('✅ Emojis actualizados — selecciónalos abajo', 'success');
+        }
+      },
+    });
+
     sec.appendChild(card);
     container.appendChild(sec);
-    renderCap(); // render first caption and auto-apply hook to canvas
+    renderCap();
   }
 
   
@@ -3308,28 +3309,9 @@ function renderPostContentPanel(container) {
   // Regenerar
   const regenBtn = document.createElement('button');
   regenBtn.style.cssText = 'width:100%;padding:10px;border-radius:var(--r);border:1.5px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;margin-bottom:8px;';
-  // Copiloto IA expandible (before Regenerar)
-  const copBtn = document.createElement('button');
-  copBtn.style.cssText = 'width:100%;padding:10px;border-radius:var(--r);background:var(--brand-subtle);border:1.5px solid var(--brand-border2);color:var(--brand);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;';
-  copBtn.innerHTML = '🤖 Mejorar con IA Copiloto';
-  const copHint = document.createElement('div');
-  copHint.style.cssText = 'font-size:10px;color:var(--text3);text-align:center;margin-top:3px;';
-  copHint.textContent = 'Selecciona un caption primero con ✅ Usar este caption';
-  let copOpen = false;
-  const copPanel = document.createElement('div');
-  copPanel.style.cssText = 'display:none;margin-top:8px;border:1px solid var(--border2);border-radius:var(--rlg);overflow:hidden;';
-  copPanel.innerHTML = document.getElementById('iaCop')?.innerHTML || '<div style="padding:12px;font-size:12px;color:var(--text3);">Copiloto no disponible</div>';
-  // Wire up the send button in inline cop panel
-  copBtn.onclick = () => {
-    copOpen = !copOpen;
-    copPanel.style.display = copOpen ? 'block' : 'none';
-    copBtn.style.background = copOpen ? 'var(--brand-border)' : 'var(--brand-subtle)';
-    if (copOpen) setTimeout(scrollCopMessages, 100);
-  };
-  regenSec.appendChild(copBtn);
-  regenSec.appendChild(copPanel);
+  // Nota: el viejo botón "Mejorar con IA Copiloto" se eliminó.
+  // El Copiloto v2 (6 botones preset) se renderiza ahora INLINE bajo cada caption en renderCopilotoPanel().
 
-  // Regenerar (after Copiloto)
   regenBtn.innerHTML = '🔄 Regenerar contenido (-1 crédito)';
   regenBtn.onclick = () => regenerateFromEditor();
   regenSec.appendChild(regenBtn);
@@ -3400,28 +3382,9 @@ function renderCarouselContentPanel(container) {
   carRegen.onclick = () => regenerateFromEditor();
   container.appendChild(carRegen);
 
-  const carCop = document.createElement('button');
-  carCop.style.cssText = 'width:100%;padding:8px;border-radius:var(--r);background:var(--brand-subtle);border:1px solid var(--brand-border);color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;';
-  carCop.innerHTML = '🤖 Mejorar con IA';
-  let _carCopOpen = false;
-  const carCopPanel = document.createElement('div');
-  carCopPanel.style.cssText = 'display:none;margin-bottom:8px;border:1px solid var(--border2);border-radius:var(--r);overflow:hidden;';
-  carCopPanel.innerHTML = document.getElementById('iaCop')?.innerHTML || '';
-  carCop.onclick = () => {
-    _carCopOpen = !_carCopOpen;
-    carCopPanel.style.display = _carCopOpen ? 'block' : 'none';
-    if (_carCopOpen) {
-      setTimeout(scrollCopMessages, 100);
-      // Pre-fill input with slide context hint
-      const inp = carCopPanel.querySelector('#copInput') || document.getElementById('copInput');
-      const curSlide = iaData?.carousel_slides?.[currentSlide];
-      if (inp && !inp.value && curSlide) {
-        inp.placeholder = 'Ej: mejora el texto del slide ' + (currentSlide+1) + ', hazlo más impactante…';
-      }
-    }
-  };
-  container.appendChild(carCop);
-  container.appendChild(carCopPanel);
+  // Botón "Mejorar con IA" eliminado en B1.1.
+  // Para mejorar slides individuales, está pendiente el Bloque B2 (Copiloto del Slide con 3 modes:
+  // slide_title, slide_content, slide_full). Por ahora: regenerar contenido completo desde Regenerar.
 
   // Slide cards
   slides_data.forEach((s, i) => {
@@ -4048,89 +4011,9 @@ function renderReelContentPanel(container) {
     capSec.appendChild(copyCapBtn);
     card.appendChild(capSec);
 
-    // ── Mejorar con IA ──
-    const iaSection = document.createElement('div');
-    iaSection.style.cssText = 'padding:10px 14px;';
-    let _iaOpen = false;
-    const iaBtn = document.createElement('button');
-    iaBtn.style.cssText = 'width:100%;padding:7px;border-radius:8px;background:var(--brand-subtle);border:1px solid var(--brand-border);color:var(--brand);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;';
-    iaBtn.innerHTML = '🤖 Mejorar este guión con IA';
-
-    const iaChat = document.createElement('div');
-    iaChat.style.cssText = 'display:none;margin-top:8px;';
-
-    const iaInputRow = document.createElement('div');
-    iaInputRow.style.cssText = 'display:flex;gap:6px;';
-    const iaInput = document.createElement('input');
-    iaInput.type = 'text';
-    iaInput.placeholder = 'Ej: hazlo más viral, cambia el gancho, tono más cercano…';
-    iaInput.style.cssText = 'flex:1;padding:7px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surf);color:var(--text);font-size:11px;font-family:inherit;';
-    const iaSendBtn = document.createElement('button');
-    iaSendBtn.style.cssText = 'padding:7px 12px;border-radius:6px;background:var(--brand);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
-    iaSendBtn.textContent = '→';
-    iaInputRow.appendChild(iaInput);
-    iaInputRow.appendChild(iaSendBtn);
-
-    const iaResult = document.createElement('div');
-    iaResult.style.cssText = 'display:none;margin-top:8px;padding:10px;background:var(--surf2);border-radius:8px;border:1px solid var(--border2);font-size:11px;color:var(--text2);line-height:1.6;';
-
-    const sendFn = async () => {
-      const msg = iaInput.value.trim();
-      if (!msg) return;
-      const token = localStorage.getItem(KEYS.token);
-      if (!token) { toast('Inicia sesión primero','error'); return; }
-      iaResult.style.display = 'block';
-      iaResult.textContent   = '✍️ Mejorando guión…';
-      iaInput.disabled = true; iaSendBtn.disabled = true;
-      try {
-        const guionCtx = 'HOOK: ' + (idea.hook||'') + '\nPROBLEMA: ' + (idea.problem||'') + '\nSOLUCIÓN: ' + (idea.solution||'') + '\nCTA: ' + (idea.cta||'');
-        const r = await fetch(API_URL + '/analyze/refine', {
-          method:'POST',
-          headers:{ 'Content-Type':'application/json','Authorization':'Bearer '+token },
-          body: JSON.stringify({
-            message: msg,
-            history: [],
-            ia_context: {
-              niche:            niche,
-              tone:             iaData?.tone || 'Profesional',
-              publication_type: 'reel',
-              current_caption:  guionCtx,
-            }
-          })
-        });
-        const d = await r.json();
-        if (!r.ok || !d.success) throw new Error(d.error || 'Error');
-        const improved = d.reply.trim();
-        iaResult.innerHTML =
-          '<div style="white-space:pre-wrap;margin-bottom:10px;">' + escHtml(improved) + '</div>' +
-          '<div style="display:flex;gap:6px;">' +
-            '<button class="_reelCopyImproved" style="flex:1;padding:6px;border-radius:6px;background:var(--grad);border:none;color:#fff;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;">📋 Copiar guión mejorado</button>' +
-          '</div>';
-        iaResult.querySelector('._reelCopyImproved').onclick = () => {
-          navigator.clipboard.writeText(improved).then(() => toast('✅ Guión mejorado copiado','success'));
-        };
-      } catch(e) {
-        iaResult.textContent = '❌ ' + (e.message || 'Error. Intenta de nuevo.');
-      } finally {
-        iaInput.disabled = false; iaSendBtn.disabled = false; iaInput.value = '';
-      }
-    };
-
-    iaSendBtn.onclick = sendFn;
-    iaInput.onkeydown = e => { if (e.key === 'Enter') sendFn(); };
-
-    iaBtn.onclick = () => {
-      _iaOpen = !_iaOpen;
-      iaChat.style.display = _iaOpen ? 'block' : 'none';
-      iaBtn.style.background = _iaOpen ? 'var(--brand-border)' : 'var(--brand-subtle)';
-      if (_iaOpen) iaInput.focus();
-    };
-
-    iaChat.appendChild(iaInputRow);
-    iaChat.appendChild(iaResult);
-    iaSection.appendChild(iaBtn);
-    iaSection.appendChild(iaChat);
-    card.appendChild(iaSection);
+    // ── Copiloto v2: el botón "Mejorar este guion con IA" se elimina aquí.
+    //    En B1.4 se renderiza el Copiloto v2 (6 botones preset) bajo el caption del reel,
+    //    con la misma UX que en POST y CARRUSEL.
     container.appendChild(card);
   });
 
@@ -6229,18 +6112,8 @@ function renderCarouselPanel() {
   regenBtn2.onclick = () => regenerateFromEditor();
   container.appendChild(regenBtn2);
 
-  // IA Copiloto
-  const copBtn2 = document.createElement('button');
-  copBtn2.style.cssText = 'width:100%;padding:9px;border-radius:var(--r);background:var(--brand-subtle);border:1.5px solid var(--brand-border2);color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;';
-  copBtn2.innerHTML = '🤖 Mejorar con IA';
-  let _c2open = false;
-  const cop2 = document.createElement('div');
-  cop2.style.cssText = 'display:none;border:1px solid var(--border2);border-radius:var(--r);overflow:hidden;margin-bottom:8px;max-height:300px;overflow-y:auto;';
-  const copSrc = document.getElementById('iaCop');
-  cop2.innerHTML = copSrc ? copSrc.innerHTML : '';
-  copBtn2.onclick = () => { _c2open=!_c2open; cop2.style.display=_c2open?'block':'none'; };
-  container.appendChild(copBtn2);
-  container.appendChild(cop2);
+  // Botón "Mejorar con IA" eliminado en B1.1.
+  // Pendiente Bloque B2 para Copiloto del slide individual.
 
   // Restaurar contenido original (auto-cargado al abrir el editor)
   const applyAll = document.createElement('button');
@@ -6436,20 +6309,11 @@ function renderCarouselCaptionPanel() {
     navEl.appendChild(emoRow);
   }
 
-  // ── 5. Mejorar con IA Copiloto ──
-  const iaCCBtn = document.createElement('button');
-  iaCCBtn.style.cssText = 'width:100%;padding:8px;border-radius:var(--r);background:var(--brand-subtle);border:1.5px solid var(--brand-border2);color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:6px;';
-  iaCCBtn.innerHTML = '🤖 Mejorar con IA Copiloto';
-  const _ccHint = document.createElement('div');
-  _ccHint.style.cssText = 'font-size:10px;color:var(--text3);text-align:center;margin-top:3px;';
-  _ccHint.textContent = 'Selecciona un caption primero con ✅ Usar este caption';
-  iaCCBtn.onclick = () => {
-    const tabs = document.querySelectorAll('.ia-tab');
-    tabs.forEach(t => { if (t.dataset.tab === 'copiloto' || t.textContent.includes('Copiloto')) t.click(); });
-  };
-  navEl.appendChild(iaCCBtn);
+  // ── Copiloto v2: el botón "Mejorar con IA Copiloto" se elimina aquí.
+  //    En B1.3 se renderiza el Copiloto v2 (6 botones preset) bajo cada caption del carrusel,
+  //    con la misma UX que en POST y REEL.
 
-  // ── 6. Regenerar ──
+  // ── Regenerar ──
   const regenBtn = document.createElement('button');
   regenBtn.style.cssText = 'width:100%;padding:8px;border-radius:var(--r);background:rgba(99,102,241,.12);border:1.5px solid rgba(99,102,241,.3);color:#818CF8;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
   regenBtn.innerHTML = '🔄 Regenerar contenido (-1 crédito)';
@@ -6601,222 +6465,276 @@ function applyBrandToAllSlides() {
 /* ══ WIZARD SLIDES (CARRUSEL) ══ */
 
 
-/* ══ COPILOTO IA ══ */
-let _copHistory  = [];
-let _copBusy     = false;
-let _copAnalysisId = null;
+/* ══ COPILOTO v2 ══════════════════════════════════════════════════════════
+   Reemplaza el viejo iaCop (chat con bocadillos) por un panel inline con
+   6 botones preset que llaman a /api/analyze/refine en modo preset-driven.
+   Cada botón aplica QUIRÚRGICAMENTE solo al campo correspondiente del caption.
+   ─────────────────────────────────────────────────────────────────────── */
 
-// Set analysis ID from iaData on load
-function initCopiloto() {
-  _copAnalysisId = iaData?.id || iaData?.analysis_id || null;
-  if (!_copAnalysisId) {
-    // Hide cop tab if no analysis
-    if (tab) tab.style.display = 'none';
+// Parsea un caption a la estructura {hook, description, cta}.
+// Acepta:
+//   - Objeto ya estructurado {hook, description, cta} (formato 2026)
+//   - String legacy con doble salto de línea como separador
+//   - String sin separadores (fallback: todo va a description)
+function parseCaption(input) {
+  if (!input) return { hook: '', description: '', cta: '' };
+  if (typeof input === 'object' && !Array.isArray(input)) {
+    return {
+      hook:        String(input.hook        || '').trim(),
+      description: String(input.description || '').trim(),
+      cta:         String(input.cta         || '').trim(),
+    };
   }
-}
-
-function scrollCopMessages() {
-  const m = document.getElementById('copMessages');
-  if (m) m.scrollTop = m.scrollHeight;
-}
-
-function copAddMsg(role, text) {
-  const msgs = document.getElementById('copMessages');
-  const div  = document.createElement('div');
-  div.className = 'cop-msg ' + role;
-  div.textContent = text;
-  msgs.appendChild(div);
-  scrollCopMessages();
-  return div;
-}
-
-// ── Copiloto IA — versión simplificada ──────────────────────────────────
-// Trabaja SIEMPRE sobre el caption activo en "Tu Caption" (capFull)
-
-async function copSend(preset) {
-  if (_copBusy) return;
-  const input = document.getElementById('copInput');
-  const msg   = preset || input?.value?.trim();
-  if (!msg) return;
-
-  if (!iaData) {
-    copAddMsg('ai', '⚠️ El copiloto necesita un análisis generado. Vuelve al inicio y genera contenido primero.');
-    return;
+  const s = String(input).trim();
+  const parts = s.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+  if (parts.length >= 3) {
+    return { hook: parts[0], description: parts.slice(1, -1).join('\n\n'), cta: parts[parts.length - 1] };
   }
+  if (parts.length === 2) return { hook: parts[0], description: parts[1], cta: '' };
+  return { hook: '', description: s, cta: '' };
+}
+
+// Concatena {hook, description, cta} en string para el textarea lateral.
+function joinCaption(parts) {
+  return [parts.hook, parts.description, parts.cta]
+    .filter(p => p && String(p).trim())
+    .join('\n\n');
+}
+
+// Llamada al backend /api/analyze/refine en modo preset-driven (Bloque A).
+// mode: 'hook' | 'description' | 'cta' | 'full' | 'hashtags' | 'emojis'
+// current: objeto con los campos actuales
+// instruction: string opcional (max 500 chars)
+async function callRefine(mode, current, instruction) {
   const token = localStorage.getItem(KEYS.token);
-  if (!token) { copAddMsg('ai', '⚠️ Inicia sesión para usar el copiloto.'); return; }
+  if (!token) throw new Error('Inicia sesión primero');
 
-  // Leer el caption activo del textarea
-  const capEl      = document.getElementById('capFull');
-  const currentCap = capEl?.value?.trim() || captionFull?.trim() || '';
+  const activeSlide = (currentFormat === 'carousel')
+    ? iaData?.carousel_slides?.[currentSlide] || null
+    : null;
 
-  // Si no hay caption activo, avisar al usuario
-  if (!currentCap) {
-    copAddMsg('ai', '⚠️ Primero selecciona un caption con el botón "✅ Usar este caption" — así el copiloto sabe qué mejorar.');
-    return;
-  }
+  const body = {
+    analysis_id: iaData?.id || iaData?.analysis_id || null,
+    mode,
+    current,
+    ia_context: {
+      niche:            iaData?.niche || iaData?.detected_niche || '',
+      description:      iaData?.description || '',
+      publication_type: currentFormat || iaData?.publicationType || 'post',
+      tone:             iaData?.tone || 'Profesional',
+      current_slide:    activeSlide ? {
+        index:   currentSlide + 1,
+        role:    activeSlide.role || '',
+        title:   _cleanSlideTitle(activeSlide.title || ''),
+        content: activeSlide.content || '',
+      } : null,
+    },
+    instruction: instruction ? String(instruction).slice(0, 500) : '',
+  };
 
-  _copBusy = true;
-  if (input) input.value = '';
-  document.getElementById('copSendBtn').disabled = true;
+  const r = await fetch(API_URL + '/analyze/refine', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+    body:    JSON.stringify(body),
+  });
+  const d = await r.json();
+  if (r.status === 429) throw new Error('Sin créditos disponibles');
+  if (!r.ok || !d.ok) throw new Error(d.error || 'Error en el copiloto');
+  return d;
+}
 
-  copAddMsg('user', msg);
-  _copHistory.push({ role: 'user', content: msg });
-  const typing = copAddMsg('typing', '✍️ Mejorando tu caption…');
+// Renderiza el panel del Copiloto IA con los 6 botones preset + preview.
+// Args:
+//   container: HTMLElement donde insertar el panel
+//   ctx: { format, captionIndex, getCurrent, applyHook, applyDescription, applyCta, applyFull, applyHashtags, applyEmojis }
+//        - format: 'post' | 'carousel' | 'reel'
+//        - captionIndex: índice del caption activo (0-2)
+//        - getCurrent(): devuelve {hook, description, cta, hashtags[], emojis[]}
+//        - applyXxx(value): callback que aplica el resultado al UI
+function renderCopilotoPanel(container, ctx) {
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'background:var(--surf2);border-top:1px solid var(--border);padding:12px 14px;margin-top:8px;border-radius:0 0 var(--r) var(--r);';
 
-  try {
-    // Contexto: caption activo + nicho + tono + instrucción
-    // Si es carrusel, incluir también el slide activo
-    const activeSlide = iaData.publicationType === 'carousel' || currentFormat === 'carousel'
-      ? iaData?.carousel_slides?.[currentSlide] || null
-      : null;
+  // Header
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'font-size:10px;font-weight:800;color:var(--brand2);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;';
+  hdr.textContent = '✨ Copiloto IA';
+  wrap.appendChild(hdr);
 
-    const context = {
-      ia_context: {
-        niche:            iaData.niche || iaData.detected_niche || '',
-        description:      iaData.description || '',
-        publication_type: iaData.publicationType || 'post',
-        tone:             iaData.tone || 'Profesional',
-        current_caption:  currentCap,
-        current_slide:    activeSlide ? {
-          index:   currentSlide + 1,
-          role:    activeSlide.role || '',
-          title:   _cleanSlideTitle(activeSlide.title || ''),
-          content: activeSlide.content || '',
-        } : null,
+  // 6 botones preset en grid 2x3
+  const grid = document.createElement('div');
+  grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;';
+
+  const presets = [
+    { mode: 'hook',        label: '🪝 Hook viral'      },
+    { mode: 'description', label: '📝 Mejorar desc.'   },
+    { mode: 'cta',         label: '🎯 Mejorar CTA'     },
+    { mode: 'full',        label: '🔄 Caption nuevo'   },
+    { mode: 'hashtags',    label: '#️⃣ Hashtags'        },
+    { mode: 'emojis',      label: '😀 Emojis'          },
+  ];
+
+  // Input de instrucción opcional
+  const instrInput = document.createElement('input');
+  instrInput.type = 'text';
+  instrInput.placeholder = 'Instrucción opcional (ej: más vendedor)';
+  instrInput.maxLength = 500;
+  instrInput.style.cssText = 'width:100%;padding:7px 10px;font-size:11px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surf);color:var(--text);box-sizing:border-box;font-family:inherit;outline:none;';
+
+  // Container del preview (vacío hasta que el usuario pulsa un botón)
+  const previewContainer = document.createElement('div');
+  previewContainer.style.cssText = 'margin-top:10px;';
+
+  let busy = false;
+
+  presets.forEach(p => {
+    const btn = document.createElement('button');
+    btn.style.cssText = 'padding:8px 7px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surf3);color:var(--text);font-size:10px;font-weight:700;cursor:pointer;text-align:left;font-family:inherit;transition:all .15s;';
+    btn.textContent = p.label;
+    btn.onmouseover = () => { if (!busy) btn.style.borderColor = 'var(--brand)'; };
+    btn.onmouseout  = () => { btn.style.borderColor = 'var(--border2)'; };
+
+    btn.onclick = async () => {
+      if (busy) return;
+      busy = true;
+      const origLabel = btn.textContent;
+      btn.textContent = '✨ Generando…';
+      btn.disabled = true;
+      // Limpiar preview anterior
+      previewContainer.innerHTML = '';
+
+      try {
+        const current = ctx.getCurrent();
+        const result = await callRefine(p.mode, current, instrInput.value.trim());
+        showCopilotoPreview(previewContainer, p.mode, result, ctx);
+      } catch (e) {
+        toast('❌ ' + (e.message || 'Error en el copiloto'), 'error');
+      } finally {
+        busy = false;
+        btn.textContent = origLabel;
+        btn.disabled = false;
       }
     };
+    grid.appendChild(btn);
+  });
 
-    const r = await fetch(API_URL + '/analyze/refine', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body:    JSON.stringify({
-        message: msg,
-        history: _copHistory.slice(-6),
-        ...context,
-      }),
-    });
-    const d = await r.json();
-    typing.remove();
-
-    if (r.status === 403 && d.upgrade_required) {
-      const el = document.createElement('div');
-      el.innerHTML = '🔒 El Copiloto IA es exclusivo de <strong>Pro y Premium</strong>.<br><a href="index.html#planes" style="color:var(--brand);font-weight:700;font-size:11px;margin-top:4px;display:inline-block;">Ver planes →</a>';
-      const bubble = copAddMsg('ai', '');
-      bubble.innerHTML = ''; bubble.appendChild(el);
-      return;
-    }
-    if (r.status === 429) throw new Error('⏳ Demasiadas solicitudes. Espera un momento.');
-    if (!r.ok || !d.success) throw new Error(d.error || 'Error del servidor');
-
-    copAddMsg('ai', d.reply);
-    _copHistory.push({ role: 'assistant', content: d.reply });
-    if (_copHistory.length > 12) _copHistory = _copHistory.slice(-12);
-
-    const reply    = d.reply.trim();
-    const newTags  = Array.isArray(d.hashtags) ? d.hashtags : [];
-    const newEmoji = Array.isArray(d.emojis)   ? d.emojis   : [];
-    const lastMsg  = document.querySelector('#copMessages .cop-msg.ai:last-child');
-    if (!lastMsg || !reply.length) return;
-
-    const wrap = document.createElement('div');
-    wrap.style.cssText = 'margin-top:10px;display:flex;flex-direction:column;gap:8px;';
-
-    // ── Botón aplicar caption ──
-    const btnCap = document.createElement('button');
-    btnCap.style.cssText = 'width:100%;padding:8px 10px;border-radius:6px;background:var(--grad);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
-    btnCap.textContent = '✅ Aplicar caption en Tu Caption';
-    btnCap.onclick = () => {
-      const clean = reply.replace(/\n{3,}/g, '\n\n').trim();
-      const capEl = document.getElementById('capFull');
-      if (capEl) { capEl.value = clean; captionFull = clean; updateCaptionPreview(); resetHashChips(); }
-      toast('✅ Caption actualizado', 'success');
-      btnCap.textContent = '✓ Aplicado'; btnCap.style.background = '#10B981'; btnCap.disabled = true;
-    };
-    wrap.appendChild(btnCap);
-
-    // ── Nuevos hashtags como chips ──
-    if (newTags.length) {
-      const tagSec = document.createElement('div');
-      tagSec.style.cssText = 'background:var(--surf2);border-radius:8px;padding:8px;';
-      const tagTitle = document.createElement('div');
-      tagTitle.style.cssText = 'font-size:10px;font-weight:700;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;';
-      tagTitle.textContent = '# Hashtags sugeridos — toca para añadir';
-      tagSec.appendChild(tagTitle);
-      const tagRow = document.createElement('div');
-      tagRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;';
-      newTags.forEach(tag => {
-        const chip = document.createElement('button');
-        chip.className = 'hash-chip';
-        chip.textContent = tag.startsWith('#') ? tag : '#' + tag;
-        chip.onclick = () => {
-          const capEl = document.getElementById('capFull');
-          if (!capEl) return;
-          if (chip.classList.contains('active')) {
-            chip.classList.remove('active');
-            capEl.value = capEl.value.replace(new RegExp('\\s*' + tag.replace('#','\\#') + '\\b', 'g'), '').trim();
-          } else {
-            chip.classList.add('active');
-            const sep = capEl.value && !capEl.value.endsWith('\n') ? ' ' : '';
-            capEl.value = capEl.value + sep + (tag.startsWith('#') ? tag : '#' + tag);
-          }
-          captionFull = capEl.value; updateCaptionPreview();
-        };
-        tagRow.appendChild(chip);
-      });
-      // Botón reemplazar todos
-      const replaceBtn = document.createElement('button');
-      replaceBtn.style.cssText = 'width:100%;padding:5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:10px;cursor:pointer;font-family:inherit;margin-top:2px;';
-      replaceBtn.textContent = '↺ Reemplazar todos los hashtags del panel';
-      replaceBtn.onclick = () => {
-        // Update iaData hashtags so the panel refreshes
-        iaData.hashtags = newTags;
-        renderContentPanel();
-        toast('Hashtags actualizados en el panel', 'success');
-        replaceBtn.textContent = '✓ Panel actualizado'; replaceBtn.disabled = true;
-      };
-      tagSec.appendChild(tagRow);
-      tagSec.appendChild(replaceBtn);
-      wrap.appendChild(tagSec);
-    }
-
-    // ── Nuevos emojis como chips ──
-    if (newEmoji.length) {
-      const emoSec = document.createElement('div');
-      emoSec.style.cssText = 'background:var(--surf2);border-radius:8px;padding:8px;';
-      const emoTitle = document.createElement('div');
-      emoTitle.style.cssText = 'font-size:10px;font-weight:700;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;';
-      emoTitle.textContent = '😊 Emojis sugeridos — toca para añadir al caption';
-      emoSec.appendChild(emoTitle);
-      const emoRow = document.createElement('div');
-      emoRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;';
-      newEmoji.forEach(em => {
-        const b = document.createElement('button');
-        b.style.cssText = 'font-size:22px;cursor:pointer;background:none;border:1px solid var(--border2);border-radius:6px;padding:3px 6px;';
-        b.textContent = em;
-        b.onclick = () => {
-          const capEl = document.getElementById('capFull');
-          if (capEl) { capEl.value += ' ' + em; captionFull = capEl.value; updateCaptionPreview(); }
-          b.style.borderColor = 'var(--brand)'; b.style.background = 'var(--brand-subtle)';
-          toast('Emoji añadido al caption', 'success');
-        };
-        emoRow.appendChild(b);
-      });
-      emoSec.appendChild(emoRow);
-      wrap.appendChild(emoSec);
-    }
-
-    lastMsg.appendChild(wrap);
-
-  } catch(e) {
-    typing.remove();
-    copAddMsg('ai', '❌ ' + (e.message || 'Error. Intenta de nuevo.'));
-  } finally {
-    _copBusy = false;
-    document.getElementById('copSendBtn').disabled = false;
-    document.getElementById('copInput')?.focus();
-  }
+  wrap.appendChild(grid);
+  wrap.appendChild(instrInput);
+  wrap.appendChild(previewContainer);
+  container.appendChild(wrap);
 }
+
+// Muestra el preview del resultado del Copiloto + botones [Aplicar] [Descartar].
+// Aplicar quirúrgico: solo reemplaza el campo del mode correspondiente.
+function showCopilotoPreview(container, mode, result, ctx) {
+  const box = document.createElement('div');
+  box.style.cssText = 'padding:12px 14px;border:1px solid var(--brand-border2);border-left:3px solid var(--brand);background:rgba(139,95,191,.08);border-radius:var(--r);margin-top:6px;';
+
+  // Header del preview
+  const head = document.createElement('div');
+  head.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;';
+  const lbl = document.createElement('span');
+  lbl.style.cssText = 'font-size:9px;font-weight:800;color:var(--brand);letter-spacing:.06em;text-transform:uppercase;';
+  const modeNames = {
+    hook: '✨ preview — nuevo hook',
+    description: '✨ preview — nueva descripción',
+    cta: '✨ preview — nuevo CTA',
+    full: '✨ preview — caption nuevo',
+    hashtags: '✨ preview — hashtags nuevos',
+    emojis: '✨ preview — emojis nuevos',
+  };
+  lbl.textContent = modeNames[mode] || '✨ preview';
+  head.appendChild(lbl);
+
+  // Pattern/cta_type info (si lo devolvió el backend)
+  if (result.pattern || result.cta_type) {
+    const tag = document.createElement('span');
+    tag.style.cssText = 'font-size:9px;color:var(--text2);font-weight:700;';
+    tag.textContent = (result.pattern ? 'pattern: ' + result.pattern : '') + (result.cta_type ? 'tipo: ' + result.cta_type : '');
+    head.appendChild(tag);
+  }
+  box.appendChild(head);
+
+  // Body del preview — varía por mode
+  const body = document.createElement('div');
+  body.style.cssText = 'font-size:12px;line-height:1.5;color:var(--text);padding:8px 10px;background:var(--surf);border-radius:var(--r);border:1px solid var(--border);margin-bottom:9px;';
+
+  let toApply = null; // valor a aplicar si el usuario pulsa "Aplicar"
+
+  if (mode === 'hook') {
+    body.textContent = result.new_hook || '';
+    toApply = result.new_hook || '';
+  } else if (mode === 'description') {
+    body.style.whiteSpace = 'pre-wrap';
+    body.textContent = result.new_description || '';
+    toApply = result.new_description || '';
+  } else if (mode === 'cta') {
+    body.textContent = result.new_cta || '';
+    toApply = result.new_cta || '';
+  } else if (mode === 'full') {
+    const c = result.new_caption || {};
+    body.style.whiteSpace = 'pre-wrap';
+    body.innerHTML =
+      '<div style="font-weight:700;color:var(--brand);font-size:10px;margin-bottom:4px;">🪝 HOOK</div>' +
+      '<div style="margin-bottom:8px;">' + escHtml(c.hook || '') + '</div>' +
+      '<div style="font-weight:700;color:var(--brand);font-size:10px;margin-bottom:4px;">📝 DESCRIPTION</div>' +
+      '<div style="margin-bottom:8px;">' + escHtml(c.description || '') + '</div>' +
+      '<div style="font-weight:700;color:var(--brand);font-size:10px;margin-bottom:4px;">🎯 CTA</div>' +
+      '<div>' + escHtml(c.cta || '') + '</div>';
+    toApply = { hook: c.hook || '', description: c.description || '', cta: c.cta || '' };
+  } else if (mode === 'hashtags') {
+    const arr = Array.isArray(result.new_hashtags) ? result.new_hashtags : [];
+    body.style.display = 'flex';
+    body.style.flexWrap = 'wrap';
+    body.style.gap = '4px';
+    body.innerHTML = '';
+    arr.forEach(h => {
+      const tag = document.createElement('span');
+      tag.style.cssText = 'background:rgba(139,95,191,.12);color:var(--brand);padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600;';
+      tag.textContent = h;
+      body.appendChild(tag);
+    });
+    toApply = arr;
+  } else if (mode === 'emojis') {
+    const arr = Array.isArray(result.new_emojis) ? result.new_emojis : [];
+    body.style.fontSize = '20px';
+    body.textContent = arr.join(' ');
+    toApply = arr;
+  }
+  box.appendChild(body);
+
+  // Botones [Aplicar] [Descartar]
+  const btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:flex;gap:6px;';
+  const applyBtn = document.createElement('button');
+  applyBtn.style.cssText = 'flex:1;padding:8px;border-radius:var(--r);border:none;background:var(--grad);color:#fff;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:.02em;font-family:inherit;';
+  applyBtn.innerHTML = '✓ Aplicar';
+  applyBtn.onclick = () => {
+    try {
+      if (mode === 'hook'        && ctx.applyHook)        ctx.applyHook(toApply);
+      if (mode === 'description' && ctx.applyDescription) ctx.applyDescription(toApply);
+      if (mode === 'cta'         && ctx.applyCta)         ctx.applyCta(toApply);
+      if (mode === 'full'        && ctx.applyFull)        ctx.applyFull(toApply);
+      if (mode === 'hashtags'    && ctx.applyHashtags)    ctx.applyHashtags(toApply);
+      if (mode === 'emojis'      && ctx.applyEmojis)      ctx.applyEmojis(toApply);
+      toast('✅ Aplicado', 'success');
+      container.innerHTML = ''; // limpiar preview
+    } catch (e) {
+      toast('❌ Error al aplicar: ' + e.message, 'error');
+    }
+  };
+  const discardBtn = document.createElement('button');
+  discardBtn.style.cssText = 'flex:1;padding:8px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
+  discardBtn.textContent = 'Descartar';
+  discardBtn.onclick = () => { container.innerHTML = ''; };
+
+  btnRow.appendChild(applyBtn);
+  btnRow.appendChild(discardBtn);
+  box.appendChild(btnRow);
+
+  container.appendChild(box);
+}
+
 </script>
 </body>
 </html>
