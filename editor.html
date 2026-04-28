@@ -1728,6 +1728,26 @@ function loadIAData() {
     if (!raw) { renderIAPanel(); return; }
     iaData = JSON.parse(raw);
 
+    // ── COMPAT GROQSERVICE v2 ─────────────────────────────────────────
+    // groqService v2 devuelve captions como objetos {hook, description, cta}.
+    // El editor legacy lee captions como strings (21 lugares: .replace, .split,
+    // .substring, .match). Hasta el rediseño completo del Copiloto (Fase B),
+    // usamos _captions_legacy (strings concatenados) que groqService v2 incluye
+    // como red de seguridad. Si no existe (datos viejos), normalizamos manual.
+    if (Array.isArray(iaData.captions) && iaData.captions.some(c => c && typeof c === 'object')) {
+      if (Array.isArray(iaData._captions_legacy) && iaData._captions_legacy.length === iaData.captions.length) {
+        iaData.captions = iaData._captions_legacy;
+      } else {
+        iaData.captions = iaData.captions.map(c => {
+          if (typeof c === 'string') return c;
+          if (c && typeof c === 'object') {
+            return [c.hook, c.description, c.cta].filter(p => p && String(p).trim()).join('\n\n');
+          }
+          return '';
+        });
+      }
+    }
+
     if (iaData.publicationType) {
       currentFormat = iaData.publicationType;
       initFormatTabs(currentFormat);
@@ -1743,6 +1763,11 @@ function loadIAData() {
       currentSlide = 0;
       loadSlide(0);
       updateCanvasBg();
+      // ── AUTO-APLICAR contenido de los slides al canvas ───────────────
+      // Sin esto, el usuario abre el editor con canvas vacío y tiene que
+      // pulsar "Aplicar todos los slides" para ver lo que ya generó la IA.
+      // Silent: no toast ni historySave (es el estado inicial, no una acción).
+      applyAllSlides(iaData.carousel_slides, true);
     }
 
     // Caption starts empty — user selects manually
@@ -3334,11 +3359,23 @@ function renderCarouselContentPanel(container) {
   hdr.innerHTML = `<strong style="color:var(--text);">${slides_data.length} slides generados</strong><br>Las miniaturas abajo del canvas muestran todos los slides. Toca una tarjeta para editarla.`;
   container.appendChild(hdr);
 
-  // Apply all button
+  // Restaurar contenido original (los slides ya vienen auto-aplicados al cargar)
+  // Solo útil si el usuario destruyó algo y quiere volver al estado IA inicial.
   const applyAll = document.createElement('button');
-  applyAll.style.cssText = 'width:100%;padding:10px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;';
-  applyAll.innerHTML = '✨ Aplicar todos los slides';
-  applyAll.onclick = () => { applyAllSlides(slides_data); applyAll.textContent='✅ Slides aplicados'; applyAll.style.background='var(--success)'; };
+  applyAll.style.cssText = 'width:100%;padding:10px;border-radius:var(--r);background:transparent;border:1.5px solid var(--border2);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;';
+  applyAll.innerHTML = '🔄 Restaurar contenido original';
+  applyAll.onclick = () => {
+    if (!confirm('¿Restaurar el contenido original de los slides?\n\nEsto reemplazará cualquier cambio que hayas hecho en los textos o bloques del canvas.')) return;
+    applyAllSlides(slides_data);
+    applyAll.textContent = '✅ Contenido restaurado';
+    applyAll.style.background = 'var(--success)';
+    applyAll.style.color = '#fff';
+    setTimeout(() => {
+      applyAll.innerHTML = '🔄 Restaurar contenido original';
+      applyAll.style.background = 'transparent';
+      applyAll.style.color = 'var(--text2)';
+    }, 2000);
+  };
   container.appendChild(applyAll);
 
   // Regenerar + IA
@@ -3479,7 +3516,7 @@ function applySlideToCanvas(idx, s) {
   toast(`Slide ${idx+1} cargado — edítalo en el canvas`,'success');
 }
 
-function applyAllSlides(slides_data) {
+function applyAllSlides(slides_data, silent = false) {
   if (!slides_data?.length) return;
   while (slides.length < slides_data.length) slides.push(newSlide(slides[0]?.bg1||'#7C3AED', slides[0]?.bg2||'#F43F5E'));
   slides_data.forEach((s, i) => {
@@ -3491,8 +3528,11 @@ function applyAllSlides(slides_data) {
   });
   loadSlide(0);
   updateCanvasBg();
-  updateSlideNav(); renderSlideStrip(); historySave();
-  toast(`✅ ${slides_data.length} slides aplicados`,'success');
+  updateSlideNav(); renderSlideStrip();
+  if (!silent) {
+    historySave();
+    toast(`✅ ${slides_data.length} slides aplicados`,'success');
+  }
 }
 
 /* ── STORY ── */
@@ -6131,11 +6171,22 @@ function renderCarouselPanel() {
   container.appendChild(copBtn2);
   container.appendChild(cop2);
 
-  // Apply all btn
+  // Restaurar contenido original (auto-cargado al abrir el editor)
   const applyAll = document.createElement('button');
-  applyAll.style.cssText = 'width:100%;padding:10px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;';
-  applyAll.innerHTML = '✦ Aplicar todos los slides';
-  applyAll.onclick = () => applyAllSlides(slides_data);
+  applyAll.style.cssText = 'width:100%;padding:10px;border-radius:var(--r);background:transparent;border:1.5px solid var(--border2);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;';
+  applyAll.innerHTML = '🔄 Restaurar contenido original';
+  applyAll.onclick = () => {
+    if (!confirm('¿Restaurar el contenido original de los slides?\n\nEsto reemplazará cualquier cambio que hayas hecho en los textos o bloques del canvas.')) return;
+    applyAllSlides(slides_data);
+    applyAll.textContent = '✅ Contenido restaurado';
+    applyAll.style.background = 'var(--success)';
+    applyAll.style.color = '#fff';
+    setTimeout(() => {
+      applyAll.innerHTML = '🔄 Restaurar contenido original';
+      applyAll.style.background = 'transparent';
+      applyAll.style.color = 'var(--text2)';
+    }, 2000);
+  };
   container.appendChild(applyAll);
 
   // IA btn
