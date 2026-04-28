@@ -889,6 +889,7 @@ const KEYS = {
   format:      'conteniza_format',
   history:     'conteniza_history',
   dailyUsage:  'conteniza_daily_usage',
+  dailyLimit:  'conteniza_daily_limit',
   cookies:     'conteniza_cookies',
   cookiesDate: 'conteniza_cookies_date',
 };
@@ -1017,6 +1018,10 @@ async function handleAuth(event) {
       // Store daily usage for quick restore
       if (d.user.daily_usage_count !== undefined) {
         localStorage.setItem(KEYS.dailyUsage, String(d.user.daily_usage_count));
+      }
+      // Store daily limit (can be courtesy or plan-based)
+      if (d.user.daily_usage_limit !== undefined && d.user.daily_usage_limit !== null) {
+        localStorage.setItem(KEYS.dailyLimit, String(d.user.daily_usage_limit));
       }
       await showMainApp();
       showNotification(_isRegister ? '¡Cuenta creada!' : '¡Bienvenido!', 'success');
@@ -1167,6 +1172,10 @@ async function syncCredits() {
       if (d.user.daily_usage_count !== undefined) {
         currentUser.daily_usage_count = d.user.daily_usage_count;
         localStorage.setItem(KEYS.dailyUsage, String(d.user.daily_usage_count));
+      }
+      if (d.user.daily_usage_limit !== undefined && d.user.daily_usage_limit !== null) {
+        currentUser.daily_usage_limit = d.user.daily_usage_limit;
+        localStorage.setItem(KEYS.dailyLimit, String(d.user.daily_usage_limit));
       }
       document.getElementById('userCredits').textContent = userCredits + ' créditos';
       document.getElementById('creditsDisplay').textContent = userCredits;
@@ -1518,7 +1527,17 @@ function updateCreditsBar() {
     const stored = localStorage.getItem(KEYS.dailyUsage);
     dailyUsed = stored ? parseInt(stored) || 0 : 0;
   }
-  const dailyLimit = plan === 'free' ? 5 : plan === 'pro' ? 20 : 30;
+  // Leer límite diario del backend (incluye cortesías personalizadas).
+  // Fallback al hardcode por plan solo si el backend no envió el límite (ej: usuario recién logueado).
+  let dailyLimit = currentUser?.daily_usage_limit;
+  if (dailyLimit === undefined || dailyLimit === null) {
+    const storedLimit = localStorage.getItem(KEYS.dailyLimit);
+    dailyLimit = storedLimit ? parseInt(storedLimit) : null;
+  }
+  if (!dailyLimit || dailyLimit <= 0) {
+    // Fallback hardcode solo si el backend nunca envió el dato
+    dailyLimit = plan === 'free' ? 5 : plan === 'pro' ? 20 : 30;
+  }
   if (usedLb) usedLb.textContent = `${used} usados de ${limit} este mes  •  Hoy: ${dailyUsed}/${dailyLimit}`;
 
   if (resetLb) {
@@ -1719,6 +1738,11 @@ async function generateContent(event) {
         currentUser.daily_usage_count = d.daily_usage.current;
       } else {
         currentUser.daily_usage_count = (currentUser.daily_usage_count || 0) + 1;
+      }
+      // Backend envía el límite real (incluye cortesía si está activa)
+      if (d.daily_usage?.limit !== undefined && d.daily_usage.limit !== null) {
+        currentUser.daily_usage_limit = d.daily_usage.limit;
+        localStorage.setItem(KEYS.dailyLimit, String(d.daily_usage.limit));
       }
     }
     // Save updated daily count to localStorage
