@@ -201,8 +201,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 .caption-zone{
   width:190px;flex-shrink:0;display:flex;flex-direction:column;
   background:var(--surf);border-left:1px solid var(--border);
-  padding:8px;gap:5px;overflow:hidden;
-  font-size:11px;height:260px;align-self:flex-start;
+  padding:8px;gap:5px;overflow:visible;
+  font-size:11px;height:340px;align-self:flex-start;
 }
 .caption-zone-lbl{
   font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;
@@ -212,7 +212,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 .caption-zone textarea{
   flex:1;min-height:0;resize:none;padding:8px;border-radius:var(--r);
   border:1px solid var(--border2);background:var(--surf2);color:var(--text);
-  font-family:inherit;font-size:11px;line-height:1.6;overflow-y:auto;
+  font-family:inherit;font-size:11px;line-height:1.6;overflow-y:auto;min-height:180px;
 }
 .ia-panel{
   width:280px;flex-shrink:0;display:flex;flex-direction:column;
@@ -3165,7 +3165,7 @@ function renderPostContentPanel(container) {
       const cap = captions[capIdx];
       const capEl = document.getElementById('capFull');
       // Strip any hashtags from previous caption before applying new one
-      const capClean = cap.replace(/#\S+/g, '').replace(/\s+$/, '').trim();
+      const capClean = cap.replace(/\s+$/, '').trim();
       if (capEl) { capEl.value = capClean; captionFull = capClean; updateCaptionPreview(); }
       // Reset hashtag chips — user picks new ones for this caption
       resetHashChips();
@@ -3348,7 +3348,7 @@ function renderCarouselContentPanel(container) {
         '<span class="slide-role-badge" style="background:' + color + '22;color:' + color + ';">' + label + '</span>' +
       '</div>' +
       '<div class="slide-card2-body">' +
-        (s.title   ? '<strong style="color:var(--text);font-size:12px;">' + escHtml(_cleanSlideTitle(s.title)) + '</strong>' : '') +
+        (s.title   ? '<strong style="color:' + (_isSlideSchema(s.title) ? '#EF4444' : 'var(--text)') + ';font-size:12px;">' + (_isSlideSchema(s.title) ? '⚠️ ' : '') + escHtml(_cleanSlideTitle(s.title)) + '</strong>' : '') +
         (s.content ? '<br><span style="font-size:11px;">' + escHtml(s.content.substring(0,80)) + (s.content.length>80?'…':'') + '</span>' : '') +
       '</div>';
     card.onclick = () => {
@@ -3454,6 +3454,7 @@ function applyAllSlides(slides_data) {
     saveCurrentBlocks();
   });
   loadSlide(0);
+  updateCanvasBg();
   updateSlideNav(); renderSlideStrip(); historySave();
   toast(`✅ ${slides_data.length} slides aplicados`,'success');
 }
@@ -4155,6 +4156,14 @@ function renderPostPanel(container) {
 
 
 // Strip role labels from slide titles before showing on canvas
+function _isSlideSchema(text) {
+  if (!text) return false;
+  const m = ['max 6 palabras','max 8 palabras','GANCHO —','TITULO GANCHO',
+    'primer problema real','primera solucion conc','contenido especifico',
+    'INTRO —','quiebre emocional','exact_text','sin etiquetas','color_scheme'];
+  return m.some(x => String(text).includes(x));
+}
+
 function _cleanSlideTitle(title) {
   if (!title) return '';
   return title
@@ -6478,13 +6487,12 @@ async function copSend(preset) {
     wrap.style.cssText = 'margin-top:10px;display:flex;flex-direction:column;gap:8px;';
 
     // ── Botón aplicar caption ──
-    // Only show "Aplicar caption" if reply is substantial (not just hashtag/emoji intro)
-    const _replyIsCaption = reply.length > 80 && !_isHashtagReq && !_isEmojiReq;
     const btnCap = document.createElement('button');
+    const _replyIsCaption = reply.length > 80 && !_isHashtagReq && !_isEmojiReq;
     btnCap.style.cssText = 'width:100%;padding:8px 10px;border-radius:6px;background:var(--grad);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;' + (_replyIsCaption ? '' : 'display:none;');
     btnCap.textContent = '✅ Aplicar caption en Tu Caption';
     btnCap.onclick = () => {
-      const clean = reply.replace(/#\S+/g, '').replace(/\n{3,}/g, '\n\n').trim();
+      const clean = reply.replace(/\n{3,}/g, '\n\n').trim();
       const capEl = document.getElementById('capFull');
       if (capEl) { capEl.value = clean; captionFull = clean; updateCaptionPreview(); resetHashChips(); }
       toast('✅ Caption actualizado', 'success');
