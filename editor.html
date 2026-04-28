@@ -3307,11 +3307,21 @@ function renderCarouselContentPanel(container) {
   const roleColors = {titulo:'#8B5FBF',portada:'#8B5FBF',intro:'#0EA5E9',
     dolor_1:'#F43F5E',dolor_2:'#F43F5E',dolor_3:'#F43F5E',
     valor_1:'#10B981',valor_2:'#10B981',valor_3:'#10B981',valor_4:'#10B981',
-    accion:'#F59E0B',item:'#6366F1'};
+    accion:'#F59E0B',item:'#6366F1',
+    // ── Framework 5-stage 2026 (groqService v2): Hook→Context→Value→Proof→CTA ──
+    hook:'#8B5FBF',     context:'#0EA5E9',
+    value_1:'#10B981',  value_2:'#10B981',  value_3:'#10B981',
+    value_4:'#10B981',  value_5:'#10B981',
+    proof:'#EAB308',    resumen:'#6366F1',  cta:'#F59E0B'};
   const roleLabels = {titulo:'TÍTULO',portada:'PORTADA',intro:'INTRO',
     dolor_1:'DOLOR 1',dolor_2:'DOLOR 2',dolor_3:'DOLOR 3',
     valor_1:'VALOR 1',valor_2:'VALOR 2',valor_3:'VALOR 3',valor_4:'VALOR 4',
-    accion:'ACCIÓN',item:'ÍTEM'};
+    accion:'ACCIÓN',item:'ÍTEM',
+    // ── Framework 5-stage 2026 (groqService v2) ──
+    hook:'HOOK',        context:'CONTEXTO',
+    value_1:'VALOR 1',  value_2:'VALOR 2',  value_3:'VALOR 3',
+    value_4:'VALOR 4',  value_5:'VALOR 5',
+    proof:'PRUEBA',     resumen:'RESUMEN',  cta:'CTA'};
 
   if (!slides_data.length) {
     container.innerHTML = '<div class="ia-empty"><div class="ia-empty-icon">🎠</div>Sin slides generados</div>';
@@ -6140,7 +6150,17 @@ function renderCarouselPanel() {
   slides_data.forEach((s, i) => {
     const card = document.createElement('div');
     card.className = 'slide-card2' + (i===currentSlide?' active':'');
-    const roleLabel = {portada:'PORTADA',accion:'ACCIÓN',item:'ÍTEM'}[s.role] || (s.role||'').toUpperCase();
+    const roleLabel = {
+      portada:'PORTADA', titulo:'TÍTULO', intro:'INTRO',
+      dolor_1:'DOLOR 1', dolor_2:'DOLOR 2', dolor_3:'DOLOR 3',
+      valor_1:'VALOR 1', valor_2:'VALOR 2', valor_3:'VALOR 3', valor_4:'VALOR 4',
+      accion:'ACCIÓN', item:'ÍTEM',
+      // Framework 5-stage 2026 (groqService v2)
+      hook:'HOOK', context:'CONTEXTO',
+      value_1:'VALOR 1', value_2:'VALOR 2', value_3:'VALOR 3',
+      value_4:'VALOR 4', value_5:'VALOR 5',
+      proof:'PRUEBA', resumen:'RESUMEN', cta:'CTA'
+    }[s.role] || (s.role||'').toUpperCase();
     card.innerHTML =
       '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">' +
         '<span style="font-size:10px;font-weight:800;color:var(--brand);">Slide ' + (i+1) + '</span>' +
