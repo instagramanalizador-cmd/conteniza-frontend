@@ -202,7 +202,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   width:190px;flex-shrink:0;display:flex;flex-direction:column;
   background:var(--surf);border-left:1px solid var(--border);
   padding:8px;gap:5px;overflow:visible;
-  font-size:11px;height:340px;align-self:flex-start;
+  font-size:11px;height:50vh;min-height:340px;align-self:flex-start;
 }
 .caption-zone-lbl{
   font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;
@@ -1785,6 +1785,8 @@ async function loadUser() {
         const username = currentUser.username || currentUser.email?.split('@')[0] || 'tu_usuario';
         document.getElementById('igUsername').textContent = username;
         updateTopbarUser();
+        // FIX: refresh tab visibility now that currentUser is loaded (Marca tab gating)
+        if (typeof updateTabsForFormat === 'function') updateTabsForFormat(currentFormat);
         // Still refresh in background
         fetch(API_URL + '/auth/me', { headers:{ Authorization:'Bearer '+token }})
           .then(r => r.ok ? r.json() : null)
@@ -1792,6 +1794,7 @@ async function loadUser() {
             if (d?.user || d?.email) {
               currentUser = d.user || d;
               updateTopbarUser();
+              if (typeof updateTabsForFormat === 'function') updateTabsForFormat(currentFormat);
             }
           }).catch(()=>{});
       } catch(pe) {}
@@ -1802,6 +1805,8 @@ async function loadUser() {
         currentUser = d.user || d;
         const username = currentUser.username || currentUser.email?.split('@')[0] || 'tu_usuario';
         document.getElementById('igUsername').textContent = username;
+        // FIX: refresh tab visibility now that currentUser is loaded (Marca tab gating)
+        if (typeof updateTabsForFormat === 'function') updateTabsForFormat(currentFormat);
       }
     }
     // Load brand
@@ -1840,19 +1845,48 @@ async function loadUser() {
 
 function applyBrandToCanvas() {
   if (!currentBrand) return;
-  if (currentBrand.color_primary) {
-    slides.forEach(s => { s.bg1 = currentBrand.color_primary; });
-    document.getElementById('bg1Input').value = currentBrand.color_primary;
-    document.getElementById('bg1InputM').value = currentBrand.color_primary;
-    document.getElementById('bg1Input').closest('.bgc-swatch').style.background = currentBrand.color_primary;
+  const b = currentBrand;
+
+  // 1) Colores de fondo en todos los slides + sincronizar inputs
+  if (b.color_primary) {
+    slides.forEach(s => { s.bg1 = b.color_primary; });
+    const _b1  = document.getElementById('bg1Input');
+    const _b1m = document.getElementById('bg1InputM');
+    if (_b1)  { _b1.value = b.color_primary;  const sw = _b1.closest('.bgc-swatch'); if (sw) sw.style.background = b.color_primary; }
+    if (_b1m) { _b1m.value = b.color_primary; const sw = _b1m.closest('.bgc-swatch'); if (sw) sw.style.background = b.color_primary; }
   }
-  if (currentBrand.color_secondary) {
-    slides.forEach(s => { s.bg2 = currentBrand.color_secondary; });
-    document.getElementById('bg2Input').value = currentBrand.color_secondary;
-    document.getElementById('bg2InputM').value = currentBrand.color_secondary;
-    document.getElementById('bg2Input').closest('.bgc-swatch').style.background = currentBrand.color_secondary;
+  if (b.color_secondary) {
+    slides.forEach(s => { s.bg2 = b.color_secondary; });
+    const _b2  = document.getElementById('bg2Input');
+    const _b2m = document.getElementById('bg2InputM');
+    if (_b2)  { _b2.value = b.color_secondary;  const sw = _b2.closest('.bgc-swatch'); if (sw) sw.style.background = b.color_secondary; }
+    if (_b2m) { _b2m.value = b.color_secondary; const sw = _b2m.closest('.bgc-swatch'); if (sw) sw.style.background = b.color_secondary; }
   }
+
+  // 2) Fuente y colores en bloques de texto existentes en el canvas
+  const fn  = b.font_name      || 'DM Sans';
+  const fc  = b.font_color     || '#fff';
+  const sfc = b.sub_font_color || 'rgba(255,255,255,.85)';
+  document.querySelectorAll('.eblock-text').forEach((ta, i) => {
+    ta.style.fontFamily = `'${fn}',sans-serif`;
+    ta.style.color      = i === 0 ? fc : sfc;
+  });
+
+  // 3) Logo: añadir si hay logo_url y no existe ya un bloque logo en el canvas
+  if (b.logo_url) {
+    const existingLogo = document.querySelector('.eblock[data-role="logo-block"]');
+    if (existingLogo) {
+      const img = existingLogo.querySelector('img');
+      if (img) img.src = b.logo_url;
+    } else if (typeof makeBlock === 'function' && document.getElementById('canvasBlocks')) {
+      try { makeBlock('image', { src:b.logo_url, x:5, y:3, w:22, h:13, role:'logo-block' }); } catch(_e) {}
+    }
+  }
+
+  // 4) Persistir DOM en slides[currentSlide]._dom y repintar canvas + thumb
+  if (typeof saveCurrentBlocks === 'function') saveCurrentBlocks();
   updateCanvasBg();
+  if (typeof updateStripThumb === 'function') updateStripThumb(currentSlide);
 }
 
 /* ══ CANVAS RESIZE ══ */
@@ -5316,6 +5350,7 @@ async function saveBrandOverlay() {
       sub_font_color:  document.getElementById('ovSubFontColor')?.value  || 'rgba(255,255,255,0.8)',
     };
     renderBrandPanel();
+    applyBrandToCanvas();   // ← FIX: refrescar canvas tras guardar (post/reel/story/carrusel)
     closeBrandOverlay();
     toast('✅ Marca guardada y aplicada','success');
   } catch(err) { toast('Error: '+err.message,'error'); }
