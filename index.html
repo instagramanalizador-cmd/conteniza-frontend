@@ -190,7 +190,7 @@
     }
     .auth-title { font-size:20px; font-weight:800; text-align:center; margin-bottom:6px; }
     .auth-sub   { font-size:13px; color:var(--text-2); text-align:center; margin-bottom:24px; }
-    .form-group { margin-bottom:16px; }
+    .form-group { margin-bottom:12px; }
     .form-label { display:block; font-size:13px; font-weight:600; color:var(--text-2); margin-bottom:6px; }
     .form-input, .form-select, .form-textarea {
       width:100%; padding:11px 14px; border:1.5px solid var(--border);
@@ -205,20 +205,20 @@
     .auth-toggle a:hover { text-decoration:underline; }
 
     /* ── MAIN APP ── */
-    #mainApp { max-width:620px; margin:0 auto; padding:24px 20px 80px; }
+    #mainApp { max-width:620px; margin:0 auto; padding:12px 20px 60px; }
 
     .gen-card {
       background:var(--surface); border-radius:var(--radius-xl);
       box-shadow:var(--shadow-md); overflow:hidden;
     }
     .gen-card-header {
-      padding:24px 24px 0;
+      padding:16px 24px 0;
     }
     .gen-card-header h2 {
-      font-family:'Syne',sans-serif; font-size:20px; font-weight:800; margin-bottom:4px;
+      font-family:'Syne',sans-serif; font-size:20px; font-weight:800; margin-bottom:2px;
     }
     .gen-card-header p { font-size:13px; color:var(--text-2); }
-    .gen-card-body { padding:20px 24px 24px; }
+    .gen-card-body { padding:14px 24px 20px; }
 
     /* Format buttons */
     .pub-grid {
@@ -440,6 +440,7 @@
       <button id="upgradePlanBtn" class="ub-btn upgrade hidden" onclick="showPlansScreen()">⬆️ Mejorar</button>
       <div class="ub-sep"></div>
       <button id="adminBtn" class="ub-btn admin hidden" onclick="openAdmin()">🛡️ Admin</button>
+      <button class="ub-btn" onclick="showCreateHelp()" title="Ayuda — Cómo crear buen contenido">❓ Ayuda</button>
       <button class="ub-btn danger" onclick="logout()">🚪 Salir</button>
     </div>
   </div>
@@ -531,20 +532,15 @@
 
 <!-- ═══ MAIN APP ═══ -->
 <div id="mainApp" class="hidden">
-  <div style="text-align:center;padding:28px 0 20px;">
-    <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;background:var(--grad-brand);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px;">✦ Conteniza</div>
-    <p style="font-size:13px;color:var(--text-3);">¿Qué contenido creamos hoy?</p>
+  <div style="text-align:center;padding:8px 0 12px;">
+    <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;background:var(--grad-brand);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:2px;">✦ Conteniza</div>
+    <p style="font-size:12px;color:var(--text-3);">¿Qué contenido creamos hoy?</p>
   </div>
 
   <div class="gen-card">
-    <div class="gen-card-header" style="position:relative;">
+    <div class="gen-card-header">
       <h2>✨ Nuevo contenido</h2>
       <p>Describe el tema y elige el formato — Conteniza hace el resto</p>
-      <!-- Botón ayuda — guía rápida de cómo crear buen contenido -->
-      <button type="button" onclick="showCreateHelp()" title="Guía: cómo crear buen contenido"
-              style="position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;background:rgba(139,95,191,.12);border:1.5px solid rgba(139,95,191,.3);color:var(--brand);font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;transition:all .15s;"
-              onmouseover="this.style.background='rgba(139,95,191,.22)'"
-              onmouseout="this.style.background='rgba(139,95,191,.12)'">?</button>
     </div>
     <div class="gen-card-body">
       <form id="contentForm" onsubmit="generateContent(event)">
@@ -563,7 +559,7 @@
         </div>
 
         <!-- NICHO + TONO — visibles siempre -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
           <div class="form-group" style="margin:0;">
             <label class="form-label">🎯 Tu nicho</label>
             <div id="nicheDisplay" style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:rgba(139,95,191,.1);border:1.5px solid rgba(139,95,191,.3);border-radius:var(--radius-sm);min-height:40px;cursor:pointer;" onclick="openNicheSelector()">
@@ -2530,9 +2526,12 @@ function skipOnboarding() {
   </script>
 
 <!-- ── COOKIE BANNER ── -->
+<!-- Estilos de layout (flex/align/gap) se aplican solo cuando el banner está visible.
+     Antes había 'display:none' Y 'display:flex' en el mismo style inline — el último ganaba
+     y el banner salía siempre, ignorando el localStorage. -->
 <div id="cookieBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:99999;
   background:rgba(15,15,25,.97);border-top:1px solid rgba(139,95,191,.4);
-  padding:14px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+  padding:14px 20px;align-items:center;gap:12px;flex-wrap:wrap;">
   <div style="flex:1;min-width:200px;">
     <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:3px;">🍪 Usamos cookies</div>
     <div style="font-size:11px;color:rgba(255,255,255,.6);line-height:1.5;">
