@@ -7323,14 +7323,66 @@ function renderCarouselPanel() {
       value_4:'VALOR 4', value_5:'VALOR 5',
       proof:'PRUEBA', resumen:'RESUMEN', cta:'CTA'
     }[s.role] || (s.role||'').toUpperCase();
+
+    // ── B2 v3: color del rol para botón ✨ ──
+    const roleColor = {
+      titulo:'#8B5FBF',portada:'#8B5FBF',intro:'#0EA5E9',
+      dolor_1:'#F43F5E',dolor_2:'#F43F5E',dolor_3:'#F43F5E',
+      valor_1:'#10B981',valor_2:'#10B981',valor_3:'#10B981',valor_4:'#10B981',
+      accion:'#F59E0B',item:'#6366F1',
+      hook:'#8B5FBF',context:'#0EA5E9',
+      value_1:'#10B981',value_2:'#10B981',value_3:'#10B981',
+      value_4:'#10B981',value_5:'#10B981',
+      proof:'#EAB308',resumen:'#6366F1',cta:'#F59E0B'
+    }[s.role] || '#8B5FBF';
+
     card.innerHTML =
       '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">' +
         '<span style="font-size:10px;font-weight:800;color:var(--brand);">Slide ' + (i+1) + '</span>' +
         (roleLabel ? '<span style="font-size:9px;font-weight:700;background:var(--brand-subtle);color:var(--brand);padding:1px 6px;border-radius:4px;">' + roleLabel + '</span>' : '') +
+        // ── B2: Botón Copiloto ✨ Mejorar ──
+        '<button class="slide-cop-btn" data-slide-idx="' + i + '" title="Mejorar este slide con IA (sin coste)" ' +
+        'style="margin-left:auto;padding:4px 9px;border-radius:6px;background:' + roleColor + ';border:none;color:#fff;font-size:10px;font-weight:800;cursor:pointer;font-family:inherit;flex-shrink:0;box-shadow:0 1px 4px ' + roleColor + '55;">✨ Mejorar</button>' +
       '</div>' +
       '<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:2px;">' + (s.title||'') + '</div>' +
-      '<div style="font-size:11px;color:var(--text3);line-height:1.4;">' + (s.content||'').substring(0,70) + ((s.content||'').length>70?'…':'') + '</div>';
-    card.onclick = () => {
+      '<div style="font-size:11px;color:var(--text3);line-height:1.4;">' + (s.content||'').substring(0,70) + ((s.content||'').length>70?'…':'') + '</div>' +
+      // ── B2: Panel del Copiloto (oculto por defecto) ──
+      '<div class="slide-cop-panel" id="slideCopPanel_' + i + '" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">' +
+        '<div style="font-size:9px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">✨ Copiloto del slide ' + (i+1) + ' (sin coste)</div>' +
+        '<div style="display:flex;flex-direction:column;gap:6px;">' +
+          '<button class="slide-cop-action" data-mode="slide_title" data-slide-idx="' + i + '" ' +
+          'style="padding:7px;border-radius:5px;background:var(--surf);border:1px solid var(--border2);color:var(--text);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left;">📌 Mejorar título</button>' +
+          '<button class="slide-cop-action" data-mode="slide_content" data-slide-idx="' + i + '" ' +
+          'style="padding:7px;border-radius:5px;background:var(--surf);border:1px solid var(--border2);color:var(--text);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left;">📄 Mejorar contenido</button>' +
+          '<button class="slide-cop-action" data-mode="slide_full" data-slide-idx="' + i + '" ' +
+          'style="padding:7px;border-radius:5px;background:var(--brand-subtle);border:1px solid var(--brand-border);color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;">🔄 Regenerar slide completo</button>' +
+        '</div>' +
+        '<div class="slide-cop-result" id="slideCopResult_' + i + '" style="display:none;margin-top:8px;padding:8px;background:var(--surf);border-radius:6px;border:1px solid var(--border2);font-size:11px;color:var(--text2);line-height:1.5;"></div>' +
+      '</div>';
+
+    card.onclick = (e) => {
+      // ── B2: Click en ✨ Mejorar → toggle panel del Copiloto, NO aplicar al canvas ──
+      const copBtn = e.target.closest('.slide-cop-btn');
+      if (copBtn) {
+        e.stopPropagation();
+        const panel = document.getElementById('slideCopPanel_' + i);
+        if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        return;
+      }
+      // ── B2: Click en una acción del Copiloto → ejecutar modo ──
+      const actBtn = e.target.closest('.slide-cop-action');
+      if (actBtn) {
+        e.stopPropagation();
+        const mode = actBtn.getAttribute('data-mode');
+        _runSlideCopilot(i, s, mode, actBtn);
+        return;
+      }
+      // ── B2: Click dentro del panel → no propagar (no aplicar al canvas) ──
+      if (e.target.closest('.slide-cop-panel')) {
+        e.stopPropagation();
+        return;
+      }
+      // Click en cualquier otra parte de la card → aplicar al canvas
       document.querySelectorAll('.slide-card2').forEach(c=>c.classList.remove('active'));
       card.classList.add('active');
       applySlideToCanvas(i, s);
@@ -7338,7 +7390,8 @@ function renderCarouselPanel() {
     container.appendChild(card);
   });
 
-
+  // ── B2: log de diagnóstico (verifica si esta versión está corriendo) ──
+  console.log('[B2] renderCarouselPanel — versión REAL con botones ✨ Mejorar por slide. Slides:', slides_data.length);
 }
 
 function renderCarouselCaptionPanel() {
