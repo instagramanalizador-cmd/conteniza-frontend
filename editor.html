@@ -3491,12 +3491,43 @@ function renderCarouselContentPanel(container) {
       '<div class="slide-card2-head" style="border-left:3px solid ' + color + ';padding-left:10px;">' +
         '<span style="font-size:12px;font-weight:700;color:' + color + ';">Slide ' + (i+1) + '</span>' +
         '<span class="slide-role-badge" style="background:' + color + '22;color:' + color + ';">' + label + '</span>' +
+        // ── B2: Botón Copiloto del slide individual ──
+        '<button class="slide-cop-btn" data-slide-idx="' + i + '" title="Mejorar este slide con IA" ' +
+        'style="margin-left:auto;padding:3px 8px;border-radius:5px;background:' + color + '22;border:1px solid ' + color + '44;color:' + color + ';font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;">✨</button>' +
       '</div>' +
       '<div class="slide-card2-body">' +
         (s.title   ? '<strong style="color:' + (_isSlideSchema(s.title) ? '#EF4444' : 'var(--text)') + ';font-size:12px;">' + (_isSlideSchema(s.title) ? '⚠️ ' : '') + escHtml(_cleanSlideTitle(s.title)) + '</strong>' : '') +
         (s.content ? '<br><span style="font-size:11px;">' + escHtml(s.content.substring(0,80)) + (s.content.length>80?'…':'') + '</span>' : '') +
+      '</div>' +
+      // ── B2: Panel del Copiloto (oculto por defecto, se expande al click en ✨) ──
+      '<div class="slide-cop-panel" id="slideCopPanel_' + i + '" style="display:none;border-top:1px solid var(--border);background:var(--surf2);padding:10px 12px;">' +
+        '<div style="font-size:9px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">✨ Copiloto del slide ' + (i+1) + ' (sin coste)</div>' +
+        '<div style="display:flex;flex-direction:column;gap:6px;">' +
+          '<button class="slide-cop-action" data-mode="slide_title" data-slide-idx="' + i + '" ' +
+          'style="padding:7px;border-radius:5px;background:var(--surf);border:1px solid var(--border2);color:var(--text);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left;">📌 Mejorar título</button>' +
+          '<button class="slide-cop-action" data-mode="slide_content" data-slide-idx="' + i + '" ' +
+          'style="padding:7px;border-radius:5px;background:var(--surf);border:1px solid var(--border2);color:var(--text);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left;">📄 Mejorar contenido</button>' +
+          '<button class="slide-cop-action" data-mode="slide_full" data-slide-idx="' + i + '" ' +
+          'style="padding:7px;border-radius:5px;background:var(--brand-subtle);border:1px solid var(--brand-border);color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;">🔄 Regenerar slide completo</button>' +
+        '</div>' +
+        '<div class="slide-cop-result" id="slideCopResult_' + i + '" style="display:none;margin-top:8px;padding:8px;background:var(--surf);border-radius:6px;border:1px solid var(--border2);font-size:11px;color:var(--text2);line-height:1.5;"></div>' +
       '</div>';
-    card.onclick = () => {
+    card.onclick = (e) => {
+      // Si clicó el botón ✨ → toggle panel, NO aplicar al canvas
+      if (e.target.classList.contains('slide-cop-btn')) {
+        e.stopPropagation();
+        const panel = document.getElementById('slideCopPanel_' + i);
+        if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        return;
+      }
+      // Si clicó una acción del copiloto → ejecutar modo
+      if (e.target.classList.contains('slide-cop-action')) {
+        e.stopPropagation();
+        const mode = e.target.getAttribute('data-mode');
+        _runSlideCopilot(i, s, mode, e.target);
+        return;
+      }
+      // Click en la card → aplicar al canvas (comportamiento original)
       container.querySelectorAll('.slide-card2').forEach(c => c.classList.remove('active'));
       card.classList.add('active');
       applySlideToCanvas(i, s);
@@ -4054,6 +4085,252 @@ async function _storyCopSend(idx, storyText) {
   }
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// B2 — COPILOTO DEL SLIDE INDIVIDUAL DEL CARRUSEL
+// 3 modes: slide_title (solo título), slide_content (solo contenido), slide_full (ambos)
+// Llama al backend /refine con el slide concreto, recibe la propuesta y permite aplicarla.
+// Coste: 0 créditos (Copiloto siempre es gratis, igual que el general).
+// ════════════════════════════════════════════════════════════════════════════
+async function _runSlideCopilot(slideIdx, slideData, mode, btnEl) {
+  const result = document.getElementById('slideCopResult_' + slideIdx);
+  if (!result) return;
+
+  const token = localStorage.getItem(KEYS.token);
+  if (!token) { toast('Inicia sesión primero', 'error'); return; }
+
+  // Marcar el botón pulsado como activo
+  const allBtns = btnEl?.parentElement?.querySelectorAll('button');
+  if (allBtns) allBtns.forEach(b => b.disabled = true);
+  if (btnEl) btnEl.style.opacity = '0.6';
+
+  result.style.display = 'block';
+  result.textContent   = '✨ Mejorando con IA…';
+
+  // Determinar total de slides
+  const totalSlides = (iaData?.carousel_slides?.length) || (slides?.length) || 10;
+
+  try {
+    const r = await fetch(API_URL + '/analyze/refine', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({
+        mode,
+        current: {
+          slide_index:   slideIdx,
+          slide_role:    slideData.role || 'value',
+          slide_title:   slideData.title   || '',
+          slide_content: slideData.content || '',
+          total_slides:  totalSlides,
+        },
+        ia_context: {
+          niche:            iaData?.niche || iaData?.detected_niche || '',
+          tone:             iaData?.tone  || 'Profesional',
+          publication_type: 'carousel',
+          description:      iaData?.input_description || iaData?.description || '',
+        }
+      })
+    });
+    const d = await r.json();
+
+    if (r.status === 503) {
+      throw new Error(d.error || 'Servicio saturado. Intenta en 30s.');
+    }
+    if (!r.ok || !d.ok) throw new Error(d.error || 'Error generando mejora');
+
+    // Render según el mode
+    let previewHtml = '';
+    let newTitle = null, newContent = null;
+
+    if (mode === 'slide_title') {
+      newTitle = d.new_title;
+      previewHtml = '<div style="margin-bottom:6px;"><strong style="font-size:11px;color:var(--brand);">Nuevo título:</strong></div>' +
+                    '<div style="font-size:12px;color:var(--text);font-weight:700;margin-bottom:8px;">' + escHtml(newTitle) + '</div>';
+    } else if (mode === 'slide_content') {
+      newContent = d.new_content;
+      previewHtml = '<div style="margin-bottom:6px;"><strong style="font-size:11px;color:var(--brand);">Nuevo contenido:</strong></div>' +
+                    '<div style="font-size:11px;color:var(--text);line-height:1.6;margin-bottom:8px;">' + escHtml(newContent) + '</div>';
+    } else if (mode === 'slide_full') {
+      newTitle   = d.new_title;
+      newContent = d.new_content;
+      previewHtml = '<div style="margin-bottom:6px;"><strong style="font-size:11px;color:var(--brand);">Nuevo título:</strong></div>' +
+                    '<div style="font-size:12px;color:var(--text);font-weight:700;margin-bottom:8px;">' + escHtml(newTitle || '') + '</div>' +
+                    '<div style="margin-bottom:6px;"><strong style="font-size:11px;color:var(--brand);">Nuevo contenido:</strong></div>' +
+                    '<div style="font-size:11px;color:var(--text);line-height:1.6;margin-bottom:8px;">' + escHtml(newContent || '') + '</div>';
+    }
+
+    result.innerHTML = previewHtml +
+      '<div style="display:flex;gap:6px;">' +
+        '<button id="slideApplyBtn_' + slideIdx + '" style="flex:1;padding:7px;border-radius:5px;background:var(--grad);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">✅ Aplicar</button>' +
+        '<button id="slideDiscardBtn_' + slideIdx + '" style="padding:7px 12px;border-radius:5px;background:var(--surf);border:1px solid var(--border2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">Descartar</button>' +
+      '</div>';
+
+    // Aplicar: actualizar el slide en iaData.carousel_slides + re-render panel
+    document.getElementById('slideApplyBtn_' + slideIdx).onclick = () => {
+      if (iaData?.carousel_slides && iaData.carousel_slides[slideIdx]) {
+        if (newTitle !== null)   iaData.carousel_slides[slideIdx].title   = newTitle;
+        if (newContent !== null) iaData.carousel_slides[slideIdx].content = newContent;
+        // Re-renderizar el panel para que se vea actualizado
+        renderCarouselPanel();
+        // Si el slide está cargado en el canvas, también actualizar el canvas
+        if (currentSlide === slideIdx) {
+          applySlideToCanvas(slideIdx, iaData.carousel_slides[slideIdx]);
+        }
+        toast('✅ Slide ' + (slideIdx+1) + ' actualizado', 'success');
+      }
+    };
+
+    document.getElementById('slideDiscardBtn_' + slideIdx).onclick = () => {
+      result.style.display = 'none';
+      result.innerHTML = '';
+    };
+
+  } catch(e) {
+    result.innerHTML = '<div style="color:#EF4444;font-size:11px;">❌ ' + escHtml(e.message || 'Error. Intenta de nuevo.') + '</div>';
+  } finally {
+    if (allBtns) allBtns.forEach(b => b.disabled = false);
+    if (btnEl) btnEl.style.opacity = '1';
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// B3 — COPILOTO DEL GUION DEL REEL
+// 5 modes: reel_hook, reel_problem, reel_solution, reel_cta, reel_full
+// Cada sección del guion tiene su botón "✨ Mejorar". Botón final regenera todo.
+// Coste: 0 créditos.
+// ════════════════════════════════════════════════════════════════════════════
+async function _runReelCopilot(reelIdx, reelData, mode, btnEl) {
+  const result = document.getElementById('reelCopResult_' + reelIdx);
+  if (!result) return;
+
+  const token = localStorage.getItem(KEYS.token);
+  if (!token) { toast('Inicia sesión primero', 'error'); return; }
+
+  const allBtns = btnEl?.closest('.reel-cop-actions')?.querySelectorAll('button');
+  if (allBtns) allBtns.forEach(b => b.disabled = true);
+  if (btnEl) btnEl.style.opacity = '0.6';
+
+  result.style.display = 'block';
+  result.textContent   = '✨ Mejorando guion con IA…';
+
+  try {
+    const r = await fetch(API_URL + '/analyze/refine', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({
+        mode,
+        current: {
+          reel_index:    reelIdx,
+          reel_angle:    reelData.angle    || 'PAIN+PROMISE',
+          reel_hook:     reelData.hook     || '',
+          reel_problem:  reelData.problem  || '',
+          reel_solution: reelData.solution || '',
+          reel_cta:      reelData.cta      || '',
+        },
+        ia_context: {
+          niche:            iaData?.niche || iaData?.detected_niche || '',
+          tone:             iaData?.tone  || 'Profesional',
+          publication_type: 'reel',
+          description:      iaData?.input_description || iaData?.description || '',
+        }
+      })
+    });
+    const d = await r.json();
+
+    if (r.status === 503) {
+      throw new Error(d.error || 'Servicio saturado. Intenta en 30s.');
+    }
+    if (!r.ok || !d.ok) throw new Error(d.error || 'Error generando mejora');
+
+    // Render preview según mode
+    let previewHtml = '';
+    const sectionLabels = {
+      reel_hook:     '🎯 Nuevo HOOK (0-3s)',
+      reel_problem:  '📢 Nuevo PROBLEMA (3-10s)',
+      reel_solution: '💡 Nueva SOLUCIÓN (10-22s)',
+      reel_cta:      '🎬 Nuevo CTA (22-25s)',
+    };
+
+    let updatedFields = {};
+    if (mode === 'reel_hook')     { updatedFields.hook     = d.new_hook;     }
+    if (mode === 'reel_problem')  { updatedFields.problem  = d.new_problem;  }
+    if (mode === 'reel_solution') { updatedFields.solution = d.new_solution; }
+    if (mode === 'reel_cta')      { updatedFields.cta      = d.new_cta;      }
+    if (mode === 'reel_full' && d.new_reel) {
+      updatedFields = {
+        hook:     d.new_reel.hook,
+        problem:  d.new_reel.problem,
+        solution: d.new_reel.solution,
+        cta:      d.new_reel.cta,
+      };
+    }
+
+    if (mode === 'reel_full') {
+      previewHtml =
+        '<div style="margin-bottom:8px;"><strong style="font-size:11px;color:var(--brand);">🔄 Nuevo guion completo</strong></div>' +
+        '<div style="font-size:11px;line-height:1.6;color:var(--text);">' +
+          '<div style="margin-bottom:5px;"><strong>🎯 HOOK:</strong> ' + escHtml(updatedFields.hook || '') + '</div>' +
+          '<div style="margin-bottom:5px;"><strong>📢 PROBLEMA:</strong> ' + escHtml(updatedFields.problem || '') + '</div>' +
+          '<div style="margin-bottom:5px;"><strong>💡 SOLUCIÓN:</strong> ' + escHtml(updatedFields.solution || '') + '</div>' +
+          '<div style="margin-bottom:5px;"><strong>🎬 CTA:</strong> ' + escHtml(updatedFields.cta || '') + '</div>' +
+        '</div>';
+    } else {
+      const lbl = sectionLabels[mode] || 'Mejora';
+      const txt = updatedFields.hook || updatedFields.problem || updatedFields.solution || updatedFields.cta || '';
+      previewHtml =
+        '<div style="margin-bottom:6px;"><strong style="font-size:11px;color:var(--brand);">' + lbl + '</strong></div>' +
+        '<div style="font-size:11px;color:var(--text);line-height:1.6;margin-bottom:8px;">' + escHtml(txt) + '</div>';
+    }
+
+    result.innerHTML = previewHtml +
+      '<div style="display:flex;gap:6px;margin-top:8px;">' +
+        '<button id="reelApplyBtn_' + reelIdx + '" style="flex:1;padding:7px;border-radius:5px;background:var(--grad);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">✅ Aplicar</button>' +
+        '<button id="reelDiscardBtn_' + reelIdx + '" style="padding:7px 12px;border-radius:5px;background:var(--surf);border:1px solid var(--border2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">Descartar</button>' +
+      '</div>';
+
+    // Aplicar: actualizar iaData.stories[reelIdx] con los nuevos campos
+    // Recordar: para reels, iaData.stories[] son los guiones (3 reels), parseados con parseReel
+    document.getElementById('reelApplyBtn_' + reelIdx).onclick = () => {
+      // Actualizar el dato parseado in-memory
+      if (window._reelsCache && window._reelsCache[reelIdx]) {
+        Object.assign(window._reelsCache[reelIdx], updatedFields);
+      }
+      // Re-construir el string crudo del reel para iaData.stories[reelIdx]
+      // (mantenemos el raw original para no perder música/text overlays si los había)
+      if (iaData?.stories && iaData.stories[reelIdx]) {
+        const reel = window._reelsCache?.[reelIdx] || updatedFields;
+        // Reconstruir string en el formato esperado del prompt
+        const angleLabel = (reel.angle || 'PAIN+PROMISE');
+        iaData.stories[reelIdx] =
+          'REEL ' + (reelIdx+1) + ' ' + angleLabel + ' — 25s\n' +
+          '🎯 HOOK 0-3s (TEXT OVERLAY): ' + (reel.hook || updatedFields.hook || '') + '\n' +
+          '📢 PROBLEM 3-10s: ' + (reel.problem || updatedFields.problem || '') + '\n' +
+          '💡 SOLUTION 10-22s: ' + (reel.solution || updatedFields.solution || '') + '\n' +
+          '🎬 CTA 22-25s: ' + (reel.cta || updatedFields.cta || '') + '\n' +
+          '🎵 MUSICA: ' + (reel.musica || 'Lo-fi instrumental, 75 BPM') + '\n' +
+          '📝 TEXT OVERLAYS: ' + (reel.overlays || (reel.hook || updatedFields.hook || ''));
+      }
+      // Re-renderizar el panel del reel para reflejar los cambios
+      const inner = document.getElementById('iaContentInner');
+      if (inner && typeof renderReelContentPanel === 'function') {
+        inner.innerHTML = '';
+        renderReelContentPanel(inner);
+      }
+      toast('✅ Reel ' + (reelIdx+1) + ' actualizado', 'success');
+    };
+
+    document.getElementById('reelDiscardBtn_' + reelIdx).onclick = () => {
+      result.style.display = 'none';
+      result.innerHTML = '';
+    };
+
+  } catch(e) {
+    result.innerHTML = '<div style="color:#EF4444;font-size:11px;">❌ ' + escHtml(e.message || 'Error. Intenta de nuevo.') + '</div>';
+  } finally {
+    if (allBtns) allBtns.forEach(b => b.disabled = false);
+    if (btnEl) btnEl.style.opacity = '1';
+  }
+}
+
 
 /* ── REEL ── */
 function renderReelContentPanel(container) {
@@ -4106,6 +4383,8 @@ function renderReelContentPanel(container) {
     reelIdeas.push({ raw:'', angle: angleLabels[j] || 'Ángulo '+(j+1),
       hook:'', problem:'', solution:'', cta:'', musica:'', overlays:'' });
   }
+  // ── B3: cachear reelIdeas globalmente para que _runReelCopilot pueda actualizarlos ──
+  window._reelsCache = reelIdeas;
 
   // ── Header ──
   const hdr = document.createElement('div');
@@ -4185,10 +4464,10 @@ function renderReelContentPanel(container) {
     guionSec.style.cssText = 'padding:12px 14px;border-bottom:1px solid var(--border);';
 
     const blocks = [
-      { label:'⏱️ 0-3s — HOOK (text overlay)', color:'#8B5FBF', text: idea.hook,     role: 'hook'     },
-      { label:'⏱️ 3-10s — PROBLEMA',           color:'#F43F5E', text: idea.problem,  role: 'problem'  },
-      { label:'⏱️ 10-22s — SOLUCIÓN',          color:'#10B981', text: idea.solution, role: 'solution' },
-      { label:'⏱️ 22-25s — CTA',                color:'#0EA5E9', text: idea.cta,      role: 'cta'      },
+      { label:'⏱️ 0-3s — HOOK (text overlay)', color:'#8B5FBF', text: idea.hook,     role: 'hook',     mode: 'reel_hook'     },
+      { label:'⏱️ 3-10s — PROBLEMA',           color:'#F43F5E', text: idea.problem,  role: 'problem',  mode: 'reel_problem'  },
+      { label:'⏱️ 10-22s — SOLUCIÓN',          color:'#10B981', text: idea.solution, role: 'solution', mode: 'reel_solution' },
+      { label:'⏱️ 22-25s — CTA',                color:'#0EA5E9', text: idea.cta,      role: 'cta',      mode: 'reel_cta'      },
     ];
 
     blocks.forEach(b => {
@@ -4196,9 +4475,25 @@ function renderReelContentPanel(container) {
       const row = document.createElement('div');
       row.style.cssText = 'margin-bottom:10px;';
       row.innerHTML =
-        '<div style="font-size:9px;font-weight:800;color:' + b.color + ';text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">' + b.label + '</div>' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">' +
+          '<div style="font-size:9px;font-weight:800;color:' + b.color + ';text-transform:uppercase;letter-spacing:.06em;">' + b.label + '</div>' +
+          // ── B3: Botón ✨ por sección del guion ──
+          '<button class="reel-cop-btn-section" data-mode="' + b.mode + '" data-reel-idx="' + idx + '" ' +
+          'title="Mejorar esta sección con IA (sin coste)" ' +
+          'style="padding:2px 7px;border-radius:4px;background:' + b.color + '22;border:1px solid ' + b.color + '44;color:' + b.color + ';font-size:9px;font-weight:700;cursor:pointer;font-family:inherit;">✨ Mejorar</button>' +
+        '</div>' +
         '<div style="font-size:12px;color:var(--text2);line-height:1.6;">' + escHtml(b.text) + '</div>';
       guionSec.appendChild(row);
+
+      // Wire el botón ✨ de esta sección al backend
+      const copBtn = row.querySelector('.reel-cop-btn-section');
+      if (copBtn) {
+        copBtn.onclick = (e) => {
+          e.stopPropagation();
+          _runReelCopilot(idx, idea, b.mode, copBtn);
+        };
+      }
+
       // Botón "Aplicar HOOK al cover" debajo del hook
       if (b.role === 'hook') {
         const applyHookBtn = document.createElement('button');
@@ -4234,6 +4529,23 @@ function renderReelContentPanel(container) {
         guionSec.appendChild(applyHookBtn);
       }
     });
+
+    // ── B3: Result panel del Copiloto del Reel (debajo del guion) ──
+    const reelCopResult = document.createElement('div');
+    reelCopResult.id = 'reelCopResult_' + idx;
+    reelCopResult.style.cssText = 'display:none;margin-top:10px;padding:10px;background:var(--surf2);border-radius:8px;border:1px solid var(--border2);';
+    guionSec.appendChild(reelCopResult);
+
+    // ── B3: Botón regenerar guion completo (manteniendo ángulo) ──
+    const regenWrap = document.createElement('div');
+    regenWrap.className = 'reel-cop-actions';
+    regenWrap.style.cssText = 'margin-top:10px;padding-top:10px;border-top:1px solid var(--border);';
+    const regenBtn = document.createElement('button');
+    regenBtn.style.cssText = 'width:100%;padding:8px;border-radius:6px;background:var(--brand-subtle);border:1px solid var(--brand-border);color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
+    regenBtn.innerHTML = '🔄 Regenerar guion completo (sin coste, mismo ángulo)';
+    regenBtn.onclick = () => _runReelCopilot(idx, idea, 'reel_full', regenBtn);
+    regenWrap.appendChild(regenBtn);
+    guionSec.appendChild(regenWrap);
 
     if (idea.overlays) {
       const ovRow = document.createElement('div');
