@@ -7030,6 +7030,10 @@ function applySlidesData(data, format) {
     // con las dimensiones del canvas VIEJO (formato anterior), causando que un
     // diseño Carrusel cargado en sesión Reel mantuvo el canvas Reel y al revés.
     if (typeof resizeCanvas === 'function') resizeCanvas();
+    // ── DOBLE SEGURIDAD: forzar topbar tab también aquí (reportado por usuario:
+    // "sigue diciendo Carrusel arriba cuando cargo Post"). Si por alguna razón
+    // el initFormatTabs dentro de switchFormat no se ejecutó, lo hacemos explícito.
+    if (typeof initFormatTabs === 'function') initFormatTabs(format);
   } else {
     console.warn('[loadDesign] format no definido — no se cambia pestaña');
   }
