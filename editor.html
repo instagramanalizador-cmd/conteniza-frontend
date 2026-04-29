@@ -2699,7 +2699,7 @@ function loadSlide(idx) {
   } else if (sl.iaSlide) {
     // Auto-apply IA slide content when first visiting this slide
     const s = sl.iaSlide;
-    if (s.title)   addTextBlock(s.title,   { y:18, w:88, x:6, fontSize:36, bold:true,  color:currentBrand?.font_color||'#fff', align:'center' });
+    if (s.title)   addTextBlock(s.title,   { y:18, w:88, x:6, fontSize:36, bold:true,  color:currentBrand?.font_color||'#fff', align:'center', role:'slide-title' });
     if (s.content) addTextBlock(s.content, { y:55, w:88, x:6, fontSize:20, bold:false, color:currentBrand?.sub_font_color||'rgba(255,255,255,.85)', align:'center' });
   }
   updateCanvasBg();
@@ -3531,7 +3531,7 @@ function applySlideToCanvas(idx, s) {
   document.getElementById('canvasBlocks').innerHTML = '';
   slides[idx].blocks = [];
   // I2: usar _cleanSlideTitle para coherencia con applyAllSlides (filtra JSON schema basura)
-  if (s.title)   addTextBlock(_cleanSlideTitle(s.title),   {y:20, w:88, x:6, fontSize:34, bold:true,  color:currentBrand?.font_color||'#fff', align:'center', _noSelect:true});
+  if (s.title)   addTextBlock(_cleanSlideTitle(s.title),   {y:20, w:88, x:6, fontSize:34, bold:true,  color:currentBrand?.font_color||'#fff', align:'center', _noSelect:true, role:'slide-title'});
   if (s.content) addTextBlock(s.content, {y:56, w:88, x:6, fontSize:18, bold:false, color:currentBrand?.sub_font_color||'rgba(255,255,255,.85)', align:'center', _noSelect:true});
   saveCurrentBlocks();
   // Deseleccionar para que el usuario vea el slide limpio sin un bloque marcado
@@ -3546,7 +3546,7 @@ function applyAllSlides(slides_data, silent = false) {
   slides_data.forEach((s, i) => {
     loadSlide(i);
     document.getElementById('canvasBlocks').innerHTML = '';
-    if (s.title)   addTextBlock(_cleanSlideTitle(s.title),   {y:20, w:88, x:6, fontSize:34, bold:true,  color:currentBrand?.font_color||'#fff', align:'center', _noSelect:true});
+    if (s.title)   addTextBlock(_cleanSlideTitle(s.title),   {y:20, w:88, x:6, fontSize:34, bold:true,  color:currentBrand?.font_color||'#fff', align:'center', _noSelect:true, role:'slide-title'});
     if (s.content) addTextBlock(s.content, {y:56, w:88, x:6, fontSize:18, bold:false, color:currentBrand?.sub_font_color||'rgba(255,255,255,.85)', align:'center', _noSelect:true});
     saveCurrentBlocks();
   });
@@ -4414,7 +4414,7 @@ function applySlide(idx) {
   document.getElementById('canvasBlocks').innerHTML = '';
   slides[currentSlide].blocks = [];
   // Add title block
-  if (s.title) addTextBlock(_cleanSlideTitle(s.title), { y:25, w:88, x:6, fontSize:36, bold:true, color:currentBrand?.font_color||'#fff' });
+  if (s.title) addTextBlock(_cleanSlideTitle(s.title), { y:25, w:88, x:6, fontSize:36, bold:true, color:currentBrand?.font_color||'#fff', role:'slide-title' });
   if (s.content) addTextBlock(s.content, { y:55, w:88, x:6, fontSize:20, color:currentBrand?.sub_font_color||'rgba(255,255,255,.85)' });
   toast('✅ Slide aplicado','success');
 }
@@ -7307,10 +7307,34 @@ function _applyTextToCanvasByFormat(text) {
 }
 
 // Aplica el hook al canvas actual (POST/REEL/un slide específico del carrusel)
+// En carrusel sustituye el bloque de título del slide (role='slide-title').
+// En POST/REEL sustituye el hook-block del canvas único.
+// FALLBACK defensivo: si no hay bloque con el role esperado (carruseles legacy generados antes del fix),
+// sustituye el primer bloque de texto del slide para no montar nada encima.
 function _applyHookToCurrentCanvas(text) {
   if (typeof replaceOrAddBlock !== 'function') return;
-  replaceOrAddBlock('hook-block', text, {
-    y: 8, w: 88, x: 6, fontSize: 28, bold: true,
+  const targetRole = (currentFormat === 'carousel') ? 'slide-title' : 'hook-block';
+  const yPos = (currentFormat === 'carousel') ? 20 : 8;
+  const fontSize = (currentFormat === 'carousel') ? 34 : 28;
+
+  // Si no hay bloque con el role esperado, intentar etiquetar el primer text-block existente
+  // como el role correspondiente para que replaceOrAddBlock lo encuentre y sustituya en vez de añadir.
+  const existingWithRole = document.querySelector('.eblock[data-role="' + targetRole + '"]');
+  if (!existingWithRole) {
+    const firstTextBlock = document.querySelector('.eblock');
+    if (firstTextBlock && firstTextBlock.querySelector('.eblock-text')) {
+      firstTextBlock.dataset.role = targetRole;
+      firstTextBlock.setAttribute('data-role', targetRole);
+      // También actualizar slides[].blocks para persistir el role en el data
+      if (slides[currentSlide]?.blocks) {
+        const blk = slides[currentSlide].blocks.find(b => b.id === firstTextBlock.id);
+        if (blk) blk.role = targetRole;
+      }
+    }
+  }
+
+  replaceOrAddBlock(targetRole, text, {
+    y: yPos, w: 88, x: 6, fontSize: fontSize, bold: true,
     color: currentBrand?.font_color || '#fff', align: 'center',
   });
 }
