@@ -3607,12 +3607,15 @@ function renderStoryContentPanel(container) {
 
   // ── Helper: parse story string into parts ──
   function parseStory(raw) {
-    if (!raw) return { tipo:'', tipoIcon:'📱', canvasText:'', stickerText:'', fondo:'' };
+    if (!raw) return { tipo:'', tipoIcon:'📱', canvasText:'', stickerText:'', fondo:'', options:null, correctOption:null };
     const parts = raw.split('|').map(p => p.trim());
 
     // Detect type from first part
     const first = parts[0] || '';
     let tipoIcon = '📱', tipo = 'IDEA', canvasText = '', stickerText = '', fondo = '';
+    // ── B3.2: opciones estructuradas (POLL/QUIZ) — null para tipos sin opciones ──
+    let options = null;        // Array<string> con opciones editables
+    let correctOption = null;  // index 0-3 de la respuesta correcta (solo QUIZ)
 
     // Detección flexible: detecta tanto el formato esperado (📊 ENCUESTA) como variantes que la IA suele devolver (POLL, QUIZ, QUESTION, etc.)
     const isEncuesta = first.startsWith('📊') || /^POLL\s*:/i.test(first) || /^ENCUESTA\s*:/i.test(first);
@@ -3636,14 +3639,34 @@ function renderStoryContentPanel(container) {
       stickerText = (optA && optB) ? 'A: ' + optA + '\nB: ' + optB :
                     (optA || optB) ? (optA || optB) :
                     'Sí / No'; // fallback útil para encuestas binarias cuando la IA no devuelve opciones
+      // ── B3.2: opciones estructuradas para inputs editables ──
+      // Si la IA no devolvió opciones, fallback a Sí/No (lo más común)
+      options = [
+        optA || 'Sí',
+        optB || 'No'
+      ];
       fondo = (parts.find(p => /FONDO:|FONDO\s*-|🎨/i.test(p)) || '').replace(/.*🎨\s*FONDO:?\s*|.*FONDO:\s*/i,'').trim();
 
     } else if (isQuiz) {
       tipoIcon = '❓'; tipo = 'QUIZ';
       canvasText = first.replace(/^❓\s*/, '').replace(/^QUIZ\s*:\s*/i, '').trim();
-      // Buscar respuesta correcta (A: ... o R: ...)
-      const resp = (parts.find(p => /^(A|R|RESPUESTA)\s*:/i.test(p)) || '').replace(/^(A|R|RESPUESTA)\s*:\s*/i,'').trim();
-      stickerText = resp ? 'Respuesta: ' + resp : 'Quiz: respuesta correcta en el siguiente story';
+      // ── B3.2: extraer opciones A/B/C/D + respuesta correcta ──
+      // El backend genera: "QUIZ: pregunta | A: opcA | B: opcB | C: opcC | D: opcD | CORRECTA: A | FONDO: ... | TIP: ..."
+      const optA = (parts.find(p => /^A\s*:/i.test(p)) || '').replace(/^A\s*:\s*/i,'').trim();
+      const optB = (parts.find(p => /^B\s*:/i.test(p)) || '').replace(/^B\s*:\s*/i,'').trim();
+      const optC = (parts.find(p => /^C\s*:/i.test(p)) || '').replace(/^C\s*:\s*/i,'').trim();
+      const optD = (parts.find(p => /^D\s*:/i.test(p)) || '').replace(/^D\s*:\s*/i,'').trim();
+      const correctRaw = (parts.find(p => /^CORRECTA\s*:|^RESPUESTA\s*:/i.test(p)) || '').replace(/^(CORRECTA|RESPUESTA)\s*:\s*/i,'').trim().toUpperCase();
+      // correctIdx: 0=A, 1=B, 2=C, 3=D
+      const correctIdx = ['A','B','C','D'].indexOf(correctRaw.charAt(0));
+      options = [
+        optA || 'Opción A',
+        optB || 'Opción B',
+        optC || 'Opción C',
+        optD || 'Opción D'
+      ];
+      correctOption = correctIdx >= 0 ? correctIdx : 0;
+      stickerText = correctRaw ? 'Respuesta correcta: ' + correctRaw : 'Quiz: marca la respuesta correcta al añadir el sticker';
       fondo = (parts.find(p => /FONDO:/i.test(p)) || '').replace(/.*FONDO:\s*/i,'').trim();
 
     } else if (isPregunta) {
@@ -3705,7 +3728,7 @@ function renderStoryContentPanel(container) {
       stickerText = '';
     }
 
-    return { tipo, tipoIcon, canvasText, stickerText, fondo };
+    return { tipo, tipoIcon, canvasText, stickerText, fondo, options, correctOption };
   }
 
   // ── Story cards ──
@@ -3735,7 +3758,7 @@ function renderStoryContentPanel(container) {
 
   if (stories.length) {
     stories.forEach((raw, idx) => {
-      const { tipo, tipoIcon, canvasText, stickerText, fondo } = parseStory(raw);
+      const { tipo, tipoIcon, canvasText, stickerText, fondo, options, correctOption } = parseStory(raw);
       const color = storyTypeColors[tipo] || '#8B5FBF';
 
       const card = document.createElement('div');
@@ -3792,16 +3815,19 @@ function renderStoryContentPanel(container) {
       canvasSec.appendChild(applyBtn);
       card.appendChild(canvasSec);
 
-      // ── Sticker text section (only if has content) ──
-      if (stickerText) {
+      // ── Sticker text section ──
+      // B3.2: para POLL y QUIZ renderizamos inputs editables en lugar de texto plano.
+      // Los demás tipos siguen mostrando stickerText como antes.
+      const hasEditableOptions = (tipo === 'ENCUESTA' || tipo === 'QUIZ') && Array.isArray(options) && options.length > 0;
+      if (stickerText || hasEditableOptions) {
         const stickerSec = document.createElement('div');
         stickerSec.style.cssText = 'padding:10px 12px;border-bottom:1px solid var(--border);background:var(--surf2);';
         const stickerLbl = document.createElement('div');
-        stickerLbl.style.cssText = 'font-size:9px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;';
+        stickerLbl.style.cssText = 'font-size:9px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;';
         // Label depends on type
         const stickerLabels = {
-          'ENCUESTA':         '📊 OPCIONES PARA EL STICKER DE ENCUESTA',
-          'QUIZ':             '❓ RESPUESTA DEL QUIZ',
+          'ENCUESTA':         '📊 OPCIONES (editables)',
+          'QUIZ':             '❓ OPCIONES + RESPUESTA CORRECTA (editables)',
           'PREGUNTA ABIERTA': '💬 TEXTO PARA STICKER DE PREGUNTA',
           'DATO IMPACTANTE':  '😱 TEXTO PARA SLIDER DE EMOJI',
           'TIP GUARDABLE':    '💾 LLAMADA A GUARDAR',
@@ -3810,22 +3836,98 @@ function renderStoryContentPanel(container) {
           'SLIDER':           '🎚 EMOJI Y OBJETIVO DEL SLIDER',
         };
         stickerLbl.textContent = stickerLabels[tipo] || '📋 TEXTO PARA STICKER';
-        const stickerTxt = document.createElement('div');
-        stickerTxt.style.cssText = 'font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:6px;white-space:pre-line;';
-        stickerTxt.textContent = stickerText;
-        const copyBtn = document.createElement('button');
-        copyBtn.style.cssText = 'padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--surf);color:var(--text2);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;';
-        copyBtn.textContent = '📋 Copiar';
-        copyBtn.onclick = () => {
-          navigator.clipboard.writeText(stickerText.replace(/\n/g, '\n')).then(() => {
-            toast('✅ Copiado — pégalo como sticker en Instagram', 'success');
-            copyBtn.textContent = '✓ Copiado';
-            setTimeout(() => { copyBtn.textContent = '📋 Copiar'; }, 1500);
-          });
-        };
         stickerSec.appendChild(stickerLbl);
-        stickerSec.appendChild(stickerTxt);
-        stickerSec.appendChild(copyBtn);
+
+        if (hasEditableOptions) {
+          // ── B3.2: Inputs editables para POLL/QUIZ ──
+          // Cada opción es un input. Usuario edita, "Copiar" lee los valores actuales.
+          // Para QUIZ además hay radios para marcar la respuesta correcta.
+          const optsContainer = document.createElement('div');
+          optsContainer.style.cssText = 'display:flex;flex-direction:column;gap:6px;margin-bottom:8px;';
+
+          // Input refs to read on copy
+          const inputRefs = [];
+          let correctRef = correctOption || 0; // QUIZ only
+
+          options.forEach((opt, optIdx) => {
+            const optRow = document.createElement('div');
+            optRow.style.cssText = 'display:flex;align-items:center;gap:8px;';
+
+            // QUIZ only: radio para marcar correcta
+            if (tipo === 'QUIZ') {
+              const radio = document.createElement('input');
+              radio.type = 'radio';
+              radio.name = 'quiz_correct_' + idx;
+              radio.checked = (optIdx === correctRef);
+              radio.style.cssText = 'cursor:pointer;accent-color:var(--brand);flex-shrink:0;';
+              radio.title = 'Marcar como respuesta correcta';
+              radio.onchange = () => { correctRef = optIdx; };
+              optRow.appendChild(radio);
+            }
+
+            // Letter label (A/B/C/D)
+            const letterLbl = document.createElement('span');
+            letterLbl.textContent = String.fromCharCode(65 + optIdx) + '.';
+            letterLbl.style.cssText = 'font-size:10px;font-weight:800;color:' + color + ';width:14px;flex-shrink:0;';
+            optRow.appendChild(letterLbl);
+
+            // Editable input
+            const inp = document.createElement('input');
+            inp.type = 'text';
+            inp.value = opt;
+            inp.style.cssText = 'flex:1;padding:5px 8px;border-radius:5px;border:1px solid var(--border2);background:var(--surf);color:var(--text);font-size:11px;font-family:inherit;outline:none;';
+            inp.onfocus = () => { inp.style.borderColor = 'var(--brand)'; };
+            inp.onblur  = () => { inp.style.borderColor = 'var(--border2)'; };
+            inputRefs.push(inp);
+            optRow.appendChild(inp);
+
+            optsContainer.appendChild(optRow);
+          });
+          stickerSec.appendChild(optsContainer);
+
+          // Botón Copiar — lee los valores actuales de los inputs
+          const copyBtn = document.createElement('button');
+          copyBtn.style.cssText = 'padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--surf);color:var(--text2);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;';
+          copyBtn.textContent = '📋 Copiar opciones';
+          copyBtn.onclick = () => {
+            const editedValues = inputRefs.map(r => r.value.trim()).filter(Boolean);
+            let textToCopy;
+            if (tipo === 'QUIZ') {
+              const correctLetter = String.fromCharCode(65 + correctRef);
+              textToCopy = editedValues.map((v, i) => String.fromCharCode(65 + i) + '. ' + v).join('\n') +
+                           '\n\nRespuesta correcta: ' + correctLetter;
+            } else {
+              // ENCUESTA — solo opciones, sin letras (Instagram solo muestra el texto)
+              textToCopy = editedValues.join(' / ');
+            }
+            navigator.clipboard.writeText(textToCopy).then(() => {
+              toast('✅ Opciones copiadas — pégalas en el sticker de Instagram', 'success');
+              copyBtn.textContent = '✓ Copiado';
+              setTimeout(() => { copyBtn.textContent = '📋 Copiar opciones'; }, 1500);
+            });
+          };
+          stickerSec.appendChild(copyBtn);
+
+        } else {
+          // ── Otros tipos (PREGUNTA, DATO, TIP, CTA DM, REVEAL, SLIDER) ──
+          // Comportamiento original: texto plano + botón Copiar
+          const stickerTxt = document.createElement('div');
+          stickerTxt.style.cssText = 'font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:6px;white-space:pre-line;';
+          stickerTxt.textContent = stickerText;
+          const copyBtn = document.createElement('button');
+          copyBtn.style.cssText = 'padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--surf);color:var(--text2);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;';
+          copyBtn.textContent = '📋 Copiar';
+          copyBtn.onclick = () => {
+            navigator.clipboard.writeText(stickerText.replace(/\n/g, '\n')).then(() => {
+              toast('✅ Copiado — pégalo como sticker en Instagram', 'success');
+              copyBtn.textContent = '✓ Copiado';
+              setTimeout(() => { copyBtn.textContent = '📋 Copiar'; }, 1500);
+            });
+          };
+          stickerSec.appendChild(stickerTxt);
+          stickerSec.appendChild(copyBtn);
+        }
+
         card.appendChild(stickerSec);
       }
 
