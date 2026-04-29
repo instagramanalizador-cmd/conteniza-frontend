@@ -126,10 +126,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 .ig-action-icons span{font-size:20px;opacity:.9;}
 .ig-bookmark{font-size:20px;opacity:.9;}
 .ig-likes{font-size:12px;font-weight:700;color:#fff;padding:0 12px 6px;background:#000;}
-.ig-caption-preview{font-size:12px;color:rgba(255,255,255,.85);padding:6px 12px 12px;background:#000;line-height:1.6;border-top:1px solid rgba(255,255,255,.08);}
+.ig-caption-preview{font-size:13px;color:rgba(255,255,255,.95);padding:8px 14px 14px;background:#000;line-height:1.5;border-top:none;}
 /* Caption content: max-height + fade-out (simula Instagram cuando hay "ver más") */
 .ig-caption-content{
-  display:block;max-height:48px;overflow:hidden;position:relative;
+  display:block;max-height:42px;overflow:hidden;position:relative;
   /* Fade-out degradado al final para indicar que hay más texto */
   -webkit-mask-image:linear-gradient(to bottom, #000 60%, transparent 100%);
           mask-image:linear-gradient(to bottom, #000 60%, transparent 100%);
@@ -141,8 +141,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   -webkit-mask-image:none;
           mask-image:none;
 }
-.ig-caption-content strong{margin-right:6px;}
-#igCaptionToggle:hover{color:rgba(255,255,255,.85)!important;}
+.ig-caption-content strong{margin-right:6px;font-weight:700;}
+#igCaptionToggle{
+  display:none;background:none;border:none;color:rgba(255,255,255,.5);
+  font-size:13px;font-weight:500;cursor:pointer;padding:4px 0 0;
+  font-family:inherit;letter-spacing:0;
+}
+#igCaptionToggle:hover{color:rgba(255,255,255,.85);}
 
 /* ── SLIDE STRIP ── */
 .slide-strip{
@@ -963,13 +968,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
         </div>
         <div class="ig-caption-preview" id="igCaptionPreview">
           <div class="ig-caption-content" id="igCaptionContent">
-            <strong style="color:#fff;white-space:nowrap;" id="igCaptionUser">tu_usuario</strong>
-            <span id="igCaptionText" style="color:rgba(255,255,255,.85);"> Usa un caption del panel →</span>
+            <strong style="color:#fff;" id="igCaptionUser">tu_usuario</strong><span id="igCaptionText" style="color:rgba(255,255,255,.95);"> Usa un caption del panel →</span>
           </div>
-          <button id="igCaptionToggle" onclick="expandCaptionPreview()"
-                  style="display:none;background:none;border:none;color:rgba(255,255,255,.55);font-size:12px;font-weight:600;cursor:pointer;padding:4px 0 0;font-family:inherit;letter-spacing:.01em;">
-            ver más
-          </button>
+          <button id="igCaptionToggle" onclick="expandCaptionPreview()">ver más</button>
         </div>
 
       </div>
@@ -2704,6 +2705,14 @@ function loadSlide(idx) {
   updateCanvasBg();
   updateSlideNav();
   renderSlideStrip();
+  // ── I1: actualizar visual del panel del carrusel (slide-card2 active) ──
+  // Antes el panel solo mostraba el slide activo correctamente al cargar el carrusel inicial,
+  // pero al pulsar flechas o cambiar de slide via strip, la clase .active quedaba en el viejo.
+  if (currentFormat === 'carousel') {
+    document.querySelectorAll('#carouselPanelContent .slide-card2').forEach((card, i) => {
+      card.classList.toggle('active', i === idx);
+    });
+  }
   selectedId = null;
   document.getElementById('propsBar').classList.remove('visible');
 }
@@ -3082,14 +3091,30 @@ function showEmojiDestination(em, originEl) {
 
   const picker = document.createElement('div');
   picker.className='emoji-dest-picker';
-  picker.style.cssText='position:fixed;z-index:9999;background:var(--surf);border:1.5px solid var(--brand);border-radius:10px;padding:8px;display:flex;gap:6px;box-shadow:0 4px 20px rgba(0,0,0,.3);';
+  // I4: layout VERTICAL apilado (antes era horizontal y se cortaba en pantallas pequeñas)
+  picker.style.cssText='position:fixed;z-index:9999;background:var(--surf);border:1.5px solid var(--brand);border-radius:10px;padding:6px;display:flex;flex-direction:column;gap:4px;box-shadow:0 4px 20px rgba(0,0,0,.4);min-width:140px;';
   const rect=originEl.getBoundingClientRect();
   picker.style.top=(rect.bottom+4)+'px';
-  picker.style.left=Math.max(4,rect.left-30)+'px';
+  // Centrar el picker bajo el chip de emoji
+  picker.style.left=Math.max(4, rect.left + (rect.width/2) - 70)+'px';
+
+  // Header con emoji + cancelar
+  const head = document.createElement('div');
+  head.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:2px 4px 4px;border-bottom:1px solid var(--border);margin-bottom:4px;';
+  const emPreview = document.createElement('span');
+  emPreview.style.cssText = 'font-size:18px;line-height:1;';
+  emPreview.textContent = em;
+  const cancel=document.createElement('button');
+  cancel.style.cssText='width:22px;height:22px;border-radius:50%;border:none;background:rgba(248,113,113,.15);color:var(--danger);font-size:11px;cursor:pointer;font-family:inherit;';
+  cancel.textContent='✕';
+  cancel.onclick=()=>{picker.remove();originEl.style.borderColor='';originEl.style.background='';};
+  head.appendChild(emPreview);
+  head.appendChild(cancel);
+  picker.appendChild(head);
 
   const toCanvas=document.createElement('button');
-  toCanvas.style.cssText='padding:6px 12px;border-radius:6px;background:var(--grad);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
-  toCanvas.textContent='📸 Canvas';
+  toCanvas.style.cssText='width:100%;padding:8px 10px;border-radius:6px;background:var(--grad);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;';
+  toCanvas.innerHTML='📸 Añadir al canvas';
   toCanvas.onclick=()=>{
     addTextBlock(em,{w:16,x:42,y:5,fontSize:56});
     picker.remove();originEl.style.borderColor='';originEl.style.background='';
@@ -3097,8 +3122,8 @@ function showEmojiDestination(em, originEl) {
   };
 
   const toCaption=document.createElement('button');
-  toCaption.style.cssText='padding:6px 12px;border-radius:6px;background:var(--surf2);border:1px solid var(--border2);color:var(--text);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
-  toCaption.textContent='📝 Caption';
+  toCaption.style.cssText='width:100%;padding:8px 10px;border-radius:6px;background:var(--surf2);border:1px solid var(--border2);color:var(--text);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;';
+  toCaption.innerHTML='📝 Añadir al caption';
   toCaption.onclick=()=>{
     const capEl=document.getElementById('capFull');
     if(capEl){capEl.value+=' '+em;captionFull=capEl.value;updateCaptionPreview();}
@@ -3106,12 +3131,8 @@ function showEmojiDestination(em, originEl) {
     toast('Emoji añadido al caption','success');
   };
 
-  const cancel=document.createElement('button');
-  cancel.style.cssText='width:22px;height:22px;border-radius:50%;border:none;background:rgba(248,113,113,.2);color:var(--danger);font-size:11px;cursor:pointer;';
-  cancel.textContent='✕';
-  cancel.onclick=()=>{picker.remove();originEl.style.borderColor='';originEl.style.background='';};
-
-  picker.appendChild(toCanvas);picker.appendChild(toCaption);picker.appendChild(cancel);
+  picker.appendChild(toCanvas);
+  picker.appendChild(toCaption);
   document.body.appendChild(picker);
   setTimeout(()=>{
     document.addEventListener('click',function cp(e){
@@ -3507,7 +3528,8 @@ function applySlideToCanvas(idx, s) {
   if (idx !== currentSlide) loadSlide(idx);
   document.getElementById('canvasBlocks').innerHTML = '';
   slides[idx].blocks = [];
-  if (s.title)   addTextBlock(s.title,   {y:20, w:88, x:6, fontSize:34, bold:true,  color:currentBrand?.font_color||'#fff', align:'center', _noSelect:true});
+  // I2: usar _cleanSlideTitle para coherencia con applyAllSlides (filtra JSON schema basura)
+  if (s.title)   addTextBlock(_cleanSlideTitle(s.title),   {y:20, w:88, x:6, fontSize:34, bold:true,  color:currentBrand?.font_color||'#fff', align:'center', _noSelect:true});
   if (s.content) addTextBlock(s.content, {y:56, w:88, x:6, fontSize:18, bold:false, color:currentBrand?.sub_font_color||'rgba(255,255,255,.85)', align:'center', _noSelect:true});
   saveCurrentBlocks();
   // Deseleccionar para que el usuario vea el slide limpio sin un bloque marcado
@@ -4543,19 +4565,22 @@ function copyCaptionZoneSmart() {
   const captionStr = [parts.hook, parts.description, parts.cta]
     .filter(p => p && p.trim())
     .join('\n\n');
-  // Emojis seleccionados (los que tienen .active en el caption-zone)
+  // Emojis seleccionados (los que tienen .emo-chip-active en el caption-zone)
   const emojiBtns = document.querySelectorAll('#capZoneEmojis .emo-chip-active');
   const emojiStr = Array.from(emojiBtns).map(b => b.dataset.emoji || b.textContent).join(' ').trim();
-  // Hashtags seleccionados (los que tienen .active en el caption-zone)
+  // Hashtags seleccionados — NORMALIZAR quitando espacios internos para que Instagram los reconozca
+  // Ej: "#gestión del tiempo" → "#gestióndeltiempo" (válido en Instagram)
   const hashBtns = document.querySelectorAll('#capZoneHashtags .hash-chip.active');
   const hashStr = Array.from(hashBtns).map(b => {
-    const t = (b.dataset.tag || b.textContent || '').trim();
-    return t.startsWith('#') ? t : '#' + t;
+    const raw = (b.dataset.tag || b.textContent || '').trim();
+    // Quitar espacios internos + asegurar prefijo #
+    const noSpaces = raw.replace(/\s+/g, '');
+    return noSpaces.startsWith('#') ? noSpaces : '#' + noSpaces;
   }).join(' ').trim();
-  // Composición final estilo Instagram
+  // Composición final estilo Instagram (un solo \n entre emojis y hashtags para que se vea más compacto al pegar)
   let final = captionStr;
   if (emojiStr) final += '\n\n' + emojiStr;
-  if (hashStr)  final += '\n\n' + hashStr;
+  if (hashStr)  final += (emojiStr ? '\n' : '\n\n') + hashStr;
   if (!final.trim()) {
     toast('No hay contenido para copiar', 'info');
     return;
@@ -4623,27 +4648,46 @@ function updateCaptionPreview() {
   const preview = document.getElementById('igCaptionText');
   const content = document.getElementById('igCaptionContent');
   const toggle  = document.getElementById('igCaptionToggle');
+
+  // Construir el texto completo: caption + emojis seleccionados + hashtags seleccionados
+  // (igual que copyCaptionZoneSmart, para que el preview refleje lo que el usuario va a copiar)
+  let displayText = captionFull || '';
+  // Emojis seleccionados con .emo-chip-active
+  const emojiBtns = document.querySelectorAll('#capZoneEmojis .emo-chip-active');
+  if (emojiBtns.length) {
+    const emojiStr = Array.from(emojiBtns).map(b => b.dataset.emoji || b.textContent).join(' ').trim();
+    if (emojiStr) displayText += '\n\n' + emojiStr;
+  }
+  // Hashtags seleccionados con .active (normalizando espacios internos)
+  const hashBtns = document.querySelectorAll('#capZoneHashtags .hash-chip.active');
+  if (hashBtns.length) {
+    const hashStr = Array.from(hashBtns).map(b => {
+      const raw = (b.dataset.tag || b.textContent || '').trim();
+      // Normalizar: quitar espacios internos para que Instagram los reconozca como hashtag
+      const noSpaces = raw.replace(/\s+/g, '');
+      return noSpaces.startsWith('#') ? noSpaces : '#' + noSpaces;
+    }).join(' ').trim();
+    if (hashStr) displayText += '\n\n' + hashStr;
+  }
+
   if (preview) {
-    if (!captionFull) {
+    if (!displayText.trim()) {
       preview.textContent = ' Usa un caption del panel →';
       preview.style.color = 'rgba(255,255,255,.4)';
     } else {
-      // YA NO truncamos: el caption completo se renderiza, el fade-out CSS hace el corte visual
-      preview.textContent = ' ' + captionFull;
-      preview.style.color = 'rgba(255,255,255,.9)';
+      preview.textContent = ' ' + displayText;
+      preview.style.color = 'rgba(255,255,255,.95)';
     }
   }
   // Decidir si mostrar el botón "ver más": solo si el contenido overflowa el max-height
   if (content && toggle) {
-    // En estado colapsado, comparar scrollHeight (alto real) con clientHeight (alto visible).
-    // Si scrollHeight > clientHeight → hay más contenido oculto → mostrar "ver más".
     if (content.classList.contains('expanded')) {
       toggle.style.display = 'inline-block';
       toggle.textContent   = 'ver menos';
     } else {
       // Esperar al próximo frame para que el navegador termine el layout antes de medir
       requestAnimationFrame(() => {
-        const overflows = content.scrollHeight > content.clientHeight + 2; // +2 por redondeo
+        const overflows = content.scrollHeight > content.clientHeight + 2;
         toggle.style.display = overflows ? 'inline-block' : 'none';
         toggle.textContent   = 'ver más';
       });
@@ -7163,6 +7207,8 @@ function renderCaptionZoneHashtags() {
       } else {
         toast('Máximo 3 hashtags', 'info');
       }
+      // Actualizar preview Instagram al cambiar selección
+      if (typeof updateCaptionPreview === 'function') updateCaptionPreview();
     };
     chipsRow.appendChild(chip);
   });
@@ -7213,6 +7259,8 @@ function renderCaptionZoneEmojis() {
         chip.style.borderColor = 'var(--brand)';
         chip.style.background  = 'rgba(139,95,191,.12)';
       }
+      // Actualizar preview Instagram al cambiar selección
+      if (typeof updateCaptionPreview === 'function') updateCaptionPreview();
     };
     chipsRow.appendChild(chip);
   });
