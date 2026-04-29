@@ -519,10 +519,35 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   .main{flex-direction:column;}
   .canvas-area{padding:8px;gap:6px;}
   .ia-panel #bgControls{display:none;} /* solo ocultar el desktop bg-controls */
-  .topbar{gap:6px;padding:0 8px;}
-  .fmt-tabs{gap:2px;}
+
+  /* ── Topbar mobile: scroll horizontal + elementos más compactos ── */
+  .topbar{
+    gap:4px;padding:0 6px;height:46px;
+    overflow-x:auto;overflow-y:hidden;
+    scrollbar-width:none;
+  }
+  .topbar::-webkit-scrollbar{display:none;}
+  .tb-back{display:none;} /* redundante con tb-logo-text que también vuelve al inicio */
+  .tb-logo-text{font-size:13px;}
+  .fmt-tabs{margin:0 4px;gap:2px;}
   .fmt-tab{padding:4px 7px;font-size:11px;}
-  .tb-btn span{display:none;}
+  .tb-btn span{display:none;} /* solo iconos */
+  .tb-btn{padding:6px 8px;font-size:13px;}
+  #autoSaveLabel{display:none !important;}
+  .tb-user-info{padding:0 4px;gap:4px;}
+  .tb-credits{font-size:10px;padding:2px 6px;}
+  .slide-nav{margin-left:2px;}
+  .slide-nav .snav-btn{width:24px;height:24px;font-size:13px;}
+
+  /* Modal de Mis diseños */
+  .designs-modal{padding:8px !important;}
+  .designs-card{max-width:96vw !important;max-height:92dvh !important;}
+  .designs-head{padding:10px 14px;}
+  .designs-head-title{font-size:13px;}
+  .designs-save-row{padding:10px 14px;}
+  .designs-list{padding:10px 14px;}
+  .design-item{flex-wrap:wrap;}
+  .design-actions{width:100%;justify-content:flex-end;}
 }
 
 /* ── NUEVO PANEL CONTENIDO ── */

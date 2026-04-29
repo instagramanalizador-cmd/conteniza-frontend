@@ -366,9 +366,22 @@
       .pub-grid { grid-template-columns:repeat(2,1fr); }
       .adv-grid { grid-template-columns:1fr; }
       .auth-card { padding:28px 20px; }
-      #mainApp { padding:16px 12px 80px; }
-      .gen-card-body { padding:16px; }
-      .gen-card-header { padding:20px 16px 0; }
+      #mainApp { padding:8px 10px 20px; }
+      .gen-card-body { padding:10px 14px 14px; }
+      .gen-card-header { padding:12px 14px 0; }
+      /* Mobile user-bar: ocultar botones secundarios (están en el dropdown del avatar) */
+      .user-bar-right > #historialBtn,
+      .user-bar-right > #brandBtn,
+      .user-bar-right > #adminBtn,
+      .user-bar-right > .ub-sep { display:none !important; }
+      /* Botón "Salir" más compacto */
+      .user-bar-right .ub-btn.danger { padding:6px 8px; font-size:11px; }
+      .user-bar-right .ub-btn.danger::before { content:'🚪'; }
+      /* Reducir padding del bar */
+      .user-bar-inner { padding:8px 12px; min-height:48px; gap:8px; }
+      /* "❓ Ayuda" solo icono */
+      .user-bar-right > button[onclick*="showCreateHelp"] span,
+      .user-bar-right > button[onclick*="showCreateHelp"]::after { display:none; }
     }
 
     /* ── NICHE MISMATCH MODAL ── */
