@@ -3064,7 +3064,9 @@ function renderContentPanel() {
       if (!hasHook && firstHook) {
         // Extraer hook del primer guion (formato "🎯 HOOK 0-3s: …")
         const m = String(firstHook).match(/🎯\s*HOOK\s*\d+\s*[-–]\s*\d+\s*s[^:]*:\s*([^\n]+)/i);
-        const hookText = m ? m[1].trim().substring(0, 125) : '';
+        const rawHook = m ? m[1].trim() : '';
+        // Limpiar con _cleanHookForCanvas (quita prefijos sobrantes, comillas; sin substring arbitrario)
+        const hookText = (typeof _cleanHookForCanvas === 'function') ? _cleanHookForCanvas(rawHook) : rawHook;
         if (hookText && typeof replaceOrAddBlock === 'function') {
           replaceOrAddBlock('hook-block', hookText, {
             y: 8, w: 88, x: 6, fontSize: 28, bold: true,
@@ -3891,21 +3893,58 @@ function renderReelContentPanel(container) {
   coverHdr.style.cssText = 'background:linear-gradient(135deg,rgba(139,95,191,.18),rgba(233,30,140,.12));border-left:3px solid var(--brand2);border-radius:8px;padding:10px 12px;margin-bottom:14px;';
   coverHdr.innerHTML =
     '<div style="font-size:11px;font-weight:800;color:var(--brand2);margin-bottom:3px;letter-spacing:.04em;">🎬 Diseña la PORTADA de tu Reel</div>' +
-    '<div style="font-size:10px;color:var(--text2);line-height:1.5;">El canvas de la izquierda es el <strong>cover</strong> que verán antes de pulsar play. Aplica un hook con el botón "🎨 Aplicar HOOK al canvas" debajo de cada guión.</div>';
+    '<div style="font-size:10px;color:var(--text2);line-height:1.5;">El canvas de la izquierda es el <strong>cover</strong> que verán antes de pulsar play. Si no te gusta el hook, mejóralo en el Copiloto del lateral derecho.</div>';
   container.appendChild(coverHdr);
 
-  // ── Cards ──
-  let reelIdx = 0;
+  // ── Navegación con flechas — Reel X de Y ──
   const angleColors = ['#8B5FBF','#F43F5E','#0EA5E9'];
+  const navHdr = document.createElement('div');
+  navHdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;background:var(--surf2);border:1px solid var(--border2);border-radius:10px;padding:8px 12px;margin-bottom:10px;';
+  const navInfo = document.createElement('div');
+  navInfo.style.cssText = 'font-size:12px;font-weight:800;color:var(--text);';
+  const navBtns = document.createElement('div');
+  navBtns.style.cssText = 'display:flex;gap:6px;';
+  const navPrev = document.createElement('button');
+  navPrev.style.cssText = 'width:30px;height:30px;border-radius:6px;border:1px solid var(--border2);background:var(--surf);color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;';
+  navPrev.innerHTML = '←';
+  const navNext = document.createElement('button');
+  navNext.style.cssText = 'width:30px;height:30px;border-radius:6px;border:1px solid var(--border2);background:var(--surf);color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;';
+  navNext.innerHTML = '→';
+  navBtns.appendChild(navPrev);
+  navBtns.appendChild(navNext);
+  navHdr.appendChild(navInfo);
+  navHdr.appendChild(navBtns);
+  container.appendChild(navHdr);
 
-  reelIdeas.forEach((idea, idx) => {
+  // ── Card holder (se re-renderiza al cambiar reelIdx) ──
+  const cardHolder = document.createElement('div');
+  container.appendChild(cardHolder);
+
+  // ── Index del reel activo (0..2) ──
+  let reelIdx = 0;
+  // Buffer de captions editados localmente por reel (para no perderlos al navegar)
+  const editedCaptions = reelIdeas.map(() => null);
+
+  function renderActiveReel() {
+    const idx = reelIdx;
+    const idea = reelIdeas[idx];
     const color = angleColors[idx] || '#8B5FBF';
-    const card  = document.createElement('div');
+
+    navInfo.innerHTML = '🎬 Reel <strong style="color:var(--brand);">' + (idx+1) + '</strong> de ' + reelIdeas.length + ' <span style="color:' + color + ';font-weight:800;margin-left:6px;">— ' + (idea.angle || angleLabels[idx]) + '</span>';
+    navPrev.disabled = idx === 0;
+    navNext.disabled = idx === reelIdeas.length - 1;
+    navPrev.style.opacity = idx === 0 ? '.35' : '1';
+    navNext.style.opacity = idx === reelIdeas.length - 1 ? '.35' : '1';
+    navPrev.style.cursor = idx === 0 ? 'not-allowed' : 'pointer';
+    navNext.style.cursor = idx === reelIdeas.length - 1 ? 'not-allowed' : 'pointer';
+
+    cardHolder.innerHTML = '';
+    const card = document.createElement('div');
     card.style.cssText = 'border:1.5px solid var(--border2);border-radius:12px;overflow:hidden;margin-bottom:14px;';
 
     // ── Card header ──
     const cardHdr = document.createElement('div');
-    cardHdr.style.cssText = `padding:10px 14px;background:${color}18;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;`;
+    cardHdr.style.cssText = 'padding:10px 14px;background:' + color + '18;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;';
     cardHdr.innerHTML =
       '<div style="width:28px;height:28px;border-radius:50%;background:' + color + ';display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;">' + (idx+1) + '</div>' +
       '<div>' +
@@ -3919,10 +3958,10 @@ function renderReelContentPanel(container) {
     guionSec.style.cssText = 'padding:12px 14px;border-bottom:1px solid var(--border);';
 
     const blocks = [
-      { label:'⏱️ 0-3s — HOOK (text overlay)', color:'#8B5FBF', text: idea.hook     },
-      { label:'⏱️ 3-10s — PROBLEMA',           color:'#F43F5E', text: idea.problem  },
-      { label:'⏱️ 10-22s — SOLUCIÓN',          color:'#10B981', text: idea.solution },
-      { label:'⏱️ 22-25s — CTA',                color:'#0EA5E9', text: idea.cta      },
+      { label:'⏱️ 0-3s — HOOK (text overlay)', color:'#8B5FBF', text: idea.hook,     role: 'hook'     },
+      { label:'⏱️ 3-10s — PROBLEMA',           color:'#F43F5E', text: idea.problem,  role: 'problem'  },
+      { label:'⏱️ 10-22s — SOLUCIÓN',          color:'#10B981', text: idea.solution, role: 'solution' },
+      { label:'⏱️ 22-25s — CTA',                color:'#0EA5E9', text: idea.cta,      role: 'cta'      },
     ];
 
     blocks.forEach(b => {
@@ -3933,13 +3972,14 @@ function renderReelContentPanel(container) {
         '<div style="font-size:9px;font-weight:800;color:' + b.color + ';text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">' + b.label + '</div>' +
         '<div style="font-size:12px;color:var(--text2);line-height:1.6;">' + escHtml(b.text) + '</div>';
       guionSec.appendChild(row);
-      // ── B1.6: botón "Aplicar HOOK al canvas" debajo del hook ──
-      if (b.label.includes('HOOK')) {
+      // Botón "Aplicar HOOK al cover" debajo del hook
+      if (b.role === 'hook') {
         const applyHookBtn = document.createElement('button');
         applyHookBtn.style.cssText = 'width:100%;padding:7px;margin-top:6px;border-radius:6px;background:rgba(139,95,191,.12);border:1px solid var(--brand-border);color:var(--brand);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;';
-        applyHookBtn.innerHTML = '🎨 Aplicar HOOK al canvas (cover del Reel)';
+        applyHookBtn.innerHTML = '🎬 Aplicar HOOK al cover del Reel';
         applyHookBtn.onclick = () => {
-          const fl = String(b.text || '').substring(0, 125).trim();
+          // Limpiar el hook (quitar prefijos, comillas, sin substring arbitrario)
+          const fl = (typeof _cleanHookForCanvas === 'function') ? _cleanHookForCanvas(b.text) : String(b.text || '').trim();
           if (!fl) { toast('No hay hook para aplicar', 'info'); return; }
           if (typeof replaceOrAddBlock === 'function') {
             replaceOrAddBlock('hook-block', fl, {
@@ -3951,12 +3991,17 @@ function renderReelContentPanel(container) {
             applyHookBtn.style.borderColor = '#10B981';
             applyHookBtn.style.color = '#10B981';
             setTimeout(() => {
-              applyHookBtn.innerHTML = '🎨 Aplicar HOOK al canvas (cover del Reel)';
+              applyHookBtn.innerHTML = '🎬 Aplicar HOOK al cover del Reel';
               applyHookBtn.style.background = 'rgba(139,95,191,.12)';
               applyHookBtn.style.borderColor = 'var(--brand-border)';
               applyHookBtn.style.color = 'var(--brand)';
             }, 1500);
-            toast('✅ HOOK del reel aplicado al cover', 'success');
+            // Warning si > 80 chars
+            if (fl.length > 80) {
+              toast('⚠️ Hook largo (' + fl.length + ' chars). Instagram suele cortar visualmente sobre 60-70.', 'info');
+            } else {
+              toast('✅ HOOK aplicado al cover', 'success');
+            }
           }
         };
         guionSec.appendChild(applyHookBtn);
@@ -3981,7 +4026,6 @@ function renderReelContentPanel(container) {
     const btnRow = document.createElement('div');
     btnRow.style.cssText = 'padding:10px 14px;display:flex;gap:8px;border-bottom:1px solid var(--border);';
 
-    // Full script for teleprompter
     const btnFull = document.createElement('button');
     btnFull.style.cssText = 'flex:1;padding:8px;border-radius:8px;background:var(--grad);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
     btnFull.innerHTML = '📋 Guión completo';
@@ -4003,7 +4047,6 @@ function renderReelContentPanel(container) {
       });
     };
 
-    // Clean text only (no timestamps)
     const btnText = document.createElement('button');
     btnText.style.cssText = 'flex:1;padding:8px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
     btnText.innerHTML = '🎙️ Solo el texto';
@@ -4016,14 +4059,11 @@ function renderReelContentPanel(container) {
         setTimeout(() => { btnText.innerHTML = '🎙️ Solo el texto'; }, 2000);
       });
     };
-
     btnRow.appendChild(btnFull);
     btnRow.appendChild(btnText);
     card.appendChild(btnRow);
 
     // ── Caption section ──
-    // El caption del reel viene en iaData.captions[idx] como objeto {hook, description, cta}
-    // o como string concatenado (después del shim de loadIAData). Soportamos ambos.
     const capSec = document.createElement('div');
     capSec.style.cssText = 'padding:10px 14px;border-bottom:1px solid var(--border);';
 
@@ -4032,25 +4072,26 @@ function renderReelContentPanel(container) {
     capLbl.textContent = '📝 CAPTION DEL REEL (va debajo del video en Instagram)';
     capSec.appendChild(capLbl);
 
-    // Resolver el caption para este reel
+    // Resolver caption
     let captionStr = '';
     const c = captionsArr[idx];
     if (c && typeof c === 'object' && !Array.isArray(c)) {
-      // Objeto {hook, description, cta} — concatenamos
       captionStr = [c.hook, c.description, c.cta].filter(p => p && String(p).trim()).join('\n\n');
     } else if (typeof c === 'string') {
-      // Ya es string (el shim ya lo convirtió o vino legacy)
       captionStr = c;
     } else if (captionsLegacy[idx]) {
-      // Fallback: legacy original
       captionStr = String(captionsLegacy[idx]);
     }
 
-    // ── REEL caption: 3 bloques editables (hook/desc/cta) — patrón consistente con POST y CARRUSEL ──
-    // Parsear el caption a partes
-    const initialParts = (typeof parseCaption === 'function')
-      ? parseCaption(captionStr)
-      : { hook:'', description: String(captionStr||''), cta:'' };
+    // Restaurar buffer si el usuario ya editó este reel
+    let initialParts;
+    if (editedCaptions[idx]) {
+      initialParts = editedCaptions[idx];
+    } else {
+      initialParts = (typeof parseCaption === 'function')
+        ? parseCaption(captionStr)
+        : { hook:'', description: String(captionStr||''), cta:'' };
+    }
 
     const mkReelBlock = (label, minH) => {
       const wrap = document.createElement('div');
@@ -4073,21 +4114,27 @@ function renderReelContentPanel(container) {
     reelDesc.ed.innerText = initialParts.description || '';
     reelCta.ed.innerText  = initialParts.cta || '';
 
-    capSec.appendChild(reelHook.wrap);
-    capSec.appendChild(reelDesc.wrap);
-    capSec.appendChild(reelCta.wrap);
-
-    // Botón "✅ Usar este caption" (NUEVO en B1.4 — el reel no lo tenía)
-    const useReelBtn = document.createElement('button');
-    useReelBtn.style.cssText = 'width:100%;padding:8px;border-radius:7px;background:var(--grad);border:none;color:#fff;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.02em;margin-top:4px;margin-bottom:6px;';
-    useReelBtn.innerHTML = '✅ Usar este caption';
-    useReelBtn.onclick = () => {
-      const parts = {
+    // Persistir cambios en el buffer cuando el usuario edita
+    const saveBuffer = () => {
+      editedCaptions[idx] = {
         hook:        reelHook.ed.innerText.trim(),
         description: reelDesc.ed.innerText.trim(),
         cta:         reelCta.ed.innerText.trim(),
       };
-      // Escribir al caption-zone (también sincroniza captionFull + #capFull)
+    };
+    [reelHook.ed, reelDesc.ed, reelCta.ed].forEach(ed => ed.addEventListener('input', saveBuffer));
+
+    capSec.appendChild(reelHook.wrap);
+    capSec.appendChild(reelDesc.wrap);
+    capSec.appendChild(reelCta.wrap);
+
+    // Botón "✅ Usar este caption"
+    const useReelBtn = document.createElement('button');
+    useReelBtn.style.cssText = 'width:100%;padding:8px;border-radius:7px;background:var(--grad);border:none;color:#fff;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.02em;margin-top:4px;margin-bottom:6px;';
+    useReelBtn.innerHTML = '✅ Usar este caption';
+    useReelBtn.onclick = () => {
+      saveBuffer();
+      const parts = editedCaptions[idx];
       if (typeof setCaptionZoneValue === 'function') {
         setCaptionZoneValue(parts);
       }
@@ -4099,10 +4146,18 @@ function renderReelContentPanel(container) {
     capSec.appendChild(useReelBtn);
 
     card.appendChild(capSec);
+    cardHolder.appendChild(card);
+  }
 
-    // El Copiloto v2 vive en el caption-zone (lateral 300px) — no se duplica aquí.
-    container.appendChild(card);
-  });
+  navPrev.onclick = () => {
+    if (reelIdx > 0) { reelIdx--; renderActiveReel(); }
+  };
+  navNext.onclick = () => {
+    if (reelIdx < reelIdeas.length - 1) { reelIdx++; renderActiveReel(); }
+  };
+
+  // Render inicial
+  renderActiveReel();
 
   // ── Regenerar al fondo ──
   const regenBtn = document.createElement('button');
@@ -7055,33 +7110,85 @@ function showCopilotoPreview(container, mode, result, ctx) {
   }
   box.appendChild(body);
 
-  // Botones [Aplicar] [Descartar]
+  // Botones [Aplicar al caption] [Aplicar al canvas/slide/cover] [Descartar]
+  // Para modes 'hook' y 'full': dos botones separados (caption + canvas)
+  // Para los demás (description, cta, hashtags, emojis): un solo botón [Aplicar]
   const btnRow = document.createElement('div');
-  btnRow.style.cssText = 'display:flex;gap:6px;';
-  const applyBtn = document.createElement('button');
-  applyBtn.style.cssText = 'flex:1;padding:8px;border-radius:var(--r);border:none;background:var(--grad);color:#fff;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:.02em;font-family:inherit;';
-  applyBtn.innerHTML = '✓ Aplicar';
-  applyBtn.onclick = () => {
-    try {
-      if (mode === 'hook'        && ctx.applyHook)        ctx.applyHook(toApply);
-      if (mode === 'description' && ctx.applyDescription) ctx.applyDescription(toApply);
-      if (mode === 'cta'         && ctx.applyCta)         ctx.applyCta(toApply);
-      if (mode === 'full'        && ctx.applyFull)        ctx.applyFull(toApply);
-      if (mode === 'hashtags'    && ctx.applyHashtags)    ctx.applyHashtags(toApply);
-      if (mode === 'emojis'      && ctx.applyEmojis)      ctx.applyEmojis(toApply);
-      toast('✅ Aplicado', 'success');
-      container.innerHTML = ''; // limpiar preview
-    } catch (e) {
-      toast('❌ Error al aplicar: ' + e.message, 'error');
-    }
-  };
-  const discardBtn = document.createElement('button');
-  discardBtn.style.cssText = 'flex:1;padding:8px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
-  discardBtn.textContent = 'Descartar';
-  discardBtn.onclick = () => { container.innerHTML = ''; };
+  btnRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
 
-  btnRow.appendChild(applyBtn);
+  const isHookOrFull = (mode === 'hook' || mode === 'full');
+  const fmt = ctx.format || 'post';
+  // Etiqueta del botón "Aplicar al canvas" según formato
+  const canvasBtnLabel = fmt === 'carousel' ? '🎨 Aplicar a un slide…'
+                       : fmt === 'reel'     ? '🎬 Aplicar al cover'
+                       : '🎨 Aplicar al canvas';
+
+  if (isHookOrFull) {
+    // Botón 1: Aplicar al caption (siempre actualiza los bloques editables del caption-zone)
+    const captionBtn = document.createElement('button');
+    captionBtn.style.cssText = 'flex:1;min-width:140px;padding:8px;border-radius:var(--r);border:none;background:var(--grad);color:#fff;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:.02em;font-family:inherit;';
+    captionBtn.innerHTML = '📝 Aplicar al caption';
+    captionBtn.onclick = () => {
+      try {
+        if (mode === 'hook' && ctx.applyHook) ctx.applyHook(toApply);
+        if (mode === 'full' && ctx.applyFull) ctx.applyFull(toApply);
+        toast('✅ Caption actualizado', 'success');
+        captionBtn.textContent = '✅ Aplicado al caption';
+        captionBtn.style.background = '#10B981';
+        // No limpio el preview — el usuario puede querer aplicar también al canvas
+      } catch (e) {
+        toast('❌ Error: ' + e.message, 'error');
+      }
+    };
+    btnRow.appendChild(captionBtn);
+
+    // Botón 2: Aplicar al canvas / slide / cover según formato
+    const canvasBtn = document.createElement('button');
+    canvasBtn.style.cssText = 'flex:1;min-width:140px;padding:8px;border-radius:var(--r);border:1.5px solid var(--brand);background:rgba(139,95,191,.12);color:var(--brand);font-size:11px;font-weight:800;cursor:pointer;letter-spacing:.02em;font-family:inherit;';
+    canvasBtn.innerHTML = canvasBtnLabel;
+    canvasBtn.onclick = () => {
+      try {
+        if (mode === 'hook' && ctx.applyHookToCanvas) ctx.applyHookToCanvas(toApply);
+        if (mode === 'full' && ctx.applyFullToCanvas) ctx.applyFullToCanvas(toApply);
+        // En carrusel se abre selector — no limpio el preview hasta que el usuario elija o cancele
+        if (fmt !== 'carousel') {
+          canvasBtn.textContent = '✅ Aplicado';
+          canvasBtn.style.background = 'rgba(16,185,129,.15)';
+          canvasBtn.style.borderColor = '#10B981';
+          canvasBtn.style.color = '#10B981';
+        }
+      } catch (e) {
+        toast('❌ Error: ' + e.message, 'error');
+      }
+    };
+    btnRow.appendChild(canvasBtn);
+  } else {
+    // Modes que NO tocan el canvas (description, cta, hashtags, emojis): un solo botón
+    const applyBtn = document.createElement('button');
+    applyBtn.style.cssText = 'flex:1;padding:8px;border-radius:var(--r);border:none;background:var(--grad);color:#fff;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:.02em;font-family:inherit;';
+    applyBtn.innerHTML = '✓ Aplicar';
+    applyBtn.onclick = () => {
+      try {
+        if (mode === 'description' && ctx.applyDescription) ctx.applyDescription(toApply);
+        if (mode === 'cta'         && ctx.applyCta)         ctx.applyCta(toApply);
+        if (mode === 'hashtags'    && ctx.applyHashtags)    ctx.applyHashtags(toApply);
+        if (mode === 'emojis'      && ctx.applyEmojis)      ctx.applyEmojis(toApply);
+        toast('✅ Aplicado', 'success');
+        container.innerHTML = ''; // limpiar preview (estos modes son one-shot)
+      } catch (e) {
+        toast('❌ Error al aplicar: ' + e.message, 'error');
+      }
+    };
+    btnRow.appendChild(applyBtn);
+  }
+
+  // Descartar
+  const discardBtn = document.createElement('button');
+  discardBtn.style.cssText = 'padding:8px 14px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
+  discardBtn.textContent = 'Cerrar';
+  discardBtn.onclick = () => { container.innerHTML = ''; };
   btnRow.appendChild(discardBtn);
+
   box.appendChild(btnRow);
 
   container.appendChild(box);
@@ -7113,17 +7220,11 @@ function renderCaptionZoneCopilot() {
         emojis:      iaData?.emojis   || [],
       };
     },
+    // ── APLICAR AL CAPTION (lateral) — SIEMPRE actualiza el caption-zone ──
     applyHook: (newHook) => {
-      // Actualiza el bloque editable del caption-zone
+      // SOLO actualiza los bloques editables del caption-zone (NO toca el canvas)
+      // Para tocar el canvas el usuario debe pulsar el botón explícito "Aplicar al canvas/slide/cover"
       setCaptionZoneValue({ ...readCaptionZoneParts(), hook: newHook });
-      // Sincroniza también el canvas: reemplaza el bloque hook-block del slide actual
-      const fl = String(newHook || '').substring(0, 125).trim();
-      if (fl && typeof replaceOrAddBlock === 'function') {
-        replaceOrAddBlock('hook-block', fl, {
-          y: 8, w: 88, x: 6, fontSize: 28, bold: true,
-          color: currentBrand?.font_color || '#fff', align: 'center',
-        });
-      }
     },
     applyDescription: (newDesc) => {
       // La description NO va al canvas — solo al caption (queda debajo del post en Instagram)
@@ -7134,15 +7235,8 @@ function renderCaptionZoneCopilot() {
       setCaptionZoneValue({ ...readCaptionZoneParts(), cta: newCta });
     },
     applyFull: (newCap) => {
-      // Caption nuevo entero: actualiza los 3 bloques editables + sincroniza el hook al canvas
+      // Caption nuevo entero: actualiza los 3 bloques editables (NO toca el canvas)
       setCaptionZoneValue(newCap);
-      const fl = String(newCap?.hook || '').substring(0, 125).trim();
-      if (fl && typeof replaceOrAddBlock === 'function') {
-        replaceOrAddBlock('hook-block', fl, {
-          y: 8, w: 88, x: 6, fontSize: 28, bold: true,
-          color: currentBrand?.font_color || '#fff', align: 'center',
-        });
-      }
     },
     applyHashtags:    (newTags) => {
       if (Array.isArray(newTags) && newTags.length) {
@@ -7158,7 +7252,158 @@ function renderCaptionZoneCopilot() {
         toast('✅ Emojis actualizados — selecciónalos abajo', 'success');
       }
     },
+    // ── APLICAR AL CANVAS — solo cuando el usuario lo pulsa explícitamente ──
+    // En POST: aplica directamente al hook-block del canvas
+    // En CARRUSEL: abre selector de slide para que el usuario elija cuál
+    // En REEL: aplica al hook-block del cover (slide actual)
+    applyHookToCanvas: (newHook) => {
+      const fl = _cleanHookForCanvas(newHook);
+      if (!fl) { toast('Hook vacío', 'info'); return; }
+      _applyTextToCanvasByFormat(fl);
+    },
+    applyFullToCanvas: (newCap) => {
+      const fl = _cleanHookForCanvas(newCap?.hook || '');
+      if (!fl) { toast('Hook vacío', 'info'); return; }
+      _applyTextToCanvasByFormat(fl);
+    },
   });
+}
+
+// ── Helpers para aplicar el hook al canvas según el formato ──
+
+// Limpia el texto del hook antes de aplicarlo al canvas:
+// - Quita prefijos comunes del guion del reel (🎯 HOOK 0-3s — text overlay:, etc.)
+// - NO trunca arbitrariamente (substring 125 quitado — antes cortaba palabras a la mitad)
+// - Devuelve el hook limpio listo para mostrar
+function _cleanHookForCanvas(rawHook) {
+  if (!rawHook || typeof rawHook !== 'string') return '';
+  let txt = rawHook
+    // Quitar prefijos del guion del reel: "🎯 HOOK 0-3s — text overlay:" / "HOOK 0-3s:" / "0-3s:"
+    .replace(/^[🎯🪝]\s*HOOK\s*\d+\s*[-–—]\s*\d+\s*s\b[^:]*:\s*/i, '')
+    .replace(/^HOOK\s*\d+\s*[-–—]\s*\d+\s*s\b[^:]*:\s*/i, '')
+    .replace(/^\d+\s*[-–—]\s*\d+\s*s\b[^:]*:\s*/i, '')
+    .replace(/^\(?\s*text overlay\s*\)?\s*[:\-—]?\s*/i, '')
+    // Quitar comillas envolventes
+    .replace(/^["'"\u201C\u201D]+|["'"\u201C\u201D]+$/g, '')
+    .trim();
+  return txt;
+}
+
+// Aplica un texto al canvas según el formato actual
+function _applyTextToCanvasByFormat(text) {
+  if (currentFormat === 'carousel') {
+    // En carrusel: abrir selector de slide para que el usuario elija
+    _openSlideSelector(text);
+  } else {
+    // POST y REEL: aplicar al hook-block del canvas actual (sustituye, no monta)
+    _applyHookToCurrentCanvas(text);
+    // Warning si > 80 chars (Instagram corta visualmente sobre 60-70)
+    if (text.length > 80) {
+      toast('⚠️ Hook largo (' + text.length + ' chars). Instagram suele cortar visualmente sobre 60-70.', 'info');
+    } else {
+      toast('✅ Hook aplicado al canvas', 'success');
+    }
+  }
+}
+
+// Aplica el hook al canvas actual (POST/REEL/un slide específico del carrusel)
+function _applyHookToCurrentCanvas(text) {
+  if (typeof replaceOrAddBlock !== 'function') return;
+  replaceOrAddBlock('hook-block', text, {
+    y: 8, w: 88, x: 6, fontSize: 28, bold: true,
+    color: currentBrand?.font_color || '#fff', align: 'center',
+  });
+}
+
+// Abre un selector de slide para el carrusel (el usuario decide a qué slide aplicar)
+function _openSlideSelector(text) {
+  // Quitar selector previo si existe
+  document.querySelectorAll('.slide-selector-popup').forEach(e => e.remove());
+
+  const popup = document.createElement('div');
+  popup.className = 'slide-selector-popup';
+  popup.style.cssText = 'position:fixed;z-index:99999;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--surf);border:1.5px solid var(--brand);border-radius:12px;padding:16px;box-shadow:0 8px 32px rgba(0,0,0,.5);min-width:320px;max-width:420px;';
+
+  const head = document.createElement('div');
+  head.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;';
+  head.innerHTML =
+    '<div style="font-size:13px;font-weight:800;color:var(--brand);">🎨 ¿A qué slide aplicar?</div>';
+  const closeBtn = document.createElement('button');
+  closeBtn.style.cssText = 'width:24px;height:24px;border-radius:50%;border:none;background:rgba(248,113,113,.15);color:var(--danger);font-size:12px;cursor:pointer;font-family:inherit;';
+  closeBtn.textContent = '✕';
+  closeBtn.onclick = () => popup.remove();
+  head.appendChild(closeBtn);
+  popup.appendChild(head);
+
+  // Preview del texto que se va a aplicar
+  const preview = document.createElement('div');
+  preview.style.cssText = 'font-size:11px;color:var(--text2);background:var(--surf2);padding:8px 10px;border-radius:6px;border:1px solid var(--border);margin-bottom:12px;line-height:1.5;';
+  preview.innerHTML = '<strong style="color:var(--brand);">Texto:</strong> ' + escHtml(text);
+  popup.appendChild(preview);
+
+  const lbl = document.createElement('div');
+  lbl.style.cssText = 'font-size:9px;font-weight:800;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;';
+  lbl.textContent = 'Elige el slide';
+  popup.appendChild(lbl);
+
+  // Lista de slides — etiqueta con número + rol del slide si lo tiene
+  const list = document.createElement('div');
+  list.style.cssText = 'display:flex;flex-direction:column;gap:5px;max-height:300px;overflow-y:auto;';
+  const roleLabels = {
+    portada:'PORTADA', titulo:'TÍTULO', intro:'INTRO',
+    dolor_1:'DOLOR 1', dolor_2:'DOLOR 2', dolor_3:'DOLOR 3',
+    valor_1:'VALOR 1', valor_2:'VALOR 2', valor_3:'VALOR 3', valor_4:'VALOR 4',
+    accion:'ACCIÓN', item:'ÍTEM',
+    hook:'HOOK', context:'CONTEXTO',
+    value_1:'VALOR 1', value_2:'VALOR 2', value_3:'VALOR 3',
+    value_4:'VALOR 4', value_5:'VALOR 5',
+    proof:'PRUEBA', resumen:'RESUMEN', cta:'CTA'
+  };
+  for (let i = 0; i < slides.length; i++) {
+    const sd = iaData?.carousel_slides?.[i];
+    const role = sd?.role || '';
+    const roleStr = roleLabels[role] || role.toUpperCase() || '';
+    const isCurrent = i === currentSlide;
+    const btn = document.createElement('button');
+    btn.style.cssText = 'display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:7px;background:' + (isCurrent ? 'rgba(139,95,191,.15)' : 'var(--surf2)') + ';border:1px solid ' + (isCurrent ? 'var(--brand)' : 'var(--border2)') + ';color:var(--text);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left;transition:all .15s;';
+    btn.innerHTML =
+      '<span style="font-size:14px;font-weight:800;color:var(--brand);min-width:24px;">' + (i+1) + '</span>' +
+      '<span style="flex:1;">Slide ' + (i+1) + (roleStr ? ' — <span style="color:var(--brand2);font-weight:700;">' + roleStr + '</span>' : '') + (isCurrent ? ' <span style="color:var(--text3);font-size:10px;">(actual)</span>' : '') + '</span>';
+    btn.onclick = () => {
+      // Cambiar al slide elegido + aplicar el texto al hook-block de ese slide
+      if (i !== currentSlide) {
+        loadSlide(i);
+        // Esperar al próximo frame para que loadSlide termine de renderizar el slide
+        setTimeout(() => {
+          _applyHookToCurrentCanvas(text);
+          if (text.length > 80) {
+            toast('⚠️ Texto largo (' + text.length + ' chars) aplicado al slide ' + (i+1), 'info');
+          } else {
+            toast('✅ Aplicado al slide ' + (i+1), 'success');
+          }
+        }, 80);
+      } else {
+        _applyHookToCurrentCanvas(text);
+        if (text.length > 80) {
+          toast('⚠️ Texto largo (' + text.length + ' chars) aplicado al slide ' + (i+1), 'info');
+        } else {
+          toast('✅ Aplicado al slide ' + (i+1), 'success');
+        }
+      }
+      popup.remove();
+    };
+    list.appendChild(btn);
+  }
+  popup.appendChild(list);
+
+  // Backdrop semitransparente
+  const backdrop = document.createElement('div');
+  backdrop.className = 'slide-selector-popup';
+  backdrop.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99998;';
+  backdrop.onclick = () => { popup.remove(); backdrop.remove(); };
+
+  document.body.appendChild(backdrop);
+  document.body.appendChild(popup);
 }
 
 // Hashtags chips dentro del caption-zone
