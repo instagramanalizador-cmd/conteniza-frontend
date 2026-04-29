@@ -190,63 +190,63 @@
     }
     .auth-title { font-size:20px; font-weight:800; text-align:center; margin-bottom:6px; }
     .auth-sub   { font-size:13px; color:var(--text-2); text-align:center; margin-bottom:24px; }
-    .form-group { margin-bottom:12px; }
-    .form-label { display:block; font-size:13px; font-weight:600; color:var(--text-2); margin-bottom:6px; }
+    .form-group { margin-bottom:8px; }
+    .form-label { display:block; font-size:12px; font-weight:600; color:var(--text-2); margin-bottom:4px; }
     .form-input, .form-select, .form-textarea {
-      width:100%; padding:11px 14px; border:1.5px solid var(--border);
-      border-radius:var(--radius-md); font-size:14px; color:var(--text);
+      width:100%; padding:8px 12px; border:1.5px solid var(--border);
+      border-radius:var(--radius-md); font-size:13px; color:var(--text);
       background:var(--surface-2); font-family:inherit; outline:none; transition:border-color .15s;
     }
     .form-input:focus, .form-select:focus, .form-textarea:focus { border-color:var(--brand); background:#fff; }
-    .form-textarea { resize:vertical; min-height:96px; line-height:1.6; }
-    .form-hint { font-size:11px; color:var(--text-3); margin-top:5px; }
+    .form-textarea { resize:vertical; min-height:60px; line-height:1.5; }
+    .form-hint { font-size:10px; color:var(--text-3); margin-top:3px; }
     .auth-toggle { text-align:center; margin-top:16px; font-size:13px; color:var(--text-2); }
     .auth-toggle a { color:var(--brand); font-weight:700; cursor:pointer; text-decoration:none; }
     .auth-toggle a:hover { text-decoration:underline; }
 
     /* ── MAIN APP ── */
-    #mainApp { max-width:620px; margin:0 auto; padding:12px 20px 60px; }
+    #mainApp { max-width:620px; margin:0 auto; padding:8px 20px 30px; }
 
     .gen-card {
       background:var(--surface); border-radius:var(--radius-xl);
       box-shadow:var(--shadow-md); overflow:hidden;
     }
     .gen-card-header {
-      padding:16px 24px 0;
+      padding:12px 20px 0;
     }
     .gen-card-header h2 {
-      font-family:'Syne',sans-serif; font-size:20px; font-weight:800; margin-bottom:2px;
+      font-family:'Syne',sans-serif; font-size:18px; font-weight:800; margin-bottom:1px;
     }
-    .gen-card-header p { font-size:13px; color:var(--text-2); }
-    .gen-card-body { padding:14px 24px 20px; }
+    .gen-card-header p { font-size:12px; color:var(--text-2); }
+    .gen-card-body { padding:10px 20px 14px; }
 
-    /* Format buttons */
+    /* Format buttons — más compactos */
     .pub-grid {
-      display:grid; grid-template-columns:repeat(4,1fr); gap:8px;
+      display:grid; grid-template-columns:repeat(4,1fr); gap:6px;
     }
     .pub-btn {
       display:flex; flex-direction:column; align-items:center;
-      padding:14px 8px; border-radius:var(--radius-md);
+      padding:9px 6px; border-radius:var(--radius-md);
       border:2px solid var(--border); background:var(--surface-2);
-      cursor:pointer; transition:all .15s; gap:4px; text-align:center;
+      cursor:pointer; transition:all .15s; gap:2px; text-align:center;
     }
     .pub-btn:hover { border-color:var(--brand-mid); background:var(--brand-light); }
     .pub-btn.active { border-color:var(--brand); background:var(--brand-light); }
-    .pub-btn-icon { font-size:22px; }
-    .pub-btn-label { font-size:12px; font-weight:700; color:var(--text); }
+    .pub-btn-icon { font-size:18px; }
+    .pub-btn-label { font-size:11px; font-weight:700; color:var(--text); }
     .pub-btn.active .pub-btn-label { color:var(--brand); }
-    .pub-btn-desc { font-size:10px; color:var(--text-3); line-height:1.3; }
+    .pub-btn-desc { font-size:9px; color:var(--text-3); line-height:1.2; }
 
-    /* Collapse */
+    /* Collapse — más compacto */
     .collapse-trigger {
       width:100%; display:flex; align-items:center; justify-content:space-between;
-      padding:11px 14px; border:1.5px solid var(--border); border-radius:var(--radius-md);
-      background:var(--surface-2); font-size:13px; font-weight:600;
+      padding:8px 12px; border:1.5px solid var(--border); border-radius:var(--radius-md);
+      background:var(--surface-2); font-size:12px; font-weight:600;
       color:var(--text-2); cursor:pointer; transition:all .15s;
     }
     .collapse-trigger:hover { border-color:var(--brand-mid); color:var(--brand); }
-    .collapse-chevron { font-style:normal; font-size:16px; transition:transform .2s; }
-    .collapse-body { padding-top:12px; }
+    .collapse-chevron { font-style:normal; font-size:14px; transition:transform .2s; }
+    .collapse-body { padding-top:10px; }
 
     /* File upload */
     .upload-zone {
@@ -532,9 +532,9 @@
 
 <!-- ═══ MAIN APP ═══ -->
 <div id="mainApp" class="hidden">
-  <div style="text-align:center;padding:8px 0 12px;">
-    <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;background:var(--grad-brand);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:2px;">✦ Conteniza</div>
-    <p style="font-size:12px;color:var(--text-3);">¿Qué contenido creamos hoy?</p>
+  <div style="text-align:center;padding:4px 0 6px;">
+    <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;background:var(--grad-brand);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:1px;">✦ Conteniza</div>
+    <p style="font-size:11px;color:var(--text-3);">¿Qué contenido creamos hoy?</p>
   </div>
 
   <div class="gen-card">
@@ -552,27 +552,27 @@
             id="description"
             class="form-textarea"
             placeholder="Ej: 5 errores que cometen mis clientes al intentar escalar su negocio..."
-            style="min-height:72px;"
+            style="min-height:56px;"
             oninput="autosaveDesc(this.value)"
           ></textarea>
           <div class="form-hint">Sé específico para obtener mejores resultados</div>
         </div>
 
         <!-- NICHO + TONO — visibles siempre -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
           <div class="form-group" style="margin:0;">
             <label class="form-label">🎯 Tu nicho</label>
-            <div id="nicheDisplay" style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:rgba(139,95,191,.1);border:1.5px solid rgba(139,95,191,.3);border-radius:var(--radius-sm);min-height:40px;cursor:pointer;" onclick="openNicheSelector()">
-              <span id="nicheDisplayText" style="font-size:13px;font-weight:600;color:var(--brand);flex:1;">–</span>
-              <span style="font-size:11px;color:var(--text-3);">cambiar</span>
+            <div id="nicheDisplay" style="display:flex;align-items:center;gap:6px;padding:7px 10px;background:rgba(139,95,191,.1);border:1.5px solid rgba(139,95,191,.3);border-radius:var(--radius-sm);min-height:34px;cursor:pointer;" onclick="openNicheSelector()">
+              <span id="nicheDisplayText" style="font-size:12px;font-weight:600;color:var(--brand);flex:1;">–</span>
+              <span style="font-size:10px;color:var(--text-3);">cambiar</span>
             </div>
             <!-- Hidden input keeps compatibility with existing JS -->
             <input type="hidden" id="niche">
-            <div class="form-hint" style="font-size:10px;margin-top:3px;">Define tu audiencia</div>
+            <div class="form-hint" style="font-size:10px;margin-top:2px;">Define tu audiencia</div>
           </div>
           <div class="form-group" style="margin:0;">
             <label class="form-label">🎭 Tono</label>
-            <select id="tone" class="form-select" style="font-size:13px;">
+            <select id="tone" class="form-select" style="font-size:12px;padding:7px 10px;">
               <option value="">IA elige el mejor</option>
               <option value="Profesional">Profesional</option>
               <option value="Motivacional">Motivacional</option>
@@ -590,7 +590,7 @@
 
         <!-- FORMATO -->
         <div class="form-group">
-          <label class="form-label" style="margin-bottom:10px;">📋 Formato de publicación</label>
+          <label class="form-label" style="margin-bottom:6px;">📋 Formato de publicación</label>
           <div class="pub-grid">
             <button type="button" class="pub-btn active" data-value="post" onclick="selectPubType(this)">
               <div class="pub-btn-icon">📸</div>
@@ -670,12 +670,12 @@
         </div>
 
         <!-- CREDITS — barra compacta arriba del botón -->
-        <div class="credits-bar" style="flex-direction:column;align-items:stretch;gap:4px;margin-bottom:10px;padding:8px 12px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;">
+        <div class="credits-bar" style="flex-direction:column;align-items:stretch;gap:3px;margin-bottom:8px;padding:6px 10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;">
             <span>⚡ <strong id="creditsDisplay">–</strong> créditos disponibles</span>
             <span id="creditsResetLabel" style="font-size:10px;color:var(--text-3);"></span>
           </div>
-          <div style="background:var(--surface-2);border-radius:99px;height:4px;overflow:hidden;border:1px solid var(--border);">
+          <div style="background:var(--surface-2);border-radius:99px;height:3px;overflow:hidden;border:1px solid var(--border);">
             <div id="creditsBar" style="height:100%;border-radius:99px;background:var(--grad-brand);transition:width .4s ease;width:0%;"></div>
           </div>
           <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-3);">
@@ -683,16 +683,16 @@
             <span id="creditsLabel"></span>
           </div>
           <!-- Warning créditos bajos (oculto por defecto) -->
-          <div id="lowCreditsWarning" style="display:none;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:6px 10px;font-size:11px;font-weight:600;color:#DC2626;margin-top:4px;">
+          <div id="lowCreditsWarning" style="display:none;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:5px 9px;font-size:11px;font-weight:600;color:#DC2626;margin-top:3px;">
             ⚠️ Te queda 1 crédito — úsalo bien
           </div>
-          <div id="zeroCreditsWarning" style="display:none;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4);border-radius:8px;padding:8px 10px;font-size:11px;font-weight:700;color:#DC2626;text-align:center;margin-top:4px;">
+          <div id="zeroCreditsWarning" style="display:none;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4);border-radius:8px;padding:6px 9px;font-size:11px;font-weight:700;color:#DC2626;text-align:center;margin-top:3px;">
             🔒 Sin créditos disponibles · <a href="#" onclick="showPlansScreen()" style="color:#DC2626;text-decoration:underline;cursor:pointer;">Mejorar plan →</a>
           </div>
         </div>
 
         <!-- GENERATE BUTTON -->
-        <button type="submit" class="btn btn-primary" id="generateBtn">
+        <button type="submit" class="btn btn-primary" id="generateBtn" style="padding:10px;font-size:14px;">
           <span id="generateBtnContent" style="display:flex;align-items:center;gap:8px;">
             <span>✨</span><span>Generar contenido</span>
           </span>
@@ -701,10 +701,10 @@
         <!-- ── Aviso importante sobre el rol de Conteniza ── -->
         <!-- Gestiona expectativas: Conteniza genera IDEAS, no diseños finales perfectos.
              El usuario debe verificarlas y adaptarlas a su marca antes de publicar. -->
-        <div style="margin-top:14px;padding:12px 14px;background:linear-gradient(135deg,rgba(124,58,237,.08),rgba(244,63,94,.08));border:1px solid rgba(124,58,237,.25);border-radius:10px;display:flex;align-items:flex-start;gap:10px;">
-          <span style="font-size:18px;line-height:1;flex-shrink:0;">💡</span>
-          <div style="flex:1;font-size:12px;line-height:1.5;color:var(--text-2);">
-            <strong style="color:var(--text-1);font-weight:700;">Conteniza genera IDEAS de contenido</strong> — no diseños finales.<br>
+        <div style="margin-top:10px;padding:9px 12px;background:linear-gradient(135deg,rgba(124,58,237,.08),rgba(244,63,94,.08));border:1px solid rgba(124,58,237,.25);border-radius:9px;display:flex;align-items:flex-start;gap:8px;">
+          <span style="font-size:15px;line-height:1;flex-shrink:0;">💡</span>
+          <div style="flex:1;font-size:11px;line-height:1.45;color:var(--text-2);">
+            <strong style="color:var(--text-1);font-weight:700;">Conteniza genera IDEAS de contenido</strong> — no diseños finales.
             <span style="color:var(--text-3);">Revisa cada idea, adáptala a tu marca y dale tu toque personal antes de publicar. Conteniza es tu copiloto, no tu sustituto.</span>
           </div>
         </div>
