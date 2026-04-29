@@ -924,7 +924,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   <button class="tb-btn" id="undoBtn" onclick="historyUndo()" title="Deshacer (Ctrl+Z)" style="opacity:.7;">↩</button>
   <button class="tb-btn" id="redoBtn" onclick="historyRedo()" title="Rehacer (Ctrl+Y)" style="opacity:.7;">↪</button>
   <input type="file" id="imgBlockInput" accept="image/*" style="display:none" onchange="addImageBlock(event)">
-  <button class="tb-btn" onclick="openDesignsModal()" title="Guardar diseño">💾 <span>Guardar</span></button>
+  <button class="tb-btn" onclick="openDesignsModal('save')" title="Guardar diseño actual">💾 <span>Guardar</span></button>
+  <button class="tb-btn" onclick="openDesignsModal('list')" title="Mis diseños guardados">📁 <span>Mis diseños</span></button>
   <span id="autoSaveLabel" style="font-size:10px;color:var(--text3);display:none;flex-shrink:0;">⏱</span>
   <button class="tb-btn" onclick="showHelp()" title="Ayuda">❓</button>
   <button class="tb-btn" onclick="showIgPreview()" title="Vista previa como Instagram" style="background:var(--brand-subtle);border:1px solid var(--brand-border2);color:var(--brand);">👁 <span>Preview</span></button>
@@ -1603,20 +1604,37 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 </div><!-- /main -->
 
 <!-- ══ DESIGNS MODAL ══ -->
+<!-- 2 modos: 'save' (guardar diseño actual) o 'list' (cargar diseño guardado).
+     Antes ambos flujos estaban mezclados en el mismo modal. -->
 <div class="designs-modal" id="designsModal" onclick="if(event.target===this)closeDesignsModal()">
   <div class="designs-card">
     <div class="designs-head">
-      <div class="designs-head-title">💾 Mis diseños guardados</div>
+      <div class="designs-head-title" id="designsModalTitle">💾 Guardar diseño</div>
       <button class="designs-head-close" onclick="closeDesignsModal()">✕</button>
     </div>
-    <div class="designs-save-row">
+    <!-- Modo SAVE: input + botón Guardar -->
+    <div class="designs-save-row" id="designsSaveSection">
       <input type="text" class="designs-name-input" id="designNameInput" placeholder="Nombre del diseño…" maxlength="80">
       <button class="designs-save-btn" id="designSaveBtn" onclick="saveDesign()">Guardar</button>
     </div>
-    <div class="designs-list" id="designsList">
-      <div class="designs-empty">Cargando diseños…</div>
+    <!-- Modo LIST: filtro de formato + lista -->
+    <div id="designsListSection" style="display:none;">
+      <div id="designsFilterRow" style="padding:0 14px 10px;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text2);">
+        <span>Mostrar:</span>
+        <button id="filterCurrentBtn" onclick="setDesignsFilter('current')"
+                style="padding:4px 10px;border-radius:6px;background:var(--brand-subtle);border:1px solid var(--brand-border);color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">
+          Solo formato actual
+        </button>
+        <button id="filterAllBtn" onclick="setDesignsFilter('all')"
+                style="padding:4px 10px;border-radius:6px;background:var(--surf2);border:1px solid var(--border);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">
+          Ver todos
+        </button>
+      </div>
+      <div class="designs-list" id="designsList">
+        <div class="designs-empty">Cargando diseños…</div>
+      </div>
+      <div class="designs-limit" id="designsLimit"></div>
     </div>
-    <div class="designs-limit" id="designsLimit"></div>
   </div>
 </div>
 
@@ -6358,17 +6376,58 @@ function alignBlock(dir) {
 /* ══ DESIGNS — GUARDAR Y CARGAR ══ */
 let _currentDesignId = null;  // ID del diseño actualmente cargado
 let _designsCache    = [];
+let _designsFilter   = 'current';  // 'current' | 'all'  — filtro de la lista
+let _designsMode     = 'save';     // 'save' | 'list' — modo actual del modal
 
-function openDesignsModal() {
-  document.getElementById('designsModal').classList.add('open');
-  // Pre-fill name from current design
-  const nameInput = document.getElementById('designNameInput');
-  if (!nameInput.value) {
-    const fmt = currentFormat.charAt(0).toUpperCase() + currentFormat.slice(1);
-    const now = new Date();
-    nameInput.value = `${fmt} ${now.toLocaleDateString('es-ES', {day:'2-digit',month:'short'})}`;
+// modo='save' (default): solo input nombre + botón guardar
+// modo='list': solo lista de diseños guardados con filtro por formato
+function openDesignsModal(mode = 'save') {
+  _designsMode = mode;
+  const modal     = document.getElementById('designsModal');
+  const title     = document.getElementById('designsModalTitle');
+  const saveSec   = document.getElementById('designsSaveSection');
+  const listSec   = document.getElementById('designsListSection');
+  modal.classList.add('open');
+
+  if (mode === 'save') {
+    // Solo guardar — sin lista (foco limpio en la acción de guardar)
+    title.textContent = '💾 Guardar diseño';
+    saveSec.style.display = '';
+    listSec.style.display = 'none';
+    // Pre-fill name from current design
+    const nameInput = document.getElementById('designNameInput');
+    if (!nameInput.value) {
+      const fmt = currentFormat.charAt(0).toUpperCase() + currentFormat.slice(1);
+      const now = new Date();
+      nameInput.value = `${fmt} ${now.toLocaleDateString('es-ES', {day:'2-digit',month:'short'})}`;
+    }
+    setTimeout(() => nameInput.focus(), 50);
+  } else {
+    // Solo lista — sin input de guardar
+    title.textContent = '📁 Mis diseños guardados';
+    saveSec.style.display = 'none';
+    listSec.style.display = '';
+    _designsFilter = 'current'; // por defecto, filtrar por formato actual
+    loadDesignsList();
   }
-  loadDesignsList();
+}
+
+// Cambia el filtro de la lista entre 'current' (solo formato actual) y 'all' (todos)
+function setDesignsFilter(filter) {
+  _designsFilter = filter;
+  // Update visual state of buttons
+  const curBtn = document.getElementById('filterCurrentBtn');
+  const allBtn = document.getElementById('filterAllBtn');
+  if (curBtn && allBtn) {
+    const active   = 'padding:4px 10px;border-radius:6px;background:var(--brand-subtle);border:1px solid var(--brand-border);color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
+    const inactive = 'padding:4px 10px;border-radius:6px;background:var(--surf2);border:1px solid var(--border);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;';
+    curBtn.style.cssText = (filter === 'current') ? active : inactive;
+    allBtn.style.cssText = (filter === 'all')     ? active : inactive;
+  }
+  // Re-render list with new filter
+  if (_designsCache.length) {
+    renderDesignsList({ designs: _designsCache, count: _designsCache.length, plan: currentUser?.plan_type });
+  }
 }
 
 function closeDesignsModal() {
@@ -6408,6 +6467,12 @@ function applySlidesData(data, format) {
       console.log('[loadDesign] Cambiando formato:', currentFormat, '→', format);
     }
     switchFormat(format);
+    // ── BUG FIX CRÍTICO: switchFormat agenda resizeCanvas con requestAnimationFrame
+    // (async, próximo frame). Pero loadSlide() abajo es síncrono e inmediato.
+    // Si no forzamos un resizeCanvas SÍNCRONO aquí, los bloques se renderizan
+    // con las dimensiones del canvas VIEJO (formato anterior), causando que un
+    // diseño Carrusel cargado en sesión Reel mantuvo el canvas Reel y al revés.
+    if (typeof resizeCanvas === 'function') resizeCanvas();
   } else {
     console.warn('[loadDesign] format no definido — no se cambia pestaña');
   }
@@ -6426,6 +6491,10 @@ function applySlidesData(data, format) {
   loadSlide(0);
   updateSlideNav();
   renderSlideStrip();
+  // ── BUG FIX: segundo resizeCanvas DESPUÉS de loadSlide ──
+  // Por seguridad, recalculamos las dimensiones tras cargar bloques.
+  // Algunos navegadores pueden haber rebotado el layout del wrap.
+  if (typeof resizeCanvas === 'function') resizeCanvas();
   historySave();
   toast('✅ Diseño cargado', 'success');
 }
@@ -6528,16 +6597,31 @@ function renderDesignsList(data) {
   const limit = document.getElementById('designsLimit');
   const { designs, count, plan } = data;
 
+  // ── Aplicar filtro de formato ──
+  // Si _designsFilter === 'current', mostrar solo los del formato actual del editor.
+  let visible = designs || [];
+  let filteredOut = 0;
+  if (_designsFilter === 'current' && currentFormat) {
+    const before = visible.length;
+    visible = visible.filter(d => d.format === currentFormat);
+    filteredOut = before - visible.length;
+  }
+
   limit.textContent = `${count} / ${data.limit} diseños (plan ${plan?.toUpperCase() || 'FREE'})`;
 
-  if (!designs?.length) {
-    list.innerHTML = '<div class="designs-empty">No tienes diseños guardados todavía.<br>Crea uno con el botón de arriba.</div>';
+  if (!visible.length) {
+    if (filteredOut > 0) {
+      list.innerHTML = '<div class="designs-empty">No tienes diseños guardados de tipo <strong>' + currentFormat + '</strong>.<br><br>' +
+        '<button onclick="setDesignsFilter(\'all\')" style="padding:6px 14px;border-radius:6px;background:var(--brand);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Ver todos los formatos (' + filteredOut + ')</button></div>';
+    } else {
+      list.innerHTML = '<div class="designs-empty">No tienes diseños guardados todavía.<br>Crea uno con el botón Guardar de arriba.</div>';
+    }
     return;
   }
 
   const fmtLabels = { post:'📸 Post', square:'⬜ 1:1', carousel:'🎠 Carrusel', story:'📱 Story', reel:'🎬 Reel' };
 
-  list.innerHTML = designs.map(d => {
+  list.innerHTML = visible.map(d => {
     const updated = new Date(d.updated_at).toLocaleDateString('es-ES', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
     const preview  = d.preview_url
       ? `<img src="${d.preview_url}" alt="preview" onerror="this.style.display='none'">`
