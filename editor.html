@@ -127,25 +127,27 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 .ig-bookmark{font-size:20px;opacity:.9;}
 .ig-likes{font-size:12px;font-weight:700;color:#fff;padding:0 12px 6px;background:#000;}
 .ig-caption-preview{font-size:13px;color:rgba(255,255,255,.95);padding:8px 14px 14px;background:#000;line-height:1.5;border-top:none;}
-/* Caption content: max-height + fade-out (simula Instagram cuando hay "ver más") */
+/* Caption content: corte a 125 caracteres exactos (comportamiento real de Instagram).
+   Antes cortábamos por altura visual, pero eso solo dejaba ~50 chars visibles cuando
+   Instagram muestra hasta 125 antes del "ver más". */
 .ig-caption-content{
-  display:block;max-height:42px;overflow:hidden;position:relative;
-  /* Fade-out degradado al final para indicar que hay más texto */
-  -webkit-mask-image:linear-gradient(to bottom, #000 60%, transparent 100%);
-          mask-image:linear-gradient(to bottom, #000 60%, transparent 100%);
+  display:block;
   white-space:pre-wrap;word-wrap:break-word;
-  transition:max-height .25s ease;
+  transition:none;
+}
+/* Cuando NO está expandido, se muestra solo el preview corto (con "..." al final si hay más) */
+.ig-caption-content:not(.expanded) #igCaptionText{
+  display:inline;
 }
 .ig-caption-content.expanded{
-  max-height:none;
-  -webkit-mask-image:none;
-          mask-image:none;
+  /* Estado expandido: mostrar todo */
 }
 .ig-caption-content strong{margin-right:6px;font-weight:700;}
 #igCaptionToggle{
   display:none;background:none;border:none;color:rgba(255,255,255,.5);
-  font-size:13px;font-weight:500;cursor:pointer;padding:4px 0 0;
-  font-family:inherit;letter-spacing:0;
+  font-size:13px;font-weight:400;cursor:pointer;padding:0;margin:0;
+  font-family:inherit;letter-spacing:0;line-height:inherit;
+  vertical-align:baseline;
 }
 #igCaptionToggle:hover{color:rgba(255,255,255,.85);}
 
@@ -252,10 +254,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 .ia-tabs{display:flex;border-bottom:1px solid var(--border);}
 .ia-tab{
   flex:1;padding:10px 4px;text-align:center;font-size:11px;font-weight:700;
-  color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;
-  white-space:nowrap;
+  color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;
+  white-space:nowrap;opacity:.75;
 }
-.ia-tab.active{color:var(--brand);border-bottom-color:var(--brand);}
+.ia-tab:hover{color:var(--text);opacity:1;}
+.ia-tab.active{color:var(--brand);border-bottom-color:var(--brand);opacity:1;}
 .ia-body{flex:1;overflow-y:auto;padding:10px;}
 .ia-body::-webkit-scrollbar{width:3px;}
 .ia-body::-webkit-scrollbar-thumb{background:var(--brand);border-radius:2px;}
@@ -892,17 +895,37 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 
   <div class="tb-spacer"></div>
 
-  <!-- Usuario y créditos -->
-  <div class="tb-user-info" id="tbUserInfo" style="display:none;">
-    <span class="tb-user-email" id="tbUserEmail"></span>
+  <!-- Avatar dropdown — email + créditos detallados al click (más limpio que tener email visible siempre) -->
+  <div class="tb-user-info" id="tbUserInfo" style="display:none;position:relative;">
     <span class="tb-credits" id="tbCredits" title="Créditos disponibles">⚡ —</span>
-    <span id="tbDailyUsage" style="font-size:10px;color:var(--text3);white-space:nowrap;"></span>
+    <button id="tbAvatarBtn" onclick="toggleUserDropdown(event)" title="Tu cuenta"
+            style="width:32px;height:32px;border-radius:50%;border:1.5px solid var(--brand-border2);background:var(--grad);color:#fff;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;flex-shrink:0;text-transform:uppercase;">
+      <span id="tbAvatarInitial">?</span>
+    </button>
+    <!-- Dropdown del avatar (oculto por defecto) -->
+    <div id="tbUserDropdown" style="display:none;position:absolute;top:calc(100% + 6px);right:0;min-width:240px;background:var(--surf);border:1px solid var(--border2);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.4);padding:12px;z-index:1000;">
+      <div style="font-size:9px;font-weight:800;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;">Cuenta</div>
+      <div id="tbUserEmail" style="font-size:12px;color:var(--text);font-weight:600;margin-bottom:10px;word-break:break-all;line-height:1.4;"></div>
+      <div style="display:flex;flex-direction:column;gap:5px;border-top:1px solid var(--border);padding-top:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);">
+          <span>⚡ Créditos:</span>
+          <span id="tbCreditsDetail" style="font-weight:700;color:var(--text);">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);">
+          <span>📅 Hoy:</span>
+          <span id="tbDailyUsage" style="font-weight:700;color:var(--text);">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);">
+          <span>📋 Plan:</span>
+          <span id="tbPlanName" style="font-weight:700;color:var(--text);">—</span>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Acciones -->
   <button class="tb-btn" id="undoBtn" onclick="historyUndo()" title="Deshacer (Ctrl+Z)" style="opacity:.35;">↩</button>
   <button class="tb-btn" id="redoBtn" onclick="historyRedo()" title="Rehacer (Ctrl+Y)" style="opacity:.35;">↪</button>
-  <button class="tb-btn" onclick="toggleGrid()" id="gridBtn" title="Cuadrícula">⊞</button>
   <input type="file" id="imgBlockInput" accept="image/*" style="display:none" onchange="addImageBlock(event)">
   <button class="tb-btn" onclick="openDesignsModal()" title="Guardar diseño">💾 <span>Guardar</span></button>
   <span id="autoSaveLabel" style="font-size:10px;color:var(--text3);display:none;flex-shrink:0;">⏱</span>
@@ -1153,6 +1176,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
       </div>
       <div class="prop-sep"></div>
       <div class="prop-group">
+        <button class="prop-btn" onclick="toggleGrid()" id="gridBtn" title="Cuadrícula — guía visual para alinear bloques">⊞</button>
         <button class="prop-btn" onclick="duplicateBlock()" title="Duplicar (Ctrl+D)">⧉</button>
         <button class="prop-btn" onclick="deleteSelectedBlock()" title="Borrar" style="color:var(--danger);">🗑</button>
       </div>
@@ -1209,8 +1233,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
       </div>
       <!-- Actions -->
       <div style="display:flex;gap:8px;margin-top:12px;">
-        <button onclick="closeIgPreview()" style="flex:1;padding:12px;border-radius:10px;background:rgba(255,255,255,.1);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">← Volver a editar</button>
-        <button onclick="exportFromPreview()" style="flex:1;padding:12px;border-radius:10px;background:var(--grad);border:none;color:#fff;font-size:13px;font-weight:800;cursor:pointer;font-family:'Syne',sans-serif;">📥 Exportar</button>
+        <button onclick="closeIgPreview()" style="flex:1;padding:12px;border-radius:10px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.01em;">← Volver a editar</button>
+        <button onclick="exportFromPreview()" style="flex:1;padding:12px;border-radius:10px;background:var(--grad);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.01em;">📥 Exportar</button>
       </div>
     </div>
   </div>
@@ -3056,25 +3080,9 @@ function renderContentPanel() {
     const cz = document.getElementById('captionZone');
     if (cz) cz.style.display = '';
     renderReelContentPanel(inner);
-    // ── B1.6: pre-fill cover con el primer hook del reel si el canvas está vacío ──
-    // Solo lo hace si NO hay ya un hook-block en el canvas (para no pisar ediciones del usuario)
-    setTimeout(() => {
-      const hasHook = document.querySelector('.eblock[data-role="hook-block"]');
-      const firstHook = iaData?.stories?.[0];
-      if (!hasHook && firstHook) {
-        // Extraer hook del primer guion (formato "🎯 HOOK 0-3s: …")
-        const m = String(firstHook).match(/🎯\s*HOOK\s*\d+\s*[-–]\s*\d+\s*s[^:]*:\s*([^\n]+)/i);
-        const rawHook = m ? m[1].trim() : '';
-        // Limpiar con _cleanHookForCanvas (quita prefijos sobrantes, comillas; sin substring arbitrario)
-        const hookText = (typeof _cleanHookForCanvas === 'function') ? _cleanHookForCanvas(rawHook) : rawHook;
-        if (hookText && typeof replaceOrAddBlock === 'function') {
-          replaceOrAddBlock('hook-block', hookText, {
-            y: 8, w: 88, x: 6, fontSize: 28, bold: true,
-            color: currentBrand?.font_color || '#fff', align: 'center',
-          });
-        }
-      }
-    }, 200);
+    // El cover empieza vacío — el usuario decide qué hook aplicar (cualquiera de los 3 reels o uno suyo).
+    // Antes había un pre-fill automático del primer hook; ahora se quitó porque incomodaba al elegir
+    // un reel distinto al 1.
   } else {
     // post o carousel — caption-zone visible
     const cz = document.getElementById('captionZone');
@@ -4703,9 +4711,9 @@ function updateCaptionPreview() {
   const preview = document.getElementById('igCaptionText');
   const content = document.getElementById('igCaptionContent');
   const toggle  = document.getElementById('igCaptionToggle');
+  const userEl  = document.getElementById('igCaptionUser');
 
   // Construir el texto completo: caption + emojis seleccionados + hashtags seleccionados
-  // (igual que copyCaptionZoneSmart, para que el preview refleje lo que el usuario va a copiar)
   let displayText = captionFull || '';
   // Emojis seleccionados con .emo-chip-active
   const emojiBtns = document.querySelectorAll('#capZoneEmojis .emo-chip-active');
@@ -4718,44 +4726,64 @@ function updateCaptionPreview() {
   if (hashBtns.length) {
     const hashStr = Array.from(hashBtns).map(b => {
       const raw = (b.dataset.tag || b.textContent || '').trim();
-      // Normalizar: quitar espacios internos para que Instagram los reconozca como hashtag
       const noSpaces = raw.replace(/\s+/g, '');
       return noSpaces.startsWith('#') ? noSpaces : '#' + noSpaces;
     }).join(' ').trim();
     if (hashStr) displayText += '\n\n' + hashStr;
   }
 
-  if (preview) {
-    if (!displayText.trim()) {
+  if (!displayText.trim()) {
+    if (preview) {
       preview.textContent = ' Usa un caption del panel →';
       preview.style.color = 'rgba(255,255,255,.4)';
-    } else {
-      preview.textContent = ' ' + displayText;
-      preview.style.color = 'rgba(255,255,255,.95)';
     }
+    if (toggle) toggle.style.display = 'none';
+    return;
   }
-  // Decidir si mostrar el botón "ver más": solo si el contenido overflowa el max-height
-  if (content && toggle) {
-    if (content.classList.contains('expanded')) {
-      toggle.style.display = 'inline-block';
-      toggle.textContent   = 'ver menos';
+
+  // Instagram corta el caption a 125 caracteres en el feed (incluye username).
+  // Calcular caracteres disponibles para el caption (después del username + espacio).
+  const username = (userEl?.textContent || 'tu_usuario').trim();
+  const usernameLength = username.length + 1; // +1 por el espacio entre user y caption
+  const TRUNCATE_AT = 125;
+  const availableForCaption = TRUNCATE_AT - usernameLength;
+
+  const isExpanded = content?.classList.contains('expanded');
+  const totalLength = displayText.length;
+  const needsTruncation = totalLength > availableForCaption;
+
+  if (preview) {
+    if (isExpanded || !needsTruncation) {
+      // Mostrar texto completo
+      preview.textContent = ' ' + displayText;
     } else {
-      // Esperar al próximo frame para que el navegador termine el layout antes de medir
-      requestAnimationFrame(() => {
-        const overflows = content.scrollHeight > content.clientHeight + 2;
-        toggle.style.display = overflows ? 'inline-block' : 'none';
-        toggle.textContent   = 'ver más';
-      });
+      // Truncar a `availableForCaption` chars + "..."
+      // Cortar en el último espacio para no partir palabras a la mitad
+      let cutPoint = availableForCaption;
+      const sliced = displayText.substring(0, availableForCaption);
+      const lastSpace = sliced.lastIndexOf(' ');
+      if (lastSpace > availableForCaption * 0.7) cutPoint = lastSpace;
+      preview.textContent = ' ' + displayText.substring(0, cutPoint).trimEnd() + '… ';
+    }
+    preview.style.color = 'rgba(255,255,255,.95)';
+  }
+
+  // Botón "ver más / ver menos"
+  if (toggle) {
+    if (needsTruncation) {
+      toggle.style.display = 'inline';
+      toggle.textContent = isExpanded ? 'ver menos' : 'ver más';
+    } else {
+      toggle.style.display = 'none';
     }
   }
 }
 
 function expandCaptionPreview() {
   const content = document.getElementById('igCaptionContent');
-  const toggle  = document.getElementById('igCaptionToggle');
-  if (!content || !toggle) return;
-  const isExpanded = content.classList.toggle('expanded');
-  toggle.textContent = isExpanded ? 'ver menos' : 'ver más';
+  if (!content) return;
+  content.classList.toggle('expanded');
+  updateCaptionPreview();
 }
 
 // Update the section previews in caption tab
@@ -5366,24 +5394,61 @@ function updateTopbarUser() {
   const infoEl   = document.getElementById('tbUserInfo');
   const emailEl  = document.getElementById('tbUserEmail');
   const creditEl = document.getElementById('tbCredits');
+  const avatarInitial = document.getElementById('tbAvatarInitial');
   if (!infoEl) return;
 
   if (currentUser) {
     infoEl.style.display = 'flex';
-    if (emailEl)  emailEl.textContent  = currentUser.email || '';
-    if (creditEl) {
-      const cr = currentUser.credits_remaining ?? '—';
-      const du = currentUser.daily_usage_count ?? 0;
-      const dl = currentUser.plan_type === 'free' ? 2 : currentUser.plan_type === 'pro' ? 20 : 30;
-      // Show: "⚡ 268 créditos  |  Hoy: 5/30"
-      creditEl.textContent = `⚡ ${cr}`;
-      creditEl.title = `${cr} créditos disponibles • Hoy: ${du}/${dl}`;
-      // Show daily usage inline next to credits
-      const dailyEl = document.getElementById('tbDailyUsage');
-      if (dailyEl) dailyEl.textContent = `Hoy: ${du}/${dl}`;
+    const email = currentUser.email || '';
+    if (emailEl)  emailEl.textContent  = email;
+    // Avatar: primera letra del email, mayúscula
+    if (avatarInitial) {
+      const initial = email.trim().charAt(0).toUpperCase() || '?';
+      avatarInitial.textContent = initial;
     }
+    // Créditos badge (junto al avatar) y detalle (en dropdown)
+    const cr = currentUser.credits_remaining ?? '—';
+    const du = currentUser.daily_usage_count ?? 0;
+    // Leer límite del backend (incluye cortesía); fallback al hardcode por plan si no llegó
+    let dl = currentUser.daily_usage_limit;
+    if (!dl) {
+      dl = currentUser.plan_type === 'free' ? 2 : currentUser.plan_type === 'pro' ? 20 : 30;
+    }
+    if (creditEl) {
+      creditEl.textContent = '⚡ ' + cr;
+      creditEl.title = cr + ' créditos disponibles • Hoy: ' + du + '/' + dl;
+    }
+    // Dropdown detail
+    const crDetail = document.getElementById('tbCreditsDetail');
+    if (crDetail) crDetail.textContent = cr + ' disponibles';
+    const dailyEl = document.getElementById('tbDailyUsage');
+    if (dailyEl) dailyEl.textContent = du + ' / ' + dl;
+    const planEl = document.getElementById('tbPlanName');
+    if (planEl) planEl.textContent = (currentUser.plan_type || 'free').toUpperCase();
   } else {
     infoEl.style.display = 'none';
+  }
+}
+
+// Toggle del dropdown del avatar
+function toggleUserDropdown(event) {
+  event.stopPropagation();
+  const dd = document.getElementById('tbUserDropdown');
+  if (!dd) return;
+  const isOpen = dd.style.display === 'block';
+  if (isOpen) {
+    dd.style.display = 'none';
+  } else {
+    dd.style.display = 'block';
+    // Cerrar al hacer click fuera
+    setTimeout(() => {
+      document.addEventListener('click', function closeOnOutside(e) {
+        if (!dd.contains(e.target) && e.target.id !== 'tbAvatarBtn' && e.target.id !== 'tbAvatarInitial') {
+          dd.style.display = 'none';
+          document.removeEventListener('click', closeOnOutside);
+        }
+      });
+    }, 50);
   }
 }
 
