@@ -2131,7 +2131,7 @@ function applyCourtesyPreset(credits, daily, days) {
   document.getElementById('courtesyCredits').value = credits;
   document.getElementById('courtesyDaily').value   = daily;
   document.getElementById('courtesyDays').value    = days;
-  // Presets: Prueba=Pro, Partner=Pro, VIP=Premium
+  // Presets: Prueba=Pro, Partner=Pro, VIP=Premium, Premium+=Premium
   if (credits >= 100) selectCourtesyPlan('premium');
   else selectCourtesyPlan('pro');
 }
@@ -2213,21 +2213,26 @@ document.addEventListener('keydown', e => {
     <!-- Presets rápidos -->
     <div style="margin-bottom:16px;">
       <div style="font-size:12px;font-weight:700;color:#4a5568;margin-bottom:8px;">⚡ Presets rápidos</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-        <button onclick="applyCourtesyPreset(20,5,7)" style="background:#EBF8FF;border:1.5px solid #BEE3F8;border-radius:8px;padding:10px 6px;cursor:pointer;text-align:center;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;">
+        <button onclick="applyCourtesyPreset(20,5,7)" style="background:#EBF8FF;border:1.5px solid #BEE3F8;border-radius:8px;padding:10px 4px;cursor:pointer;text-align:center;">
           <div style="font-size:16px;">🧪</div>
           <div style="font-size:11px;font-weight:700;color:#2B6CB0;margin-top:2px;">Prueba</div>
-          <div style="font-size:10px;color:#4A5568;">20 cred · 5/día · 7d</div>
+          <div style="font-size:9px;color:#4A5568;">20 · 5/día · 7d</div>
         </button>
-        <button onclick="applyCourtesyPreset(50,10,30)" style="background:#F0FFF4;border:1.5px solid #C6F6D5;border-radius:8px;padding:10px 6px;cursor:pointer;text-align:center;">
+        <button onclick="applyCourtesyPreset(50,10,30)" style="background:#F0FFF4;border:1.5px solid #C6F6D5;border-radius:8px;padding:10px 4px;cursor:pointer;text-align:center;">
           <div style="font-size:16px;">🤝</div>
           <div style="font-size:11px;font-weight:700;color:#276749;margin-top:2px;">Partner</div>
-          <div style="font-size:10px;color:#4A5568;">50 cred · 10/día · 30d</div>
+          <div style="font-size:9px;color:#4A5568;">50 · 10/día · 30d</div>
         </button>
-        <button onclick="applyCourtesyPreset(100,20,30)" style="background:#FAF5FF;border:1.5px solid #E9D8FD;border-radius:8px;padding:10px 6px;cursor:pointer;text-align:center;">
+        <button onclick="applyCourtesyPreset(100,20,30)" style="background:#FAF5FF;border:1.5px solid #E9D8FD;border-radius:8px;padding:10px 4px;cursor:pointer;text-align:center;">
           <div style="font-size:16px;">⭐</div>
           <div style="font-size:11px;font-weight:700;color:#6B46C1;margin-top:2px;">VIP</div>
-          <div style="font-size:10px;color:#4A5568;">100 cred · 20/día · 30d</div>
+          <div style="font-size:9px;color:#4A5568;">100 · 20/día · 30d</div>
+        </button>
+        <button onclick="applyCourtesyPreset(200,30,30)" style="background:#FFF5F7;border:1.5px solid #FED7E2;border-radius:8px;padding:10px 4px;cursor:pointer;text-align:center;">
+          <div style="font-size:16px;">💎</div>
+          <div style="font-size:11px;font-weight:700;color:#B83280;margin-top:2px;">Premium+</div>
+          <div style="font-size:9px;color:#4A5568;">200 · 30/día · 30d</div>
         </button>
       </div>
     </div>
