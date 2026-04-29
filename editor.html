@@ -1235,7 +1235,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
         </div>
         <!-- Image area -->
         <div id="igPrevImgWrap" style="width:100%;aspect-ratio:4/5;position:relative;background:#111;overflow:hidden;">
-          <img id="igPrevImg" src="" alt="Preview" style="width:100%;height:100%;object-fit:cover;display:block;">
+          <img id="igPrevImg" src="" alt="Preview" style="width:100%;height:100%;object-fit:contain;display:block;background:#111;">
           <!-- Carousel dots -->
           <div id="igPrevDots" style="display:none;position:absolute;bottom:10px;left:50%;transform:translateX(-50%);gap:4px;align-items:center;"></div>
         </div>
@@ -3614,42 +3614,87 @@ function renderStoryContentPanel(container) {
     const first = parts[0] || '';
     let tipoIcon = '📱', tipo = 'IDEA', canvasText = '', stickerText = '', fondo = '';
 
-    if (first.startsWith('📊')) {
+    // Detección flexible: detecta tanto el formato esperado (📊 ENCUESTA) como variantes que la IA suele devolver (POLL, QUIZ, QUESTION, etc.)
+    const isEncuesta = first.startsWith('📊') || /^POLL\s*:/i.test(first) || /^ENCUESTA\s*:/i.test(first);
+    const isPregunta = first.startsWith('💬') || /^QUESTION\s*:/i.test(first) || /^PREGUNTA\s*ABIERTA\s*:/i.test(first);
+    const isQuiz     = /^QUIZ\s*:/i.test(first) || /^❓\s*QUIZ/i.test(first);
+    const isDato     = first.startsWith('📈') || /^DATO\s*:/i.test(first);
+    const isTip      = first.startsWith('💡') || /^TIP\s*:/i.test(first);
+    const isCtaDm    = first.startsWith('📩') || /^CTA\s*DM\s*:/i.test(first);
+    // ── V8 fix: ideas 4 (REVEAL) y 5 (SLIDER) ahora reconocidas ──
+    // Antes caían al fallback `raw.substring(0,120)` y se mostraban truncadas.
+    const isReveal   = first.startsWith('🔓') || /^REVEAL\s*:/i.test(first);
+    const isSlider   = first.startsWith('🎚') || /^SLIDER\s*:/i.test(first);
+
+    if (isEncuesta) {
       tipoIcon = '📊'; tipo = 'ENCUESTA';
-      // ENCUESTA: [pregunta] | OPCION A: [a] | OPCION B: [b] | FONDO: ... | TIP: ...
-      canvasText = first.replace(/^📊\s*ENCUESTA:\s*/i, '').trim();
-      const optA = (parts.find(p => /OPCION\s*A:/i.test(p)) || '').replace(/OPCION\s*A:\s*/i,'').trim();
-      const optB = (parts.find(p => /OPCION\s*B:/i.test(p)) || '').replace(/OPCION\s*B:\s*/i,'').trim();
-      stickerText = (optA && optB) ? 'A: ' + optA + '\nB: ' + optB : '';
+      // Limpiar prefijos: "📊 ENCUESTA:", "POLL:", "ENCUESTA:"
+      canvasText = first.replace(/^📊\s*/, '').replace(/^(POLL|ENCUESTA)\s*:\s*/i, '').trim();
+      // Buscar opciones con varios formatos: "OPCION A:", "OPTION A:", "A:", "Opción A:"
+      const optA = (parts.find(p => /(OPCION|OPTION|OP)\.?\s*A\s*:/i.test(p)) || '').replace(/(OPCION|OPTION|OP)\.?\s*A\s*:\s*/i,'').trim();
+      const optB = (parts.find(p => /(OPCION|OPTION|OP)\.?\s*B\s*:/i.test(p)) || '').replace(/(OPCION|OPTION|OP)\.?\s*B\s*:\s*/i,'').trim();
+      stickerText = (optA && optB) ? 'A: ' + optA + '\nB: ' + optB :
+                    (optA || optB) ? (optA || optB) :
+                    'Sí / No'; // fallback útil para encuestas binarias cuando la IA no devuelve opciones
+      fondo = (parts.find(p => /FONDO:|FONDO\s*-|🎨/i.test(p)) || '').replace(/.*🎨\s*FONDO:?\s*|.*FONDO:\s*/i,'').trim();
+
+    } else if (isQuiz) {
+      tipoIcon = '❓'; tipo = 'QUIZ';
+      canvasText = first.replace(/^❓\s*/, '').replace(/^QUIZ\s*:\s*/i, '').trim();
+      // Buscar respuesta correcta (A: ... o R: ...)
+      const resp = (parts.find(p => /^(A|R|RESPUESTA)\s*:/i.test(p)) || '').replace(/^(A|R|RESPUESTA)\s*:\s*/i,'').trim();
+      stickerText = resp ? 'Respuesta: ' + resp : 'Quiz: respuesta correcta en el siguiente story';
       fondo = (parts.find(p => /FONDO:/i.test(p)) || '').replace(/.*FONDO:\s*/i,'').trim();
 
-    } else if (first.startsWith('💬')) {
+    } else if (isPregunta) {
       tipoIcon = '💬'; tipo = 'PREGUNTA ABIERTA';
-      canvasText = first.replace(/^💬\s*PREGUNTA ABIERTA:\s*/i, '').trim();
-      const ej = (parts.find(p => /EJEMPLO\s*RESPUESTA:/i.test(p)) || '').replace(/EJEMPLO\s*RESPUESTA:\s*/i,'').trim();
+      canvasText = first.replace(/^💬\s*/, '').replace(/^(QUESTION|PREGUNTA\s*ABIERTA)\s*:\s*/i, '').trim();
+      const ej = (parts.find(p => /EJEMPLO\s*RESPUESTA:|RESPUESTA:/i.test(p)) || '').replace(/.*EJEMPLO\s*RESPUESTA:|.*RESPUESTA:\s*/i,'').trim();
       stickerText = canvasText + (ej ? '\nEj: ' + ej : '');
       fondo = (parts.find(p => /FONDO:/i.test(p)) || '').replace(/.*FONDO:\s*/i,'').trim();
 
-    } else if (first.startsWith('📈')) {
+    } else if (isDato) {
       tipoIcon = '📈'; tipo = 'DATO IMPACTANTE';
-      canvasText = first.replace(/^📈\s*DATO IMPACTANTE:\s*/i, '').trim();
+      canvasText = first.replace(/^📈\s*/, '').replace(/^DATO\s*IMPACTANTE\s*:\s*/i, '').replace(/^DATO\s*:\s*/i, '').trim();
       const slider = (parts.find(p => /REACCION\s*SLIDER:/i.test(p)) || '').replace(/.*REACCION\s*SLIDER:\s*/i,'').trim();
       const emoji  = (parts.find(p => /EMOJI\s*SUGERIDO:/i.test(p)) || '').replace(/.*EMOJI\s*SUGERIDO:\s*/i,'').trim();
       stickerText = (slider ? slider : '') + (emoji ? ' ' + emoji : '');
       fondo = (parts.find(p => /FONDO:/i.test(p)) || '').replace(/.*FONDO:\s*/i,'').trim();
 
-    } else if (first.startsWith('💡')) {
+    } else if (isTip) {
       tipoIcon = '💡'; tipo = 'TIP GUARDABLE';
-      canvasText = first.replace(/^💡\s*TIP GUARDABLE:\s*/i, '').trim();
+      canvasText = first.replace(/^💡\s*/, '').replace(/^TIP\s*GUARDABLE\s*:\s*/i, '').replace(/^TIP\s*:\s*/i, '').trim();
       const accion = (parts.find(p => /^ACCION:/i.test(p)) || '').replace(/^ACCION:\s*/i,'').trim();
       stickerText = accion || 'Guarda esta story para recordarlo';
       fondo = (parts.find(p => /FONDO:/i.test(p)) || '').replace(/.*FONDO:\s*/i,'').trim();
 
-    } else if (first.startsWith('📩')) {
+    } else if (isCtaDm) {
       tipoIcon = '📩'; tipo = 'CTA DM';
-      canvasText = first.replace(/^📩\s*CTA DM:\s*/i, '').trim();
+      canvasText = first.replace(/^📩\s*/, '').replace(/^CTA\s*DM\s*:\s*/i, '').trim();
       const palabra = (parts.find(p => /PALABRA\s*CLAVE:/i.test(p)) || '').replace(/.*PALABRA\s*CLAVE:\s*/i,'').trim();
       stickerText = palabra || canvasText;
+      fondo = (parts.find(p => /FONDO:/i.test(p)) || '').replace(/.*FONDO:\s*/i,'').trim();
+
+    } else if (isReveal) {
+      // ── V8 fix: REVEAL — story con hook + DM con keyword ──
+      tipoIcon = '🔓'; tipo = 'REVEAL';
+      canvasText = first.replace(/^🔓\s*/, '').replace(/^REVEAL\s*:\s*/i, '').trim();
+      const promesa = (parts.find(p => /PROMESA\s*OCULTA:|PROMESA:/i.test(p)) || '').replace(/.*PROMESA\s*OCULTA:\s*|.*PROMESA:\s*/i,'').trim();
+      const keyword = (parts.find(p => /KEYWORD:|PALABRA:/i.test(p)) || '').replace(/.*KEYWORD:\s*|.*PALABRA:\s*/i,'').trim();
+      stickerText = keyword
+        ? 'Escribe «' + keyword + '» por DM' + (promesa ? '\n→ ' + promesa : '')
+        : (promesa || 'Manda DM para descubrir');
+      fondo = (parts.find(p => /FONDO:/i.test(p)) || '').replace(/.*FONDO:\s*/i,'').trim();
+
+    } else if (isSlider) {
+      // ── V8 fix: SLIDER — story con barra de rating + emoji ──
+      tipoIcon = '🎚'; tipo = 'SLIDER';
+      canvasText = first.replace(/^🎚\s*/, '').replace(/^SLIDER\s*:\s*/i, '').trim();
+      const emoji  = (parts.find(p => /^EMOJI:/i.test(p)) || '').replace(/^EMOJI:\s*/i,'').trim();
+      const obj    = (parts.find(p => /OBJETIVO:|MIDE:/i.test(p)) || '').replace(/.*OBJETIVO:\s*|.*MIDE:\s*/i,'').trim();
+      stickerText = emoji
+        ? 'Slider ' + emoji + (obj ? '\n→ ' + obj : '')
+        : (obj || 'Arrastra el slider');
       fondo = (parts.find(p => /FONDO:/i.test(p)) || '').replace(/.*FONDO:\s*/i,'').trim();
 
     } else {
@@ -5232,6 +5277,9 @@ async function exportCarouselPDF() {
   const total = slides.length;
 
   toast('Generando PDF…','info');
+  // ── Deseleccionar bloque antes de capturar para que NO salgan handles+X en la exportación ──
+  deselectBlock();
+  await new Promise(r => setTimeout(r, 50));
 
   // PDF dimensions in mm — Instagram 4:5 ratio
   const pdfW = 108; // mm
@@ -5241,6 +5289,7 @@ async function exportCarouselPDF() {
   for (let i = 0; i < total; i++) {
     if (i > 0) pdf.addPage([pdfW, pdfH]);
     loadSlide(i);
+    deselectBlock(); // por si loadSlide reactivó algo
     await new Promise(r => setTimeout(r, 180));
     try {
       const hasBg = !!slides[i]?.bgImg;
@@ -5265,6 +5314,9 @@ async function exportPNG(idx) {
   const realH = parseInt(wrap.dataset.realH) || 1350;
   try {
     toast('Exportando…','info');
+    // ── Deseleccionar bloque antes de capturar para que NO salgan handles+X en la exportación ──
+    deselectBlock();
+    await new Promise(r => setTimeout(r, 50)); // dar tiempo a que se actualice el DOM
     const hasBgImg = !!slides[currentSlide]?.bgImg;
     const c = await html2canvas(wrap, { scale:1/scale, useCORS:true, allowTaint:hasBgImg, backgroundColor:null });
     const out = document.createElement('canvas');
@@ -5285,8 +5337,12 @@ async function exportCarouselZip() {
   const realW = parseInt(wrap.dataset.realW) || 1080;
   const realH = parseInt(wrap.dataset.realH) || 1350;
   toast('Exportando carrusel…','info');
+  // ── Deseleccionar bloque antes de capturar para que NO salgan handles+X en la exportación ──
+  deselectBlock();
+  await new Promise(r => setTimeout(r, 50));
   for (let i=0; i<slides.length; i++) {
     loadSlide(i);
+    deselectBlock(); // por si loadSlide reactivó algo
     await new Promise(r=>setTimeout(r,180));
     try {
       const hasBgImgZ = !!slides[i]?.bgImg;
@@ -5590,6 +5646,7 @@ async function showIgPreview() {
 
 function renderIgPreview() {
   const img     = document.getElementById('igPrevImg');
+  const wrap    = document.getElementById('igPrevImgWrap');
   const nav     = document.getElementById('igPrevNav');
   const dots    = document.getElementById('igPrevDots');
   const counter = document.getElementById('igPrevCounter');
@@ -5598,6 +5655,17 @@ function renderIgPreview() {
   const toggle  = document.getElementById('igPrevCaptionToggle');
 
   if (!img || !_igPrevSlides.length) return;
+
+  // ── Aspect-ratio dinámico según el formato ──
+  // - Post/Carousel: 1080x1350 = 4:5 (vertical compacto)
+  // - Reel/Story: 1080x1920 = 9:16 (vertical largo, sin esto el hook se sale del frame)
+  if (wrap) {
+    if (currentFormat === 'reel' || currentFormat === 'story') {
+      wrap.style.aspectRatio = '9/16';
+    } else {
+      wrap.style.aspectRatio = '4/5';
+    }
+  }
 
   // Set image
   img.src = _igPrevSlides[_igPrevIdx] || '';
@@ -6193,9 +6261,18 @@ function collectSlidesData() {
 function applySlidesData(data, format) {
   if (!Array.isArray(data) || !data.length) return;
 
-  // Switch format
-  if (format && format !== currentFormat) {
+  // ── BUG FIX: switchFormat con condición más amplia ──
+  // Antes: solo cambiaba si format !== currentFormat. Si la pestaña activa
+  // estaba desincronizada con currentFormat, podía no cambiar visualmente.
+  // Ahora: si format viene definido, forzamos el switch para garantizar
+  // que las pestañas, currentFormat y los renderers queden coherentes.
+  if (format) {
+    if (format !== currentFormat) {
+      console.log('[loadDesign] Cambiando formato:', currentFormat, '→', format);
+    }
     switchFormat(format);
+  } else {
+    console.warn('[loadDesign] format no definido — no se cambia pestaña');
   }
 
   slides = data.map(sl => ({
@@ -6359,7 +6436,17 @@ async function loadDesign(id, name) {
     _currentDesignId = id;
     document.getElementById('designNameInput').value = d.design.name;
     closeDesignsModal();
-    applySlidesData(d.design.slides_data, d.design.format);
+
+    // ── BUG FIX: cambio de formato al cargar diseño ──
+    // El endpoint individual /designs/:id puede no devolver el campo `format` en
+    // algunos diseños viejos. Si falta, usamos el formato del cache de la lista
+    // (loadDesignsList ya lo muestra correctamente en la UI). De este modo,
+    // si guardas un Carrusel y lo cargas estando en Reel, la pestaña cambia
+    // automáticamente a Carrusel. Antes: se quedaba en Reel.
+    const cached = (_designsCache || []).find(x => x.id === id);
+    const resolvedFormat = d.design.format || cached?.format || null;
+
+    applySlidesData(d.design.slides_data, resolvedFormat);
 
   } catch (e) {
     toast('❌ ' + (e.message || 'Error cargando'), 'error');
