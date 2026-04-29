@@ -422,6 +422,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   outline:none;word-break:break-word;line-height:1.3;
   text-shadow:0 2px 10px rgba(0,0,0,.4);
   cursor:text;
+  /* ── Fix #12: permitir seleccionar texto con mouse ──
+     Antes: el padre .eblock tenía user-select:none (necesario para drag/resize)
+     y el texto heredaba ese none → era imposible marcar con mouse para copiar/editar.
+     Ahora: el texto sobrescribe a text + auto, así el padre sigue siendo no-seleccionable
+     para drag, pero el texto sí permite selección. */
+  user-select:text;
+  -webkit-user-select:text;
 }
 .eblock-img img{width:100%;height:100%;object-fit:cover;display:block;border-radius:4px;}
 
@@ -1702,7 +1709,62 @@ function historySave() {
   if (_history.length > MAX_HIST) _history.shift();
   _histIdx = _history.length - 1;
   updateUndoButtons();
+
+  // ── Fix #16: autosave de slides editados a sessionStorage ──
+  // Cada cambio significativo se guarda. Si el usuario hace refresh, loadIAData
+  // lo restaura. No hacemos esto sincrónicamente porque puede ralentizar el undo;
+  // lo agendamos con requestIdleCallback (o setTimeout fallback).
+  _scheduleAutosave();
 }
+
+// Autosave debounceado para no spamear sessionStorage
+let _autosaveTimer = null;
+function _scheduleAutosave() {
+  if (_autosaveTimer) clearTimeout(_autosaveTimer);
+  _autosaveTimer = setTimeout(() => {
+    try {
+      // Antes de salvar, sincronizar el slide actual con sus blocks del DOM
+      if (typeof saveCurrentBlocks === 'function') saveCurrentBlocks();
+      const lightSlides = slides.map(sl => ({
+        bg1:       sl.bg1,
+        bg2:       sl.bg2,
+        // bgImg puede ser MUY grande (dataURL). Guardamos solo si <500KB
+        bgImg:     (sl.bgImg && sl.bgImg.length < 500000) ? sl.bgImg : null,
+        overlay:   sl.overlay,
+        bgOpacity: sl.bgOpacity,
+        _dom:      sl._dom || [],
+      }));
+      const payload = JSON.stringify({
+        format: currentFormat,
+        slides: lightSlides,
+        savedAt: Date.now(),
+      });
+      // Solo guardar si cabe (<4MB para dejar margen al límite de ~5MB)
+      if (payload.length < 4000000) {
+        sessionStorage.setItem('conteniza_slides_edited', payload);
+      } else {
+        // Demasiado grande (probablemente imágenes grandes en bgImg) — limpiar
+        sessionStorage.removeItem('conteniza_slides_edited');
+      }
+    } catch(e) {
+      console.warn('Autosave falló:', e?.message);
+    }
+  }, 800); // 800ms debounce
+}
+
+// Fix #16: advertencia antes de cerrar/refrescar si hay trabajo sin guardar como diseño
+window.addEventListener('beforeunload', (e) => {
+  // Solo si hay slides editados (más de un slide o blocks en cualquier slide)
+  const hasWork = slides && slides.some(sl => sl._dom?.length > 0);
+  // Si tienes un design_id estamos editando un guardado — menos urgente
+  const isEditingSaved = !!_currentDesignId;
+  if (hasWork && !isEditingSaved) {
+    const msg = 'Tienes cambios sin guardar. ¿Seguro que quieres salir?';
+    e.preventDefault();
+    e.returnValue = msg;
+    return msg;
+  }
+});
 
 function historyUndo() {
   if (_histIdx <= 0) return;
@@ -1820,7 +1882,31 @@ function loadIAData() {
       initFormatTabs(currentFormat);
     }
 
-    if (currentFormat === 'carousel' && iaData.carousel_slides?.length) {
+    // ── Fix #16: restaurar slides editados desde sessionStorage si existen ──
+    // Antes: al hacer refresh se cargaba iaData (los datos de la IA) pero los
+    // blocks que el usuario había editado en el canvas se perdían. Ahora
+    // intentamos primero restaurar las slides editadas guardadas en autosave.
+    let _restoredFromAutosave = false;
+    try {
+      const editedRaw = sessionStorage.getItem('conteniza_slides_edited');
+      if (editedRaw) {
+        const edited = JSON.parse(editedRaw);
+        if (Array.isArray(edited?.slides) && edited.slides.length > 0 && edited.format === currentFormat) {
+          slides = edited.slides.map(sl => ({
+            bg1:       sl.bg1 || '#7C3AED',
+            bg2:       sl.bg2 || '#F43F5E',
+            bgImg:     sl.bgImg || null,
+            overlay:   sl.overlay   || 0,
+            bgOpacity: sl.bgOpacity !== undefined ? sl.bgOpacity : 100,
+            _dom:      sl._dom || [],
+          }));
+          _restoredFromAutosave = true;
+          setTimeout(() => toast('✅ Trabajo restaurado de la sesión anterior', 'success'), 200);
+        }
+      }
+    } catch(_) { /* ignore — caemos al render normal */ }
+
+    if (currentFormat === 'carousel' && iaData.carousel_slides?.length && !_restoredFromAutosave) {
       slides = iaData.carousel_slides.map((s,i) => {
         const sl = newSlide('#7C3AED', '#F43F5E'); // defaults — Mi Marca solo se aplica si el usuario lo pide
         sl.iaSlide = s;
@@ -2553,10 +2639,32 @@ function updatePropsBar(id) {
   }
 }
 
+// ── Fix #13 + #14: limpiar inline styles de hijos del bloque de texto ──
+// Cuando se pega texto, el navegador puede crear <span>/<div> hijos con
+// font-family/font-size/color inline. Esos estilos GANAN sobre los del padre,
+// haciendo que applyPropFont/applyPropSize/applyColor parezcan "no funcionar".
+// Esta helper recorre todos los descendientes y borra los estilos del prop dado
+// (o todos si prop es undefined), para que hereden del padre como esperamos.
+function _normalizeTextChildren(ta, prop) {
+  if (!ta) return;
+  const all = ta.querySelectorAll('*');
+  all.forEach(el => {
+    if (prop) {
+      el.style.removeProperty(prop);
+    } else {
+      // Limpiar todos los props comunes que pueden venir del paste
+      ['font-family', 'font-size', 'color', 'font-weight', 'font-style',
+       'text-decoration', 'text-align', 'background', 'background-color']
+        .forEach(p => el.style.removeProperty(p));
+    }
+  });
+}
+
 function applyPropFont() {
   const el = document.getElementById(selectedId); if (!el) return;
   const ta = el.querySelector('.eblock-text'); if (!ta) return;
   ta.style.fontFamily = `'${document.getElementById('propFont').value}', sans-serif`;
+  _normalizeTextChildren(ta, 'font-family'); // Fix #13
   setTimeout(historySave, 100);
 }
 
@@ -2564,6 +2672,7 @@ function applyPropSize() {
   const el = document.getElementById(selectedId); if (!el) return;
   const ta = el.querySelector('.eblock-text'); if (!ta) return;
   ta.style.fontSize = document.getElementById('propSize').value + 'px';
+  _normalizeTextChildren(ta, 'font-size'); // Fix #14
 }
 
 function changeFontSize(delta) {
@@ -2572,6 +2681,7 @@ function changeFontSize(delta) {
   const cur = parseInt(ta.style.fontSize) || 36;
   const nv  = Math.max(8, Math.min(200, cur + delta));
   ta.style.fontSize = nv + 'px';
+  _normalizeTextChildren(ta, 'font-size'); // Fix #14
   document.getElementById('propSize').value = nv;
 }
 
@@ -2869,10 +2979,22 @@ function deleteSlide(idx, e) {
   e?.stopPropagation();
   if (slides.length <= 1) { toast('Debe quedar al menos 1 slide','error'); return; }
   slides.splice(idx, 1);
+  // ── Fix #17: sincronizar iaData.carousel_slides con slides[] al borrar ──
+  // Antes: el panel lateral del Carrusel leía iaData.carousel_slides (los slides
+  // originales de la IA) y NO se actualizaba al borrar, así seguía mostrando 10
+  // slides aunque el strip mostrara 9. Ahora también borramos del iaData.
+  // Si el usuario quiere recuperarlos, hay un botón "Restaurar contenido original".
+  if (iaData?.carousel_slides && Array.isArray(iaData.carousel_slides) && idx < iaData.carousel_slides.length) {
+    iaData.carousel_slides.splice(idx, 1);
+  }
   const newIdx = Math.min(currentSlide, slides.length - 1);
   document.getElementById('canvasBlocks').innerHTML = '';
   currentSlide = -1;
   loadSlide(newIdx);
+  // Refrescar el panel del Carrusel para que las cards reflejen el cambio
+  if (currentFormat === 'carousel' && typeof renderCarouselPanel === 'function') {
+    renderCarouselPanel();
+  }
   historySave();
   toast('Slide eliminado','success');
 }
@@ -3665,12 +3787,12 @@ function applySlideToCanvas(idx, s) {
   if (idx !== currentSlide) loadSlide(idx);
   document.getElementById('canvasBlocks').innerHTML = '';
   slides[idx].blocks = [];
-  // ── Fix #4: NO sobrescribir el color con la marca al cargar slide desde el panel ──
-  // Antes: aplicaba currentBrand.font_color (a veces amarillo) → inconsistente con miniaturas blancas.
-  // Ahora: siempre blanco por defecto. Si el usuario quiere color de marca, lo aplica desde el panel "Marca".
-  // I2: usar _cleanSlideTitle para coherencia con applyAllSlides (filtra JSON schema basura)
-  if (s.title)   addTextBlock(_cleanSlideTitle(s.title),   {y:20, w:88, x:6, fontSize:34, bold:true,  color:'#fff', align:'center', _noSelect:true, role:'slide-title'});
-  if (s.content) addTextBlock(s.content, {y:56, w:88, x:6, fontSize:18, bold:false, color:'rgba(255,255,255,.92)', align:'center', _noSelect:true});
+  // ── Fix #4 + #15: blanco siempre + más espacio entre título/contenido (anti-amontonamiento) ──
+  // Antes: title y:20 fs:34, content y:56 fs:18 → con textos largos chocaban entre sí.
+  // Ahora: title y:14 fs:30, content y:55 fs:17 → el título empieza más arriba y el contenido
+  // baja un poco más, dando ~40% de altura útil para cada bloque.
+  if (s.title)   addTextBlock(_cleanSlideTitle(s.title),   {y:14, w:88, x:6, fontSize:30, bold:true,  color:'#fff', align:'center', _noSelect:true, role:'slide-title'});
+  if (s.content) addTextBlock(s.content, {y:55, w:88, x:6, fontSize:17, bold:false, color:'rgba(255,255,255,.92)', align:'center', _noSelect:true});
   saveCurrentBlocks();
   // Deseleccionar para que el usuario vea el slide limpio sin un bloque marcado
   if (typeof deselectBlock === 'function') deselectBlock();
@@ -3684,9 +3806,9 @@ function applyAllSlides(slides_data, silent = false) {
   slides_data.forEach((s, i) => {
     loadSlide(i);
     document.getElementById('canvasBlocks').innerHTML = '';
-    // ── Fix #4: blanco por defecto, no marca ──
-    if (s.title)   addTextBlock(_cleanSlideTitle(s.title),   {y:20, w:88, x:6, fontSize:34, bold:true,  color:'#fff', align:'center', _noSelect:true, role:'slide-title'});
-    if (s.content) addTextBlock(s.content, {y:56, w:88, x:6, fontSize:18, bold:false, color:'rgba(255,255,255,.92)', align:'center', _noSelect:true});
+    // ── Fix #4 + #15: blanco + más espacio ──
+    if (s.title)   addTextBlock(_cleanSlideTitle(s.title),   {y:14, w:88, x:6, fontSize:30, bold:true,  color:'#fff', align:'center', _noSelect:true, role:'slide-title'});
+    if (s.content) addTextBlock(s.content, {y:55, w:88, x:6, fontSize:17, bold:false, color:'rgba(255,255,255,.92)', align:'center', _noSelect:true});
     saveCurrentBlocks();
   });
   loadSlide(0);
@@ -6679,12 +6801,27 @@ function syncShadowUI(el) {
 function applyTextGradient(c1, c2) {
   const el = document.getElementById(selectedId); if (!el) return;
   const ta = el.querySelector('.eblock-text'); if (!ta) return;
+  // ── Fix #19: limpiar inline styles de hijos antes de aplicar gradiente ──
+  // Antes: si el texto tenía <span> con style inline (por paste), el gradient
+  // text-clip se aplicaba a CADA hijo como rectángulos rellenos en vez de
+  // pintar el texto como gradiente. Ahora limpiamos hijos primero y forzamos
+  // herencia para que el gradient se aplique al texto entero como un solo bloque.
+  if (typeof _normalizeTextChildren === 'function') _normalizeTextChildren(ta);
   // CSS gradient text via background-clip trick
   ta.style.backgroundImage    = `linear-gradient(135deg, ${c1}, ${c2})`;
   ta.style.webkitBackgroundClip = 'text';
   ta.style.backgroundClip     = 'text';
   ta.style.webkitTextFillColor = 'transparent';
   ta.style.color               = 'transparent';
+  // Forzar a los hijos a heredar transparencia y bg
+  ta.querySelectorAll('*').forEach(child => {
+    child.style.background = 'transparent';
+    child.style.backgroundImage = 'inherit';
+    child.style.webkitBackgroundClip = 'text';
+    child.style.backgroundClip = 'text';
+    child.style.webkitTextFillColor = 'transparent';
+    child.style.color = 'inherit';
+  });
   el.dataset.textGradient = c1 + '|' + c2;
   historySave();
   toast('✅ Gradiente aplicado', 'success');
@@ -6777,25 +6914,31 @@ function openDesignsModal(mode = 'save') {
     title.textContent = '📁 Mis diseños guardados';
     saveSec.style.display = 'none';
     listSec.style.display = '';
-    _designsFilter = 'current'; // por defecto, filtrar por formato actual
-    // ── Fix #3: forzar estilos del filtro al abrir (antes solo se actualizaban al click) ──
-    setTimeout(() => setDesignsFilter('current'), 0);
+    // ── Fix #3 v2: SIEMPRE resetear filter a 'current' al abrir + aplicar
+    // estilos a los botones DIRECTAMENTE (no con setTimeout, que era racy).
+    _designsFilter = 'current';
+    _applyFilterButtonStyles('current'); // estilos visuales inmediatos
+    console.log('[Mis diseños] Abierto. currentFormat=', currentFormat, '_designsFilter=', _designsFilter);
     loadDesignsList();
   }
+}
+
+// Helper: aplicar estilos visuales a los botones de filtro
+function _applyFilterButtonStyles(filter) {
+  const curBtn = document.getElementById('filterCurrentBtn');
+  const allBtn = document.getElementById('filterAllBtn');
+  if (!curBtn || !allBtn) return;
+  const active   = 'padding:4px 10px;border-radius:6px;background:var(--brand-subtle);border:1px solid var(--brand-border);color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
+  const inactive = 'padding:4px 10px;border-radius:6px;background:var(--surf2);border:1px solid var(--border);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;';
+  curBtn.style.cssText = (filter === 'current') ? active : inactive;
+  allBtn.style.cssText = (filter === 'all')     ? active : inactive;
 }
 
 // Cambia el filtro de la lista entre 'current' (solo formato actual) y 'all' (todos)
 function setDesignsFilter(filter) {
   _designsFilter = filter;
-  // Update visual state of buttons
-  const curBtn = document.getElementById('filterCurrentBtn');
-  const allBtn = document.getElementById('filterAllBtn');
-  if (curBtn && allBtn) {
-    const active   = 'padding:4px 10px;border-radius:6px;background:var(--brand-subtle);border:1px solid var(--brand-border);color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;';
-    const inactive = 'padding:4px 10px;border-radius:6px;background:var(--surf2);border:1px solid var(--border);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;';
-    curBtn.style.cssText = (filter === 'current') ? active : inactive;
-    allBtn.style.cssText = (filter === 'all')     ? active : inactive;
-  }
+  _applyFilterButtonStyles(filter);
+  console.log('[Mis diseños] Filtro cambiado a:', filter, 'currentFormat=', currentFormat);
   // Re-render list with new filter
   if (_designsCache.length) {
     renderDesignsList({ designs: _designsCache, count: _designsCache.length, plan: currentUser?.plan_type });
@@ -6975,14 +7118,19 @@ function renderDesignsList(data) {
   const { designs, count, plan } = data;
 
   // ── Aplicar filtro de formato ──
-  // Si _designsFilter === 'current', mostrar solo los del formato actual del editor.
+  // ── Fix v2 (problema de filtro reportado por usuario):
+  // Si _designsFilter no es 'all' explícitamente, asumimos 'current'.
+  // Antes: "if (_designsFilter === 'current')" — si la variable era undefined NO filtraba.
+  // Ahora: la única vía para mostrar todos es _designsFilter === 'all' explícito.
+  const showAll = (_designsFilter === 'all');
   let visible = designs || [];
   let filteredOut = 0;
-  if (_designsFilter === 'current' && currentFormat) {
+  if (!showAll && currentFormat) {
     const before = visible.length;
     visible = visible.filter(d => d.format === currentFormat);
     filteredOut = before - visible.length;
   }
+  console.log('[Mis diseños] render — filter=', _designsFilter, 'showAll=', showAll, 'currentFormat=', currentFormat, 'total=', visible.length, 'filteredOut=', filteredOut);
 
   // ── Fix #2: el backend no siempre devuelve `limit` → mostrar undefined.
   // Hacemos un mapeo defensivo por plan, y si el backend lo manda usamos el suyo.
@@ -7040,7 +7188,6 @@ async function loadDesign(id, name) {
 
     _currentDesignId = id;
     document.getElementById('designNameInput').value = d.design.name;
-    closeDesignsModal();
 
     // ── BUG FIX: cambio de formato al cargar diseño ──
     // El endpoint individual /designs/:id puede no devolver el campo `format` en
@@ -7051,6 +7198,23 @@ async function loadDesign(id, name) {
     const cached = (_designsCache || []).find(x => x.id === id);
     const resolvedFormat = d.design.format || cached?.format || null;
 
+    // ── Fix v2: si el formato del diseño es DISTINTO al formato actual, confirmar.
+    // Antes: cambiaba sin avisar — confuso si el usuario estaba editando en otro formato.
+    if (resolvedFormat && resolvedFormat !== currentFormat) {
+      const fmtLabels = { post:'Post', square:'Post 1:1', carousel:'Carrusel', story:'Story', reel:'Reel' };
+      const fromLabel = fmtLabels[currentFormat] || currentFormat;
+      const toLabel   = fmtLabels[resolvedFormat] || resolvedFormat;
+      const ok = confirm(
+        `Este diseño es de tipo "${toLabel}" pero estás en "${fromLabel}".\n\n` +
+        `¿Cambiar a "${toLabel}" y cargarlo? (Tu trabajo actual en "${fromLabel}" se guardará automáticamente).`
+      );
+      if (!ok) {
+        toast('Cancelado — sigues en ' + fromLabel, 'info');
+        return;
+      }
+    }
+
+    closeDesignsModal();
     applySlidesData(d.design.slides_data, resolvedFormat);
 
   } catch (e) {
