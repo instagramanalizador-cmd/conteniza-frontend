@@ -2103,6 +2103,13 @@ function resizeCanvas() {
 function switchFormat(fmt) {
   currentFormat = fmt;
   document.querySelectorAll('.fmt-tab').forEach(t => t.classList.toggle('active', t.dataset.fmt === fmt));
+  // ── Fix bug pestaña topbar (reportado por usuario):
+  // El topbar muestra un único tab fijo creado por initFormatTabs(fmt) con el icon+label
+  // del formato actual (ej. "🎠 Carrusel"). Pero ese tab NO tiene data-fmt, así que el
+  // toggle de clase 'active' arriba no actualiza su contenido. Si el usuario cambia
+  // de Carrusel a Post (cargando un diseño), el tab seguía diciendo "Carrusel".
+  // Solución: regenerar el tab del topbar al cambiar de formato.
+  initFormatTabs(fmt);
 
   const isCarousel = fmt === 'carousel';
   document.getElementById('slideNav').classList.toggle('visible', isCarousel);
@@ -4156,23 +4163,38 @@ function renderStoryContentPanel(container) {
         card.appendChild(stickerSec);
       }
 
-      // ── Mejorar con IA ──
+      // ── B3.3: Copiloto de Story con acciones rápidas + chat libre ──
+      // Antes: solo había un chat libre donde el usuario tenía que escribir su instrucción.
+      // Ahora: 3 acciones rápidas preset (más interactiva / cambiar sticker / más viral)
+      // + chat libre debajo para casos avanzados.
       const iaSection = document.createElement('div');
       iaSection.style.cssText = 'padding:8px 12px;';
 
       let _iaOpen = false;
       const iaBtn = document.createElement('button');
       iaBtn.style.cssText = 'width:100%;padding:7px;border-radius:6px;background:var(--brand-subtle);border:1px solid var(--brand-border);color:var(--brand);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:5px;';
-      iaBtn.innerHTML = '🤖 Mejorar esta idea con IA';
+      iaBtn.innerHTML = '✨ Mejorar esta idea con IA (sin coste)';
 
-      // Inline mini-chat per story
+      // Inline mini-panel per story
       const iaChat = document.createElement('div');
       iaChat.style.cssText = 'display:none;margin-top:8px;';
+      // Acciones rápidas preset (B3.3)
+      const _safeText = canvasText.replace(/`/g,"'").substring(0,100);
       iaChat.innerHTML =
+        '<div style="font-size:9px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">⚡ Acciones rápidas</div>' +
+        '<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px;">' +
+          '<button onclick="_storyCopQuick(' + idx + ',\`' + _safeText + '\`,\'engagement\')" ' +
+          'style="padding:6px 8px;border-radius:5px;background:var(--surf);border:1px solid var(--border2);color:var(--text);font-size:10px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left;">📊 Hacerla más interactiva (sticker más fuerte)</button>' +
+          '<button onclick="_storyCopQuick(' + idx + ',\`' + _safeText + '\`,\'sticker_swap\')" ' +
+          'style="padding:6px 8px;border-radius:5px;background:var(--surf);border:1px solid var(--border2);color:var(--text);font-size:10px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left;">🔄 Cambiar tipo de sticker</button>' +
+          '<button onclick="_storyCopQuick(' + idx + ',\`' + _safeText + '\`,\'viral\')" ' +
+          'style="padding:6px 8px;border-radius:5px;background:var(--brand-subtle);border:1px solid var(--brand-border);color:var(--brand);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;">🚀 Hacerla más viral (hook más fuerte)</button>' +
+        '</div>' +
+        '<div style="font-size:9px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">💬 O escribe tu instrucción</div>' +
         '<div style="display:flex;gap:6px;">' +
-          '<input id="storyCopInput_' + idx + '" type="text" placeholder="Ej: hazla más viral, cambia el tono…" ' +
+          '<input id="storyCopInput_' + idx + '" type="text" placeholder="Ej: hazla más graciosa, cambia el tono…" ' +
           'style="flex:1;padding:7px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surf);color:var(--text);font-size:11px;font-family:inherit;">' +
-          '<button onclick="_storyCopSend(' + idx + ',\`' + canvasText.replace(/`/g,"'").substring(0,100) + '\`)" ' +
+          '<button onclick="_storyCopSend(' + idx + ',\`' + _safeText + '\`)" ' +
           'style="padding:7px 12px;border-radius:6px;background:var(--brand);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">→</button>' +
         '</div>' +
         '<div id="storyCopResult_' + idx + '" style="display:none;margin-top:8px;padding:8px;background:var(--surf2);border-radius:8px;border:1px solid var(--border2);font-size:11px;color:var(--text2);line-height:1.6;"></div>';
@@ -4201,6 +4223,21 @@ function renderStoryContentPanel(container) {
   regenBtn.innerHTML = '🔄 Regenerar ideas (-1 crédito)';
   regenBtn.onclick = () => regenerateFromEditor();
   container.appendChild(regenBtn);
+}
+
+// B3.3 — Acción rápida del Copiloto Story con preset preconstruido
+async function _storyCopQuick(idx, storyText, preset) {
+  const presetMessages = {
+    engagement:    'Hazla más interactiva: usa un sticker más fuerte (POLL/QUIZ/SLIDER) y haz que la pregunta divida más opiniones de la audiencia. Mantén el tema.',
+    sticker_swap:  'Cambia el tipo de sticker (si es POLL → prueba QUIZ; si es QUIZ → prueba SLIDER; si es QUESTION → prueba REVEAL). Adapta el contenido al nuevo sticker manteniendo el tema.',
+    viral:         'Hazla más viral: hook más punchy en las primeras palabras (≤8 palabras), usa pattern interrupt o contradicción del tema. Mantén el sticker actual pero hazlo más impactante.',
+  };
+  const msg = presetMessages[preset];
+  if (!msg) return;
+  // Reusar el flujo de _storyCopSend pero con el mensaje preset
+  const input = document.getElementById('storyCopInput_' + idx);
+  if (input) input.value = msg;
+  await _storyCopSend(idx, storyText);
 }
 
 // ── Story copiloto per-card ──
