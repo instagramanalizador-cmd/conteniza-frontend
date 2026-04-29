@@ -539,7 +539,7 @@
   <div class="gen-card">
     <div class="gen-card-header" style="position:relative;">
       <h2>✨ Nuevo contenido</h2>
-      <p>Describe el tema y elige el formato — la IA hace el resto</p>
+      <p>Describe el tema y elige el formato — Conteniza hace el resto</p>
       <!-- Botón ayuda — guía rápida de cómo crear buen contenido -->
       <button type="button" onclick="showCreateHelp()" title="Guía: cómo crear buen contenido"
               style="position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;background:rgba(139,95,191,.12);border:1.5px solid rgba(139,95,191,.3);color:var(--brand);font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;transition:all .15s;"
@@ -958,6 +958,12 @@ async function apiFetch(url, options = {}, timeoutMs = 30000) {
     const res = await fetch(url, options);
     clearTimeout(timer);
     if (res.status === 401) {
+      // ── BUG FIX: si es endpoint público (login/register), NO tratar como "sesión expirada" ──
+      // /auth/login con credenciales malas devuelve 401, pero NO es sesión expirada — es un
+      // error de login normal. Dejamos que el caller maneje el mensaje "Credenciales incorrectas".
+      if (isPublic) {
+        return res; // que el caller lea res.json() y muestre el mensaje de error correcto
+      }
       const mainAppVisible = !document.getElementById('mainApp')?.classList.contains('hidden');
       if (mainAppVisible) {
         // Token expired while using the app — don't logout, just throw so caller handles gracefully
