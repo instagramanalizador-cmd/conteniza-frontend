@@ -28,9 +28,9 @@
   --surf3:    #222235;
   --border:   rgba(255,255,255,.07);
   --border2:  rgba(255,255,255,.13);
-  --text:     #f0f0f8;
-  --text2:    rgba(240,240,248,.85);
-  --text3:    rgba(240,240,248,.6);
+  --text:     #ffffff;
+  --text2:    rgba(255,255,255,.92);
+  --text3:    rgba(255,255,255,.75);
   --danger:   #f87171;
   --success:  #34d399;
   --r:        8px;
@@ -925,7 +925,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   <button class="tb-btn" id="redoBtn" onclick="historyRedo()" title="Rehacer (Ctrl+Y)" style="opacity:.7;">↪</button>
   <input type="file" id="imgBlockInput" accept="image/*" style="display:none" onchange="addImageBlock(event)">
   <button class="tb-btn" onclick="openDesignsModal('save')" title="Guardar diseño actual">💾 <span>Guardar</span></button>
-  <button class="tb-btn" onclick="openDesignsModal('list')" title="Mis diseños guardados">📁 <span>Mis diseños</span></button>
+  <button class="tb-btn" onclick="openDesignsModal('list')" title="Mis diseños guardados" style="background:var(--brand-subtle);border:1px solid var(--brand-border2);color:var(--brand);font-weight:700;">📁 <span>Mis diseños</span></button>
   <span id="autoSaveLabel" style="font-size:10px;color:var(--text3);display:none;flex-shrink:0;">⏱</span>
   <button class="tb-btn" onclick="showHelp()" title="Ayuda">❓</button>
   <button class="tb-btn" onclick="showIgPreview()" title="Vista previa como Instagram" style="background:var(--brand-subtle);border:1px solid var(--brand-border2);color:var(--brand);">👁 <span>Preview</span></button>
@@ -2098,6 +2098,8 @@ function updateCanvasBg() {
 }
 
 function onBgColorChange() {
+  // ── Fix #11: guardar blocks antes de modificar bg ──
+  if (typeof saveCurrentBlocks === 'function') saveCurrentBlocks();
   const c1 = document.getElementById('bg1Input').value;
   const c2 = document.getElementById('bg2Input').value;
   slides[currentSlide].bg1 = c1;
@@ -2117,6 +2119,8 @@ function onBgColorChange() {
 }
 
 function onBgColorChangeMobile() {
+  // ── Fix #11: guardar blocks antes de modificar bg ──
+  if (typeof saveCurrentBlocks === 'function') saveCurrentBlocks();
   const c1 = document.getElementById('bg1InputM').value;
   const c2 = document.getElementById('bg2InputM').value;
   slides[currentSlide].bg1 = c1;
@@ -2130,6 +2134,8 @@ function onBgColorChangeMobile() {
 }
 
 function applyBgPreset(c1, c2) {
+  // ── Fix #11: guardar blocks antes de modificar bg ──
+  if (typeof saveCurrentBlocks === 'function') saveCurrentBlocks();
   slides[currentSlide].bg1 = c1;
   slides[currentSlide].bg2 = c2;
   slides[currentSlide].bgImg = null;
@@ -2202,6 +2208,8 @@ function loadBgImage(event) {
   }
   const reader = new FileReader();
   reader.onload = e => {
+    // ── Fix #11: guardar blocks ANTES de modificar el slide para no perder texto ──
+    if (typeof saveCurrentBlocks === 'function') saveCurrentBlocks();
     slides[currentSlide].bgImg = e.target.result;
     updateCanvasBg();
     updateStripThumb(currentSlide);
@@ -2214,6 +2222,8 @@ function loadBgImage(event) {
 }
 
 function removeBgImage() {
+  // ── Fix #11: guardar blocks antes de modificar bg ──
+  if (typeof saveCurrentBlocks === 'function') saveCurrentBlocks();
   slides[currentSlide].bgImg = null;
   updateCanvasBg();
   updateStripThumb(currentSlide);
@@ -2265,6 +2275,31 @@ function makeBlock(type, opts={}) {
     }
     ta.addEventListener('focus', () => selectBlock(id));
     ta.addEventListener('input', () => updatePropsBar(id));
+    // ── Fix #6: pegar texto siempre como TEXTO PLANO ──
+    // Antes: al copiar desde el panel del Reel/Story con fondo oscuro, el navegador
+    // pegaba HTML con estilos inline (incluido background:#000), creando un fondo negro
+    // imborrable en el bloque. Ahora interceptamos paste y forzamos texto plano,
+    // respetando saltos de línea como <div> hijos.
+    ta.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData)?.getData('text/plain') || '';
+      if (!text) return;
+      // Insertar como texto plano respetando saltos
+      const sel = window.getSelection();
+      if (!sel.rangeCount) return;
+      const range = sel.getRangeAt(0);
+      range.deleteContents();
+      const lines = text.split('\n');
+      const frag = document.createDocumentFragment();
+      lines.forEach((l, idx) => {
+        if (idx > 0) frag.appendChild(document.createElement('br'));
+        if (l) frag.appendChild(document.createTextNode(l));
+      });
+      range.insertNode(frag);
+      // Mover cursor al final del texto pegado
+      sel.collapseToEnd();
+      updatePropsBar(id);
+    });
     inner.appendChild(ta);
   } else if (type === 'image') {
     const imgEl = document.createElement('img');
@@ -3630,9 +3665,12 @@ function applySlideToCanvas(idx, s) {
   if (idx !== currentSlide) loadSlide(idx);
   document.getElementById('canvasBlocks').innerHTML = '';
   slides[idx].blocks = [];
+  // ── Fix #4: NO sobrescribir el color con la marca al cargar slide desde el panel ──
+  // Antes: aplicaba currentBrand.font_color (a veces amarillo) → inconsistente con miniaturas blancas.
+  // Ahora: siempre blanco por defecto. Si el usuario quiere color de marca, lo aplica desde el panel "Marca".
   // I2: usar _cleanSlideTitle para coherencia con applyAllSlides (filtra JSON schema basura)
-  if (s.title)   addTextBlock(_cleanSlideTitle(s.title),   {y:20, w:88, x:6, fontSize:34, bold:true,  color:currentBrand?.font_color||'#fff', align:'center', _noSelect:true, role:'slide-title'});
-  if (s.content) addTextBlock(s.content, {y:56, w:88, x:6, fontSize:18, bold:false, color:currentBrand?.sub_font_color||'rgba(255,255,255,.85)', align:'center', _noSelect:true});
+  if (s.title)   addTextBlock(_cleanSlideTitle(s.title),   {y:20, w:88, x:6, fontSize:34, bold:true,  color:'#fff', align:'center', _noSelect:true, role:'slide-title'});
+  if (s.content) addTextBlock(s.content, {y:56, w:88, x:6, fontSize:18, bold:false, color:'rgba(255,255,255,.92)', align:'center', _noSelect:true});
   saveCurrentBlocks();
   // Deseleccionar para que el usuario vea el slide limpio sin un bloque marcado
   if (typeof deselectBlock === 'function') deselectBlock();
@@ -3646,8 +3684,9 @@ function applyAllSlides(slides_data, silent = false) {
   slides_data.forEach((s, i) => {
     loadSlide(i);
     document.getElementById('canvasBlocks').innerHTML = '';
-    if (s.title)   addTextBlock(_cleanSlideTitle(s.title),   {y:20, w:88, x:6, fontSize:34, bold:true,  color:currentBrand?.font_color||'#fff', align:'center', _noSelect:true, role:'slide-title'});
-    if (s.content) addTextBlock(s.content, {y:56, w:88, x:6, fontSize:18, bold:false, color:currentBrand?.sub_font_color||'rgba(255,255,255,.85)', align:'center', _noSelect:true});
+    // ── Fix #4: blanco por defecto, no marca ──
+    if (s.title)   addTextBlock(_cleanSlideTitle(s.title),   {y:20, w:88, x:6, fontSize:34, bold:true,  color:'#fff', align:'center', _noSelect:true, role:'slide-title'});
+    if (s.content) addTextBlock(s.content, {y:56, w:88, x:6, fontSize:18, bold:false, color:'rgba(255,255,255,.92)', align:'center', _noSelect:true});
     saveCurrentBlocks();
   });
   loadSlide(0);
@@ -3668,8 +3707,9 @@ function renderStoryContentPanel(container) {
   // ── Header explicativo ──
   const header = document.createElement('div');
   header.style.cssText = 'background:var(--brand-subtle);border-radius:10px;padding:10px 12px;margin-bottom:12px;border-left:3px solid var(--brand);';
-  header.innerHTML = '<div style="font-size:11px;font-weight:800;color:var(--brand);margin-bottom:3px;">📱 Cómo usar estas ideas</div>' +
-    '<div style="font-size:10px;color:var(--text3);line-height:1.5;">Aplica el texto al canvas → descarga la story → súbela a Instagram → añade los stickers interactivos desde la app.</div>';
+  header.innerHTML = '<div style="font-size:11px;font-weight:800;color:var(--brand);margin-bottom:6px;">💡 Estas son IDEAS para tus stories</div>' +
+    '<div style="font-size:10px;color:var(--text2);line-height:1.55;">Conteniza te da <strong>ideas de interacción</strong> con tu comunidad (encuestas, quizzes, preguntas). Tú creas tu plantilla principal en el canvas → la descargas → la subes a Stories de Instagram → y allí <strong>añades los stickers reales</strong> (Poll/Quiz/Slider/Question) desde la app de Instagram para que tu audiencia vote o responda.</div>' +
+    '<div style="margin-top:8px;padding:7px 9px;background:rgba(139,95,191,.12);border-radius:6px;border-left:2px solid var(--brand);font-size:10px;color:var(--text2);line-height:1.5;"><strong style="color:var(--brand);">📝 Flujo:</strong> 1) Edita la portada en el canvas →&nbsp;2) Exporta&nbsp;→&nbsp;3) Sube a Stories en IG&nbsp;→&nbsp;4) Añade el sticker interactivo desde IG con el texto que te sugerimos abajo.</div>';
   container.appendChild(header);
 
   // ── Helper: parse story string into parts ──
@@ -4409,7 +4449,7 @@ function renderReelContentPanel(container) {
   hdr.style.cssText = 'background:var(--brand-subtle);border-radius:10px;padding:10px 12px;margin-bottom:12px;border-left:3px solid var(--brand);';
   hdr.innerHTML =
     '<div style="font-size:11px;font-weight:800;color:var(--brand);margin-bottom:3px;">🎬 3 guiones listos para grabar</div>' +
-    '<div style="font-size:10px;color:var(--text3);line-height:1.5;">Copia el guión → pégalo en tu app de teleprompter → graba en una toma.</div>';
+    '<div style="font-size:10px;color:var(--text3);line-height:1.5;">📌 Estos son <strong>guiones</strong> para grabarlos como Reel. Edítalos en una app como <strong>CapCut</strong>, <strong>InShot</strong> o <strong>VN</strong> (gratis, móvil) → añade el video, texto en pantalla y música → publica en Instagram. Aquí también puedes diseñar la <strong>portada</strong> del Reel (el frame que verán antes de pulsar play).</div>';
   container.appendChild(hdr);
 
   // ── B1.6: Header cover del Reel ──
@@ -4597,7 +4637,7 @@ function renderReelContentPanel(container) {
         idea.overlays ? '📝 Text overlays: ' + idea.overlays : '',
       ].filter(Boolean).join('\n');
       navigator.clipboard.writeText(script).then(() => {
-        toast('✅ Guión copiado — pégalo en tu teleprompter', 'success');
+        toast('✅ Guión copiado — pégalo en CapCut/InShot para grabar', 'success');
         btnFull.textContent = '✓ Copiado';
         btnFull.style.background = '#10B981';
         setTimeout(() => { btnFull.innerHTML = '📋 Guión completo'; btnFull.style.background = 'var(--grad)'; }, 2000);
@@ -6738,6 +6778,8 @@ function openDesignsModal(mode = 'save') {
     saveSec.style.display = 'none';
     listSec.style.display = '';
     _designsFilter = 'current'; // por defecto, filtrar por formato actual
+    // ── Fix #3: forzar estilos del filtro al abrir (antes solo se actualizaban al click) ──
+    setTimeout(() => setDesignsFilter('current'), 0);
     loadDesignsList();
   }
 }
@@ -6891,6 +6933,11 @@ async function saveDesign() {
     toast(`✅ ${d.action === 'created' ? 'Diseño guardado' : 'Diseño actualizado'}`, 'success');
     loadDesignsList();
 
+    // ── Fix #1: cerrar el modal después de guardar exitosamente ──
+    // (en modo 'save' del modal, el usuario espera que el modal se cierre solo).
+    // No cerramos en modo 'list' porque ahí no se debería ni mostrar el botón.
+    setTimeout(() => closeDesignsModal(), 400);
+
   } catch (e) {
     toast('❌ ' + (e.message || 'Error guardando'), 'error');
   } finally {
@@ -6937,7 +6984,12 @@ function renderDesignsList(data) {
     filteredOut = before - visible.length;
   }
 
-  limit.textContent = `${count} / ${data.limit} diseños (plan ${plan?.toUpperCase() || 'FREE'})`;
+  // ── Fix #2: el backend no siempre devuelve `limit` → mostrar undefined.
+  // Hacemos un mapeo defensivo por plan, y si el backend lo manda usamos el suyo.
+  const _DESIGN_LIMITS_BY_PLAN = { free: 5, basic: 20, pro: 100, premium: 500, 'premium+': 1000 };
+  const _planKey = (plan || 'free').toLowerCase();
+  const _planLimit = data.limit ?? _DESIGN_LIMITS_BY_PLAN[_planKey] ?? '∞';
+  limit.textContent = `${count} / ${_planLimit} diseños (plan ${plan?.toUpperCase() || 'FREE'})`;
 
   if (!visible.length) {
     if (filteredOut > 0) {
