@@ -2459,6 +2459,12 @@ function handleTouchEnd(e) {
 }
 
 function handleCanvasDblClick(e) {
+  // ── DESHABILITADO (opción A confirmada por usuario):
+  // Antes: doble clic en zona vacía del canvas creaba un cuadro de texto nuevo.
+  // Era molesto cuando solo querías editar bloques existentes. Ahora no hace nada.
+  // Para añadir texto nuevo, usa el botón "T+" del lateral del canvas.
+  return;
+  /* CÓDIGO ORIGINAL DESHABILITADO:
   if (e.target.closest('.eblock')) return;
   const wrap  = document.getElementById('canvasWrap');
   const wRect = wrap.getBoundingClientRect();
@@ -2467,6 +2473,7 @@ function handleCanvasDblClick(e) {
   const block = addTextBlock('Texto', { x: Math.max(5,x-40), y: Math.max(5,y-5), w:80, fontSize:36 });
   const ta = block?.querySelector('.eblock-text');
   if (ta) { setTimeout(() => { ta.focus(); selectAll(ta); }, 50); }
+  */
 }
 
 function selectAll(el) {
@@ -3480,6 +3487,9 @@ function renderCarouselContentPanel(container) {
   // Para mejorar slides individuales, está pendiente el Bloque B2 (Copiloto del Slide con 3 modes:
   // slide_title, slide_content, slide_full). Por ahora: regenerar contenido completo desde Regenerar.
 
+  // ── B2 v2: log para diagnosticar si esta versión está corriendo ──
+  console.log('[B2] renderCarouselPanel — versión con botones ✨ Mejorar por slide');
+
   // Slide cards
   slides_data.forEach((s, i) => {
     const color = roleColors[s.role] || '#8B5FBF';
@@ -3492,8 +3502,9 @@ function renderCarouselContentPanel(container) {
         '<span style="font-size:12px;font-weight:700;color:' + color + ';">Slide ' + (i+1) + '</span>' +
         '<span class="slide-role-badge" style="background:' + color + '22;color:' + color + ';">' + label + '</span>' +
         // ── B2: Botón Copiloto del slide individual ──
-        '<button class="slide-cop-btn" data-slide-idx="' + i + '" title="Mejorar este slide con IA" ' +
-        'style="margin-left:auto;padding:3px 8px;border-radius:5px;background:' + color + '22;border:1px solid ' + color + '44;color:' + color + ';font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;">✨</button>' +
+        // v2: más visible (color sólido + texto "Mejorar" + más padding) para que no pase desapercibido
+        '<button class="slide-cop-btn" data-slide-idx="' + i + '" title="Mejorar este slide con IA (sin coste)" ' +
+        'style="margin-left:auto;padding:5px 10px;border-radius:6px;background:' + color + ';border:none;color:#fff;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px;box-shadow:0 1px 4px ' + color + '55;">✨ Mejorar</button>' +
       '</div>' +
       '<div class="slide-card2-body">' +
         (s.title   ? '<strong style="color:' + (_isSlideSchema(s.title) ? '#EF4444' : 'var(--text)') + ';font-size:12px;">' + (_isSlideSchema(s.title) ? '⚠️ ' : '') + escHtml(_cleanSlideTitle(s.title)) + '</strong>' : '') +
@@ -3513,18 +3524,25 @@ function renderCarouselContentPanel(container) {
         '<div class="slide-cop-result" id="slideCopResult_' + i + '" style="display:none;margin-top:8px;padding:8px;background:var(--surf);border-radius:6px;border:1px solid var(--border2);font-size:11px;color:var(--text2);line-height:1.5;"></div>' +
       '</div>';
     card.onclick = (e) => {
-      // Si clicó el botón ✨ → toggle panel, NO aplicar al canvas
-      if (e.target.classList.contains('slide-cop-btn')) {
+      // Si clicó el botón ✨ (o cualquier hijo suyo) → toggle panel, NO aplicar al canvas
+      const btn = e.target.closest('.slide-cop-btn');
+      if (btn) {
         e.stopPropagation();
         const panel = document.getElementById('slideCopPanel_' + i);
         if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
         return;
       }
       // Si clicó una acción del copiloto → ejecutar modo
-      if (e.target.classList.contains('slide-cop-action')) {
+      const actBtn = e.target.closest('.slide-cop-action');
+      if (actBtn) {
         e.stopPropagation();
-        const mode = e.target.getAttribute('data-mode');
-        _runSlideCopilot(i, s, mode, e.target);
+        const mode = actBtn.getAttribute('data-mode');
+        _runSlideCopilot(i, s, mode, actBtn);
+        return;
+      }
+      // Si clicó dentro del panel del copiloto → no hacer nada
+      if (e.target.closest('.slide-cop-panel')) {
+        e.stopPropagation();
         return;
       }
       // Click en la card → aplicar al canvas (comportamiento original)
