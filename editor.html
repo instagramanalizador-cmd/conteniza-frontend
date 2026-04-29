@@ -3692,9 +3692,11 @@ function renderStoryContentPanel(container) {
       canvasText = first.replace(/^🎚\s*/, '').replace(/^SLIDER\s*:\s*/i, '').trim();
       const emoji  = (parts.find(p => /^EMOJI:/i.test(p)) || '').replace(/^EMOJI:\s*/i,'').trim();
       const obj    = (parts.find(p => /OBJETIVO:|MIDE:/i.test(p)) || '').replace(/.*OBJETIVO:\s*|.*MIDE:\s*/i,'').trim();
+      // Solo el emoji va al sticker en Instagram. El "objetivo" es metadata de
+      // marketing — no debe mostrarse como instrucción al usuario final.
       stickerText = emoji
-        ? 'Slider ' + emoji + (obj ? '\n→ ' + obj : '')
-        : (obj || 'Arrastra el slider');
+        ? 'Emoji del slider: ' + emoji
+        : 'Elige un emoji para el slider (ej: 😱, ❤️, 😂)';
       fondo = (parts.find(p => /FONDO:/i.test(p)) || '').replace(/.*FONDO:\s*/i,'').trim();
 
     } else {
@@ -3708,12 +3710,27 @@ function renderStoryContentPanel(container) {
 
   // ── Story cards ──
   const storyTypeColors = {
-    'ENCUESTA':       '#8B5FBF',
+    'ENCUESTA':         '#8B5FBF',
+    'QUIZ':             '#A855F7',
     'PREGUNTA ABIERTA': '#0EA5E9',
     'DATO IMPACTANTE':  '#F43F5E',
     'TIP GUARDABLE':    '#10B981',
     'CTA DM':           '#F59E0B',
+    'REVEAL':           '#EC4899',
+    'SLIDER':           '#06B6D4',
     'IDEA':             '#6366F1',
+  };
+
+  // ── Instrucciones de uso para Instagram (qué hacer con cada tipo) ──
+  const igInstructions = {
+    'ENCUESTA':         '👉 Aplica el texto al canvas. En Instagram, añade el sticker «Encuesta» con las opciones de abajo.',
+    'QUIZ':             '👉 Aplica el texto al canvas. En Instagram, añade el sticker «Cuestionario» con la pregunta y marca la respuesta correcta.',
+    'PREGUNTA ABIERTA': '👉 Aplica el texto al canvas. En Instagram, añade el sticker «Preguntas» encima.',
+    'DATO IMPACTANTE':  '👉 Aplica el texto al canvas. En Instagram, añade el sticker «Deslizador» con un emoji para que la gente reaccione.',
+    'TIP GUARDABLE':    '👉 Aplica el texto al canvas. Recuérdale a la audiencia que guarde la story.',
+    'CTA DM':           '👉 Aplica el texto al canvas. La gente debe escribirte la palabra clave por DM para recibir el material.',
+    'REVEAL':           '👉 Aplica el texto al canvas. Comparte la story y responde por DM cuando alguien escriba la keyword.',
+    'SLIDER':           '👉 Aplica el texto al canvas. En Instagram, añade el sticker «Deslizador» con el emoji indicado.',
   };
 
   if (stories.length) {
@@ -3735,6 +3752,15 @@ function renderStoryContentPanel(container) {
           (fondo ? '<div style="font-size:9px;color:var(--text3);">🎨 ' + fondo + '</div>' : '') +
         '</div>';
       card.appendChild(hdr);
+
+      // ── Instrucción de uso para Instagram (qué hacer con esta idea) ──
+      const instr = igInstructions[tipo];
+      if (instr) {
+        const instrEl = document.createElement('div');
+        instrEl.style.cssText = 'padding:8px 12px;background:' + color + '0d;border-bottom:1px solid var(--border);font-size:10px;line-height:1.5;color:var(--text2);';
+        instrEl.textContent = instr;
+        card.appendChild(instrEl);
+      }
 
       // ── Canvas text section ──
       const canvasSec = document.createElement('div');
@@ -3774,11 +3800,14 @@ function renderStoryContentPanel(container) {
         stickerLbl.style.cssText = 'font-size:9px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;';
         // Label depends on type
         const stickerLabels = {
-          'ENCUESTA': '📊 OPCIONES PARA EL STICKER DE ENCUESTA',
+          'ENCUESTA':         '📊 OPCIONES PARA EL STICKER DE ENCUESTA',
+          'QUIZ':             '❓ RESPUESTA DEL QUIZ',
           'PREGUNTA ABIERTA': '💬 TEXTO PARA STICKER DE PREGUNTA',
-          'DATO IMPACTANTE': '😱 TEXTO PARA SLIDER DE EMOJI',
-          'TIP GUARDABLE': '💾 LLAMADA A GUARDAR',
-          'CTA DM': '📩 TEXTO PARA STICKER DE DM',
+          'DATO IMPACTANTE':  '😱 TEXTO PARA SLIDER DE EMOJI',
+          'TIP GUARDABLE':    '💾 LLAMADA A GUARDAR',
+          'CTA DM':           '📩 TEXTO PARA STICKER DE DM',
+          'REVEAL':           '🔓 KEYWORD PARA EL DM',
+          'SLIDER':           '🎚 EMOJI Y OBJETIVO DEL SLIDER',
         };
         stickerLbl.textContent = stickerLabels[tipo] || '📋 TEXTO PARA STICKER';
         const stickerTxt = document.createElement('div');
@@ -5597,6 +5626,12 @@ async function showIgPreview() {
   // Save current slide before starting preview loop
   saveCurrentBlocks();
 
+  // ── BUG FIX: deseleccionar bloque activo ──
+  // Sin esto, los bloques con texto/imagen seleccionados aparecen con sus handles
+  // (cuadrados de redimensionado) en la vista previa Instagram. Mismo fix que ya
+  // hicimos en exportPNG/exportCarouselZip/exportCarouselPDF.
+  if (typeof deselectBlock === 'function') deselectBlock();
+
   // Render all slides to images
   _igPrevSlides = [];
   const wrap  = document.getElementById('canvasWrap');
@@ -6296,6 +6331,8 @@ function applySlidesData(data, format) {
 // Capture a preview PNG as base64 (current slide only, small size)
 async function capturePreview() {
   try {
+    // Sin esto, la miniatura del diseño guardado puede mostrar handles de selección
+    if (typeof deselectBlock === 'function') deselectBlock();
     const wrap  = document.getElementById('canvasWrap');
     const scale = parseFloat(wrap.dataset.scale) || 1;
     const c = await html2canvas(wrap, {
