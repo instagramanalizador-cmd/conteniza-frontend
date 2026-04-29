@@ -201,7 +201,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 }
 .props-bar::-webkit-scrollbar{display:none;}
 .prop-group{display:flex;align-items:center;gap:6px;flex-shrink:0;}
-.prop-sep{width:1px;height:24px;background:var(--border2);flex-shrink:0;}
+.prop-sep{width:1px;height:28px;background:linear-gradient(to bottom,transparent,var(--border2) 20%,var(--border2) 80%,transparent);flex-shrink:0;margin:0 4px;}
 .prop-btn{
   display:flex;align-items:center;justify-content:center;
   width:32px;height:32px;border-radius:var(--r);border:1px solid var(--border2);
@@ -216,7 +216,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 .prop-select{min-width:100px;}
 .prop-input{width:58px;text-align:center;}
 .prop-color{width:32px;height:32px;border-radius:var(--r);border:1px solid var(--border2);cursor:pointer;padding:2px;}
-.prop-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;flex-shrink:0;}
+.prop-label{font-size:9px;font-weight:800;color:var(--text2);text-transform:uppercase;flex-shrink:0;letter-spacing:.04em;margin-right:2px;}
 
 /* ── IA PANEL ── */
 .caption-zone{
@@ -736,9 +736,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 .prop-opacity-wrap{display:flex;align-items:center;gap:4px;flex-shrink:0;}
 .prop-opacity-slider{width:60px;accent-color:var(--brand);}
 
-/* Layer buttons */
-.prop-layer-wrap{display:flex;gap:3px;flex-shrink:0;}
-
 /* Text gradient — clip trick */
 .grad-btn{
   width:22px;height:22px;border-radius:4px;border:1.5px solid var(--border2);
@@ -1055,6 +1052,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 
     <!-- Properties bar (shows when block selected) -->
     <div class="props-bar" id="propsBar">
+
+      <!-- ═══ TIPOGRAFÍA ═══ -->
       <div class="prop-group">
         <span class="prop-label">Fuente</span>
         <select class="prop-select" id="propFont" onchange="applyPropFont()" style="max-height:160px;">
@@ -1093,93 +1092,115 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
           </optgroup>
         </select>
       </div>
-      <div class="prop-sep"></div>
+
       <div class="prop-group">
         <span class="prop-label">Tamaño</span>
-        <button class="prop-btn" onclick="changeFontSize(-2)">−</button>
+        <button class="prop-btn" onclick="changeFontSize(-2)" title="Reducir tamaño">−</button>
         <input class="prop-input" id="propSize" type="number" value="36" min="8" max="200" onchange="applyPropSize()">
-        <button class="prop-btn" onclick="changeFontSize(2)">+</button>
+        <button class="prop-btn" onclick="changeFontSize(2)" title="Aumentar tamaño">+</button>
       </div>
-      <div class="prop-sep"></div>
+
       <div class="prop-group">
-        <button class="prop-btn" id="propBold"   onclick="toggleProp('bold')"      title="Negrita"><b>B</b></button>
-        <button class="prop-btn" id="propItalic" onclick="toggleProp('italic')"    title="Cursiva"><i>I</i></button>
-        <button class="prop-btn" id="propUnder"  onclick="toggleProp('underline')" title="Subrayado"><u>U</u></button>
+        <button class="prop-btn" id="propBold"   onclick="toggleProp('bold')"      title="Negrita (Ctrl+B)"><b>B</b></button>
+        <button class="prop-btn" id="propItalic" onclick="toggleProp('italic')"    title="Cursiva (Ctrl+I)"><i>I</i></button>
+        <button class="prop-btn" id="propUnder"  onclick="toggleProp('underline')" title="Subrayado (Ctrl+U)"><u>U</u></button>
       </div>
+
       <div class="prop-sep"></div>
+
+      <!-- ═══ ALINEACIÓN DE TEXTO ═══ -->
       <div class="prop-group">
-        <button class="prop-btn" onclick="applyAlign('left')"   title="Izquierda">⬅</button>
-        <button class="prop-btn" onclick="applyAlign('center')" title="Centro">⬛</button>
-        <button class="prop-btn" onclick="applyAlign('right')"  title="Derecha">➡</button>
+        <span class="prop-label">Alinear texto</span>
       </div>
+      <div class="prop-group">
+        <button class="prop-btn" onclick="applyAlign('left')"   title="Alinear texto a la izquierda">≡<sub style="font-size:8px;">←</sub></button>
+        <button class="prop-btn" onclick="applyAlign('center')" title="Alinear texto al centro">≡<sub style="font-size:8px;">↔</sub></button>
+        <button class="prop-btn" onclick="applyAlign('right')"  title="Alinear texto a la derecha">≡<sub style="font-size:8px;">→</sub></button>
+      </div>
+
       <div class="prop-sep"></div>
+
+      <!-- ═══ APARIENCIA ═══ -->
       <div class="prop-group">
         <span class="prop-label">Texto</span>
-        <input type="color" class="prop-color" id="propColor" value="#ffffff" oninput="applyPropColor()">
+        <input type="color" class="prop-color" id="propColor" value="#ffffff" oninput="applyPropColor()" title="Color del texto">
       </div>
       <div class="prop-group">
         <span class="prop-label">Fondo</span>
-        <input type="color" class="prop-color" id="propBgColor" value="#000000" oninput="applyBlockBg()">
-        <button class="prop-btn" onclick="clearBlockBg()" title="Sin fondo" style="font-size:10px;">∅</button>
+        <input type="color" class="prop-color" id="propBgColor" value="#000000" oninput="applyBlockBg()" title="Color de fondo del bloque">
+        <button class="prop-btn" onclick="clearBlockBg()" title="Sin fondo" style="font-size:11px;">∅</button>
       </div>
-      <div class="prop-sep"></div>
-      <div class="prop-sep"></div>
+
       <div class="prop-group prop-opacity-wrap">
         <span class="prop-label">Opac.</span>
-        <input type="range" class="prop-opacity-slider" id="propOpacity" min="10" max="100" value="100" oninput="applyPropOpacity()">
+        <input type="range" class="prop-opacity-slider" id="propOpacity" min="10" max="100" value="100" oninput="applyPropOpacity()" title="Opacidad del bloque">
         <span style="font-size:10px;color:var(--text3);min-width:24px;" id="propOpacityVal">100%</span>
       </div>
-      <div class="prop-sep"></div>
+
       <div class="prop-group shadow-picker">
         <span class="prop-label">Sombra</span>
         <div class="shadow-preset active" id="shNone"  onclick="applyShadow('none')"   title="Sin sombra">∅</div>
-        <div class="shadow-preset"        id="shSoft"  onclick="applyShadow('soft')"   title="Suave">S</div>
-        <div class="shadow-preset"        id="shHard"  onclick="applyShadow('hard')"   title="Dura">H</div>
+        <div class="shadow-preset"        id="shSoft"  onclick="applyShadow('soft')"   title="Sombra suave">☁</div>
+        <div class="shadow-preset"        id="shHard"  onclick="applyShadow('hard')"   title="Sombra dura">▣</div>
         <div class="shadow-preset"        id="shGlow"  onclick="applyShadow('glow')"   title="Brillo">✦</div>
-        <div class="shadow-preset"        id="shOutline" onclick="applyShadow('outline')" title="Contorno">O</div>
+        <div class="shadow-preset"        id="shOutline" onclick="applyShadow('outline')" title="Contorno">⬜</div>
       </div>
+
       <div class="prop-sep"></div>
-      <div class="prop-group prop-layer-wrap">
-        <button class="prop-btn" onclick="bringForward()" title="Subir capa — mueve el elemento por encima del que está delante">↑ Capa</button>
-        <button class="prop-btn" onclick="sendBackward()" title="Bajar capa — mueve el elemento por detrás del que está detrás">↓ Capa</button>
-      </div>
-      <div class="prop-sep"></div>
+
+      <!-- ═══ POSICIÓN Y CAPAS ═══ -->
       <div class="prop-group">
-        <button class="prop-btn" onclick="alignBlock('hcenter')" title="Centrar horizontal">⬛H</button>
-        <button class="prop-btn" onclick="alignBlock('vcenter')" title="Centrar vertical">⬛V</button>
-        <button class="prop-btn" onclick="alignBlock('left')"   title="Izquierda">|←</button>
-        <button class="prop-btn" onclick="alignBlock('right')"  title="Derecha">→|</button>
+        <span class="prop-label">Posición</span>
       </div>
-      <div class="prop-sep"></div>
       <div class="prop-group">
-        <span class="prop-label">Esp.</span>
-        <button class="prop-btn" onclick="changeLetterSpacing(-1)" title="Menos espaciado">←→</button>
+        <button class="prop-btn" onclick="alignBlock('hcenter')" title="Centrar horizontalmente en el canvas">⇔</button>
+        <button class="prop-btn" onclick="alignBlock('vcenter')" title="Centrar verticalmente en el canvas">⇕</button>
+        <button class="prop-btn" onclick="alignBlock('left')"   title="Pegar a la izquierda">|⇠</button>
+        <button class="prop-btn" onclick="alignBlock('right')"  title="Pegar a la derecha">⇢|</button>
+      </div>
+
+      <div class="prop-group">
+        <button class="prop-btn" onclick="bringForward()" title="Subir capa — mover por encima">⬆</button>
+        <button class="prop-btn" onclick="sendBackward()" title="Bajar capa — mover por debajo">⬇</button>
+      </div>
+
+      <div class="prop-sep"></div>
+
+      <!-- ═══ ESPACIADO ═══ -->
+      <div class="prop-group">
+        <span class="prop-label">Esp. letras</span>
+        <button class="prop-btn" onclick="changeLetterSpacing(-1)" title="Reducir espaciado entre letras">−</button>
         <input class="prop-input" id="propSpacing" type="number" value="0" min="-5" max="30" style="width:44px;" onchange="applyLetterSpacing()">
-        <button class="prop-btn" onclick="changeLetterSpacing(1)" title="Más espaciado">↔</button>
+        <button class="prop-btn" onclick="changeLetterSpacing(1)" title="Aumentar espaciado entre letras">+</button>
       </div>
-      <div class="prop-sep"></div>
       <div class="prop-group">
-        <span class="prop-label">Alto</span>
-        <button class="prop-btn" onclick="changeLineHeight(-0.1)" title="Menos alto">↕−</button>
+        <span class="prop-label">Alto línea</span>
+        <button class="prop-btn" onclick="changeLineHeight(-0.1)" title="Reducir alto de línea">−</button>
         <input class="prop-input" id="propLineHeight" type="number" value="1.3" min="0.8" max="3" step="0.1" style="width:44px;" onchange="applyLineHeight()">
-        <button class="prop-btn" onclick="changeLineHeight(0.1)" title="Más alto">↕+</button>
+        <button class="prop-btn" onclick="changeLineHeight(0.1)" title="Aumentar alto de línea">+</button>
       </div>
+
       <div class="prop-sep"></div>
-      <div class="prop-sep"></div>
+
+      <!-- ═══ EFECTOS ═══ -->
       <div class="prop-group">
-        <span class="prop-label">Grad</span>
+        <span class="prop-label">Gradiente</span>
         <div class="grad-btn" style="background:linear-gradient(135deg,#fff,#aaa);"       onclick="applyTextGradient('#ffffff','#aaaaaa')" title="Blanco a gris"></div>
         <div class="grad-btn" style="background:linear-gradient(135deg,#f59e0b,#ef4444);" onclick="applyTextGradient('#f59e0b','#ef4444')" title="Fuego"></div>
-        <div class="grad-btn" style="background:linear-gradient(135deg,#7c3aed,#e91e8c);" onclick="applyTextGradient('#7c3aed','#e91e8c')" title="Brand"></div>
-        <div class="grad-btn" style="background:linear-gradient(135deg,#06b6d4,#3b82f6);" onclick="applyTextGradient('#06b6d4','#3b82f6')" title="Ocean"></div>
-        <div class="grad-btn" style="background:linear-gradient(135deg,#10b981,#06b6d4);" onclick="applyTextGradient('#10b981','#06b6d4')" title="Mint"></div>
+        <div class="grad-btn" style="background:linear-gradient(135deg,#7c3aed,#e91e8c);" onclick="applyTextGradient('#7c3aed','#e91e8c')" title="Marca Conteniza"></div>
+        <div class="grad-btn" style="background:linear-gradient(135deg,#06b6d4,#3b82f6);" onclick="applyTextGradient('#06b6d4','#3b82f6')" title="Océano"></div>
+        <div class="grad-btn" style="background:linear-gradient(135deg,#10b981,#06b6d4);" onclick="applyTextGradient('#10b981','#06b6d4')" title="Menta"></div>
       </div>
+
       <div class="prop-sep"></div>
+
+      <!-- ═══ ACCIONES ═══ -->
       <div class="prop-group">
-        <button class="prop-btn" onclick="toggleGrid()" id="gridBtn" title="Cuadrícula — guía visual para alinear bloques">⊞</button>
-        <button class="prop-btn" onclick="duplicateBlock()" title="Duplicar (Ctrl+D)">⧉</button>
-        <button class="prop-btn" onclick="deleteSelectedBlock()" title="Borrar" style="color:var(--danger);">🗑</button>
+        <button class="prop-btn" onclick="toggleGrid()" id="gridBtn" title="Activar cuadrícula — guía visual para alinear bloques">⊞</button>
+        <button class="prop-btn" onclick="duplicateBlock()" title="Duplicar bloque (Ctrl+D)">⧉</button>
+        <button class="prop-btn" onclick="deleteSelectedBlock()" title="Borrar bloque (Supr)" style="color:var(--danger);">🗑</button>
       </div>
+
     </div>
 
   </div><!-- /canvas-area -->
