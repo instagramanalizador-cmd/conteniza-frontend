@@ -3,8 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>✦ Conteniza — Editor</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>" type="image/svg+xml">
+<title>Conteniza — Editor</title>
+
+<!-- Favicon + Apple touch icon (logo real Conteniza) -->
+<link rel="icon" type="image/jpeg" href="https://pub-da9915580c9244c6b6b7808979bce9e9.r2.dev/logo_conteniza2.jpg">
+<link rel="apple-touch-icon" href="https://pub-da9915580c9244c6b6b7808979bce9e9.r2.dev/logo_conteniza2.jpg">
+
+<!-- Open Graph (compartir el editor públicamente es raro pero por consistencia) -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Conteniza — Editor de contenido para Instagram">
+<meta property="og:description" content="Edita y exporta posts y carruseles educativos para Instagram con el editor visual de Conteniza.">
+<meta property="og:image" content="https://pub-da9915580c9244c6b6b7808979bce9e9.r2.dev/logo_conteniza2.jpg">
+<meta property="og:locale" content="es_ES">
+<meta property="og:site_name" content="Conteniza">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -908,8 +919,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 <!-- ══ TOPBAR ══ -->
 <div class="topbar">
   <!-- Logo + Inicio -->
-  <div class="tb-brand">
-    <span class="tb-logo-text" onclick="goBack()" title="Volver al inicio">✦ Conteniza</span>
+  <div class="tb-brand" style="display:flex;align-items:center;gap:8px;">
+    <img src="https://pub-da9915580c9244c6b6b7808979bce9e9.r2.dev/logo_conteniza2.jpg"
+         alt="Conteniza"
+         onclick="goBack()"
+         style="width:28px;height:28px;border-radius:6px;object-fit:cover;flex-shrink:0;cursor:pointer;display:block;"
+         title="Volver al inicio"
+         onerror="this.style.display='none'">
+    <span class="tb-logo-text" onclick="goBack()" title="Volver al inicio">Conteniza</span>
   </div>
   <button class="tb-btn tb-back" onclick="goBack()" title="Volver al inicio">← Inicio</button>
 

@@ -4,7 +4,12 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🛡️ Panel de Administración - Conteniza</title>
+  <title>Panel de Administración — Conteniza</title>
+
+  <!-- Favicon + Apple touch icon (logo real Conteniza) -->
+  <link rel="icon" type="image/jpeg" href="https://pub-da9915580c9244c6b6b7808979bce9e9.r2.dev/logo_conteniza2.jpg">
+  <link rel="apple-touch-icon" href="https://pub-da9915580c9244c6b6b7808979bce9e9.r2.dev/logo_conteniza2.jpg">
+
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
@@ -346,9 +351,15 @@ tbody tr:hover {
   <div class="container">
 <!-- Header -->
 <div class="header">
-  <div>
-    <h1>🛡️ Panel de Administración</h1>
-    <p id="adminEmail" style="color: rgba(255,255,255,0.7); font-size: 14px; margin-top: 4px;"></p>
+  <div style="display:flex;align-items:center;gap:14px;">
+    <img src="https://pub-da9915580c9244c6b6b7808979bce9e9.r2.dev/logo_conteniza2.jpg"
+         alt="Conteniza"
+         style="width:48px;height:48px;border-radius:10px;object-fit:cover;flex-shrink:0;display:block;"
+         onerror="this.style.display='none'">
+    <div>
+      <h1 style="margin:0;">🛡️ Panel de Administración</h1>
+      <p id="adminEmail" style="color: rgba(255,255,255,0.7); font-size: 14px; margin-top: 4px;"></p>
+    </div>
   </div>
   <div style="display: flex; gap: 12px; flex-wrap: wrap;">
     <button onclick="exportData()" class="btn btn-success">
@@ -449,6 +460,100 @@ tbody tr:hover {
         </div>
       </div>
     </div>
+
+    <!-- ═══════════════ BLOQUE C — STATS ADMIN MEJORADO ═══════════════ -->
+    <!-- Estas cards consumen el endpoint /admin/stats existente.
+         Si el backend aún no devuelve estos campos, se mostrarán "—".
+         Al implementar el endpoint, basta con devolver los campos descritos
+         en BACKEND_REQUIREMENTS_BLOQUE_C.md y todo se llena automáticamente. -->
+
+    <!-- 💰 Revenue & MRR -->
+    <div class="card">
+      <h2 style="color: var(--primary); margin-bottom: 20px;">💰 Revenue & Suscripciones</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;">
+        <div style="padding:18px;background:linear-gradient(135deg,#10b98115,#0ea5e915);border-radius:12px;border:1px solid #10b98130;">
+          <div style="font-size:11px;color:#10b981;font-weight:800;text-transform:uppercase;letter-spacing:.06em;">MRR Mensual</div>
+          <div style="font-size:30px;font-weight:900;color:#10b981;line-height:1;margin-top:6px;">€<span id="adm-mrr">—</span></div>
+          <div style="font-size:11px;color:#718096;margin-top:4px;">Recurrente predecible</div>
+        </div>
+        <div style="padding:18px;background:linear-gradient(135deg,#8b5fbf15,#f43f5e15);border-radius:12px;border:1px solid #8b5fbf30;">
+          <div style="font-size:11px;color:#8b5fbf;font-weight:800;text-transform:uppercase;letter-spacing:.06em;">ARR Anual</div>
+          <div style="font-size:30px;font-weight:900;color:#8b5fbf;line-height:1;margin-top:6px;">€<span id="adm-arr">—</span></div>
+          <div style="font-size:11px;color:#718096;margin-top:4px;">MRR × 12</div>
+        </div>
+        <div style="padding:18px;background:#f3f4f6;border-radius:12px;">
+          <div style="font-size:11px;color:#718096;font-weight:800;text-transform:uppercase;letter-spacing:.06em;">€/usuario</div>
+          <div style="font-size:30px;font-weight:900;color:#1a1a2e;line-height:1;margin-top:6px;">€<span id="adm-arpu">—</span></div>
+          <div style="font-size:11px;color:#718096;margin-top:4px;">ARPU promedio</div>
+        </div>
+        <div style="padding:18px;background:#f3f4f6;border-radius:12px;">
+          <div style="font-size:11px;color:#ef4444;font-weight:800;text-transform:uppercase;letter-spacing:.06em;">Bajas mes</div>
+          <div style="font-size:30px;font-weight:900;color:#ef4444;line-height:1;margin-top:6px;"><span id="adm-cancellations">—</span></div>
+          <div style="font-size:11px;color:#718096;margin-top:4px;">Cancelaciones este mes</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 📈 Conversiones & Funnel -->
+    <div class="card">
+      <h2 style="color: var(--primary); margin-bottom: 20px;">📈 Conversiones del funnel</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;">
+        <div style="padding:18px;background:#f3f4f6;border-radius:12px;text-align:center;">
+          <div style="font-size:11px;color:#718096;font-weight:800;text-transform:uppercase;letter-spacing:.06em;">Free → Pro</div>
+          <div style="font-size:32px;font-weight:900;color:#10b981;line-height:1;margin-top:8px;"><span id="adm-conv-free-pro">—</span>%</div>
+          <div style="font-size:11px;color:#718096;margin-top:4px;">Tasa de conversión</div>
+        </div>
+        <div style="padding:18px;background:#f3f4f6;border-radius:12px;text-align:center;">
+          <div style="font-size:11px;color:#718096;font-weight:800;text-transform:uppercase;letter-spacing:.06em;">Pro → Premium</div>
+          <div style="font-size:32px;font-weight:900;color:#f59e0b;line-height:1;margin-top:8px;"><span id="adm-conv-pro-premium">—</span>%</div>
+          <div style="font-size:11px;color:#718096;margin-top:4px;">Upgrade superior</div>
+        </div>
+        <div style="padding:18px;background:#f3f4f6;border-radius:12px;text-align:center;">
+          <div style="font-size:11px;color:#718096;font-weight:800;text-transform:uppercase;letter-spacing:.06em;">Activos hoy</div>
+          <div style="font-size:32px;font-weight:900;color:#3b82f6;line-height:1;margin-top:8px;"><span id="adm-active-today">—</span></div>
+          <div style="font-size:11px;color:#718096;margin-top:4px;">Generaron contenido hoy</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🎯 Nichos top + Formato -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:20px;">
+      <div class="card" style="margin-bottom:0;">
+        <h2 style="color: var(--primary); margin-bottom: 16px;">🎯 Top Nichos</h2>
+        <div id="adm-niches-list" style="display:flex;flex-direction:column;gap:8px;">
+          <div style="color:#718096;font-size:13px;">⏳ Cargando…</div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:0;">
+        <h2 style="color: var(--primary); margin-bottom: 16px;">📊 Formatos generados</h2>
+        <div id="adm-formats-list" style="display:flex;flex-direction:column;gap:8px;">
+          <div style="color:#718096;font-size:13px;">⏳ Cargando…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ⚡ Sistema & Errores -->
+    <div class="card">
+      <h2 style="color: var(--primary); margin-bottom: 20px;">⚡ Sistema & Errores</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;">
+        <div style="padding:14px;background:#fef3c7;border-radius:10px;border:1px solid #f59e0b30;">
+          <div style="font-size:10px;color:#92400e;font-weight:800;text-transform:uppercase;letter-spacing:.06em;">Saturación Groq hoy</div>
+          <div style="font-size:24px;font-weight:900;color:#92400e;line-height:1;margin-top:4px;"><span id="adm-groq-saturations">—</span></div>
+          <div style="font-size:10px;color:#92400e;opacity:.7;margin-top:2px;">Veces que cayó al fallback</div>
+        </div>
+        <div style="padding:14px;background:#fee2e2;border-radius:10px;border:1px solid #ef444430;">
+          <div style="font-size:10px;color:#991b1b;font-weight:800;text-transform:uppercase;letter-spacing:.06em;">Errores 503 hoy</div>
+          <div style="font-size:24px;font-weight:900;color:#991b1b;line-height:1;margin-top:4px;"><span id="adm-errors-503">—</span></div>
+          <div style="font-size:10px;color:#991b1b;opacity:.7;margin-top:2px;">Servicio no disponible</div>
+        </div>
+        <div style="padding:14px;background:#dcfce7;border-radius:10px;border:1px solid #10b98130;">
+          <div style="font-size:10px;color:#166534;font-weight:800;text-transform:uppercase;letter-spacing:.06em;">Uptime</div>
+          <div style="font-size:24px;font-weight:900;color:#166534;line-height:1;margin-top:4px;"><span id="adm-uptime">—</span>%</div>
+          <div style="font-size:10px;color:#166534;opacity:.7;margin-top:2px;">Disponibilidad del servicio</div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- TAB 2: Usuarios FREE -->
@@ -1097,16 +1202,116 @@ function renderStats(stats) {
   
   const todayUsers = allUsers.filter(u => {
     if (!u.created_at) return false;
-    
     const userDate = new Date(u.created_at);
     userDate.setHours(0, 0, 0, 0);
-    
     return userDate.getTime() === today.getTime();
   }).length;
   
   document.getElementById('stat-today').textContent = todayUsers;
-  
   console.log(`📊 Usuarios registrados hoy: ${todayUsers}`);
+
+  // ═══════════════ BLOQUE C — Stats admin mejoradas ═══════════════
+  // Si el endpoint backend devuelve estos campos, los pintamos. Si no, calculamos
+  // fallbacks razonables a partir de los datos que YA tenemos en allUsers.
+
+  // 1. Revenue & MRR
+  // Pricing por defecto (ajusta a tus precios reales en Stripe):
+  const PRICE = { free:0, pro:9.99, premium:29.99 };
+  const computedMRR = stats.mrr ?? (proCount * PRICE.pro + premiumCount * PRICE.premium);
+  const computedARR = stats.arr ?? (computedMRR * 12);
+  const totalPaying = proCount + premiumCount;
+  const computedARPU = stats.avgPerUser ?? (totalPaying > 0 ? (computedMRR / totalPaying) : 0);
+  document.getElementById('adm-mrr').textContent = computedMRR.toFixed(2);
+  document.getElementById('adm-arr').textContent = computedARR.toFixed(2);
+  document.getElementById('adm-arpu').textContent = computedARPU.toFixed(2);
+  document.getElementById('adm-cancellations').textContent = stats.cancellationsThisMonth ?? '—';
+
+  // 2. Conversiones
+  const convFreePro = stats.conversionFreeToPro ?? (allUsers.length > 0 ? Math.round((proCount / allUsers.length) * 100) : 0);
+  const convProPremium = stats.conversionProToPremium ?? (proCount > 0 ? Math.round((premiumCount / (proCount + premiumCount)) * 100) : 0);
+  document.getElementById('adm-conv-free-pro').textContent = convFreePro;
+  document.getElementById('adm-conv-pro-premium').textContent = convProPremium;
+  document.getElementById('adm-active-today').textContent = stats.activeToday ?? '—';
+
+  // 3. Top nichos
+  const nichesEl = document.getElementById('adm-niches-list');
+  if (nichesEl) {
+    const niches = stats.topNiches || [];
+    if (niches.length > 0) {
+      const maxCount = Math.max(...niches.map(n => n.count));
+      nichesEl.innerHTML = niches.slice(0, 6).map((n, i) => {
+        const pct = maxCount > 0 ? (n.count / maxCount) * 100 : 0;
+        return `
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="font-size:11px;font-weight:800;color:#718096;width:20px;">${i+1}.</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:600;color:#1a1a2e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${n.niche}</div>
+              <div style="height:5px;background:#f3f4f6;border-radius:99px;overflow:hidden;margin-top:4px;">
+                <div style="height:100%;background:linear-gradient(90deg,#8b5fbf,#f43f5e);width:${pct}%;"></div>
+              </div>
+            </div>
+            <div style="font-size:13px;font-weight:800;color:#8b5fbf;">${n.count}</div>
+          </div>
+        `;
+      }).join('');
+    } else {
+      // Fallback: usar nichos de allUsers si están disponibles
+      const nicheCount = {};
+      allUsers.forEach(u => { if (u.niche) nicheCount[u.niche] = (nicheCount[u.niche]||0) + 1; });
+      const sorted = Object.entries(nicheCount).sort((a,b) => b[1]-a[1]).slice(0, 6);
+      if (sorted.length > 0) {
+        const maxC = sorted[0][1];
+        nichesEl.innerHTML = sorted.map(([niche, c], i) => {
+          const pct = (c/maxC)*100;
+          return `
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="font-size:11px;font-weight:800;color:#718096;width:20px;">${i+1}.</div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13px;font-weight:600;color:#1a1a2e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${niche}</div>
+                <div style="height:5px;background:#f3f4f6;border-radius:99px;overflow:hidden;margin-top:4px;">
+                  <div style="height:100%;background:linear-gradient(90deg,#8b5fbf,#f43f5e);width:${pct}%;"></div>
+                </div>
+              </div>
+              <div style="font-size:13px;font-weight:800;color:#8b5fbf;">${c}</div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        nichesEl.innerHTML = '<div style="color:#718096;font-size:12px;text-align:center;padding:20px;">El backend aún no devuelve <code>topNiches</code> en /admin/stats. Implementa la query SQL del documento BACKEND_REQUIREMENTS_BLOQUE_C.md</div>';
+      }
+    }
+  }
+
+  // 4. Formatos
+  const fmtsEl = document.getElementById('adm-formats-list');
+  if (fmtsEl) {
+    const fmts = stats.byFormat || {};
+    const total = Object.values(fmts).reduce((a,b) => a+(b||0), 0);
+    if (total > 0) {
+      const FMT_LABELS = { post:'📸 Post', square:'⬜ 1:1', carousel:'🎠 Carrusel', story:'📱 Story', reel:'🎬 Reel' };
+      fmtsEl.innerHTML = Object.entries(fmts)
+        .sort((a,b) => b[1]-a[1])
+        .map(([fmt, c]) => {
+          const pct = total > 0 ? Math.round((c/total)*100) : 0;
+          return `
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="flex:1;font-size:13px;font-weight:600;color:#1a1a2e;">${FMT_LABELS[fmt] || fmt}</div>
+              <div style="flex:1;height:6px;background:#f3f4f6;border-radius:99px;overflow:hidden;">
+                <div style="height:100%;background:linear-gradient(90deg,#8b5fbf,#f43f5e);width:${pct}%;"></div>
+              </div>
+              <div style="font-size:13px;font-weight:800;color:#8b5fbf;min-width:50px;text-align:right;">${c} (${pct}%)</div>
+            </div>
+          `;
+        }).join('');
+    } else {
+      fmtsEl.innerHTML = '<div style="color:#718096;font-size:12px;text-align:center;padding:20px;">El backend aún no devuelve <code>byFormat</code> en /admin/stats.</div>';
+    }
+  }
+
+  // 5. Sistema
+  document.getElementById('adm-groq-saturations').textContent = stats.groqSaturationsToday ?? '—';
+  document.getElementById('adm-errors-503').textContent = stats.errors503Today ?? '—';
+  document.getElementById('adm-uptime').textContent = stats.uptimePercentage ?? '—';
 }
 let currentPlanFilter = 'all';
 

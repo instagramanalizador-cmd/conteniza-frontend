@@ -4,7 +4,29 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Conteniza — Posts y Carruseles educativos para Instagram con IA</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%237C3AED'/><stop offset='100%25' stop-color='%23E91E8C'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text y='.9em' font-size='70' text-anchor='middle' x='50' font-family='serif'>✦</text></svg>" type="image/svg+xml">
+
+  <!-- Favicon + Apple touch icon (logo real Conteniza) -->
+  <link rel="icon" type="image/jpeg" href="https://pub-da9915580c9244c6b6b7808979bce9e9.r2.dev/logo_conteniza2.jpg">
+  <link rel="apple-touch-icon" href="https://pub-da9915580c9244c6b6b7808979bce9e9.r2.dev/logo_conteniza2.jpg">
+
+  <!-- Open Graph tags (preview en WhatsApp, Twitter, LinkedIn, Facebook) -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://conteniza.com">
+  <meta property="og:title" content="Conteniza — Posts y Carruseles educativos para coaches">
+  <meta property="og:description" content="Crea posts y carruseles educativos para Instagram en 120 segundos con IA. El copiloto de contenido para coaches y educadores.">
+  <meta property="og:image" content="https://pub-da9915580c9244c6b6b7808979bce9e9.r2.dev/logo_conteniza2.jpg">
+  <meta property="og:locale" content="es_ES">
+  <meta property="og:site_name" content="Conteniza">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Conteniza — Posts y Carruseles educativos para coaches">
+  <meta name="twitter:description" content="Crea posts y carruseles educativos para Instagram en 120 segundos con IA.">
+  <meta name="twitter:image" content="https://pub-da9915580c9244c6b6b7808979bce9e9.r2.dev/logo_conteniza2.jpg">
+
+  <!-- Meta description (SEO) -->
+  <meta name="description" content="Conteniza — El copiloto de contenido para coaches y educadores. Crea posts y carruseles educativos para Instagram en 120 segundos con IA en español.">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Syne:wght@700;800&display=swap" rel="stylesheet">
@@ -462,9 +484,13 @@
 <!-- ═══ TOPBAR ═══ -->
 <header class="topbar" id="mainTopbar">
   <div class="topbar-inner">
-    <div class="topbar-brand" onclick="goHome()" title="Inicio">
+    <div class="topbar-brand" onclick="goHome()" title="Inicio" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+      <img src="https://pub-da9915580c9244c6b6b7808979bce9e9.r2.dev/logo_conteniza2.jpg"
+           alt="Conteniza"
+           style="width:32px;height:32px;border-radius:8px;object-fit:cover;flex-shrink:0;display:block;"
+           onerror="this.style.display='none'">
       <div>
-        <div class="topbar-name">✦ Conteniza</div>
+        <div class="topbar-name">Conteniza</div>
         <div class="topbar-tagline">Posts y Carruseles educativos · Coaches y Creadores</div>
       </div>
     </div>
@@ -478,8 +504,12 @@
 <div id="plansScreen">
   <div class="hero-bg">
     <div style="position:relative;">
-      <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#fff;margin-bottom:16px;letter-spacing:-.5px;">
-        ✦ Conteniza
+      <div style="display:flex;align-items:center;justify-content:center;gap:14px;font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#fff;margin-bottom:16px;letter-spacing:-.5px;">
+        <img src="https://pub-da9915580c9244c6b6b7808979bce9e9.r2.dev/logo_conteniza2.jpg"
+             alt="Conteniza"
+             style="width:44px;height:44px;border-radius:10px;object-fit:cover;display:block;"
+             onerror="this.style.display='none'">
+        <span>Conteniza</span>
       </div>
       <div class="hero-badge">✨ Posts y Carruseles educativos con IA</div>
       <h1 class="hero-title">El copiloto de contenido<br><span>para coaches y educadores</span></h1>
@@ -499,8 +529,12 @@
 <!-- ═══ AUTH SCREEN ═══ -->
 <div id="authScreen" class="hidden">
   <div class="auth-card">
-    <div class="auth-logo">
-      <div class="auth-logo-text">✦ Conteniza</div>
+    <div class="auth-logo" style="display:flex;align-items:center;justify-content:center;gap:10px;">
+      <img src="https://pub-da9915580c9244c6b6b7808979bce9e9.r2.dev/logo_conteniza2.jpg"
+           alt="Conteniza"
+           style="width:36px;height:36px;border-radius:8px;object-fit:cover;display:block;"
+           onerror="this.style.display='none'">
+      <div class="auth-logo-text">Conteniza</div>
     </div>
     <div class="auth-title" id="authTitle">Iniciar sesión</div>
     <div class="auth-sub" id="authSub">Bienvenido de vuelta</div>
@@ -546,7 +580,13 @@
 <!-- ═══ MAIN APP ═══ -->
 <div id="mainApp" class="hidden">
   <div style="text-align:center;padding:4px 0 6px;">
-    <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;background:var(--grad-brand);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:1px;">✦ Conteniza</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:1px;">
+      <img src="https://pub-da9915580c9244c6b6b7808979bce9e9.r2.dev/logo_conteniza2.jpg"
+           alt="Conteniza"
+           style="width:22px;height:22px;border-radius:5px;object-fit:cover;display:block;"
+           onerror="this.style.display='none'">
+      <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;background:var(--grad-brand);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Conteniza</div>
+    </div>
     <p style="font-size:11px;color:var(--text-3);">¿Qué contenido creamos hoy?</p>
   </div>
 
