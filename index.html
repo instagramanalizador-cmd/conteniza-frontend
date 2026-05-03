@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Conteniza — Crea contenido para Instagram con IA</title>
+  <title>Conteniza — Posts y Carruseles educativos para Instagram con IA</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%237C3AED'/><stop offset='100%25' stop-color='%23E91E8C'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text y='.9em' font-size='70' text-anchor='middle' x='50' font-family='serif'>✦</text></svg>" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -465,7 +465,7 @@
     <div class="topbar-brand" onclick="goHome()" title="Inicio">
       <div>
         <div class="topbar-name">✦ Conteniza</div>
-        <div class="topbar-tagline">Contenido para Instagram · Coaches y Creadores</div>
+        <div class="topbar-tagline">Posts y Carruseles educativos · Coaches y Creadores</div>
       </div>
     </div>
     <div class="topbar-actions" id="topbarActions">
@@ -481,9 +481,9 @@
       <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#fff;margin-bottom:16px;letter-spacing:-.5px;">
         ✦ Conteniza
       </div>
-      <div class="hero-badge">✨ Generador de contenido para Instagram</div>
-      <h1 class="hero-title">El copiloto de contenido<br><span>para coaches</span></h1>
-      <p class="hero-sub">Convierte tu conocimiento en hooks, captions y carruseles que atraen clientes — en segundos, sin bloqueo creativo.</p>
+      <div class="hero-badge">✨ Posts y Carruseles educativos con IA</div>
+      <h1 class="hero-title">El copiloto de contenido<br><span>para coaches y educadores</span></h1>
+      <p class="hero-sub">Convierte tu conocimiento en Posts y Carruseles educativos que atraen clientes — en 120 segundos, sin bloqueo creativo.</p>
     </div>
   </div>
   <div style="padding:56px 0 80px;background:var(--bg);">
@@ -604,7 +604,7 @@
         <!-- FORMATO -->
         <div class="form-group">
           <label class="form-label" style="margin-bottom:6px;">📋 Formato de publicación</label>
-          <div class="pub-grid">
+          <div class="pub-grid" style="grid-template-columns:repeat(2,1fr);">
             <button type="button" class="pub-btn active" data-value="post" onclick="selectPubType(this)">
               <div class="pub-btn-icon">📸</div>
               <span class="pub-btn-label">Post</span>
@@ -614,16 +614,6 @@
               <div class="pub-btn-icon">🎠</div>
               <span class="pub-btn-label">Carrusel <span id="badge-carousel" style="display:none;font-size:9px;background:#8B5FBF;color:#fff;padding:1px 6px;border-radius:99px;vertical-align:middle;">PRO</span></span>
               <span class="pub-btn-desc">Hasta 10 slides</span>
-            </button>
-            <button type="button" class="pub-btn" data-value="story" onclick="selectPubType(this)">
-              <div class="pub-btn-icon">📱</div>
-              <span class="pub-btn-label">Story <span id="badge-story" style="display:none;font-size:9px;background:#8B5FBF;color:#fff;padding:1px 6px;border-radius:99px;vertical-align:middle;">PRO</span></span>
-              <span class="pub-btn-desc">5 ideas interactivas</span>
-            </button>
-            <button type="button" class="pub-btn" data-value="reel" onclick="selectPubType(this)">
-              <div class="pub-btn-icon">🎬</div>
-              <span class="pub-btn-label">Reel <span id="badge-reel" style="display:none;font-size:9px;background:#8B5FBF;color:#fff;padding:1px 6px;border-radius:99px;vertical-align:middle;">PRO</span></span>
-              <span class="pub-btn-desc">Guión + hooks</span>
             </button>
           </div>
           <input type="hidden" id="publicationType" value="post">
@@ -1232,7 +1222,7 @@ async function syncCredits() {
 /* ── FORMAT SELECTOR ── */
 function selectPubType(btn) {
   const type = btn.dataset.value;
-  const premiumFormats = ['carousel', 'story', 'reel'];
+  const premiumFormats = ['carousel'];
   const plan = currentUser?.plan_type || 'free';
 
   if (plan === 'free' && premiumFormats.includes(type)) {
@@ -1250,7 +1240,7 @@ function selectPubType(btn) {
 function updateFormatBadges() {
   const plan = currentUser?.plan_type || 'free';
   const showBadge = plan === 'free';
-  ['carousel','story','reel'].forEach(f => {
+  ['carousel'].forEach(f => {
     const el = document.getElementById('badge-' + f);
     if (el) el.style.display = showBadge ? 'inline' : 'none';
   });
@@ -1266,7 +1256,7 @@ const PLAN_FEATURES = {
     '✅ Hooks, captions y hashtags',
     '✅ Editor visual básico',
     '✅ Export PNG',
-    '❌ Carrusel, Story, Reel',
+    '❌ Carrusel (solo Pro/Premium)',
     '❌ Subida de archivos',
     '❌ Mi Marca',
     '❌ Banco de imágenes Pexels/Unsplash',
@@ -1274,7 +1264,7 @@ const PLAN_FEATURES = {
   pro: [
     '✅ 100 análisis / mes',
     '✅ 20 análisis por día',
-    '✅ Todos los formatos (Post, Carrusel, Story, Reel)',
+    '✅ Posts y Carruseles educativos',
     '✅ Editor visual completo',
     '✅ Banco de imágenes Pexels + Unsplash',
     '✅ 🤖 Regenerar con IA desde el editor',
@@ -2668,7 +2658,7 @@ function showCreateHelp() {
           <span style="font-size:22px;flex-shrink:0;">📋</span>
           <div>
             <div style="font-weight:700;font-size:13px;color:#1a202c;margin-bottom:2px;">Elige el formato correcto</div>
-            <div style="font-size:12px;color:#4a5568;line-height:1.5;"><strong>Post</strong>: caption rápido. <strong>Carrusel</strong>: educativo, hasta 10 slides. <strong>Story</strong>: ideas interactivas (encuestas, preguntas). <strong>Reel</strong>: guiones con hooks virales.</div>
+            <div style="font-size:12px;color:#4a5568;line-height:1.5;"><strong>Post</strong>: una imagen + caption + hashtags. <strong>Carrusel</strong>: contenido educativo en hasta 10 slides — perfecto para enseñar conceptos paso a paso.</div>
           </div>
         </div>
 
@@ -2781,7 +2771,7 @@ async function showUpgradeModal(reason) {
     feats.innerHTML = [
       '✅ 100 créditos / mes',
       '✅ 20 generaciones por día',
-      '✅ Todos los formatos (Post, Carrusel, Story, Reel)',
+      '✅ Posts y Carruseles educativos',
       '✅ Banco de imágenes Pexels + Unsplash',
       '✅ Archivos de referencia 200MB/mes',
     ].map(f => '<li style="font-size:11px;color:rgba(255,255,255,.7);">' + f + '</li>').join('');
