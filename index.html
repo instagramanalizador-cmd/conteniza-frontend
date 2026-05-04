@@ -91,6 +91,10 @@
     .toast.error   { background:#FEF2F2; color:#991B1B; border-left:4px solid var(--danger); }
     .toast.info    { background:var(--brand-light); color:var(--brand-dark); border-left:4px solid var(--brand); }
     @keyframes toastIn { from { transform:translateX(40px); opacity:0; } to { transform:translateX(0); opacity:1; } }
+    @keyframes tourPulse {
+      0%, 100% { box-shadow: 0 0 0 9999px rgba(20,15,40,.75), 0 0 30px rgba(124,58,237,.6); }
+      50%      { box-shadow: 0 0 0 9999px rgba(20,15,40,.75), 0 0 50px rgba(124,58,237,.9); }
+    }
 
     /* ── SPINNER ── */
     .spinner {
@@ -458,14 +462,15 @@
           
           
           <hr style="border:none;border-top:1px solid rgba(255,255,255,.1);margin:4px 0;">
-          <button id="dropUpgradeBtn" onclick="showPlansScreen();closeUbDropdown()" style="display:none;width:100%;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">⬆️ Mejorar plan</button>
-          <button id="dropCancelBtn" onclick="cancelSubscription();closeUbDropdown()" style="display:none;width:100%;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">⚙️ Cancelar suscripción</button>
-          <button id="dropAdminBtn" onclick="openAdmin();closeUbDropdown()" style="display:none;width:100%;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:#FCD34D;cursor:pointer;border:none;background:none;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">🛡️ Admin</button>
+          <button id="dropUpgradeBtn" title="Mejorar a Pro o Premium" onclick="showPlansScreen();closeUbDropdown()" style="display:none;width:100%;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">⬆️ Mejorar plan</button>
+          <button id="dropCancelBtn" title="Cancelar tu suscripción actual" onclick="cancelSubscription();closeUbDropdown()" style="display:none;width:100%;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">⚙️ Cancelar suscripción</button>
+          <button id="dropAdminBtn" title="Panel de administración" onclick="openAdmin();closeUbDropdown()" style="display:none;width:100%;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:#FCD34D;cursor:pointer;border:none;background:none;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">🛡️ Admin</button>
           <hr style="border:none;border-top:1px solid rgba(255,255,255,.1);margin:4px 0;">
-          <button style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'" onclick="openSidebar();closeUbDropdown()">📜 Historial</button>
-          <button style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'" onclick="showBrandScreen();closeUbDropdown()">🎨 Mi Marca</button>
+          <button title="Ver historial de generaciones guardadas" style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'" onclick="openSidebar();closeUbDropdown()">📜 Historial</button>
+          <button title="Configurar logo, colores y tipografías de tu marca" style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'" onclick="showBrandScreen();closeUbDropdown()">🎨 Mi Marca</button>
+          <button title="Volver a ver el tour de bienvenida" style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'" onclick="startIndexTour(true);closeUbDropdown()">🎓 Ver tour</button>
           <div style="border-top:1px solid rgba(255,255,255,.08);margin:4px 0;"></div>
-          <button onclick="logout()" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:#FCA5A5;cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(252,129,129,.1)'" onmouseout="this.style.background='none'">🚪 Cerrar sesión</button>
+          <button onclick="logout()" title="Cerrar sesión y salir" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:#FCA5A5;cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(252,129,129,.1)'" onmouseout="this.style.background='none'">🚪 Cerrar sesión</button>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
@@ -486,6 +491,18 @@
       <button class="ub-btn danger" onclick="logout()">🚪 Salir</button>
     </div>
   </div>
+</div>
+
+<!-- ═══ TRIAL PRO BANNER (oculto por defecto, JS lo activa si trial_active) ═══ -->
+<div id="trialBanner" class="hidden" style="background:linear-gradient(90deg,#7c3aed,#a855f7);color:#fff;text-align:center;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;border-bottom:1px solid rgba(0,0,0,.15);box-shadow:0 2px 8px rgba(124,58,237,.25);" onclick="showPlansScreen()">
+  🎉 <span id="trialBannerText">7 días Pro gratis activos</span>
+  <span style="margin-left:8px;font-size:11px;opacity:.85;font-weight:500;text-decoration:underline;">Ver planes →</span>
+</div>
+
+<!-- ═══ WIZARD COMPLETION BANNER (cuando saltó el wizard, persistente hasta completarlo) ═══ -->
+<div id="wizardCompleteBanner" class="hidden" style="background:rgba(245,158,11,.15);border-bottom:1px solid rgba(245,158,11,.3);color:var(--text);text-align:center;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;" onclick="showProfileWizard()">
+  ✨ Personaliza tu IA en 2 minutos
+  <span style="margin-left:6px;font-size:11px;color:var(--brand);text-decoration:underline;">Completar →</span>
 </div>
 
 <!-- ═══ TOPBAR ═══ -->
@@ -749,11 +766,11 @@
         <!-- ── Aviso importante sobre el rol de Conteniza ── -->
         <!-- Gestiona expectativas: Conteniza genera IDEAS, no diseños finales perfectos.
              El usuario debe verificarlas y adaptarlas a su marca antes de publicar. -->
-        <div style="margin-top:10px;padding:9px 12px;background:linear-gradient(135deg,rgba(124,58,237,.08),rgba(244,63,94,.08));border:1px solid rgba(124,58,237,.25);border-radius:9px;display:flex;align-items:flex-start;gap:8px;">
-          <span style="font-size:15px;line-height:1;flex-shrink:0;">💡</span>
-          <div style="flex:1;font-size:11px;line-height:1.45;color:var(--text-2);">
-            <strong style="color:var(--text-1);font-weight:700;">Conteniza genera IDEAS de contenido</strong> — no diseños finales.
-            <span style="color:var(--text-3);">Revisa cada idea, adáptala a tu marca y dale tu toque personal antes de publicar. Conteniza es tu copiloto, no tu sustituto.</span>
+        <div style="margin-top:10px;padding:11px 13px;background:linear-gradient(135deg,rgba(124,58,237,.14),rgba(244,63,94,.12));border:1.5px solid rgba(124,58,237,.4);border-radius:10px;display:flex;align-items:flex-start;gap:9px;box-shadow:0 2px 8px rgba(124,58,237,.08);">
+          <span style="font-size:17px;line-height:1;flex-shrink:0;">💡</span>
+          <div style="flex:1;font-size:12px;line-height:1.5;color:var(--text);">
+            <strong style="color:var(--text);font-weight:800;">Conteniza genera IDEAS de contenido</strong> — no diseños finales.
+            <span style="color:var(--text-2);">Revísalas, adáptalas a tu marca y dales tu toque personal antes de publicar. Conteniza es tu copiloto, no tu sustituto.</span>
           </div>
         </div>
 
@@ -834,10 +851,103 @@
   </div>
 </div>
 
+<!-- ═══ PROFILE WIZARD MODAL (5 preguntas, skippeable) ═══ -->
+<div id="profileWizardModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:11000;backdrop-filter:blur(4px);overflow-y:auto;padding:20px 12px;">
+  <div style="max-width:480px;margin:24px auto;background:var(--surface);border-radius:20px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.45);border:1px solid var(--border);">
+
+    <!-- Header con gradiente -->
+    <div style="background:var(--grad-brand);padding:22px 24px 18px;color:#fff;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;opacity:.85;">Personaliza tu IA</div>
+        <div id="pwStepCounter" style="font-size:11px;font-weight:700;opacity:.9;">1 de 5</div>
+      </div>
+      <div style="background:rgba(255,255,255,.18);height:4px;border-radius:2px;overflow:hidden;">
+        <div id="pwProgressFill" style="background:#fff;height:100%;width:20%;transition:width .3s ease;"></div>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div style="padding:24px 24px 8px;">
+      <!-- STEP 1: Problem -->
+      <div class="pw-step" data-pw-step="1" style="display:block;">
+        <div style="font-size:32px;margin-bottom:8px;">🎯</div>
+        <div style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px;line-height:1.3;">¿Qué problema específico resuelves?</div>
+        <div style="font-size:12px;color:var(--text-3);margin-bottom:14px;line-height:1.5;">Sé concreto. Ej: "Ayudo a coaches a vender sin sentirse vendedores"</div>
+        <textarea id="pwProblem" maxlength="500" placeholder="Tu problema en 1-2 frases…" style="width:100%;min-height:90px;padding:12px 14px;background:var(--surface-2);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:13px;line-height:1.5;resize:vertical;outline:none;transition:border-color .15s;" oninput="_pwUpdateNextBtn()" onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+      </div>
+
+      <!-- STEP 2: Audience -->
+      <div class="pw-step" data-pw-step="2" style="display:none;">
+        <div style="font-size:32px;margin-bottom:8px;">👥</div>
+        <div style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px;line-height:1.3;">¿Quién es tu cliente ideal?</div>
+        <div style="font-size:12px;color:var(--text-3);margin-bottom:14px;line-height:1.5;">Edad, género, situación. Ej: "Mujeres 30-45 que buscan emprender desde casa"</div>
+        <textarea id="pwAudience" maxlength="500" placeholder="Describe a tu cliente ideal…" style="width:100%;min-height:90px;padding:12px 14px;background:var(--surface-2);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:13px;line-height:1.5;resize:vertical;outline:none;transition:border-color .15s;" oninput="_pwUpdateNextBtn()" onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+      </div>
+
+      <!-- STEP 3: Transformation -->
+      <div class="pw-step" data-pw-step="3" style="display:none;">
+        <div style="font-size:32px;margin-bottom:8px;">✨</div>
+        <div style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px;line-height:1.3;">¿Qué transformación logras?</div>
+        <div style="font-size:12px;color:var(--text-3);margin-bottom:14px;line-height:1.5;">En 1 frase clara. Ej: "Pasan de tener 5 clientes a 30 en 90 días"</div>
+        <textarea id="pwTransformation" maxlength="500" placeholder="Tu promesa de transformación…" style="width:100%;min-height:90px;padding:12px 14px;background:var(--surface-2);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:13px;line-height:1.5;resize:vertical;outline:none;transition:border-color .15s;" oninput="_pwUpdateNextBtn()" onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+      </div>
+
+      <!-- STEP 4: Offer -->
+      <div class="pw-step" data-pw-step="4" style="display:none;">
+        <div style="font-size:32px;margin-bottom:8px;">💼</div>
+        <div style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px;line-height:1.3;">¿Cuál es tu producto principal?</div>
+        <div style="font-size:12px;color:var(--text-3);margin-bottom:14px;line-height:1.5;">Tu oferta estrella. Ej: "Mentoría 1:1 de 3 meses, 1.500€"</div>
+        <textarea id="pwOffer" maxlength="500" placeholder="Tu producto/servicio principal…" style="width:100%;min-height:90px;padding:12px 14px;background:var(--surface-2);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:13px;line-height:1.5;resize:vertical;outline:none;transition:border-color .15s;" oninput="_pwUpdateNextBtn()" onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+      </div>
+
+      <!-- STEP 5: Voice -->
+      <div class="pw-step" data-pw-step="5" style="display:none;">
+        <div style="font-size:32px;margin-bottom:8px;">🎤</div>
+        <div style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px;line-height:1.3;">¿Cuál es tu tono de voz?</div>
+        <div style="font-size:12px;color:var(--text-3);margin-bottom:14px;line-height:1.5;">Cómo te comunicas con tu audiencia.</div>
+        <div id="pwVoiceGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <button type="button" data-voice="amigable" onclick="_pwSelectVoice('amigable')" style="background:var(--surface-2);border:1.5px solid var(--border);border-radius:12px;padding:14px 10px;cursor:pointer;color:var(--text);font-family:inherit;text-align:center;transition:all .15s;">
+            <div style="font-size:22px;margin-bottom:4px;">😊</div>
+            <div style="font-size:13px;font-weight:800;">Amigable</div>
+            <div style="font-size:10px;color:var(--text-3);margin-top:2px;">Cercano, cálido</div>
+          </button>
+          <button type="button" data-voice="profesional" onclick="_pwSelectVoice('profesional')" style="background:var(--surface-2);border:1.5px solid var(--border);border-radius:12px;padding:14px 10px;cursor:pointer;color:var(--text);font-family:inherit;text-align:center;transition:all .15s;">
+            <div style="font-size:22px;margin-bottom:4px;">🧑‍💼</div>
+            <div style="font-size:13px;font-weight:800;">Profesional</div>
+            <div style="font-size:10px;color:var(--text-3);margin-top:2px;">Serio, autoridad</div>
+          </button>
+          <button type="button" data-voice="vulnerable" onclick="_pwSelectVoice('vulnerable')" style="background:var(--surface-2);border:1.5px solid var(--border);border-radius:12px;padding:14px 10px;cursor:pointer;color:var(--text);font-family:inherit;text-align:center;transition:all .15s;">
+            <div style="font-size:22px;margin-bottom:4px;">💛</div>
+            <div style="font-size:13px;font-weight:800;">Vulnerable</div>
+            <div style="font-size:10px;color:var(--text-3);margin-top:2px;">Honesto, empático</div>
+          </button>
+          <button type="button" data-voice="directo" onclick="_pwSelectVoice('directo')" style="background:var(--surface-2);border:1.5px solid var(--border);border-radius:12px;padding:14px 10px;cursor:pointer;color:var(--text);font-family:inherit;text-align:center;transition:all .15s;">
+            <div style="font-size:22px;margin-bottom:4px;">⚡</div>
+            <div style="font-size:13px;font-weight:800;">Directo</div>
+            <div style="font-size:10px;color:var(--text-3);margin-top:2px;">Sin rodeos, claro</div>
+          </button>
+        </div>
+        <input type="hidden" id="pwVoice" value="">
+      </div>
+    </div>
+
+    <!-- Footer con navegación -->
+    <div style="display:flex;align-items:center;gap:10px;padding:16px 24px 18px;border-top:1px solid var(--border);">
+      <button id="pwPrevBtn" type="button" onclick="_pwGoStep(-1)" style="display:none;background:var(--surface-2);border:1.5px solid var(--border);border-radius:10px;padding:11px 16px;cursor:pointer;color:var(--text);font-family:inherit;font-size:13px;font-weight:700;">← Anterior</button>
+      <button id="pwNextBtn" type="button" onclick="_pwGoStep(1)" disabled style="flex:1;background:var(--grad-brand);border:none;border-radius:10px;padding:13px 16px;cursor:pointer;color:#fff;font-family:inherit;font-size:14px;font-weight:800;opacity:.5;transition:opacity .2s;">Siguiente →</button>
+    </div>
+
+    <!-- Skip link discreto -->
+    <div style="text-align:center;padding:0 24px 18px;">
+      <button type="button" onclick="skipProfileWizard()" style="background:none;border:none;color:var(--text-3);font-size:11px;cursor:pointer;text-decoration:underline;">Saltar por ahora</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ MI MARCA SCREEN ═══ -->
 <div id="brandScreen">
   <div class="brand-header">
-    <button class="brand-back" onclick="closeBrandScreen()">←</button>
+    <button class="brand-back" title="Volver al inicio" onclick="closeBrandScreen()">←</button>
     <div class="brand-title">🎨 Mi Marca</div>
     <button class="brand-save-btn" onclick="saveBrand()">Guardar</button>
   </div>
@@ -1081,6 +1191,8 @@ async function handleAuth(event) {
       currentUser = d.user;
       if (currentUser.plan_type) currentUser.plan_type = currentUser.plan_type.toLowerCase();
       userCredits = d.user.credits_remaining ?? 0;
+      // Persistir campos trial/onboarding (vienen del backend en /register y /login)
+      _persistTrialAndOnboardingFields(d.user);
       // Store daily usage for quick restore
       if (d.user.daily_usage_count !== undefined) {
         localStorage.setItem(KEYS.dailyUsage, String(d.user.daily_usage_count));
@@ -1193,6 +1305,9 @@ async function showMainApp() {
 
   // Niche already restored at top of showMainApp (before syncCredits)
   if (!_selectedNiche) updateNicheDisplay('');
+
+  // Trial banner + Profile wizard (5 preguntas, skippeable)
+  _checkProfileWizardAndTrial();
 }
 function updateUserPanel() {
   if (!currentUser) return;
@@ -1243,6 +1358,16 @@ async function syncCredits() {
         currentUser.daily_usage_limit = d.user.daily_usage_limit;
         localStorage.setItem(KEYS.dailyLimit, String(d.user.daily_usage_limit));
       }
+      // Persistir campos trial + onboarding (vienen de /user/profile en backend modificado)
+      _persistTrialAndOnboardingFields(d.user);
+      // Persistir respuestas del wizard si ya las completó (para precargar si reabre el modal)
+      if (d.user.profile_problem        !== undefined) currentUser.profile_problem        = d.user.profile_problem;
+      if (d.user.profile_audience       !== undefined) currentUser.profile_audience       = d.user.profile_audience;
+      if (d.user.profile_transformation !== undefined) currentUser.profile_transformation = d.user.profile_transformation;
+      if (d.user.profile_offer          !== undefined) currentUser.profile_offer          = d.user.profile_offer;
+      if (d.user.profile_voice          !== undefined) currentUser.profile_voice          = d.user.profile_voice;
+      // Re-render trial banner por si los días han cambiado o el trial expiró server-side
+      try { renderTrialBanner(); } catch(_) {}
       document.getElementById('userCredits').textContent = userCredits + ' créditos';
       document.getElementById('creditsDisplay').textContent = userCredits;
       document.getElementById('dropCredits').textContent = userCredits + ' créditos';
@@ -1372,6 +1497,26 @@ function renderPlans(plans) {
       ? (currentUser?.plan_type === planKey ? 'Plan actual ✓' : (planKey === 'free' ? 'Plan Free' : 'Contratar ahora'))
       : (planKey === 'free' ? 'Comenzar gratis' : 'Contratar ahora');
 
+    // ── Trial Pro 7d highlight (solo en card Free) ──
+    // Visitante (sin token)        → "Incluye 7 días Pro gratis al registrarte"
+    // Usuario en trial Pro activo  → "Estás disfrutando 7 días Pro gratis"
+    // Trial ya usado o expirado    → no mostrar (evita falsa promesa)
+    let trialHighlight = '';
+    if (planKey === 'free') {
+      const isVisitor   = !savedToken;
+      const trialActive = !!(currentUser && currentUser.trial_active && !currentUser.trial_used);
+      const trialUsed   = !!(currentUser && currentUser.trial_used);
+      if (isVisitor) {
+        trialHighlight = `<div class="plan-trial-highlight" style="margin:10px 0 0;padding:9px 12px;background:linear-gradient(90deg,rgba(124,58,237,.15),rgba(168,85,247,.15));border:1.5px solid rgba(139,95,191,.45);border-radius:10px;font-size:12px;font-weight:700;color:var(--brand);text-align:center;line-height:1.35;">🎁 Incluye <span style="font-weight:800;">7 días Pro gratis</span> al registrarte</div>`;
+      } else if (trialActive) {
+        const days = (typeof _trialDaysRemaining === 'function') ? _trialDaysRemaining() : 0;
+        const txt  = days > 1 ? `${days} días` : (days === 1 ? '1 día' : 'Último día');
+        trialHighlight = `<div class="plan-trial-highlight" style="margin:10px 0 0;padding:9px 12px;background:linear-gradient(90deg,rgba(124,58,237,.18),rgba(168,85,247,.18));border:1.5px solid rgba(139,95,191,.55);border-radius:10px;font-size:12px;font-weight:700;color:var(--brand);text-align:center;line-height:1.35;">✨ Estás disfrutando Pro gratis · <span style="font-weight:800;">${txt}</span> restantes</div>`;
+      }
+      // trialUsed → trialHighlight queda vacío
+      void trialUsed;
+    }
+
     const priceHTML = priceVal === 0
       ? `<div class="plan-price" style="margin:16px 0 2px;font-size:36px;font-weight:800;font-family:'Syne',sans-serif;">0€</div><div style="font-size:12px;color:var(--text-2);margin-bottom:16px;">para siempre</div>`
       : `<div class="plan-price" style="margin:16px 0 2px;font-size:36px;font-weight:800;font-family:'Syne',sans-serif;">${priceVal}€</div><div style="font-size:12px;color:var(--text-2);margin-bottom:16px;">/ mes</div>`;
@@ -1380,6 +1525,7 @@ function renderPlans(plans) {
     <div class="plan-card ${isFeatured ? 'featured' : ''}" onclick="selectPlan('${planKey}')">
       ${badge ? `<div class="plan-badge">${badge}</div>` : ''}
       <div class="plan-name">${label}</div>
+      ${trialHighlight}
       ${priceHTML}
       <ul class="plan-features">
         ${features.map(f => {
@@ -1430,9 +1576,9 @@ async function uploadFiles(files) {
       const d  = await r.json();
       if (!r.ok) throw new Error(d.error || 'Error');
       uploadedFiles.push(d.file);
-      chip.innerHTML = `<span>✅ ${escapeHtml(file.name)}</span><button class="file-chip-remove" onclick="removeFile('${d.file.id}','${chip.id}')">✕</button>`;
+      chip.innerHTML = `<span>✅ ${escapeHtml(file.name)}</span><button class="file-chip-remove" title="Quitar archivo" onclick="removeFile('${d.file.id}','${chip.id}')">✕</button>`;
     } catch(e) {
-      chip.innerHTML = `<span>❌ ${escapeHtml(file.name)} — ${e.message}</span><button class="file-chip-remove" onclick="this.parentElement.remove()">✕</button>`;
+      chip.innerHTML = `<span>❌ ${escapeHtml(file.name)} — ${e.message}</span><button class="file-chip-remove" title="Quitar archivo" onclick="this.parentElement.remove()">✕</button>`;
     }
   }
 }
@@ -1889,7 +2035,7 @@ async function openSidebar() {
           <div style="font-size:15px;font-weight:800;color:#fff;">📜 Historial</div>
           <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px;">${limitLabel} · Plan ${plan.toUpperCase()}</div>
         </div>
-        <button onclick="document.getElementById('historialModal').remove()" style="background:rgba(255,255,255,.08);border:none;color:rgba(255,255,255,.6);width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer;">✕</button>
+        <button onclick="document.getElementById('historialModal').remove()" title="Cerrar historial" aria-label="Cerrar" style="background:rgba(255,255,255,.08);border:none;color:rgba(255,255,255,.6);width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer;">✕</button>
       </div>
       <div id="historialList" style="flex:1;overflow-y:auto;padding:12px;">
         <div style="text-align:center;padding:40px 0;color:rgba(255,255,255,.3);font-size:13px;">⏳ Cargando…</div>
@@ -1976,6 +2122,11 @@ function openAdmin() { window.open('admin.html', '_blank'); }
 function logout() {
   localStorage.removeItem(KEYS.token); localStorage.removeItem(KEYS.user);
   currentUser = null; uploadedFiles = []; userCredits = 0;
+  // Ocultar banners persistentes (trial, wizard) y cerrar wizard si está abierto
+  document.getElementById('trialBanner')?.classList.add('hidden');
+  document.getElementById('wizardCompleteBanner')?.classList.add('hidden');
+  const _pwModal = document.getElementById('profileWizardModal');
+  if (_pwModal) _pwModal.style.display = 'none';
   showPlansScreen();
   updateTopbarForLoggedOut();
   showNotification('Sesión cerrada', 'success');
@@ -2230,7 +2381,14 @@ async function init() {
 
 // Cerrar modal con Escape
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeNicheMismatchModal();
+  if (e.key !== 'Escape') return;
+  // Si el wizard está abierto, Escape lo cierra como "saltar" (mantiene progreso parcial en localStorage)
+  const pw = document.getElementById('profileWizardModal');
+  if (pw && pw.style.display && pw.style.display !== 'none') {
+    skipProfileWizard();
+    return;
+  }
+  closeNicheMismatchModal();
 });
 
 init();
@@ -2512,6 +2670,251 @@ function skipOnboarding() {
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   TRIAL PRO 7 días + PROFILE WIZARD (5 preguntas, skippeable)
+   - Trial: auto-activado en backend al registrarse → banner morado siempre visible.
+   - Wizard: modal al primer login si !onboarding_completed; si saltan, banner ámbar
+     persistente hasta completarlo. Se ofrece también desde "Mi perfil" en el futuro.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const _PW_STORAGE_KEY        = 'conteniza_wizard_skipped';
+const _PW_TOTAL_STEPS        = 5;
+let   _pwCurrentStep         = 1;
+let   _pwSubmitting          = false;
+
+/* ── Persistencia de campos trial/onboarding desde respuestas auth ── */
+function _persistTrialAndOnboardingFields(srcUser) {
+  if (!srcUser || !currentUser) return;
+  if (srcUser.trial_active        !== undefined) currentUser.trial_active        = srcUser.trial_active;
+  if (srcUser.trial_ends_at       !== undefined) currentUser.trial_ends_at       = srcUser.trial_ends_at;
+  if (srcUser.trial_started_at    !== undefined) currentUser.trial_started_at    = srcUser.trial_started_at;
+  if (srcUser.trial_used          !== undefined) currentUser.trial_used          = srcUser.trial_used;
+  if (srcUser.trial_days_remaining !== undefined) currentUser.trial_days_remaining = srcUser.trial_days_remaining;
+  if (srcUser.onboarding_completed !== undefined) currentUser.onboarding_completed = srcUser.onboarding_completed;
+  try { localStorage.setItem(KEYS.user, JSON.stringify(currentUser)); } catch(_) {}
+}
+
+/* ── Trial banner ── */
+function _isTrialActiveClient() {
+  if (!currentUser) return false;
+  if (currentUser.trial_used) return false;
+  if (!currentUser.trial_ends_at) return false;
+  return new Date(currentUser.trial_ends_at).getTime() > Date.now();
+}
+
+function _trialDaysRemaining() {
+  if (!currentUser || !currentUser.trial_ends_at) return 0;
+  const ms = new Date(currentUser.trial_ends_at).getTime() - Date.now();
+  return Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)));
+}
+
+function renderTrialBanner() {
+  const banner = document.getElementById('trialBanner');
+  const txt    = document.getElementById('trialBannerText');
+  if (!banner || !txt) return;
+  // Solo se muestra a usuarios free con trial activo (Pro/Premium reales no lo necesitan)
+  const isFreeReal = !currentUser || (currentUser.plan_type || 'free') === 'free';
+  if (_isTrialActiveClient() && isFreeReal) {
+    const days = _trialDaysRemaining();
+    txt.textContent = days > 1
+      ? `🎉 ${days} días Pro gratis activos`
+      : (days === 1 ? '⏰ Último día Pro gratis' : '⏰ Tu trial Pro termina hoy');
+    banner.classList.remove('hidden');
+  } else {
+    banner.classList.add('hidden');
+  }
+}
+
+/* ── Wizard: navegación de pasos ── */
+function _pwShowStep(n) {
+  _pwCurrentStep = Math.max(1, Math.min(_PW_TOTAL_STEPS, n));
+  document.querySelectorAll('#profileWizardModal .pw-step').forEach(el => {
+    el.style.display = (parseInt(el.getAttribute('data-pw-step'), 10) === _pwCurrentStep) ? 'block' : 'none';
+  });
+  const counter  = document.getElementById('pwStepCounter');
+  const fill     = document.getElementById('pwProgressFill');
+  const prevBtn  = document.getElementById('pwPrevBtn');
+  const nextBtn  = document.getElementById('pwNextBtn');
+  if (counter) counter.textContent = `${_pwCurrentStep} de ${_PW_TOTAL_STEPS}`;
+  if (fill)    fill.style.width = `${(_pwCurrentStep / _PW_TOTAL_STEPS) * 100}%`;
+  if (prevBtn) prevBtn.style.display = _pwCurrentStep > 1 ? 'inline-block' : 'none';
+  if (nextBtn) nextBtn.textContent   = _pwCurrentStep === _PW_TOTAL_STEPS ? 'Guardar y empezar →' : 'Siguiente →';
+  _pwUpdateNextBtn();
+  // Foco en el textarea/botón del step actual (mejora UX)
+  setTimeout(() => {
+    const active = document.querySelector(`#profileWizardModal .pw-step[data-pw-step="${_pwCurrentStep}"] textarea, #profileWizardModal .pw-step[data-pw-step="${_pwCurrentStep}"] button[data-voice]`);
+    if (active && active.tagName === 'TEXTAREA') active.focus();
+  }, 50);
+}
+
+function _pwGetStepValue(step) {
+  switch (step) {
+    case 1: return (document.getElementById('pwProblem')?.value || '').trim();
+    case 2: return (document.getElementById('pwAudience')?.value || '').trim();
+    case 3: return (document.getElementById('pwTransformation')?.value || '').trim();
+    case 4: return (document.getElementById('pwOffer')?.value || '').trim();
+    case 5: return (document.getElementById('pwVoice')?.value || '').trim();
+    default: return '';
+  }
+}
+
+function _pwUpdateNextBtn() {
+  const btn = document.getElementById('pwNextBtn');
+  if (!btn) return;
+  const val   = _pwGetStepValue(_pwCurrentStep);
+  // Steps 1-4 (textareas): mínimo 5 caracteres. Step 5 (voz): debe estar seleccionada.
+  const valid = _pwCurrentStep === 5 ? !!val : val.length >= 5;
+  btn.disabled        = !valid;
+  btn.style.opacity   = valid ? '1' : '.5';
+  btn.style.cursor    = valid ? 'pointer' : 'not-allowed';
+}
+
+function _pwGoStep(direction) {
+  // direction: -1 (anterior) o +1 (siguiente / submit en último step)
+  if (direction < 0) { _pwShowStep(_pwCurrentStep - 1); return; }
+  if (_pwCurrentStep < _PW_TOTAL_STEPS) {
+    _pwShowStep(_pwCurrentStep + 1);
+  } else {
+    submitProfileWizard();
+  }
+}
+
+function _pwSelectVoice(voice) {
+  document.getElementById('pwVoice').value = voice;
+  document.querySelectorAll('#pwVoiceGrid button[data-voice]').forEach(b => {
+    const selected = b.getAttribute('data-voice') === voice;
+    b.style.background    = selected ? 'rgba(139,95,191,.18)' : 'var(--surface-2)';
+    b.style.borderColor   = selected ? 'var(--brand)'         : 'var(--border)';
+    b.style.color         = selected ? 'var(--brand)'         : 'var(--text)';
+  });
+  _pwUpdateNextBtn();
+}
+
+/* ── Mostrar / cerrar wizard ── */
+function showProfileWizard() {
+  // Si el wizard está oculto, lo mostramos en step 1 con valores guardados (si los hay)
+  const modal = document.getElementById('profileWizardModal');
+  if (!modal) return;
+
+  // Pre-cargar valores existentes (si el usuario empezó y volvió)
+  if (currentUser) {
+    const map = {
+      pwProblem:        currentUser.profile_problem        || '',
+      pwAudience:       currentUser.profile_audience       || '',
+      pwTransformation: currentUser.profile_transformation || '',
+      pwOffer:          currentUser.profile_offer          || '',
+    };
+    Object.entries(map).forEach(([id, v]) => {
+      const el = document.getElementById(id);
+      if (el && !el.value) el.value = v;
+    });
+    if (currentUser.profile_voice) _pwSelectVoice(currentUser.profile_voice);
+  }
+  modal.style.display = 'flex';
+  modal.style.alignItems = 'flex-start';
+  _pwShowStep(1);
+}
+
+function _closeProfileWizard() {
+  const modal = document.getElementById('profileWizardModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function skipProfileWizard() {
+  try { localStorage.setItem(_PW_STORAGE_KEY, '1'); } catch(_) {}
+  _closeProfileWizard();
+  // Mostrar banner persistente para invitar a completarlo después
+  const wb = document.getElementById('wizardCompleteBanner');
+  if (wb && currentUser && !currentUser.onboarding_completed) wb.classList.remove('hidden');
+  if (typeof showNotification === 'function') {
+    showNotification('Puedes personalizar tu IA en cualquier momento desde el banner superior.', 'info');
+  }
+  // Tras saltar el wizard, intentar arrancar el tour
+  if (typeof _maybeStartIndexTour === 'function') _maybeStartIndexTour();
+}
+
+async function submitProfileWizard() {
+  if (_pwSubmitting) return;
+  const payload = {
+    problem:        _pwGetStepValue(1),
+    audience:       _pwGetStepValue(2),
+    transformation: _pwGetStepValue(3),
+    offer:          _pwGetStepValue(4),
+    voice:          _pwGetStepValue(5),
+  };
+  // Validación final
+  if (!payload.problem || !payload.audience || !payload.transformation || !payload.offer || !payload.voice) {
+    if (typeof showNotification === 'function') showNotification('Completa todos los campos', 'error');
+    return;
+  }
+  const btn = document.getElementById('pwNextBtn');
+  _pwSubmitting = true;
+  if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; btn.style.opacity = '.7'; }
+
+  try {
+    const r = await apiFetch(`${API_URL}/user/onboarding`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload)
+    });
+    const d = await r.json();
+    if (!r.ok || !d.success) throw new Error(d.error || 'Error guardando perfil');
+
+    // Persistir en currentUser para que el banner ámbar se oculte y la IA reciba contexto
+    if (currentUser) {
+      currentUser.onboarding_completed   = true;
+      currentUser.profile_problem        = payload.problem;
+      currentUser.profile_audience       = payload.audience;
+      currentUser.profile_transformation = payload.transformation;
+      currentUser.profile_offer          = payload.offer;
+      currentUser.profile_voice          = payload.voice;
+      try { localStorage.setItem(KEYS.user, JSON.stringify(currentUser)); } catch(_) {}
+    }
+    try { localStorage.removeItem(_PW_STORAGE_KEY); } catch(_) {}
+    _closeProfileWizard();
+    const wb = document.getElementById('wizardCompleteBanner');
+    if (wb) wb.classList.add('hidden');
+    if (typeof showNotification === 'function') showNotification('🎯 Perfil guardado. Tu IA ahora está personalizada.', 'success');
+    // Tras completar wizard, arrancar el tour si aún no lo ha visto
+    if (typeof _maybeStartIndexTour === 'function') _maybeStartIndexTour();
+  } catch (e) {
+    if (typeof showNotification === 'function') showNotification('Error: ' + e.message, 'error');
+  } finally {
+    _pwSubmitting = false;
+    if (btn) { btn.disabled = false; btn.textContent = 'Guardar y empezar →'; btn.style.opacity = '1'; }
+  }
+}
+
+/* ── Orquestador: se llama tras showMainApp() ── */
+function _checkProfileWizardAndTrial() {
+  if (!currentUser) return;
+
+  // 1. Banner trial (siempre re-evaluar)
+  renderTrialBanner();
+
+  // 2. Banner wizard ámbar: si saltó el wizard antes y aún no lo completó
+  const wb       = document.getElementById('wizardCompleteBanner');
+  const skipped  = (() => { try { return localStorage.getItem(_PW_STORAGE_KEY) === '1'; } catch(_) { return false; } })();
+  const completed = !!currentUser.onboarding_completed;
+  if (wb) {
+    if (!completed && skipped) wb.classList.remove('hidden');
+    else                       wb.classList.add('hidden');
+  }
+
+  // 3. Auto-mostrar wizard la primera vez (no completado, no saltado, hay nicho ya)
+  // Condición: !completed && !skipped && niche ya seteado (para no chocar con onboardingScreen).
+  // Esto se ejecuta en showMainApp() así que ya pasó el flujo de niche.
+  const hasNiche = !!localStorage.getItem(KEYS.niche);
+  if (!completed && !skipped && hasNiche) {
+    // Pequeño delay para que showMainApp termine de pintar antes
+    setTimeout(() => showProfileWizard(), 600);
+    return; // El tour C2 se lanzará tras completar/saltar el wizard, no ahora
+  }
+
+  // 4. Tour C2 (8 pasos): solo si wizard ya gestionado y tour no visto
+  if (typeof _maybeStartIndexTour === 'function') _maybeStartIndexTour();
+}
+
 </script>
 <!-- ═══ ONBOARDING NICHO ═══ -->
 <div id="onboardingScreen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:10000;overflow-y:auto;">
@@ -2616,7 +3019,7 @@ function skipOnboarding() {
 <!-- ══ UPGRADE MODAL ══ -->
 <div id="upgradeModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px);">
   <div style="background:#12102a;border-radius:20px;padding:26px 22px 20px;max-width:340px;width:100%;border:1px solid rgba(139,95,191,.3);box-shadow:0 24px 64px rgba(0,0,0,.6);position:relative;">
-    <button onclick="closeUpgradeModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;color:rgba(255,255,255,.35);font-size:18px;cursor:pointer;line-height:1;">✕</button>
+    <button onclick="closeUpgradeModal()" title="Cerrar" aria-label="Cerrar" style="position:absolute;top:14px;right:16px;background:none;border:none;color:rgba(255,255,255,.35);font-size:18px;cursor:pointer;line-height:1;">✕</button>
     <div id="umIcon" style="font-size:36px;text-align:center;margin-bottom:10px;"></div>
     <h3 id="umTitle" style="text-align:center;color:#fff;font-size:17px;font-weight:800;margin:0 0 6px;font-family:'Syne',sans-serif;line-height:1.3;"></h3>
     <p id="umBody" style="text-align:center;color:rgba(255,255,255,.5);font-size:12px;line-height:1.6;margin:0 0 16px;"></p>
@@ -2678,7 +3081,7 @@ function showCreateHelp() {
     <div style="background:#fff;border-radius:16px;padding:28px;max-width:480px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
         <div style="font-size:20px;font-weight:800;color:#1a202c;">💡 Cómo crear buen contenido</div>
-        <button onclick="document.getElementById('createHelpOverlay').remove()" style="width:32px;height:32px;border-radius:50%;background:#f7fafc;border:none;color:#1a202c;font-size:16px;cursor:pointer;font-family:inherit;">✕</button>
+        <button onclick="document.getElementById('createHelpOverlay').remove()" title="Cerrar ayuda" aria-label="Cerrar" style="width:32px;height:32px;border-radius:50%;background:#f7fafc;border:none;color:#1a202c;font-size:16px;cursor:pointer;font-family:inherit;">✕</button>
       </div>
       <div style="font-size:13px;color:#718096;margin-bottom:20px;">Una guía rápida para sacar el máximo provecho de Conteniza</div>
 
@@ -2864,6 +3267,185 @@ async function showUpgradeModal(reason) {
   sec.onclick = () => { closeUpgradeModal(); showPlansScreen(); };
 
   modal.classList.remove('hidden');
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   ║  C2 — TOUR INDEX — 8 pasos guiados para usuarios nuevos
+   ║
+   ║  Sistema ligero sin dependencias externas (idéntico motor al editor).
+   ║  Persistencia: localStorage 'index_tour_seen' (no se repite).
+   ║  Auto-arranque: solo tras login en mainApp visible Y tras cerrar el
+   ║  wizard de onboarding (no chocan dos overlays a la vez).
+   ════════════════════════════════════════════════════════════════════════ */
+const INDEX_TOUR_STEPS = [
+  {
+    selector: '.topbar-brand',
+    title:    '👋 Bienvenido a Conteniza',
+    text:     'Tu copiloto de contenido para Instagram. Te muestro lo esencial en 8 pasos rápidos.',
+    pos:      'bottom',
+  },
+  {
+    selector: '#description',
+    title:    '💡 Describe tu idea',
+    text:     'Escribe sobre qué quieres publicar. Cuanto más específico, mejor sale el contenido. Ej: "5 errores que cometen mis clientes al escalar".',
+    pos:      'bottom',
+  },
+  {
+    selector: '#nicheDisplay',
+    title:    '🎯 Tu nicho',
+    text:     'Define tu nicho una vez y la IA personaliza todo el contenido a tu audiencia. Toca para cambiarlo cuando quieras.',
+    pos:      'bottom',
+  },
+  {
+    selector: '.pub-grid',
+    title:    '📋 Elige formato',
+    text:     'Post (1 imagen + caption) o Carrusel (hasta 10 slides). El carrusel es Pro — durante tu trial está desbloqueado.',
+    pos:      'top',
+  },
+  {
+    selector: '#generateBtn',
+    title:    '✨ Genera con IA',
+    text:     'Pulsa aquí y en 2 minutos tienes hooks, captions, hashtags y diseño visual listos para editar.',
+    pos:      'top',
+  },
+  {
+    selector: '#trialBanner',
+    title:    '🎉 7 días Pro gratis',
+    text:     'Tienes Pro completo activo: carruseles, 100 generaciones/mes, plantillas premium. Después vuelve a Free automáticamente.',
+    pos:      'bottom',
+    onlyIfVisible: true,
+  },
+  {
+    selector: '#historialBtn, #brandBtn, #adminBtn',
+    title:    '📜 Tu historial',
+    text:     'Tus generaciones quedan guardadas. Desde aquí puedes recuperarlas y editarlas cuando quieras.',
+    pos:      'bottom',
+    fallbackSelector: '#userBar',
+  },
+  {
+    selector: '#ubAvatarWrap',
+    title:    '👤 Tu cuenta',
+    text:     'Avatar en la esquina superior: ahí gestionas tu plan, contraseña, historial y cierras sesión.',
+    pos:      'bottom',
+  },
+];
+
+let _idxTourCurrentStep = 0;
+let _idxTourActive = false;
+
+function startIndexTour(force = false) {
+  if (!force && localStorage.getItem('index_tour_seen') === '1') return;
+  // No iniciar si el wizard de onboarding está abierto (evita doble overlay)
+  const pwModal = document.getElementById('profileWizardModal');
+  if (pwModal && pwModal.style.display && pwModal.style.display !== 'none') return;
+  // No iniciar si mainApp no está visible
+  if (document.getElementById('mainApp')?.classList.contains('hidden')) return;
+  _idxTourCurrentStep = 0;
+  _idxTourActive = true;
+  showIndexTourStep();
+}
+
+function showIndexTourStep() {
+  const step = INDEX_TOUR_STEPS[_idxTourCurrentStep];
+  if (!step) { endIndexTour(); return; }
+
+  // Skip step si requiere visibilidad y el target está oculto (ej. trial banner cuando ya expiró)
+  let target = document.querySelector(step.selector);
+  if (step.onlyIfVisible && (!target || target.classList.contains('hidden') || target.offsetParent === null)) {
+    _idxTourCurrentStep++;
+    showIndexTourStep();
+    return;
+  }
+  // Fallback selector si target no existe o está oculto
+  if (!target && step.fallbackSelector) {
+    target = document.querySelector(step.fallbackSelector);
+  }
+  if (!target) {
+    _idxTourCurrentStep++;
+    showIndexTourStep();
+    return;
+  }
+
+  // Limpiar overlay anterior
+  document.getElementById('idxTourOverlay')?.remove();
+  document.querySelectorAll('.idx-tour-tooltip').forEach(d => d.remove());
+
+  const rect = target.getBoundingClientRect();
+
+  // Overlay con highlight
+  const overlay = document.createElement('div');
+  overlay.id = 'idxTourOverlay';
+  overlay.style.cssText = `position:fixed;inset:0;z-index:99998;background:rgba(20,15,40,.75);pointer-events:auto;`;
+
+  const highlight = document.createElement('div');
+  highlight.style.cssText = `position:fixed;left:${rect.left - 8}px;top:${rect.top - 8}px;width:${rect.width + 16}px;height:${rect.height + 16}px;border:3px solid #7C3AED;border-radius:12px;box-shadow:0 0 0 9999px rgba(20,15,40,.75), 0 0 30px rgba(124,58,237,.6);pointer-events:none;animation:tourPulse 1.5s ease-in-out infinite;`;
+
+  // Tooltip
+  const tooltip = document.createElement('div');
+  tooltip.className = 'idx-tour-tooltip';
+  let ttX, ttY;
+  const margin = 16;
+  if (step.pos === 'top')         { ttX = rect.left + rect.width/2 - 160; ttY = rect.top - 200 - margin; }
+  else if (step.pos === 'bottom') { ttX = rect.left + rect.width/2 - 160; ttY = rect.bottom + margin; }
+  else if (step.pos === 'left')   { ttX = rect.left - 340 - margin; ttY = rect.top + rect.height/2 - 80; }
+  else                            { ttX = rect.right + margin; ttY = rect.top + rect.height/2 - 80; }
+
+  // Clamp a viewport
+  const vw = window.innerWidth, vh = window.innerHeight;
+  ttX = Math.max(10, Math.min(vw - 330, ttX));
+  ttY = Math.max(10, Math.min(vh - 220, ttY));
+
+  tooltip.style.cssText = `position:fixed;left:${ttX}px;top:${ttY}px;width:320px;background:#fff;border-radius:14px;padding:18px;box-shadow:0 12px 40px rgba(0,0,0,.4);font-family:inherit;color:#1E1B2E;z-index:99999;`;
+
+  const isLast = _idxTourCurrentStep === INDEX_TOUR_STEPS.length - 1;
+  tooltip.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+      <div style="font-size:11px;color:#6B6583;font-weight:600;">Paso ${_idxTourCurrentStep+1} de ${INDEX_TOUR_STEPS.length}</div>
+      <button onclick="endIndexTour()" title="Saltar tour" aria-label="Saltar tour" style="background:none;border:none;color:#A89EC9;font-size:18px;cursor:pointer;line-height:1;padding:0;">✕</button>
+    </div>
+    <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:#1E1B2E;margin-bottom:8px;">${step.title}</div>
+    <div style="font-size:13px;line-height:1.5;color:#4A4760;margin-bottom:14px;">${step.text}</div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      ${_idxTourCurrentStep > 0 ? `<button onclick="prevIndexTourStep()" title="Paso anterior" style="padding:8px 14px;border-radius:8px;border:1px solid #E5E0F9;background:#fff;color:#6B6583;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">← Atrás</button>` : ''}
+      <button onclick="${isLast ? 'endIndexTour()' : 'nextIndexTourStep()'}" title="${isLast ? 'Empezar a usar Conteniza' : 'Siguiente paso'}" style="padding:8px 14px;border-radius:8px;border:none;background:linear-gradient(135deg,#7C3AED,#F43F5E);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">${isLast ? '🎉 ¡Empezar!' : 'Siguiente →'}</button>
+    </div>`;
+
+  document.body.appendChild(overlay);
+  overlay.appendChild(highlight);
+  document.body.appendChild(tooltip);
+
+  // Scroll si target fuera de viewport
+  if (rect.top < 0 || rect.bottom > vh) {
+    target.scrollIntoView({ behavior:'smooth', block:'center' });
+  }
+}
+
+function nextIndexTourStep() { _idxTourCurrentStep++; showIndexTourStep(); }
+function prevIndexTourStep() { _idxTourCurrentStep--; if (_idxTourCurrentStep < 0) _idxTourCurrentStep = 0; showIndexTourStep(); }
+
+function endIndexTour() {
+  document.getElementById('idxTourOverlay')?.remove();
+  document.querySelectorAll('.idx-tour-tooltip').forEach(d => d.remove());
+  _idxTourActive = false;
+  localStorage.setItem('index_tour_seen', '1');
+  if (typeof showNotification === 'function') {
+    showNotification('💡 Puedes volver a ver el tour desde el menú avatar', 'info');
+  }
+}
+
+// Auto-iniciar tour: tras login Y tras cerrar wizard onboarding (si aplicaba).
+// Se llama desde _checkProfileWizardAndTrial al final, no aquí, para evitar carrera.
+function _maybeStartIndexTour() {
+  if (localStorage.getItem('index_tour_seen') === '1') return;
+  // Esperar a que mainApp esté visible y wizard cerrado
+  setTimeout(() => {
+    const mainVisible = !document.getElementById('mainApp')?.classList.contains('hidden');
+    const wizardOpen  = (() => {
+      const m = document.getElementById('profileWizardModal');
+      return m && m.style.display && m.style.display !== 'none';
+    })();
+    if (mainVisible && !wizardOpen) startIndexTour(false);
+  }, 1800);
 }
 
 </script>

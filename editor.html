@@ -75,6 +75,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   cursor:pointer;white-space:nowrap;transition:all .15s;font-family:inherit;
 }
 .tb-btn:hover{border-color:var(--brand);color:var(--text);}
+.tb-btn.active{background:var(--grad);border-color:transparent;color:#fff;opacity:1 !important;}
 .tb-btn.primary{background:var(--grad);border-color:transparent;color:#fff;}
 .tb-btn.primary:hover{opacity:.9;}
 
@@ -191,6 +192,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 }
 .strip-del::after{content:'';position:absolute;top:-6px;left:-6px;right:-6px;bottom:-6px;}
 .strip-thumb:hover .strip-del{display:flex;}
+
+.strip-dup{
+  position:absolute;top:-5px;left:-5px;width:18px;height:18px;
+  border-radius:50%;background:#7C3AED;border:1.5px solid #fff;
+  color:#fff;font-size:10px;font-weight:800;cursor:pointer;
+  display:none;align-items:center;justify-content:center;z-index:5;line-height:1;
+}
+.strip-dup::after{content:'';position:absolute;top:-6px;left:-6px;right:-6px;bottom:-6px;}
+.strip-thumb:hover .strip-dup{display:flex;}
 
 /* ── PROPERTIES PANEL (bottom strip) ── */
 .props-bar{
@@ -933,9 +943,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   <!-- Formato + nav slides -->
   <div class="fmt-tabs" id="fmtTabs"></div>
   <div class="slide-nav" id="slideNav" style="display:none;">
-    <button class="snav-btn" onclick="prevSlide()">‹</button>
+    <button class="snav-btn" onclick="prevSlide()" title="Slide anterior">‹</button>
     <span class="snav-label" id="slideLabel">1/1</span>
-    <button class="snav-btn" onclick="nextSlide()">›</button>
+    <button class="snav-btn" onclick="nextSlide()" title="Slide siguiente">›</button>
     <button class="snav-btn" onclick="addSlide()" title="Nuevo slide">+</button>
   </div>
 
@@ -972,6 +982,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   <!-- Acciones -->
   <button class="tb-btn" id="undoBtn" onclick="historyUndo()" title="Deshacer (Ctrl+Z)" style="opacity:.7;">↩</button>
   <button class="tb-btn" id="redoBtn" onclick="historyRedo()" title="Rehacer (Ctrl+Y)" style="opacity:.7;">↪</button>
+  <button class="tb-btn" id="snapGridBtn" onclick="toggleSnapToGrid()" title="Activar/desactivar snap a grid (5%)" style="opacity:.7;">⊞</button>
+  <button class="tb-btn" id="helpTourBtn" onclick="startEditorTour(true)" title="Ver tour del editor" style="opacity:.7;">?</button>
   <input type="file" id="imgBlockInput" accept="image/*" style="display:none" onchange="addImageBlock(event)">
   <button class="tb-btn" onclick="openDesignsModal('save')" title="Guardar diseño actual">💾 <span>Guardar</span></button>
   <button class="tb-btn" onclick="openDesignsModal('list')" title="Mis diseños guardados" style="background:var(--brand-subtle);border:1px solid var(--brand-border2);color:var(--brand);font-weight:700;">📁 <span>Mis diseños</span></button>
@@ -993,6 +1005,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
       <button onclick="addTextBlock('Texto',{x:20,y:40,w:60,fontSize:24,color:'#fff',bold:false})" title="Añadir texto" style="width:36px;height:36px;border-radius:50%;background:var(--brand);border:none;color:#fff;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;">T+</button>
       <button onclick="document.getElementById('imgBlockInput').click()" title="Añadir imagen" style="width:36px;height:36px;border-radius:50%;background:var(--brand);border:none;color:#fff;font-size:16px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;">🖼</button>
       <button onclick="document.getElementById('logoBlockInput').click()" title="Añadir logo" style="width:36px;height:36px;border-radius:50%;background:rgba(139,95,191,.7);border:none;color:#fff;font-size:14px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;">🏷</button>
+      <button onclick="addShapeBlock('rect')" title="Añadir rectángulo" style="width:36px;height:36px;border-radius:50%;background:rgba(139,95,191,.7);border:none;color:#fff;font-size:18px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;">▭</button>
+      <button onclick="addShapeBlock('circle')" title="Añadir círculo" style="width:36px;height:36px;border-radius:50%;background:rgba(139,95,191,.7);border:none;color:#fff;font-size:18px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;">⬤</button>
+      <button onclick="addShapeBlock('line')" title="Añadir línea" style="width:36px;height:36px;border-radius:50%;background:rgba(139,95,191,.7);border:none;color:#fff;font-size:18px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;">━</button>
     </div>
 
     <div class="ig-phone" id="igPhone">
@@ -1040,7 +1055,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
           <div class="ig-caption-content" id="igCaptionContent">
             <strong style="color:#fff;" id="igCaptionUser">tu_usuario</strong><span id="igCaptionText" style="color:rgba(255,255,255,.95);"> Usa un caption del panel →</span>
           </div>
-          <button id="igCaptionToggle" onclick="expandCaptionPreview()">ver más</button>
+          <button id="igCaptionToggle" onclick="expandCaptionPreview()" title="Expandir caption">ver más</button>
         </div>
 
       </div>
@@ -1049,9 +1064,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
     <!-- Slide strip con flechas de navegación -->
     <div style="display:none;flex-direction:column;width:100%;flex-shrink:0;" id="carouselNav">
       <div style="display:flex;align-items:center;gap:6px;padding:4px 12px;border-top:1px solid var(--border);background:var(--bg);">
-        <button onclick="prevSlide()" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:14px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;">‹</button>
+        <button onclick="prevSlide()" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:14px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;" title="Slide anterior">‹</button>
         <div class="slide-strip" id="slideStrip"></div>
-        <button onclick="nextSlide()" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:14px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;">›</button>
+        <button onclick="nextSlide()" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:14px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;" title="Slide siguiente">›</button>
         <button onclick="addSlide()" title="Añadir slide" style="width:28px;height:28px;border-radius:50%;border:1.5px dashed var(--border2);background:transparent;color:var(--text3);font-size:16px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;">+</button>
       </div>
       <div style="text-align:center;font-size:9px;color:var(--text3);padding:2px 0 4px;">Arrastra para reordenar</div>
@@ -1200,13 +1215,27 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 
       <!-- ═══ POSICIÓN Y CAPAS ═══ -->
       <div class="prop-group">
-        <span class="prop-label">Posición</span>
+        <span class="prop-label">Alinear</span>
       </div>
       <div class="prop-group">
-        <button class="prop-btn" onclick="alignBlock('hcenter')" title="Centrar horizontalmente en el canvas">⇔</button>
-        <button class="prop-btn" onclick="alignBlock('vcenter')" title="Centrar verticalmente en el canvas">⇕</button>
-        <button class="prop-btn" onclick="alignBlock('left')"   title="Pegar a la izquierda">|⇠</button>
-        <button class="prop-btn" onclick="alignBlock('right')"  title="Pegar a la derecha">⇢|</button>
+        <button class="prop-btn" onclick="alignBlock('h-center')" title="Centrar horizontalmente">⇔</button>
+        <button class="prop-btn" onclick="alignBlock('v-center')" title="Centrar verticalmente">⇕</button>
+        <button class="prop-btn" onclick="alignBlock('center')"   title="Centro absoluto del canvas">⊕</button>
+        <button class="prop-btn" onclick="alignBlock('left')"     title="Pegar a la izquierda">|⇠</button>
+        <button class="prop-btn" onclick="alignBlock('right')"    title="Pegar a la derecha">⇢|</button>
+        <button class="prop-btn" onclick="alignBlock('top')"      title="Pegar arriba">⇈</button>
+        <button class="prop-btn" onclick="alignBlock('bottom')"   title="Pegar abajo">⇊</button>
+      </div>
+
+      <!-- ═══ A5 DISTRIBUIR (todos los bloques del slide) ═══ -->
+      <div class="prop-group">
+        <span class="prop-label">Distribuir</span>
+      </div>
+      <div class="prop-group">
+        <button class="prop-btn" onclick="distributeBlocks('horizontal')" title="Distribuir bloques horizontalmente con espaciado uniforme">↔ ≡</button>
+        <button class="prop-btn" onclick="distributeBlocks('vertical')"   title="Distribuir bloques verticalmente con espaciado uniforme">↕ ≡</button>
+        <button class="prop-btn" onclick="distributeBlocks('h-equal')"    title="Alinear todos en una fila + distribuir">━ ≡</button>
+        <button class="prop-btn" onclick="distributeBlocks('v-equal')"    title="Alinear todos en una columna + distribuir">┃ ≡</button>
       </div>
 
       <div class="prop-group">
@@ -1264,13 +1293,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
           <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);display:flex;align-items:center;justify-content:center;font-size:15px;">📷</div>
           <div style="font-family:inherit;font-size:15px;font-weight:800;color:#fff;letter-spacing:.01em;">Vista previa Instagram</div>
         </div>
-        <button onclick="closeIgPreview()" style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:#fff;font-size:16px;cursor:pointer;font-family:inherit;">✕</button>
+        <button onclick="closeIgPreview()" style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:#fff;font-size:16px;cursor:pointer;font-family:inherit;" title="Cerrar vista previa">✕</button>
       </div>
       <!-- Nav tabs para post/carrusel -->
       <div id="igPrevNav" style="display:none;gap:6px;margin-bottom:10px;align-items:center;">
-        <button onclick="igPrevGo(-1)" style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;">‹</button>
+        <button onclick="igPrevGo(-1)" style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;" title="Slide anterior">‹</button>
         <span id="igPrevCounter" style="color:rgba(255,255,255,.65);font-size:12px;flex:1;text-align:center;line-height:34px;font-weight:600;"></span>
-        <button onclick="igPrevGo(1)"  style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;">›</button>
+        <button onclick="igPrevGo(1)"  style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;" title="Slide siguiente">›</button>
       </div>
       <!-- Instagram phone mockup -->
       <div style="background:#000;border-radius:14px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.08);">
@@ -1303,13 +1332,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
           <div id="igPrevCaptionContent" style="display:block;white-space:pre-wrap;word-wrap:break-word;">
             <strong style="color:#fff;font-weight:700;" id="igPrevUser2">tu_usuario</strong><span id="igPrevCaption" style="color:rgba(255,255,255,.95);"> Tu caption aparecerá aquí…</span>
           </div>
-          <button id="igPrevCaptionToggle" onclick="expandIgPrevCaption()" style="display:none;background:none;border:none;color:rgba(255,255,255,.5);font-size:13px;font-weight:400;cursor:pointer;padding:0;margin:0;font-family:inherit;letter-spacing:0;line-height:inherit;vertical-align:baseline;">ver más</button>
+          <button id="igPrevCaptionToggle" onclick="expandIgPrevCaption()" style="display:none;background:none;border:none;color:rgba(255,255,255,.5);font-size:13px;font-weight:400;cursor:pointer;padding:0;margin:0;font-family:inherit;letter-spacing:0;line-height:inherit;vertical-align:baseline;" title="Ver más">ver más</button>
         </div>
       </div>
       <!-- Actions -->
       <div style="display:flex;gap:8px;margin-top:14px;">
-        <button onclick="closeIgPreview()" style="flex:1;padding:12px;border-radius:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.01em;">← Volver a editar</button>
-        <button onclick="exportFromPreview()" style="flex:1;padding:12px;border-radius:10px;background:var(--grad);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.01em;">📥 Exportar</button>
+        <button onclick="closeIgPreview()" style="flex:1;padding:12px;border-radius:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.01em;" title="Cerrar vista previa">← Volver a editar</button>
+        <button onclick="exportFromPreview()" style="flex:1;padding:12px;border-radius:10px;background:var(--grad);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.01em;" title="Exportar PNG">📥 Exportar</button>
       </div>
     </div>
   </div>
@@ -1336,7 +1365,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
     <!-- Botones [Borrar] [Copiar] -->
     <div style="display:flex;gap:5px;">
       <button onclick="clearCaptionZone()" title="Borrar caption" style="padding:7px 10px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surf2);color:var(--text3);font-size:13px;cursor:pointer;">🗑</button>
-      <button onclick="copyCaptionZoneSmart()" style="flex:1;padding:7px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.02em;">📋 Copiar</button>
+      <button onclick="copyCaptionZoneSmart()" style="flex:1;padding:7px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.02em;" title="Copiar caption">📋 Copiar</button>
     </div>
 
     <!-- Copiloto IA — se inyecta aquí por renderCaptionZoneCopilot() -->
@@ -1427,8 +1456,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 
         <!-- Cargar imagen propia -->
         <div style="display:flex;gap:6px;margin-bottom:10px;">
-          <button onclick="document.getElementById('bgImgInput').click()" style="flex:1;padding:8px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">📷 Cargar mi imagen</button>
-          <button id="bgRemoveBtn" onclick="removeBgImage()" style="display:none;padding:8px 12px;border-radius:var(--r);border:1px solid rgba(248,113,113,.3);background:rgba(248,113,113,.1);color:#F87171;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">✕ Quitar</button>
+          <button onclick="document.getElementById('bgImgInput').click()" style="flex:1;padding:8px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;" title="Cargar imagen de fondo">📷 Cargar mi imagen</button>
+          <button id="bgRemoveBtn" onclick="removeBgImage()" style="display:none;padding:8px 12px;border-radius:var(--r);border:1px solid rgba(248,113,113,.3);background:rgba(248,113,113,.1);color:#F87171;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;" title="Quitar fondo">✕ Quitar</button>
         </div>
 
         <!-- SECCIÓN 3: BANCO DE IMÁGENES -->
@@ -1444,7 +1473,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
         <!-- Buscador -->
         <div id="imgSearchRow" style="display:flex;gap:6px;margin-bottom:8px;">
           <input type="text" class="img-search-input" id="imgSearchInput" placeholder="Buscar fotos…" style="flex:1;" onkeydown="if(event.key==='Enter')searchStockImages()">
-          <button class="img-search-btn" onclick="searchStockImages()">🔍</button>
+          <button class="img-search-btn" onclick="searchStockImages()" title="Buscar fotos">🔍</button>
         </div>
 
         <!-- Grid de fotos — más grandes, 2 columnas -->
@@ -1470,7 +1499,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
         <div style="font-size:32px;margin-bottom:8px;">🎨</div>
         <div style="font-weight:700;color:var(--text2);margin-bottom:4px;">Sin marca configurada</div>
         <div style="margin-bottom:12px;">Configura tus colores, fuente y logo aquí mismo.</div>
-        <button onclick="openBrandOverlay()" style="padding:8px 16px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">🎨 Configurar Mi Marca</button>
+        <button onclick="openBrandOverlay()" style="padding:8px 16px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;" title="Configurar Mi Marca">🎨 Configurar Mi Marca</button>
       </div>
 
       <!-- Con marca configurada -->
@@ -1492,20 +1521,20 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
           <div style="font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">🏷 Logo de marca</div>
           <div style="display:flex;gap:6px;align-items:center;">
             <div id="edLogoPreviewThumb" style="width:36px;height:36px;border-radius:6px;background:var(--surf2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:16px;overflow:hidden;flex-shrink:0;">🏷</div>
-            <button onclick="document.getElementById('brandLogoUpload').click()" style="flex:1;padding:6px 10px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">📷 Cambiar logo</button>
+            <button onclick="document.getElementById('brandLogoUpload').click()" style="flex:1;padding:6px 10px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;" title="Cambiar logo">📷 Cambiar logo</button>
             <input type="file" id="brandLogoUpload" accept="image/*" style="display:none" onchange="uploadBrandLogoFromEditor(event)">
           </div>
         </div>
 
         <!-- Edit brand button -->
-        <button onclick="openBrandOverlay()" style="width:100%;padding:8px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;">✏️ Editar Mi Marca</button>
+        <button onclick="openBrandOverlay()" style="width:100%;padding:8px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;" title="Configurar Mi Marca">✏️ Editar Mi Marca</button>
 
         <!-- Botones de acción -->
         <div style="font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">¿Dónde aplicar?</div>
-        <button onclick="applyBrandToCurrentSlide()" style="width:100%;padding:11px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:6px;">
+        <button onclick="applyBrandToCurrentSlide()" style="width:100%;padding:11px;border-radius:var(--r);background:var(--grad);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:6px;" title="Aplicar Mi Marca">
           ✨ Solo este slide
         </button>
-        <button onclick="applyBrandToAllSlides()" style="width:100%;padding:9px;border-radius:var(--r);border:1.5px solid var(--brand);background:transparent;color:var(--brand);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:14px;">
+        <button onclick="applyBrandToAllSlides()" style="width:100%;padding:9px;border-radius:var(--r);border:1.5px solid var(--brand);background:transparent;color:var(--brand);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:14px;" title="Aplicar Mi Marca">
           Aplicar a todos los slides
         </button>
 
@@ -1525,7 +1554,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
         <!-- Header -->
         <div style="padding:16px 20px;background:var(--grad);display:flex;align-items:center;justify-content:space-between;">
           <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#fff;">🎨 Mi Marca</div>
-          <button onclick="closeBrandOverlay()" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.2);border:none;color:#fff;font-size:16px;cursor:pointer;">✕</button>
+          <button onclick="closeBrandOverlay()" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.2);border:none;color:#fff;font-size:16px;cursor:pointer;" title="Cerrar">✕</button>
         </div>
         <div style="padding:20px;">
           <!-- Colors -->
@@ -1606,7 +1635,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
             <div style="font-size:11px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">👁 Vista previa</div>
             <div id="ovPreview" style="border-radius:12px;overflow:hidden;aspect-ratio:4/5;position:relative;background:linear-gradient(135deg,#8B5FBF,#E91E8C);">
               <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center;">
-                <img id="ovPreviewLogo" src="" style="width:40px;height:40px;object-fit:contain;margin-bottom:8px;display:none;">
+                <img id="ovPreviewLogo" src="" alt="Logo de marca" style="width:40px;height:40px;object-fit:contain;margin-bottom:8px;display:none;">
                 <div id="ovPreviewText" style="font-size:20px;font-weight:800;color:#fff;font-family:'DM Sans',sans-serif;">Tu hook aquí</div>
                 <div id="ovPreviewSub" style="font-size:13px;color:rgba(255,255,255,.8);margin-top:6px;font-family:'DM Sans',sans-serif;">Descripción de tu contenido</div>
               </div>
@@ -1631,7 +1660,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
       <div class="bgc-row">
         <div class="bgc-swatch" style="background:#7C3AED;"><input type="color" id="bg1InputM" value="#7C3AED" oninput="onBgColorChangeMobile()"></div>
         <div class="bgc-swatch" style="background:#F43F5E;"><input type="color" id="bg2InputM" value="#F43F5E" oninput="onBgColorChangeMobile()"></div>
-        <button class="bgc-remove-btn" id="bgRemoveBtnM" onclick="removeBgImage()" style="display:none;">✕</button>
+        <button class="bgc-remove-btn" id="bgRemoveBtnM" onclick="removeBgImage()" style="display:none;" title="Quitar fondo">✕</button>
         <div style="flex:1;"></div>
         <div class="bgc-sliders">
           <div class="bgc-slider-row">
@@ -1659,12 +1688,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   <div class="designs-card">
     <div class="designs-head">
       <div class="designs-head-title" id="designsModalTitle">💾 Guardar diseño</div>
-      <button class="designs-head-close" onclick="closeDesignsModal()">✕</button>
+      <button class="designs-head-close" onclick="closeDesignsModal()" title="Cerrar">✕</button>
     </div>
     <!-- Modo SAVE: input + botón Guardar -->
     <div class="designs-save-row" id="designsSaveSection">
       <input type="text" class="designs-name-input" id="designNameInput" placeholder="Nombre del diseño…" maxlength="80">
-      <button class="designs-save-btn" id="designSaveBtn" onclick="saveDesign()">Guardar</button>
+      <button class="designs-save-btn" id="designSaveBtn" onclick="saveDesign()" title="Guardar diseño">Guardar</button>
     </div>
     <!-- Modo LIST: lista filtrada por formato actual -->
     <div id="designsListSection" style="display:none;">
@@ -1720,6 +1749,34 @@ let gridOn          = false;
 let iaData          = null;
 let currentUser     = null;
 let currentBrand    = null;
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TRIAL PRO 7 días — helpers client-side (espejo de analyze.js / index.html)
+   - getEffectivePlan(): devuelve 'pro' si trial activo, sino el plan real
+   - Usar getEffectivePlan() para gates de FEATURES (carrusel, banco imágenes,
+     subida, bg image, daily limits)
+   - NO usar getEffectivePlan() para Premium-only (tab Marca, plantillas Premium):
+     ahí sigue user.plan_type real (Premium nunca está en trial)
+   ═══════════════════════════════════════════════════════════════════════════ */
+function isTrialActive() {
+  if (!currentUser) return false;
+  if (currentUser.trial_used) return false;
+  if (!currentUser.trial_ends_at) return false;
+  return new Date(currentUser.trial_ends_at).getTime() > Date.now();
+}
+
+function getEffectivePlan() {
+  if (!currentUser) return 'free';
+  if (isTrialActive()) return 'pro';
+  return currentUser.plan_type || 'free';
+}
+
+function trialDaysRemaining() {
+  if (!currentUser || !currentUser.trial_ends_at) return 0;
+  const ms = new Date(currentUser.trial_ends_at).getTime() - Date.now();
+  return Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)));
+}
+
 let imgBank         = [];
 let blockIdCounter  = 0;
 let _globalZCounter = 10;   // FIX: was missing — used by makeBlock for z-index
@@ -2432,7 +2489,7 @@ function onOverlayChangeMobile() {
 
 function loadBgImage(event) {
   const file = event.target.files[0]; if (!file) return;
-  if (currentUser && currentUser.plan_type === 'free') {
+  if (getEffectivePlan() === 'free') {
     toast('🔒 Cargar imagen de fondo requiere plan Pro o Premium','error');
     event.target.value = '';
     return;
@@ -2540,6 +2597,22 @@ function makeBlock(type, opts={}) {
     imgEl.src = opts.src || '';
     imgEl.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;border-radius:4px;';
     inner.appendChild(imgEl);
+  } else if (type === 'shape') {
+    // ════ A10 — SHAPES (rect, circle, line) ════
+    const shapeKind = opts.shapeKind || 'rect';
+    el.dataset.shapeKind = shapeKind;
+    el.style.height = (opts.h ?? 20) + '%';
+    const sh = document.createElement('div');
+    sh.className = 'eblock-shape';
+    const fill = opts.color || '#7C3AED';
+    if (shapeKind === 'rect') {
+      sh.style.cssText = `width:100%;height:100%;background:${fill};border-radius:${opts.radius||0}px;`;
+    } else if (shapeKind === 'circle') {
+      sh.style.cssText = `width:100%;height:100%;background:${fill};border-radius:50%;`;
+    } else if (shapeKind === 'line') {
+      sh.style.cssText = `width:100%;height:${opts.thickness||4}px;background:${fill};margin-top:auto;margin-bottom:auto;position:absolute;top:50%;left:0;transform:translateY(-50%);`;
+    }
+    inner.appendChild(sh);
   }
 
   // Resize handles
@@ -2601,6 +2674,16 @@ function makeBlock(type, opts={}) {
 
 function addTextBlock(text, opts={}) {
   return makeBlock('text', { text: text||'Texto', ...opts });
+}
+
+/* ════ A10 — Shapes geométricos ════ */
+function addShapeBlock(shapeKind) {
+  const opts = { shapeKind, x: 30, y: 35, w: 30, h: 25, color: '#7C3AED' };
+  if (shapeKind === 'circle') opts.h = 30;
+  if (shapeKind === 'line')   { opts.h = 5; opts.thickness = 4; opts.w = 60; opts.y = 50; }
+  const id = makeBlock('shape', opts);
+  toast('✅ Forma añadida','success');
+  return id;
 }
 
 function addLogoBlock(event) {
@@ -2671,6 +2754,31 @@ function duplicateBlock() {
     makeBlock('image', { src:img.src, x, y, h:parseFloat(el.style.height)||30 });
   }
   setTimeout(historySave, 100);
+}
+
+/* ════ A3 — FILTROS DE IMAGEN (CSS filter) ════ */
+const IMAGE_FILTER_PRESETS = {
+  none:     '',
+  bw:       'grayscale(100%)',
+  vintage:  'sepia(60%) contrast(1.1) saturate(.8)',
+  vivid:    'saturate(1.5) contrast(1.1)',
+  cold:     'hue-rotate(180deg) saturate(.9)',
+  warm:     'sepia(20%) saturate(1.2)',
+  blur:     'blur(3px)',
+  bright:   'brightness(1.3)',
+  dark:     'brightness(.65)',
+};
+
+function applyImageFilter(presetKey) {
+  const el = document.getElementById(selectedId);
+  if (!el) { toast('Selecciona una imagen primero','info'); return; }
+  const img = el.querySelector('img');
+  if (!img) { toast('Esa función solo funciona con imágenes','info'); return; }
+  const f = IMAGE_FILTER_PRESETS[presetKey] || '';
+  img.style.filter = f;
+  el.dataset.imgFilter = presetKey;
+  saveCurrentBlocks(); historySave();
+  toast('✅ Filtro aplicado','success');
 }
 
 function selectBlock(id) {
@@ -2892,6 +3000,17 @@ function applyLineHeight() {
 }
 
 /* ══ DRAG (mouse) ══ */
+/* ════ A6 — SNAP TO GRID (opcional, toggle) ════ */
+let _snapToGrid = false;
+const GRID_SIZE = 5; // 5% steps
+
+function toggleSnapToGrid() {
+  _snapToGrid = !_snapToGrid;
+  const btn = document.getElementById('snapGridBtn');
+  if (btn) btn.classList.toggle('active', _snapToGrid);
+  toast(_snapToGrid ? '✅ Snap a grid activado' : 'Snap a grid desactivado', 'info');
+}
+
 function startDrag(e, block) {
   e.preventDefault();
   const wrap  = document.getElementById('canvasWrap');
@@ -2903,7 +3022,12 @@ function startDrag(e, block) {
   const onMove = ev => {
     let x = ((ev.clientX - offX - wRect.left) / wRect.width)  * 100;
     let y = ((ev.clientY - offY - wRect.top)  / wRect.height) * 100;
-    // Snap to center guides (within 2%)
+    // A6: Snap to grid (5%) si activado
+    if (_snapToGrid) {
+      x = Math.round(x / GRID_SIZE) * GRID_SIZE;
+      y = Math.round(y / GRID_SIZE) * GRID_SIZE;
+    }
+    // Snap to center guides (within 2%) — siempre activo
     const bWpct = (block.offsetWidth  / wRect.width)  * 100;
     const bHpct = (block.offsetHeight / wRect.height) * 100;
     const cx = 50 - bWpct/2, cy = 50 - bHpct/2;
@@ -3014,13 +3138,36 @@ function startResizeTouch(e, block, dir) {
 
 /* ══ KEYBOARD ══ */
 function handleKeyboard(e) {
-  // Undo/Redo
-  if ((e.ctrlKey||e.metaKey) && e.key==='z' && !e.shiftKey) { e.preventDefault(); historyUndo(); return; }
-  if ((e.ctrlKey||e.metaKey) && (e.key==='y' || (e.key==='z' && e.shiftKey))) { e.preventDefault(); historyRedo(); return; }
+  // ── GUARD GLOBAL: si el usuario está escribiendo en un input/textarea,
+  //    NO procesar shortcuts (excepto Escape, que sí debe funcionar siempre).
+  //    Sin esto, escribir en el input "Nombre del diseño" o cualquier otro
+  //    input dispara deleteSelectedBlock() en cada Backspace y borra el canvas.
+  const isTyping = e.target && (
+    e.target.tagName === 'INPUT' ||
+    e.target.tagName === 'TEXTAREA' ||
+    e.target.tagName === 'SELECT' ||
+    e.target.isContentEditable === true
+  );
 
+  // Undo/Redo (NO se aplican mientras se escribe en un input)
+  if (!isTyping) {
+    if ((e.ctrlKey||e.metaKey) && e.key==='z' && !e.shiftKey) { e.preventDefault(); historyUndo(); return; }
+    if ((e.ctrlKey||e.metaKey) && (e.key==='y' || (e.key==='z' && e.shiftKey))) { e.preventDefault(); historyRedo(); return; }
+  }
+
+  // Escape SÍ funciona aunque se esté escribiendo (cierra menús, deselecciona)
+  if (e.key==='Escape') {
+    document.querySelectorAll('.eblock').forEach(b=>b.classList.remove('selected'));
+    selectedId=null;
+    document.getElementById('propsBar').classList.remove('visible');
+    return;
+  }
+
+  // El resto de shortcuts solo si NO se está escribiendo Y hay un bloque seleccionado
+  if (isTyping) return;
   if (!selectedId || e.target.contentEditable==='true') return;
+
   if ((e.key==='Delete'||e.key==='Backspace') && !e.target.closest('.eblock-text')) { e.preventDefault(); deleteSelectedBlock(); }
-  if (e.key==='Escape') { document.querySelectorAll('.eblock').forEach(b=>b.classList.remove('selected')); selectedId=null; document.getElementById('propsBar').classList.remove('visible'); }
   if (e.key==='d' && (e.ctrlKey||e.metaKey)) { e.preventDefault(); duplicateBlock(); }
   const el = document.getElementById(selectedId);
   if (el && ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) {
@@ -3114,10 +3261,52 @@ function updateSlideNav() {
 function prevSlide() { if (currentSlide > 0) loadSlide(currentSlide-1); }
 function nextSlide() { if (currentSlide < slides.length-1) loadSlide(currentSlide+1); }
 
+/* ════ LÍMITE DE SLIDES EN CARRUSEL ════
+   Instagram permite máximo 10 slides en un carrusel.
+   Si en el futuro IG amplía el límite, basta con cambiar este valor. */
+const MAX_SLIDES = 10;
+
 function addSlide() {
+  if (slides.length >= MAX_SLIDES) {
+    toast(`Máximo ${MAX_SLIDES} slides por carrusel (límite de Instagram)`, 'info');
+    return;
+  }
   saveCurrentBlocks();
   slides.push(newSlide(slides[currentSlide]?.bg1||'#7C3AED', slides[currentSlide]?.bg2||'#F43F5E'));
   loadSlide(slides.length-1);
+}
+
+/* ════ A8 — DUPLICAR SLIDE (clona el actual con todos sus bloques + bg) ════ */
+function duplicateSlide(idx, e) {
+  e?.stopPropagation();
+  if (typeof idx !== 'number') idx = currentSlide;
+  if (!slides[idx]) return;
+  if (slides.length >= MAX_SLIDES) {
+    toast(`Máximo ${MAX_SLIDES} slides por carrusel (límite de Instagram)`, 'info');
+    return;
+  }
+  saveCurrentBlocks();
+  // Deep clone del slide (incluye _dom blocks)
+  const original = slides[idx];
+  const cloned = {
+    bg1:     original.bg1,
+    bg2:     original.bg2,
+    bgImg:   original.bgImg,
+    overlay: original.overlay,
+    iaSlide: original.iaSlide ? JSON.parse(JSON.stringify(original.iaSlide)) : null,
+    _dom:    original._dom    ? JSON.parse(JSON.stringify(original._dom))    : null,
+  };
+  slides.splice(idx + 1, 0, cloned);
+  // Si hay carousel_slides en iaData, también clonarlo en la misma posición
+  if (iaData?.carousel_slides && Array.isArray(iaData.carousel_slides) && iaData.carousel_slides[idx]) {
+    iaData.carousel_slides.splice(idx + 1, 0, JSON.parse(JSON.stringify(iaData.carousel_slides[idx])));
+  }
+  loadSlide(idx + 1);
+  if (currentFormat === 'carousel' && typeof renderCarouselPanel === 'function') {
+    renderCarouselPanel();
+  }
+  historySave();
+  toast('✅ Slide duplicado','success');
 }
 
 function deleteSlide(idx, e) {
@@ -3161,6 +3350,7 @@ function renderSlideStrip() {
          onclick="handleStripClick(event,${i})"
          style="background:${s.bgImg?`url('${s.bgImg}') center/cover`:` linear-gradient(135deg,${s.bg1},${s.bg2})`};">
       <div class="strip-thumb-label">${i+1}</div>
+      <div class="strip-dup" onclick="duplicateSlide(${i},event)" title="Duplicar slide">⎘</div>
       ${slides.length > 1 ? `<div class="strip-del" onclick="deleteSlide(${i},event)" title="Eliminar slide">✕</div>` : ''}
     </div>
   `).join('');
@@ -3400,7 +3590,8 @@ function updateTabsForFormat(fmt) {
 
 function renderIAPanel() {
   switchIaTab('content');
-  setTimeout(startTooltips, 500);
+  // ── Sistema viejo de tooltips ELIMINADO — colisionaba con el tour de 8 pasos
+  //    (EDITOR_TOUR_STEPS). El tour nuevo cubre todo lo que cubría este sistema.
 }
 
 function renderContentPanel() {
@@ -3933,6 +4124,11 @@ function applySlideToCanvas(idx, s) {
 
 function applyAllSlides(slides_data, silent = false) {
   if (!slides_data?.length) return;
+  // Cap a MAX_SLIDES por si la IA generó más slides de los permitidos
+  if (slides_data.length > MAX_SLIDES) {
+    slides_data = slides_data.slice(0, MAX_SLIDES);
+    if (!silent) toast(`Carrusel cortado a ${MAX_SLIDES} slides (límite de Instagram)`, 'info');
+  }
   while (slides.length < slides_data.length) slides.push(newSlide(slides[0]?.bg1||'#7C3AED', slides[0]?.bg2||'#F43F5E'));
   slides_data.forEach((s, i) => {
     loadSlide(i);
@@ -4615,9 +4811,13 @@ function copyCaption() {
   navigator.clipboard.writeText(full).then(() => toast('✅ Caption copiado','success'));
 }
 
-/* ══ IMG BANK — PEXELS + UNSPLASH + MIS FOTOS ══ */
-const PEXELS_API_KEY    = 'oM4ijpZO80KEavfieSIXXPXpLJqnHNLQpS5S0EhvTSAZJuHFnnYB1he2';   // ← usuario pone su key de pexels.com/api (gratis)
-const UNSPLASH_ACCESS   = 'zpmD-PWCmEakp-hsZt4PQfxqLQdlhgcA7jKdYZW3gHo'; // ← usuario pone su key de unsplash.com/developers (gratis)
+/* ══ IMG BANK — PEXELS + UNSPLASH + MIS FOTOS ══
+   API keys movidas al backend (variables de entorno PEXELS_API_KEY +
+   UNSPLASH_ACCESS_KEY en Render). El frontend ya NO conoce las claves.
+   Endpoints proxy: GET /api/images/pexels?q=...&page=...
+                    GET /api/images/unsplash?q=...&page=...
+   Si el backend devuelve 503 (provider no configurado), caemos a Picsum
+   placeholder para que la UI no se rompa en desarrollo. */
 let _currentImgTab = 'pexels';
 let _pexelsPage    = 1;
 let _stockQuery    = '';
@@ -4652,8 +4852,8 @@ function switchImgTab(tab) {
 }
 
 async function searchStockImages() {
-  // Block for Free plan
-  if (currentUser && currentUser.plan_type === 'free') {
+  // Block for Free plan (respeta trial Pro: durante trial getEffectivePlan() === 'pro')
+  if (getEffectivePlan() === 'free') {
     const bank = document.getElementById('imgBank');
     if (bank) bank.innerHTML = '<div style="text-align:center;padding:20px;"><div style="font-size:28px;margin-bottom:8px;">🔒</div><strong style="color:var(--text);display:block;margin-bottom:4px;">Solo Pro y Premium</strong><span style="font-size:11px;color:var(--text3);">Mejora tu plan para acceder al banco de imágenes</span></div>';
     return;
@@ -4680,45 +4880,62 @@ async function searchStockImages() {
   }
 }
 
-async function searchPexels(q, page=1) {
-  // Use Pexels API if key configured, else use free curated endpoint
-  if (PEXELS_API_KEY === 'PEXELS_KEY_HERE') {
-    // Demo mode: use Picsum random photos as placeholder
-    return Array.from({length:12},(_,i) => ({
-      thumb: `https://picsum.photos/seed/${encodeURIComponent(q+i)}/200/200`,
-      full:  `https://picsum.photos/seed/${encodeURIComponent(q+i)}/1080/1350`,
-      author:'Picsum', link:'https://picsum.photos'
-    }));
-  }
-  const r = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(q)}&per_page=40&page=${page}`, {
-    headers: { Authorization: PEXELS_API_KEY }
-  });
-  const d = await r.json();
-  return (d.photos || []).map(p => ({
-    thumb:  p.src.small,
-    full:   p.src.large2x || p.src.large,
-    author: p.photographer,
-    link:   p.url,
+// ── Fallback Picsum: se usa solo si el backend devuelve 503 (provider sin
+//    configurar). Mantiene la UI funcional en desarrollo / antes de meter las keys.
+function _picsumFallback(q, page, prefix='') {
+  return Array.from({length:12}, (_, i) => ({
+    thumb: `https://picsum.photos/seed/${encodeURIComponent(q+prefix+i+page)}/200/200`,
+    full:  `https://picsum.photos/seed/${encodeURIComponent(q+prefix+i+page)}/1080/1350`,
+    author:'Picsum', link:'https://picsum.photos'
   }));
 }
 
-async function searchUnsplash(q, page=1) {
-  if (UNSPLASH_ACCESS === 'UNSPLASH_KEY_HERE') {
-    return Array.from({length:12},(_,i) => ({
-      thumb: `https://picsum.photos/seed/${encodeURIComponent(q+'u'+i+page)}/200/200`,
-      full:  `https://picsum.photos/seed/${encodeURIComponent(q+'u'+i+page)}/1080/1350`,
-      author:'Unsplash', link:'https://unsplash.com'
+async function searchPexels(q, page=1) {
+  // Llamada al backend proxy. Backend hace fetch a Pexels con la API key
+  // server-side y devuelve el JSON normalizado de Pexels.
+  const token = localStorage.getItem('token');
+  if (!token) { toast('Inicia sesión para buscar imágenes','error'); return []; }
+  try {
+    const r = await fetch(`${API_URL}/images/pexels?q=${encodeURIComponent(q)}&page=${page}`, {
+      headers: { Authorization: 'Bearer ' + token }
+    });
+    if (r.status === 503) return _picsumFallback(q, page, 'p'); // provider no configurado
+    if (!r.ok) throw new Error('Pexels proxy error: ' + r.status);
+    const wrap = await r.json();
+    const d = wrap.data || wrap; // backend devuelve { success, data }
+    return (d.photos || []).map(p => ({
+      thumb:  p.src.small,
+      full:   p.src.large2x || p.src.large,
+      author: p.photographer,
+      link:   p.url,
     }));
+  } catch (err) {
+    console.warn('searchPexels error:', err.message);
+    return [];
   }
-  const r = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(q)}&per_page=20&page=${page}&client_id=${UNSPLASH_ACCESS}`);
-  if (!r.ok) throw new Error('Unsplash error: ' + r.status);
-  const d = await r.json();
-  return (d.results || []).map(p => ({
-    thumb:  p.urls.small,
-    full:   p.urls.regular,
-    author: p.user.name,
-    link:   p.links.html,
-  }));
+}
+
+async function searchUnsplash(q, page=1) {
+  const token = localStorage.getItem('token');
+  if (!token) { toast('Inicia sesión para buscar imágenes','error'); return []; }
+  try {
+    const r = await fetch(`${API_URL}/images/unsplash?q=${encodeURIComponent(q)}&page=${page}`, {
+      headers: { Authorization: 'Bearer ' + token }
+    });
+    if (r.status === 503) return _picsumFallback(q, page, 'u');
+    if (!r.ok) throw new Error('Unsplash proxy error: ' + r.status);
+    const wrap = await r.json();
+    const d = wrap.data || wrap;
+    return (d.results || []).map(p => ({
+      thumb:  p.urls.small,
+      full:   p.urls.regular,
+      author: p.user.name,
+      link:   p.links.html,
+    }));
+  } catch (err) {
+    console.warn('searchUnsplash error:', err.message);
+    return [];
+  }
 }
 
 let _stockPhotos = [];
@@ -4749,16 +4966,87 @@ function renderStockPage() {
   pagePhotos.forEach(p => {
     const div = document.createElement('div');
     div.style.cssText = 'aspect-ratio:4/5;border-radius:8px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:all .12s;background:var(--surf2);position:relative;';
-    div.innerHTML = `<img src="${p.thumb}" loading="lazy" alt="${p.author}" style="width:100%;height:100%;object-fit:cover;display:block;">
-      <div style="position:absolute;inset:0;background:rgba(139,95,191,.0);transition:.15s;display:flex;align-items:center;justify-content:center;font-size:24px;opacity:0;">+</div>`;
-    div.onmouseenter = () => { div.querySelector('div').style.opacity='1'; div.querySelector('div').style.background='rgba(139,95,191,.5)'; };
-    div.onmouseleave = () => { div.querySelector('div').style.opacity='0'; div.querySelector('div').style.background='rgba(139,95,191,.0)'; };
-    div.onclick = () => {
-      slides[currentSlide].bgImg = p.full;
-      updateCanvasBg(); updateStripThumb(currentSlide); historySave();
-      const rb = document.getElementById('bgRemoveBtn'); if (rb) rb.style.display='inline-flex';
-      toast('✅ Foto aplicada — ✕ para quitarla','success');
+
+    // ── Render: imagen + atribución autor (legal Pexels/Unsplash) + 2 botones en hover ──
+    div.innerHTML = `
+      <img src="${p.thumb}" loading="lazy" alt="Foto de ${p.author||'autor'}" style="width:100%;height:100%;object-fit:cover;display:block;">
+      <div class="img-overlay" style="position:absolute;inset:0;background:rgba(20,15,40,.0);transition:.15s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;opacity:0;padding:6px;">
+        <button class="img-btn-bg" style="background:linear-gradient(135deg,#7C3AED,#F43F5E);border:none;color:#fff;font-size:11px;font-weight:700;padding:6px 10px;border-radius:6px;cursor:pointer;font-family:inherit;width:90%;display:flex;align-items:center;justify-content:center;gap:4px;">🖼 Fondo</button>
+        <button class="img-btn-block" style="background:rgba(255,255,255,.95);border:none;color:#1E1B2E;font-size:11px;font-weight:700;padding:6px 10px;border-radius:6px;cursor:pointer;font-family:inherit;width:90%;display:flex;align-items:center;justify-content:center;gap:4px;">➕ Bloque</button>
+      </div>
+      <div class="img-author" style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.7));padding:14px 6px 4px;font-size:9px;color:#fff;text-align:center;line-height:1.2;pointer-events:none;text-shadow:0 1px 2px rgba(0,0,0,.5);">📷 ${p.author||'Autor'}</div>
+    `;
+
+    // Hover: mostrar overlay con botones
+    div.onmouseenter = () => {
+      const ov = div.querySelector('.img-overlay');
+      if (ov) { ov.style.opacity='1'; ov.style.background='rgba(20,15,40,.65)'; }
     };
+    div.onmouseleave = () => {
+      const ov = div.querySelector('.img-overlay');
+      if (ov) { ov.style.opacity='0'; ov.style.background='rgba(20,15,40,.0)'; }
+    };
+
+    // ── Botón "🖼 Fondo": aplica como fondo del slide (bloqueado en Free) ──
+    div.querySelector('.img-btn-bg').onclick = (e) => {
+      e.stopPropagation();
+      // Bloqueo plan Free (mismo criterio que loadBgImage). Trial Pro pasa el gate.
+      if (getEffectivePlan() === 'free') {
+        toast('🔒 Aplicar foto como fondo requiere plan Pro o Premium','error');
+        return;
+      }
+      // Usar applyStockImageAsBg que ya tiene cover crop + fallback CORS
+      if (typeof applyStockImageAsBg === 'function') {
+        if (typeof saveCurrentBlocks === 'function') saveCurrentBlocks();
+        applyStockImageAsBg(p.full, p.author || 'Autor');
+      } else {
+        // Fallback simple si applyStockImageAsBg no existe (no debería)
+        if (typeof saveCurrentBlocks === 'function') saveCurrentBlocks();
+        slides[currentSlide].bgImg = p.full;
+        updateCanvasBg();
+        updateStripThumb(currentSlide);
+        historySave();
+        toast(`✅ Foto de ${p.author||'autor'} aplicada como fondo`,'success');
+      }
+      // Mostrar botón ✕ de quitar fondo
+      const rb = document.getElementById('bgRemoveBtn'); if (rb) rb.style.display='inline-flex';
+      const rbH = document.getElementById('bgRemoveBtnH'); if (rbH) rbH.style.display='inline-flex';
+      const rbM = document.getElementById('bgRemoveBtnM'); if (rbM) rbM.style.display='inline-flex';
+    };
+
+    // ── Botón "➕ Bloque": añade la imagen como bloque al canvas ──
+    div.querySelector('.img-btn-block').onclick = (e) => {
+      e.stopPropagation();
+      // Añadir como bloque (NO bloqueado en Free — bloques de imagen están permitidos)
+      if (typeof addImageFromBank === 'function') {
+        addImageFromBank(p.full);
+      } else {
+        // Fallback
+        makeBlock('image', { src: p.full, y:20, h:40 });
+        toast('✅ Imagen añadida al canvas','success');
+      }
+    };
+
+    // Click en cualquier otra zona = aplicar como fondo (compatibilidad con UX anterior)
+    div.onclick = (e) => {
+      // Solo si el clic no fue en un botón (los botones tienen su propio handler)
+      if (e.target.closest('.img-btn-bg') || e.target.closest('.img-btn-block')) return;
+      // Default: comportamiento anterior (fondo) — pero ahora con bloqueo Free (trial Pro pasa)
+      if (getEffectivePlan() === 'free') {
+        toast('🔒 Aplicar foto como fondo requiere plan Pro o Premium. Pulsa "➕ Bloque" para añadirla al canvas.','info');
+        return;
+      }
+      if (typeof saveCurrentBlocks === 'function') saveCurrentBlocks();
+      if (typeof applyStockImageAsBg === 'function') {
+        applyStockImageAsBg(p.full, p.author || 'Autor');
+      } else {
+        slides[currentSlide].bgImg = p.full;
+        updateCanvasBg(); updateStripThumb(currentSlide); historySave();
+        toast('✅ Foto aplicada como fondo','success');
+      }
+      const rb = document.getElementById('bgRemoveBtn'); if (rb) rb.style.display='inline-flex';
+    };
+
     grid.appendChild(div);
   });
   bank.appendChild(grid);
@@ -4907,8 +5195,8 @@ async function uploadToBank(event) {
   const files = Array.from(event.target.files); if (!files.length) return;
   const token = localStorage.getItem('token');
   if (!token) { toast('Inicia sesión para subir imágenes','error'); return; }
-  // Block for Free plan
-  if (currentUser && currentUser.plan_type === 'free') {
+  // Block for Free plan (trial Pro pasa el gate)
+  if (getEffectivePlan() === 'free') {
     toast('🔒 Subir imágenes requiere plan Pro o Premium','error');
     event.target.value = '';
     return;
@@ -4974,8 +5262,56 @@ async function exportAll() {
   if (currentFormat === 'carousel' && slides.length > 1) {
     showExportCarouselModal();
   } else {
-    await exportPNG();
+    // Para post/square: vista previa primero
+    await showExportPreview();
   }
+}
+
+/* ════ A11 — VISTA PREVIA ANTES DE EXPORTAR (post/square) ════ */
+async function showExportPreview() {
+  const canvas = document.getElementById('canvas');
+  if (!canvas) { await exportPNG(); return; }
+
+  // Capturar canvas como imagen para preview
+  let previewSrc = '';
+  try {
+    if (typeof html2canvas !== 'undefined') {
+      const c = await html2canvas(canvas, { scale:1, logging:false, useCORS:true, allowTaint:true });
+      previewSrc = c.toDataURL('image/png', 0.85);
+    }
+  } catch(e) { console.warn('Preview falló, exportando directo:', e.message); }
+
+  // Si no se pudo previsualizar, exportar directo
+  if (!previewSrc) { await exportPNG(); return; }
+
+  // Modal con preview
+  const existing = document.getElementById('exportPreviewModal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'exportPreviewModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9500;display:flex;align-items:center;justify-content:center;padding:20px;';
+  modal.innerHTML = `
+    <div style="background:var(--surf);border-radius:16px;padding:20px;max-width:420px;width:100%;text-align:center;max-height:90vh;overflow-y:auto;">
+      <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--text);margin-bottom:12px;">👁 Vista previa</div>
+      <div style="background:#000;border-radius:10px;padding:8px;margin-bottom:14px;">
+        <img src="${previewSrc}" style="max-width:100%;max-height:55vh;border-radius:6px;display:block;margin:0 auto;" alt="Vista previa">
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:14px;">Así quedará el PNG exportado</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button id="confirmExportBtn" style="padding:12px;border-radius:10px;background:var(--grad);border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
+          📥 Descargar PNG
+        </button>
+        <button onclick="document.getElementById('exportPreviewModal').remove()" style="padding:10px;border-radius:10px;background:transparent;border:1px solid var(--border2);color:var(--text3);font-size:13px;cursor:pointer;font-family:inherit;" title="Exportar">
+          ← Volver al editor
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+  document.getElementById('confirmExportBtn').onclick = async () => {
+    modal.remove();
+    await exportPNG();
+  };
 }
 
 function showExportCarouselModal() {
@@ -4992,13 +5328,13 @@ function showExportCarouselModal() {
       <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px;">Exportar carrusel</div>
       <div style="font-size:12px;color:var(--text3);margin-bottom:20px;">${slides.length} slides listos para exportar</div>
       <div style="display:flex;flex-direction:column;gap:8px;">
-        <button onclick="document.getElementById('exportChoiceModal').remove();exportCarouselZip()" style="padding:12px;border-radius:10px;background:var(--grad);border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
+        <button onclick="document.getElementById('exportChoiceModal').remove();exportCarouselZip()" style="padding:12px;border-radius:10px;background:var(--grad);border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;" title="Exportar">
           🗜 Descargar ZIP (PNG por slide)
         </button>
-        <button onclick="document.getElementById('exportChoiceModal').remove();exportCarouselPDF()" style="padding:12px;border-radius:10px;background:var(--brand-subtle);border:1.5px solid var(--brand);color:var(--brand);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
+        <button onclick="document.getElementById('exportChoiceModal').remove();exportCarouselPDF()" style="padding:12px;border-radius:10px;background:var(--brand-subtle);border:1.5px solid var(--brand);color:var(--brand);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;" title="Exportar">
           📄 Descargar PDF (todos en uno)
         </button>
-        <button onclick="document.getElementById('exportChoiceModal').remove()" style="padding:10px;border-radius:10px;background:transparent;border:1px solid var(--border2);color:var(--text3);font-size:13px;cursor:pointer;font-family:inherit;">
+        <button onclick="document.getElementById('exportChoiceModal').remove()" style="padding:10px;border-radius:10px;background:transparent;border:1px solid var(--border2);color:var(--text3);font-size:13px;cursor:pointer;font-family:inherit;" title="Exportar">
           Cancelar
         </button>
       </div>
@@ -5103,46 +5439,12 @@ async function exportCarouselZip() {
   toast('✅ ZIP descargado','success');
 }
 
-/* ══ TOOLTIPS PRIMER USO ══ */
-const TOOLTIP_KEY = 'conteniza_tooltips_done';
-let _tooltipStep = 0;
-const TOOLTIPS = [
-  { target:'iaContent',     text:'👆 Navega los captions con ← → y toca "Usar" para elegir uno', pos:'left'   },
-  { target:'canvasBlocks',  text:'✏️ Doble toque en el canvas para añadir texto', pos:'top'    },
-  { target:'canvasBlocks',  text:'↔️ Arrastra cualquier texto para moverlo',      pos:'top'    },
-  { target:'iaDesign',      text:'🖼 Busca una foto de fondo o elige un gradiente', pos:'left'  },
-  { target:'tbCredits',     text:'⚡ Aquí ves tus créditos disponibles',           pos:'bottom' },
-];
-
-function startTooltips() {
-  if (localStorage.getItem(TOOLTIP_KEY)) return;
-  if (!iaData) return;
-  setTimeout(() => showTooltip(0), 1000);
-}
-
-function showTooltip(idx) {
-  document.querySelectorAll('.tt-bubble').forEach(e=>e.remove());
-  if (idx >= TOOLTIPS.length) { localStorage.setItem(TOOLTIP_KEY,'1'); return; }
-  const tip  = TOOLTIPS[idx];
-  const target = document.getElementById(tip.target);
-  if (!target) { showTooltip(idx+1); return; }
-
-  const bubble = document.createElement('div');
-  bubble.className = 'tt-bubble';
-  bubble.style.cssText = 'position:fixed;z-index:9999;background:var(--brand);color:#fff;font-size:12px;font-weight:600;padding:10px 14px;border-radius:10px;max-width:220px;line-height:1.5;box-shadow:0 4px 20px rgba(0,0,0,.4);cursor:pointer;';
-  bubble.innerHTML = tip.text + '<br><span style="font-size:10px;opacity:.8;">Toca para continuar (' + (idx+1) + '/' + TOOLTIPS.length + ')</span>';
-  bubble.onclick = () => showTooltip(idx+1);
-
-  document.body.appendChild(bubble);
-  const rect = target.getBoundingClientRect();
-  const bw = 230, bh = 70;
-  let top, left;
-  if (tip.pos === 'left')   { top = rect.top + rect.height/2 - bh/2; left = rect.left - bw - 10; }
-  else if (tip.pos === 'top') { top = rect.top - bh - 10; left = rect.left + rect.width/2 - bw/2; }
-  else                        { top = rect.bottom + 10; left = rect.right - bw; }
-  bubble.style.top  = Math.max(10, top)  + 'px';
-  bubble.style.left = Math.max(10, left) + 'px';
-}
+/* ══ SISTEMA TOOLTIPS PRIMER USO — ELIMINADO ══
+   El sistema antiguo (5 burbujas con "Toca para continuar 1/5") se eliminó
+   porque colisionaba visualmente con el tour de 8 pasos (EDITOR_TOUR_STEPS).
+   El tour nuevo cubre todos los puntos que cubría este sistema y permite
+   replay desde el botón ❓ Ayuda. Si el navegador tiene la flag vieja
+   localStorage['conteniza_tooltips_done'], no afecta nada — queda huérfana. */
 
 /* ══ AUTOSAVE ══ */
 let _autoSaveTimer = null;
@@ -5234,7 +5536,8 @@ function updateTopbarUser() {
     // Leer límite del backend (incluye cortesía); fallback al hardcode por plan si no llegó
     let dl = currentUser.daily_usage_limit;
     if (!dl) {
-      dl = currentUser.plan_type === 'free' ? 2 : currentUser.plan_type === 'pro' ? 20 : 30;
+      const ep = getEffectivePlan(); // respeta trial Pro
+      dl = ep === 'free' ? 2 : ep === 'pro' ? 20 : 30;
     }
     if (creditEl) {
       creditEl.textContent = '⚡ ' + cr;
@@ -5246,7 +5549,16 @@ function updateTopbarUser() {
     const dailyEl = document.getElementById('tbDailyUsage');
     if (dailyEl) dailyEl.textContent = du + ' / ' + dl;
     const planEl = document.getElementById('tbPlanName');
-    if (planEl) planEl.textContent = (currentUser.plan_type || 'free').toUpperCase();
+    if (planEl) {
+      // Durante trial mostramos "PRO (TRIAL)" para honestidad — el plan real es free
+      // pero el plan efectivo es pro. El usuario sabe que es temporal.
+      if (isTrialActive() && (currentUser.plan_type || 'free') === 'free') {
+        const days = trialDaysRemaining();
+        planEl.textContent = days > 0 ? `PRO · ${days}d` : 'PRO · TRIAL';
+      } else {
+        planEl.textContent = (currentUser.plan_type || 'free').toUpperCase();
+      }
+    }
   } else {
     infoEl.style.display = 'none';
   }
@@ -5309,7 +5621,8 @@ function showHelp() {
           <div><strong style="color:var(--text);font-size:13px;">Exportar</strong><div style="font-size:12px;color:var(--text3);margin-top:2px;">👁 Preview → ve cómo quedará en Instagram · Exportar → PNG o PDF</div></div>
         </div>
       </div>
-      <button onclick="document.getElementById('helpOverlay').remove()" style="width:100%;padding:12px;border-radius:10px;background:var(--grad);border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Entendido ✓</button>
+      <button onclick="document.getElementById('helpOverlay').remove()" style="width:100%;padding:12px;border-radius:10px;background:var(--grad);border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;" title="Cerrar">Entendido ✓</button>
+      <button onclick="document.getElementById('helpOverlay').remove();startEditorTour(true);" style="width:100%;padding:10px;border-radius:10px;background:transparent;border:1px solid var(--border2);color:var(--text3);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;" title="Relanzar tour 8 pasos">🎓 Volver a ver tour guiado</button>
     </div>`;
   ov.onclick = (ev) => { if (ev.target === ov) ov.remove(); };
   document.body.appendChild(ov);
@@ -5532,7 +5845,7 @@ function openBrandOverlay() {
       const cb = currentBrand.logo_url + (currentBrand.logo_url.includes('?') ? '&' : '?') + '_t=' + Date.now();
       // Thumb pequeño junto al botón "Subir logo"
       const lp = document.getElementById('ovLogoPreview');
-      if (lp) lp.innerHTML = `<img src="${cb}" crossOrigin="anonymous" style="width:100%;height:100%;object-fit:contain;">`;
+      if (lp) lp.innerHTML = `<img src="${cb}" alt="Logo" crossOrigin="anonymous" style="width:100%;height:100%;object-fit:contain;">`;
       // Imagen dentro de la Vista Previa grande (era el bug)
       const pl = document.getElementById('ovPreviewLogo');
       if (pl) {
@@ -5595,7 +5908,7 @@ async function onOvLogoUpload(event) {
 
       // Thumb pequeño junto al botón "Subir logo" en el overlay
       const lp = document.getElementById('ovLogoPreview');
-      if (lp) lp.innerHTML = `<img src="${cb}" crossOrigin="anonymous" style="width:100%;height:100%;object-fit:contain;">`;
+      if (lp) lp.innerHTML = `<img src="${cb}" alt="Logo" crossOrigin="anonymous" style="width:100%;height:100%;object-fit:contain;">`;
 
       // Vista Previa grande del overlay (era invisible antes)
       const pl = document.getElementById('ovPreviewLogo');
@@ -5613,7 +5926,7 @@ async function onOvLogoUpload(event) {
         edLogo.style.display = 'block';
       }
       const edThumb = document.getElementById('edLogoPreviewThumb');
-      if (edThumb) edThumb.innerHTML = `<img src="${cb}" crossOrigin="anonymous" style="width:100%;height:100%;object-fit:contain;">`;
+      if (edThumb) edThumb.innerHTML = `<img src="${cb}" alt="Logo" crossOrigin="anonymous" style="width:100%;height:100%;object-fit:contain;">`;
 
       // Actualizar el logo block en el canvas si ya existe (el usuario ya había aplicado marca antes)
       const existingLogo = document.querySelector('.eblock[data-role="logo-block"]');
@@ -5859,6 +6172,109 @@ function sendBackward() {
   toast('↓ Capa ' + newZ, 'info');
 }
 
+/* ════ A5 — ALINEAR BLOQUES (centro horizontal/vertical, izq/der/arriba/abajo) ════ */
+function alignBlock(direction) {
+  const el = document.getElementById(selectedId);
+  if (!el) { toast('Selecciona un bloque primero','info'); return; }
+  const w = parseFloat(el.style.width)  || 50;
+  const h = parseFloat(el.style.height) || 20;
+  switch (direction) {
+    case 'h-center': el.style.left = (50 - w/2) + '%'; break;
+    case 'v-center': el.style.top  = (50 - h/2) + '%'; break;
+    case 'left':     el.style.left = '2%'; break;
+    case 'right':    el.style.left = (98 - w) + '%'; break;
+    case 'top':      el.style.top  = '2%'; break;
+    case 'bottom':   el.style.top  = (98 - h) + '%'; break;
+    case 'center':   // Centro absoluto (h+v)
+      el.style.left = (50 - w/2) + '%';
+      el.style.top  = (50 - h/2) + '%';
+      break;
+  }
+  saveCurrentBlocks(); historySave();
+  toast('✅ Alineado','success');
+}
+
+/* ══ A5 — DISTRIBUIR BLOQUES ══════════════════════════════════════════════
+   Distribuye TODOS los bloques del slide actual con espaciado equidistante.
+   - 'horizontal': mantiene Y de cada bloque, redistribuye X de izq a der
+   - 'vertical':   mantiene X de cada bloque, redistribuye Y de arr a aba
+   - 'h-equal':    iguala Y al promedio (todos en la misma fila) y distribuye X
+   - 'v-equal':    iguala X al promedio (todos en la misma columna) y distribuye Y
+   Requiere ≥3 bloques (con 2 no tiene sentido distribuir).
+   ════════════════════════════════════════════════════════════════════════ */
+function distributeBlocks(mode) {
+  const canvas = document.getElementById('canvasBlocks');
+  if (!canvas) return;
+  const blocks = Array.from(canvas.querySelectorAll('.eblock'));
+  if (blocks.length < 3) {
+    toast('Necesitas al menos 3 bloques en el slide para distribuir','info');
+    return;
+  }
+
+  // Snapshot inicial para historial (1 sola entrada)
+  // Coordenadas en %: parsear left/top/width/height de cada bloque
+  const items = blocks.map(el => ({
+    el,
+    left:   parseFloat(el.style.left)   || 0,
+    top:    parseFloat(el.style.top)    || 0,
+    width:  parseFloat(el.style.width)  || 30,
+    height: parseFloat(el.style.height) || 15,
+  }));
+
+  if (mode === 'horizontal' || mode === 'h-equal') {
+    // Ordenar por X (left) para preservar el orden visual del usuario
+    items.sort((a, b) => a.left - b.left);
+    // Para 'h-equal' también igualamos Y al promedio (alineación horizontal)
+    if (mode === 'h-equal') {
+      const avgTop = items.reduce((s, it) => s + it.top, 0) / items.length;
+      items.forEach(it => { it.top = avgTop; });
+    }
+    // Calcular el ancho total ocupado y el espacio libre
+    const minLeft  = items[0].left;
+    const last     = items[items.length - 1];
+    const maxRight = last.left + last.width;
+    const totalSpan = maxRight - minLeft;
+    const sumW      = items.reduce((s, it) => s + it.width, 0);
+    const gaps      = items.length - 1;
+    const gap       = (totalSpan - sumW) / gaps;
+    // Reposicionar de izq a der con gap uniforme
+    let x = minLeft;
+    items.forEach((it, i) => {
+      it.el.style.left = x.toFixed(2) + '%';
+      if (mode === 'h-equal') it.el.style.top = it.top.toFixed(2) + '%';
+      x += it.width + gap;
+    });
+  } else if (mode === 'vertical' || mode === 'v-equal') {
+    items.sort((a, b) => a.top - b.top);
+    if (mode === 'v-equal') {
+      const avgLeft = items.reduce((s, it) => s + it.left, 0) / items.length;
+      items.forEach(it => { it.left = avgLeft; });
+    }
+    const minTop    = items[0].top;
+    const last      = items[items.length - 1];
+    const maxBot    = last.top + last.height;
+    const totalSpan = maxBot - minTop;
+    const sumH      = items.reduce((s, it) => s + it.height, 0);
+    const gaps      = items.length - 1;
+    const gap       = (totalSpan - sumH) / gaps;
+    let y = minTop;
+    items.forEach((it) => {
+      it.el.style.top = y.toFixed(2) + '%';
+      if (mode === 'v-equal') it.el.style.left = it.left.toFixed(2) + '%';
+      y += it.height + gap;
+    });
+  }
+
+  saveCurrentBlocks(); historySave();
+  const labels = {
+    'horizontal': '✅ Distribuidos horizontalmente',
+    'vertical':   '✅ Distribuidos verticalmente',
+    'h-equal':    '✅ Alineados en fila + distribuidos',
+    'v-equal':    '✅ Alineados en columna + distribuidos',
+  };
+  toast(labels[mode] || '✅ Distribuidos','success');
+}
+
 /* ══ TEXT SHADOW ══ */
 const SHADOWS = {
   none:    'none',
@@ -5949,27 +6365,6 @@ function removeTextGradient() {
   ta.style.color               = document.getElementById('propColor').value || '#ffffff';
   delete el.dataset.textGradient;
   historySave();
-}
-
-/* ══ ALIGN BLOCK ══ */
-function alignBlock(dir) {
-  const el   = document.getElementById(selectedId); if (!el) return;
-  const wrap = document.getElementById('canvasWrap');
-  const wW   = wrap.clientWidth;
-  const wH   = wrap.clientHeight;
-  const bW   = el.offsetWidth;
-  const bH   = el.offsetHeight;
-
-  switch(dir) {
-    case 'hcenter': el.style.left = ((wW/2 - bW/2) / wW * 100) + '%'; break;
-    case 'vcenter': el.style.top  = ((wH/2 - bH/2) / wH * 100) + '%'; break;
-    case 'left':    el.style.left = '2%'; break;
-    case 'right':   el.style.left = ((wW - bW - wW*0.02) / wW * 100) + '%'; break;
-    case 'top':     el.style.top  = '2%'; break;
-    case 'bottom':  el.style.top  = ((wH - bH - wH*0.02) / wH * 100) + '%'; break;
-  }
-  historySave();
-  toast('Bloque alineado','success');
 }
 
 /* ══ UPDATE PROPS BAR — opacity sync ══ */
@@ -6272,9 +6667,9 @@ function renderDesignsList(data) {
           <div class="design-meta">${fmtLabels[d.format]||d.format} · ${updated} · ${d.size_kb}KB</div>
         </div>
         <div class="design-actions">
-          <button class="design-btn" onclick="loadDesign(${d.id},'${escHtml(d.name)}')">Cargar</button>
+          <button class="design-btn" onclick="loadDesign(${d.id},'${escHtml(d.name)}')" title="Cargar diseño">Cargar</button>
           <button class="design-btn" onclick="startRenameDesign(${d.id},this)" title="Renombrar">✏️</button>
-          <button class="design-btn danger" onclick="deleteDesign(${d.id})">🗑</button>
+          <button class="design-btn danger" onclick="deleteDesign(${d.id})" title="Eliminar">🗑</button>
         </div>
       </div>
     `;
@@ -6877,7 +7272,7 @@ function renderBrandPanel() {
     if (b.logo_url) {
       const sep2 = b.logo_url.includes('?') ? '&' : '?';
       const cb = b.logo_url + sep2 + '_t=' + Date.now();
-      thumb.innerHTML = `<img src="${cb}" crossOrigin="anonymous" style="width:100%;height:100%;object-fit:contain;">`;
+      thumb.innerHTML = `<img src="${cb}" alt="Logo" crossOrigin="anonymous" style="width:100%;height:100%;object-fit:contain;">`;
     } else {
       thumb.innerHTML = '🏷';
     }
@@ -6902,7 +7297,7 @@ async function uploadBrandLogoFromEditor(event) {
       currentBrand.logo_url = d.logo_url;
       // Show preview thumb
       const thumb = document.getElementById('edLogoPreviewThumb');
-      if (thumb) thumb.innerHTML = `<img src="${d.logo_url}" style="width:100%;height:100%;object-fit:contain;">`;
+      if (thumb) thumb.innerHTML = `<img src="${d.logo_url}" alt="Logo de marca" style="width:100%;height:100%;object-fit:contain;">`;
       toast('✅ Logo actualizado','success');
     } else { throw new Error(d.error||'Error'); }
   } catch(e) { toast('Error subiendo logo: '+e.message,'error'); }
@@ -7666,6 +8061,204 @@ function renderCaptionZoneEmojis() {
   container.appendChild(wrap);
 }
 
+/* ════════════════════════════════════════════════════════════════════════
+   ║  C1 — TOUR EDITOR — 8 pasos guiados para usuarios nuevos
+   ║
+   ║  Sistema ligero sin dependencias externas. Highlight animado +
+   ║  tooltip flotante + botones Atrás/Siguiente/Saltar.
+   ║  Persistencia: localStorage 'editor_tour_seen' (no se repite).
+   ════════════════════════════════════════════════════════════════════════ */
+const EDITOR_TOUR_STEPS = [
+  {
+    selector: '.tb-brand',
+    title: '👋 Bienvenido al Editor',
+    text:  'Aquí editas tus posts y carruseles. Te muestro lo esencial en 8 pasos rápidos.',
+    pos:   'bottom',
+  },
+  {
+    selector: '#canvasWrap',
+    title: '🎨 El Canvas',
+    text:  'Tu zona de diseño. Arrastra los bloques, redimensionalos con las esquinas, haz doble clic para editar texto.',
+    pos:   'right',
+  },
+  {
+    selector: '#canvasFloatBtns',
+    title: '➕ Añadir elementos',
+    text:  'Texto, imágenes, logo y formas (rectángulo, círculo, línea). Todo se añade al canvas con un clic.',
+    pos:   'left',
+  },
+  {
+    selector: '#propsBar',
+    title: '⚙️ Panel de propiedades',
+    text:  'Selecciona un bloque y aparecen sus opciones aquí: fuente, color, alineación, capas, sombra...',
+    pos:   'right',
+    forceShow: 'propsBar',
+  },
+  {
+    selector: '#slideStrip',
+    title: '🎞 Strip de slides',
+    text:  'En carrusel: arrastra para reordenar, ⎘ para duplicar, ✕ para borrar. Clic en una para editarla.',
+    pos:   'top',
+    onlyIfFormat: 'carousel',
+  },
+  {
+    selector: '#snapGridBtn',
+    title: '⊞ Snap a grid',
+    text:  'Activa el snap a 5% para alinear bloques fácilmente. Se ven líneas guía verdes al centrar.',
+    pos:   'bottom',
+  },
+  {
+    selector: '#undoBtn',
+    title: '↩ Deshacer / Rehacer',
+    text:  'Ctrl+Z para deshacer, Ctrl+Y para rehacer. Tu trabajo se autoguarda mientras editas.',
+    pos:   'bottom',
+  },
+  {
+    selector: '.tb-export',
+    title: '📥 Exportar y guardar',
+    text:  'Exporta como PNG/PDF (con vista previa antes), o guarda el diseño para retomarlo después.',
+    pos:   'bottom',
+  },
+];
+
+let _tourCurrentStep = 0;
+let _tourActive = false;
+
+function startEditorTour(force = false) {
+  if (!force && localStorage.getItem('editor_tour_seen') === '1') return;
+  _tourCurrentStep = 0;
+  _tourActive = true;
+  showTourStep();
+}
+
+function showTourStep() {
+  const step = EDITOR_TOUR_STEPS[_tourCurrentStep];
+  if (!step) { endEditorTour(); return; }
+
+  // Saltar paso si requiere formato específico y no es el actual
+  if (step.onlyIfFormat && currentFormat !== step.onlyIfFormat) {
+    _tourCurrentStep++;
+    showTourStep();
+    return;
+  }
+
+  // Forzar mostrar elemento si es necesario (ej. propsBar)
+  if (step.forceShow === 'propsBar') {
+    document.getElementById('propsBar')?.classList.add('visible');
+  }
+
+  // Limpiar overlay anterior + TODOS los tooltips huérfanos
+  // (bug fix: antes solo se limpiaba el overlay, los tooltips se acumulaban
+  // como hijos de body cada vez que se pulsaba "Siguiente")
+  document.getElementById('tourOverlay')?.remove();
+  document.querySelectorAll('.editor-tour-tooltip').forEach(t => t.remove());
+
+  const target = document.querySelector(step.selector);
+  if (!target) {
+    // Si el target no existe, saltar al siguiente
+    _tourCurrentStep++;
+    showTourStep();
+    return;
+  }
+
+  const rect = target.getBoundingClientRect();
+
+  // Overlay con agujero (highlight)
+  const overlay = document.createElement('div');
+  overlay.id = 'tourOverlay';
+  overlay.style.cssText = `
+    position:fixed;inset:0;z-index:99998;
+    background:rgba(20,15,40,.75);
+    pointer-events:auto;
+  `;
+
+  // Recorte del target (highlight con caja brillante)
+  const highlight = document.createElement('div');
+  highlight.style.cssText = `
+    position:fixed;
+    left:${rect.left - 8}px;top:${rect.top - 8}px;
+    width:${rect.width + 16}px;height:${rect.height + 16}px;
+    border:3px solid #7C3AED;border-radius:12px;
+    box-shadow:0 0 0 9999px rgba(20,15,40,.75), 0 0 30px rgba(124,58,237,.6);
+    pointer-events:none;
+    animation:tourPulse 1.5s ease-in-out infinite;
+  `;
+
+  // Tooltip
+  const tooltip = document.createElement('div');
+  tooltip.className = 'editor-tour-tooltip'; // ← clase identificable para limpieza entre pasos
+  const arrow = step.pos === 'top' ? 'bottom' : step.pos === 'bottom' ? 'top' : step.pos === 'left' ? 'right' : 'left';
+  let ttX, ttY;
+  const margin = 16;
+  if (step.pos === 'top')         { ttX = rect.left + rect.width/2 - 160; ttY = rect.top - 180 - margin; }
+  else if (step.pos === 'bottom') { ttX = rect.left + rect.width/2 - 160; ttY = rect.bottom + margin; }
+  else if (step.pos === 'left')   { ttX = rect.left - 340 - margin; ttY = rect.top + rect.height/2 - 80; }
+  else                            { ttX = rect.right + margin; ttY = rect.top + rect.height/2 - 80; }
+
+  // Clamp a la viewport
+  const vw = window.innerWidth, vh = window.innerHeight;
+  ttX = Math.max(10, Math.min(vw - 330, ttX));
+  ttY = Math.max(10, Math.min(vh - 200, ttY));
+
+  tooltip.style.cssText = `
+    position:fixed;left:${ttX}px;top:${ttY}px;
+    width:320px;background:#fff;border-radius:14px;padding:18px;
+    box-shadow:0 12px 40px rgba(0,0,0,.4);font-family:inherit;color:#1E1B2E;
+    z-index:99999;
+  `;
+
+  const isLast = _tourCurrentStep === EDITOR_TOUR_STEPS.length - 1;
+  tooltip.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+      <div style="font-size:11px;color:#6B6583;font-weight:600;">Paso ${_tourCurrentStep+1} de ${EDITOR_TOUR_STEPS.length}</div>
+      <button onclick="endEditorTour()" title="Saltar tour" style="background:none;border:none;color:#A89EC9;font-size:18px;cursor:pointer;line-height:1;padding:0;">✕</button>
+    </div>
+    <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:#1E1B2E;margin-bottom:8px;">${step.title}</div>
+    <div style="font-size:13px;line-height:1.5;color:#4A4760;margin-bottom:14px;">${step.text}</div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      ${_tourCurrentStep > 0 ? `<button onclick="prevTourStep()" style="padding:8px 14px;border-radius:8px;border:1px solid #E5E0F9;background:#fff;color:#6B6583;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">← Atrás</button>` : ''}
+      <button onclick="${isLast ? 'endEditorTour()' : 'nextTourStep()'}" style="padding:8px 14px;border-radius:8px;border:none;background:linear-gradient(135deg,#7C3AED,#F43F5E);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">${isLast ? '🎉 ¡Empezar!' : 'Siguiente →'}</button>
+    </div>
+  `;
+
+  overlay.onclick = (e) => { if (e.target === overlay) {/* No cerrar al clic fuera */} };
+  document.body.appendChild(overlay);
+  overlay.appendChild(highlight);
+  document.body.appendChild(tooltip);
+
+  // Scroll al elemento si está fuera de viewport
+  if (rect.top < 0 || rect.bottom > vh) {
+    target.scrollIntoView({ behavior:'smooth', block:'center' });
+  }
+}
+
+function nextTourStep() { _tourCurrentStep++; showTourStep(); }
+function prevTourStep() { _tourCurrentStep--; if (_tourCurrentStep < 0) _tourCurrentStep = 0; showTourStep(); }
+
+function endEditorTour() {
+  document.getElementById('tourOverlay')?.remove();
+  document.querySelectorAll('.editor-tour-tooltip').forEach(t => t.remove());
+  _tourActive = false;
+  localStorage.setItem('editor_tour_seen', '1');
+  toast('💡 Puedes volver a ver el tour desde el botón ❓','info');
+}
+
+// Auto-iniciar tour al cargar (solo primera vez)
+window.addEventListener('load', () => {
+  // Esperar 1.5s para que el editor esté completamente renderizado
+  setTimeout(() => {
+    if (!localStorage.getItem('editor_tour_seen')) {
+      startEditorTour(false);
+    }
+  }, 1500);
+});
+
 </script>
+<style>
+@keyframes tourPulse {
+  0%, 100% { box-shadow: 0 0 0 9999px rgba(20,15,40,.75), 0 0 30px rgba(124,58,237,.6); }
+  50%      { box-shadow: 0 0 0 9999px rgba(20,15,40,.75), 0 0 50px rgba(124,58,237,.9); }
+}
+</style>
 </body>
 </html>
