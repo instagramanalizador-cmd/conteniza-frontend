@@ -93,13 +93,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   flex:1;display:flex;flex-direction:column;align-items:center;
   overflow:hidden;padding:12px 12px 0;gap:8px;position:relative;
   background:var(--bg);
-  transition:padding-bottom .25s;
+  transition:padding-left .25s;
 }
-/* Cuando el panel de propiedades está visible, reservamos espacio inferior
-   en el canvas para que la barra no tape la parte de abajo del slide.
-   Usa selector :has() (Chrome 105+, Safari 15.4+, Firefox 121+) para
-   sincronización automática sin necesidad de tocar JS. */
-body:has(.props-bar.visible) .canvas-area{padding-bottom:100px;}
+/* Cuando propsBar está visible, desplazar el canvas 160px a la derecha
+   para que el panel lateral no se solape con el slide. Cuando el usuario
+   cierra el panel (✕ o deseleccionar), el canvas vuelve a su posición.
+   Solo escritorio: en móvil (≤700px) el panel va abajo, no a la izquierda. */
+@media(min-width:701px){
+  body:has(.props-bar.visible) .canvas-area{padding-left:160px;}
+}
 
 /* Instagram phone preview */
 .ig-phone{
@@ -208,35 +210,22 @@ body:has(.props-bar.visible) .canvas-area{padding-bottom:100px;}
 .strip-dup::after{content:'';position:absolute;top:-6px;left:-6px;right:-6px;bottom:-6px;}
 .strip-thumb:hover .strip-dup{display:flex;}
 
-/* ── PROPERTIES PANEL (bottom strip — siempre abajo, nunca lateral) ──
-   Antes: flotante a la izquierda con position:fixed left:0. Causaba que se
-   superpusiera con el canvas en pantallas estrechas o medianas.
-   Ahora: barra inferior tipo Canva/Figma/Photoshop. El canvas está arriba,
-   este panel abajo — nunca pueden solaparse físicamente. Funciona igual
-   en escritorio y móvil. */
+/* ── PROPERTIES PANEL (lateral izquierdo, aparece al seleccionar bloque) ── */
 .props-bar{
-  position:fixed;bottom:0;left:0;right:0;top:auto;
-  background:var(--surf);border-top:1px solid var(--border);
-  padding:10px 16px;display:flex;flex-direction:row;align-items:center;gap:10px;
-  z-index:200;transition:transform .25s;
-  max-height:90px;min-height:60px;overflow-x:auto;overflow-y:hidden;
-  box-shadow:0 -4px 20px rgba(0,0,0,.4);
-  transform:translateY(110%);
-  /* Padding-right extra para que el botón ✕ no quede pegado al borde */
-  padding-right:50px;
+  position:fixed;left:0;top:50%;transform:translateY(-50%) translateX(-110%);
+  background:var(--surf);border:1px solid var(--border);border-radius:0 12px 12px 0;
+  padding:8px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;
+  z-index:200;transition:transform .25s;max-height:80vh;overflow-y:auto;
+  box-shadow:4px 0 20px rgba(0,0,0,.3);
 }
-.props-bar.visible{transform:translateY(0);}
-/* En pantallas anchas, limitar el ancho y centrar para que no se vea forzado */
-@media(min-width:1200px){
+.props-bar.visible{transform:translateY(-50%) translateX(0);}
+@media(max-width:700px){
   .props-bar{
-    left:50%;right:auto;
-    transform:translate(-50%, 110%);
-    max-width:1100px;width:auto;
-    border-radius:14px 14px 0 0;
-    border-left:1px solid var(--border);
-    border-right:1px solid var(--border);
+    position:fixed;bottom:0;left:0;right:0;top:auto;
+    transform:translateY(100%);flex-direction:row;border-radius:12px 12px 0 0;
+    max-height:none;overflow-x:auto;overflow-y:hidden;
   }
-  .props-bar.visible{transform:translate(-50%, 0);}
+  .props-bar.visible{transform:translateY(0);}
 }
 .props-bar::-webkit-scrollbar{display:none;}
 .prop-group{display:flex;align-items:center;gap:6px;flex-shrink:0;}
@@ -1142,8 +1131,8 @@ body:has(.props-bar.visible) .canvas-area{padding-bottom:100px;}
     <!-- Properties bar (shows when block selected) -->
     <div class="props-bar" id="propsBar">
 
-      <!-- ═══ BOTÓN CERRAR PANEL (esquina derecha) ═══ -->
-      <button onclick="closePropsBar()" title="Cerrar panel de propiedades" aria-label="Cerrar panel" style="position:absolute;top:50%;right:10px;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;border:none;background:rgba(248,113,113,.18);color:#F87171;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;line-height:1;z-index:5;flex-shrink:0;" onmouseover="this.style.background='rgba(248,113,113,.35)'" onmouseout="this.style.background='rgba(248,113,113,.18)'">✕</button>
+      <!-- ═══ BOTÓN CERRAR PANEL ═══ -->
+      <button onclick="closePropsBar()" title="Cerrar panel de propiedades" aria-label="Cerrar panel" style="position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;border:none;background:rgba(248,113,113,.15);color:#F87171;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;line-height:1;z-index:5;" onmouseover="this.style.background='rgba(248,113,113,.3)'" onmouseout="this.style.background='rgba(248,113,113,.15)'">✕</button>
 
       <!-- ═══ TIPOGRAFÍA ═══ -->
       <div class="prop-group">
