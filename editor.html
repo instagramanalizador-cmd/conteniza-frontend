@@ -93,7 +93,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   flex:1;display:flex;flex-direction:column;align-items:center;
   overflow:hidden;padding:12px 12px 0;gap:8px;position:relative;
   background:var(--bg);
+  transition:padding-bottom .25s;
 }
+/* Cuando el panel de propiedades está visible, reservamos espacio inferior
+   en el canvas para que la barra no tape la parte de abajo del slide.
+   Usa selector :has() (Chrome 105+, Safari 15.4+, Firefox 121+) para
+   sincronización automática sin necesidad de tocar JS. */
+body:has(.props-bar.visible) .canvas-area{padding-bottom:100px;}
 
 /* Instagram phone preview */
 .ig-phone{
@@ -202,23 +208,35 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 .strip-dup::after{content:'';position:absolute;top:-6px;left:-6px;right:-6px;bottom:-6px;}
 .strip-thumb:hover .strip-dup{display:flex;}
 
-/* ── PROPERTIES PANEL (bottom strip) ── */
+/* ── PROPERTIES PANEL (bottom strip — siempre abajo, nunca lateral) ──
+   Antes: flotante a la izquierda con position:fixed left:0. Causaba que se
+   superpusiera con el canvas en pantallas estrechas o medianas.
+   Ahora: barra inferior tipo Canva/Figma/Photoshop. El canvas está arriba,
+   este panel abajo — nunca pueden solaparse físicamente. Funciona igual
+   en escritorio y móvil. */
 .props-bar{
-  position:fixed;left:0;top:50%;transform:translateY(-50%) translateX(-110%);
-  background:var(--surf);border:1px solid var(--border);border-radius:0 12px 12px 0;
-  padding:8px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;
-  z-index:200;transition:transform .25s;max-height:80vh;overflow-y:auto;
-  box-shadow:4px 0 20px rgba(0,0,0,.3);
+  position:fixed;bottom:0;left:0;right:0;top:auto;
+  background:var(--surf);border-top:1px solid var(--border);
+  padding:10px 16px;display:flex;flex-direction:row;align-items:center;gap:10px;
+  z-index:200;transition:transform .25s;
+  max-height:90px;min-height:60px;overflow-x:auto;overflow-y:hidden;
+  box-shadow:0 -4px 20px rgba(0,0,0,.4);
+  transform:translateY(110%);
+  /* Padding-right extra para que el botón ✕ no quede pegado al borde */
+  padding-right:50px;
 }
-.props-bar.visible{transform:translateY(-50%) translateX(0);}
-@media(max-width:700px){
+.props-bar.visible{transform:translateY(0);}
+/* En pantallas anchas, limitar el ancho y centrar para que no se vea forzado */
+@media(min-width:1200px){
   .props-bar{
-    position:fixed;bottom:0;left:0;right:0;top:auto;
-    transform:translateY(100%);flex-direction:row;border-radius:12px 12px 0 0;
-    max-height:none;overflow-x:auto;overflow-y:hidden;
- 
-}
-  .props-bar.visible{transform:translateY(0);}
+    left:50%;right:auto;
+    transform:translate(-50%, 110%);
+    max-width:1100px;width:auto;
+    border-radius:14px 14px 0 0;
+    border-left:1px solid var(--border);
+    border-right:1px solid var(--border);
+  }
+  .props-bar.visible{transform:translate(-50%, 0);}
 }
 .props-bar::-webkit-scrollbar{display:none;}
 .prop-group{display:flex;align-items:center;gap:6px;flex-shrink:0;}
@@ -1124,8 +1142,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
     <!-- Properties bar (shows when block selected) -->
     <div class="props-bar" id="propsBar">
 
-      <!-- ═══ BOTÓN CERRAR PANEL ═══ -->
-      <button onclick="closePropsBar()" title="Cerrar panel de propiedades" aria-label="Cerrar panel" style="position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;border:none;background:rgba(248,113,113,.15);color:#F87171;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;line-height:1;z-index:5;" onmouseover="this.style.background='rgba(248,113,113,.3)'" onmouseout="this.style.background='rgba(248,113,113,.15)'">✕</button>
+      <!-- ═══ BOTÓN CERRAR PANEL (esquina derecha) ═══ -->
+      <button onclick="closePropsBar()" title="Cerrar panel de propiedades" aria-label="Cerrar panel" style="position:absolute;top:50%;right:10px;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;border:none;background:rgba(248,113,113,.18);color:#F87171;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;line-height:1;z-index:5;flex-shrink:0;" onmouseover="this.style.background='rgba(248,113,113,.35)'" onmouseout="this.style.background='rgba(248,113,113,.18)'">✕</button>
 
       <!-- ═══ TIPOGRAFÍA ═══ -->
       <div class="prop-group">
@@ -5332,8 +5350,15 @@ async function showExportPreview() {
   let previewSrc = '';
   try {
     if (typeof html2canvas !== 'undefined') {
-      const c = await html2canvas(canvas, { scale:1, logging:false, useCORS:true, allowTaint:true });
-      previewSrc = c.toDataURL('image/png', 0.85);
+      // Fix gradient texto: convertir gradients a color sólido antes del render,
+      // restaurar después (html2canvas no soporta background-clip:text)
+      const _grad = _prepareGradientsForExport(canvas);
+      try {
+        const c = await html2canvas(canvas, { scale:1, logging:false, useCORS:true, allowTaint:true });
+        previewSrc = c.toDataURL('image/png', 0.85);
+      } finally {
+        _restoreGradientsAfterExport(_grad);
+      }
     }
   } catch(e) { console.warn('Preview falló, exportando directo:', e.message); }
 
@@ -5426,7 +5451,13 @@ async function exportCarouselPDF() {
     await new Promise(r => setTimeout(r, 180));
     try {
       const hasBg = !!slides[i]?.bgImg;
-      const c = await html2canvas(wrap, {scale:1/scale, useCORS:true, allowTaint:hasBg, backgroundColor:null});
+      const _grad = _prepareGradientsForExport(wrap);
+      let c;
+      try {
+        c = await html2canvas(wrap, {scale:1/scale, useCORS:true, allowTaint:hasBg, backgroundColor:null});
+      } finally {
+        _restoreGradientsAfterExport(_grad);
+      }
       const out = document.createElement('canvas');
       out.width=realW; out.height=realH;
       out.getContext('2d').drawImage(c, 0, 0, realW, realH);
@@ -5451,7 +5482,13 @@ async function exportPNG(idx) {
     deselectBlock();
     await new Promise(r => setTimeout(r, 50)); // dar tiempo a que se actualice el DOM
     const hasBgImg = !!slides[currentSlide]?.bgImg;
-    const c = await html2canvas(wrap, { scale:1/scale, useCORS:true, allowTaint:hasBgImg, backgroundColor:null });
+    const _grad = _prepareGradientsForExport(wrap);
+    let c;
+    try {
+      c = await html2canvas(wrap, { scale:1/scale, useCORS:true, allowTaint:hasBgImg, backgroundColor:null });
+    } finally {
+      _restoreGradientsAfterExport(_grad);
+    }
     const out = document.createElement('canvas');
     out.width=realW; out.height=realH;
     out.getContext('2d').drawImage(c, 0, 0, realW, realH);
@@ -5479,7 +5516,13 @@ async function exportCarouselZip() {
     await new Promise(r=>setTimeout(r,180));
     try {
       const hasBgImgZ = !!slides[i]?.bgImg;
-      const c = await html2canvas(wrap, { scale:1/scale, useCORS:true, allowTaint:hasBgImgZ, backgroundColor:null });
+      const _grad = _prepareGradientsForExport(wrap);
+      let c;
+      try {
+        c = await html2canvas(wrap, { scale:1/scale, useCORS:true, allowTaint:hasBgImgZ, backgroundColor:null });
+      } finally {
+        _restoreGradientsAfterExport(_grad);
+      }
       const out = document.createElement('canvas');
       out.width=realW; out.height=realH;
       out.getContext('2d').drawImage(c, 0, 0, realW, realH);
@@ -5738,7 +5781,13 @@ async function showIgPreview() {
     try {
       // allowTaint:true siempre — más permisivo y resuelve el caso "solo logo, sin bgImg"
       // donde hasBg=false dejaba allowTaint=false y bloqueaba CORS
-      const c = await html2canvas(wrap, {scale:1/scale, useCORS:true, allowTaint:true, backgroundColor:null});
+      const _grad = _prepareGradientsForExport(wrap);
+      let c;
+      try {
+        c = await html2canvas(wrap, {scale:1/scale, useCORS:true, allowTaint:true, backgroundColor:null});
+      } finally {
+        _restoreGradientsAfterExport(_grad);
+      }
       const out = document.createElement('canvas');
       out.width=realW; out.height=realH;
       out.getContext('2d').drawImage(c, 0, 0, realW, realH);
@@ -6372,6 +6421,107 @@ function syncShadowUI(el) {
 }
 
 /* ══ TEXT GRADIENT ══ */
+/* ════════════════════════════════════════════════════════════════════════════
+   GRADIENT TEXT EXPORT FIX
+   ────────────────────────────────────────────────────────────────────────────
+   html2canvas (la librería que usa el preview de Instagram y los exports
+   PNG/PDF/ZIP) NO soporta `background-clip:text`. Cuando un texto tiene
+   gradiente aplicado vía esa técnica, html2canvas lo renderiza como un
+   RECTÁNGULO de gradiente sólido que tapa las letras.
+
+   Workaround: antes del render con html2canvas, convertimos los gradients a
+   color sólido (el promedio de los 2 colores). Después del render, restauramos
+   los gradients para que el editor siga viéndolos correctamente.
+
+   Trade-off: en preview/exports, los gradients se ven como color plano. Es
+   peor que el ideal pero MUCHO mejor que cuadros tapando el texto. La opción
+   ideal (renderizar gradients reales en canvas) requeriría reemplazar
+   html2canvas por una solución custom — proyecto de varios días.
+   ════════════════════════════════════════════════════════════════════════════ */
+function _avgHexColors(c1, c2) {
+  const parse = (hex) => {
+    hex = String(hex).replace('#', '').trim();
+    if (hex.length === 3) hex = hex.split('').map(c => c+c).join('');
+    if (hex.length !== 6) return [128, 128, 128]; // fallback gris
+    return [parseInt(hex.slice(0,2), 16), parseInt(hex.slice(2,4), 16), parseInt(hex.slice(4,6), 16)];
+  };
+  try {
+    const [r1, g1, b1] = parse(c1);
+    const [r2, g2, b2] = parse(c2);
+    const r = Math.round((r1 + r2) / 2);
+    const g = Math.round((g1 + g2) / 2);
+    const b = Math.round((b1 + b2) / 2);
+    return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+  } catch(_) { return '#888888'; }
+}
+
+function _prepareGradientsForExport(rootEl) {
+  if (!rootEl) return [];
+  const restorers = [];
+  rootEl.querySelectorAll('.eblock-text').forEach(ta => {
+    const block = ta.closest('.eblock');
+    if (!block?.dataset?.textGradient) return;
+    const [c1, c2] = String(block.dataset.textGradient).split('|');
+    if (!c1 || !c2) return;
+    const avg = _avgHexColors(c1, c2);
+    // Snapshot inline styles antes de cambiar
+    const taSnap = {
+      el: ta,
+      backgroundImage:      ta.style.backgroundImage,
+      webkitBackgroundClip: ta.style.webkitBackgroundClip,
+      backgroundClip:       ta.style.backgroundClip,
+      webkitTextFillColor:  ta.style.webkitTextFillColor,
+      color:                ta.style.color,
+    };
+    // Aplicar color sólido (promedio) temporalmente
+    ta.style.backgroundImage      = '';
+    ta.style.webkitBackgroundClip = '';
+    ta.style.backgroundClip       = '';
+    ta.style.webkitTextFillColor  = '';
+    ta.style.color                = avg;
+    // Mismo tratamiento para hijos (spans, divs internos)
+    const childSnaps = [];
+    ta.querySelectorAll('*').forEach(child => {
+      childSnaps.push({
+        el: child,
+        backgroundImage:      child.style.backgroundImage,
+        webkitBackgroundClip: child.style.webkitBackgroundClip,
+        backgroundClip:       child.style.backgroundClip,
+        webkitTextFillColor:  child.style.webkitTextFillColor,
+        color:                child.style.color,
+      });
+      child.style.backgroundImage      = '';
+      child.style.webkitBackgroundClip = '';
+      child.style.backgroundClip       = '';
+      child.style.webkitTextFillColor  = '';
+      child.style.color                = avg;
+    });
+    restorers.push({ taSnap, childSnaps });
+  });
+  return restorers;
+}
+
+function _restoreGradientsAfterExport(restorers) {
+  if (!restorers || !restorers.length) return;
+  restorers.forEach(({ taSnap, childSnaps }) => {
+    if (taSnap?.el) {
+      taSnap.el.style.backgroundImage      = taSnap.backgroundImage;
+      taSnap.el.style.webkitBackgroundClip = taSnap.webkitBackgroundClip;
+      taSnap.el.style.backgroundClip       = taSnap.backgroundClip;
+      taSnap.el.style.webkitTextFillColor  = taSnap.webkitTextFillColor;
+      taSnap.el.style.color                = taSnap.color;
+    }
+    childSnaps.forEach(s => {
+      if (!s.el) return;
+      s.el.style.backgroundImage      = s.backgroundImage;
+      s.el.style.webkitBackgroundClip = s.webkitBackgroundClip;
+      s.el.style.backgroundClip       = s.backgroundClip;
+      s.el.style.webkitTextFillColor  = s.webkitTextFillColor;
+      s.el.style.color                = s.color;
+    });
+  });
+}
+
 function applyTextGradient(c1, c2) {
   const el = document.getElementById(selectedId); if (!el) return;
   const ta = el.querySelector('.eblock-text'); if (!ta) return;
@@ -6587,12 +6737,18 @@ async function capturePreview() {
     if (typeof deselectBlock === 'function') deselectBlock();
     const wrap  = document.getElementById('canvasWrap');
     const scale = parseFloat(wrap.dataset.scale) || 1;
-    const c = await html2canvas(wrap, {
-      scale:          0.25 / scale,  // very small preview
-      useCORS:        true,
-      backgroundColor: null,
-      logging:        false,
-    });
+    const _grad = _prepareGradientsForExport(wrap);
+    let c;
+    try {
+      c = await html2canvas(wrap, {
+        scale:          0.25 / scale,  // very small preview
+        useCORS:        true,
+        backgroundColor: null,
+        logging:        false,
+      });
+    } finally {
+      _restoreGradientsAfterExport(_grad);
+    }
     return c.toDataURL('image/png');
   } catch (e) {
     return null;
