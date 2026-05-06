@@ -458,7 +458,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   user-select:text;
   -webkit-user-select:text;
 }
-.eblock-img img{width:100%;height:100%;object-fit:cover;display:block;border-radius:4px;}
+.eblock-img img{width:100%;height:100%;object-fit:contain;display:block;border-radius:4px;}
 
 /* resize handles */
 .eblock-handle{
@@ -1288,6 +1288,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
       </div>
 
       <div class="prop-sep"></div>
+
+      <div class="prop-sep"></div>
+
+      <!-- ═══ IMAGEN (solo visible cuando bloque imagen seleccionado) ═══ -->
+      <div class="prop-group" id="propGroupImage" style="display:none;">
+        <span class="prop-label">Imagen</span>
+        <button class="prop-btn" onclick="fitBlockToImageRatio()" title="Ajustar tamaño del bloque al ratio de la imagen (rellena sin franjas)">🔲 Ajustar</button>
+      </div>
 
       <!-- ═══ ACCIONES ═══ -->
       <div class="prop-group">
@@ -2575,6 +2583,74 @@ function toggleGrid() {
 }
 
 /* ══ BLOCKS ══ */
+/* ══════════════════════════════════════════════════════════════════════════
+   AUTO-AJUSTE DE BLOQUE A RATIO DE IMAGEN (Opción 2)
+   ──────────────────────────────────────────────────────────────────────────
+   Cuando se inserta un logo (role:'logo-block') o cualquier imagen para la
+   que se quiera ajuste automático, esta función lee las dimensiones reales
+   de la imagen una vez cargada y redimensiona el bloque para que coincida
+   con su ratio. Resultado: la imagen llena el bloque exactamente, sin
+   franjas transparentes ni distorsión.
+
+   El ancho del bloque se mantiene (el "anchor"), el alto se recalcula según
+   el ratio real de la imagen. Para logos cuadrados (1:1) el bloque queda
+   cuadrado. Para logos horizontales 3:1 el bloque queda achatado, etc.
+
+   Función separada (no inline) porque la imagen carga asíncronamente — se
+   llama después de makeBlock.
+   ══════════════════════════════════════════════════════════════════════════ */
+function _autoFitImageBlockToRatio(blockId) {
+  const el = document.getElementById(blockId);
+  if (!el) return;
+  const img = el.querySelector('img');
+  if (!img) return;
+
+  // El canvas tiene ratio del formato actual (post 4:5, square 1:1, carousel 4:5)
+  // Al calcular el alto del bloque en %, hay que normalizar respecto al ratio del canvas.
+  const canvasRatio = (currentFormat === 'square') ? 1 : (1080 / 1350); // ancho/alto
+
+  function applyFit() {
+    const natW = img.naturalWidth;
+    const natH = img.naturalHeight;
+    if (!natW || !natH) return;
+    const imgRatio  = natW / natH;             // ratio real de la imagen
+    const widthPct  = parseFloat(el.style.width)  || 22; // ancho actual del bloque (%)
+    // Calcular alto en % del canvas para que el bloque tenga el mismo ratio que la imagen.
+    // Width% del canvas en píxeles → ese ancho dividido por imgRatio = alto en px → reconvertir a %
+    // Simplificación: heightPct = widthPct * (canvasW / canvasH) / imgRatio
+    const heightPct = widthPct * canvasRatio / imgRatio;
+    el.style.height = heightPct + '%';
+    // Persistir cambio en blocks[] del slide actual
+    if (typeof saveCurrentBlocks === 'function') saveCurrentBlocks();
+  }
+
+  if (img.complete && img.naturalWidth) {
+    applyFit();
+  } else {
+    img.addEventListener('load', applyFit, { once:true });
+  }
+}
+
+/* ══ BOTÓN MANUAL "AJUSTAR A IMAGEN" (Opción 1) ══
+   Función pública llamada desde el botón en propsBar. Reutiliza el helper
+   interno _autoFitImageBlockToRatio para ajustar el bloque seleccionado al
+   ratio de su imagen. Útil para fotos stock o subidas manuales donde el
+   usuario quiere que la imagen llene el bloque sin franjas transparentes. */
+function fitBlockToImageRatio() {
+  if (!selectedId) {
+    toast('Selecciona primero un bloque de imagen','info');
+    return;
+  }
+  const el = document.getElementById(selectedId);
+  if (!el || !el.querySelector('img')) {
+    toast('Solo funciona con bloques de imagen','info');
+    return;
+  }
+  _autoFitImageBlockToRatio(selectedId);
+  historySave();
+  toast('✅ Bloque ajustado al ratio de la imagen','success');
+}
+
 function makeBlock(type, opts={}) {
   const id = 'b' + (++blockIdCounter);
   const el = document.createElement('div');
@@ -2644,7 +2720,12 @@ function makeBlock(type, opts={}) {
     // (R2 envía Access-Control-Allow-Origin pero el navegador solo lo respeta si ya tenía crossOrigin antes del request)
     imgEl.crossOrigin = 'anonymous';
     imgEl.src = opts.src || '';
-    imgEl.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;border-radius:4px;';
+    // object-fit: contain — la imagen se ajusta DENTRO del bloque preservando
+    // su ratio original (sin distorsión, sin recorte). Antes era 'cover', que
+    // recortaba/distorsionaba logos y fotos con ratio distinto al bloque.
+    // Trade-off: si el ratio no coincide, hay franjas transparentes alrededor
+    // (el usuario puede ajustar el tamaño del bloque para que coincida).
+    imgEl.style.cssText = 'width:100%;height:100%;object-fit:contain;display:block;border-radius:4px;';
     inner.appendChild(imgEl);
   } else if (type === 'shape') {
     // ════ A10 — SHAPES (rect, circle, line) ════
@@ -2718,6 +2799,16 @@ function makeBlock(type, opts={}) {
   // (ej: al aplicar Mi Marca o un slide entero, no queremos robar el foco al usuario)
   if (!opts._noSelect) selectBlock(id);
   requestAnimationFrame(historySave);
+  // Auto-ajuste de ratio para logos (Opción 2): cuando el bloque es de tipo
+  // imagen Y tiene role:'logo-block' (o explícitamente opts._autoFit=true),
+  // ajustamos el alto del bloque al ratio real de la imagen una vez cargue.
+  // Resultado: el logo se ve completo, sin franjas, sin distorsión.
+  if (type === 'image' && (opts.role === 'logo-block' || opts._autoFit)) {
+    if (typeof _autoFitImageBlockToRatio === 'function') {
+      // Llamamos en next tick para que el <img> esté ya en el DOM
+      setTimeout(() => _autoFitImageBlockToRatio(id), 0);
+    }
+  }
   return el;
 }
 
@@ -2922,6 +3013,11 @@ function updatePropsBar(id) {
   const ta = el.querySelector('.eblock-text');
   const bar = document.getElementById('propsBar');
   bar.classList.add('visible');
+
+  // Mostrar/ocultar grupo de imagen según tipo de bloque (Opción 1 — botón manual)
+  const isImageBlock = !!el.querySelector('img');
+  const propGroupImage = document.getElementById('propGroupImage');
+  if (propGroupImage) propGroupImage.style.display = isImageBlock ? '' : 'none';
 
   if (ta) {
     const font = ta.style.fontFamily.replace(/['"]/g,'').split(',')[0].trim();
