@@ -926,6 +926,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
+<!-- ══ TRIAL PRO BANNER (oculto por defecto, JS lo activa si trial_active) ══ -->
+<div id="trialBannerEditor" style="display:none;background:linear-gradient(90deg,#7c3aed,#a855f7);color:#fff;text-align:center;padding:7px 16px;font-size:12px;font-weight:600;cursor:pointer;border-bottom:1px solid rgba(0,0,0,.15);" onclick="goBack()" title="Volver al inicio para ver tus planes">
+  🎉 <span id="trialBannerEditorText">7 días Pro gratis activos</span>
+  <span style="margin-left:8px;font-size:10px;opacity:.85;font-weight:500;">Ver planes →</span>
+</div>
+
 <!-- ══ TOPBAR ══ -->
 <div class="topbar">
   <!-- Logo + Inicio -->
@@ -1117,6 +1123,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 
     <!-- Properties bar (shows when block selected) -->
     <div class="props-bar" id="propsBar">
+
+      <!-- ═══ BOTÓN CERRAR PANEL ═══ -->
+      <button onclick="closePropsBar()" title="Cerrar panel de propiedades" aria-label="Cerrar panel" style="position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;border:none;background:rgba(248,113,113,.15);color:#F87171;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;line-height:1;z-index:5;" onmouseover="this.style.background='rgba(248,113,113,.3)'" onmouseout="this.style.background='rgba(248,113,113,.15)'">✕</button>
 
       <!-- ═══ TIPOGRAFÍA ═══ -->
       <div class="prop-group">
@@ -1419,8 +1428,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
     </div>
 
         <div id="iaDesign" style="display:none;flex-direction:column;height:100%;overflow:hidden;">
-      <div id="tplContent" style="display:none;"></div>
       <div style="flex:1;overflow-y:auto;padding:10px;">
+
+        <!-- SECCIÓN 0: PLANTILLAS PREDISEÑADAS (toggle) -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div style="font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;">🎨 Plantillas prediseñadas</div>
+          <button id="tplToggleBtn" onclick="toggleTplPanel()" title="Mostrar/ocultar plantillas" style="background:var(--brand-subtle);border:1px solid var(--brand-border2);color:var(--brand);font-size:10px;font-weight:700;padding:4px 9px;border-radius:6px;cursor:pointer;font-family:inherit;">▼ Mostrar</button>
+        </div>
+        <div id="tplContent" style="display:none;margin-bottom:14px;"></div>
 
         <!-- SECCIÓN 1: GRADIENTES -->
         <div style="font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">🎨 Color de fondo</div>
@@ -1775,6 +1790,26 @@ function trialDaysRemaining() {
   if (!currentUser || !currentUser.trial_ends_at) return 0;
   const ms = new Date(currentUser.trial_ends_at).getTime() - Date.now();
   return Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)));
+}
+
+/* ══ Banner trial dentro del editor ══
+   Solo visible para usuarios free con trial activo. Se sincroniza con el
+   estado de currentUser cuando se carga (línea ~2113 sessionStorage) y cuando
+   se refresca desde /auth/me. */
+function renderTrialBannerEditor() {
+  const banner = document.getElementById('trialBannerEditor');
+  const txt    = document.getElementById('trialBannerEditorText');
+  if (!banner || !txt) return;
+  const isFreeReal = !currentUser || (currentUser.plan_type || 'free') === 'free';
+  if (isTrialActive() && isFreeReal) {
+    const days = trialDaysRemaining();
+    txt.textContent = days > 1
+      ? `${days} días Pro gratis activos`
+      : (days === 1 ? '⏰ Último día Pro gratis' : '⏰ Tu trial Pro termina hoy');
+    banner.style.display = 'block';
+  } else {
+    banner.style.display = 'none';
+  }
 }
 
 let imgBank         = [];
@@ -2156,6 +2191,7 @@ async function loadUser() {
         const username = currentUser.username || currentUser.email?.split('@')[0] || 'tu_usuario';
         document.getElementById('igUsername').textContent = username;
         updateTopbarUser();
+        renderTrialBannerEditor();
         // FIX: refresh tab visibility now that currentUser is loaded (Marca tab gating)
         if (typeof updateTabsForFormat === 'function') updateTabsForFormat(currentFormat);
         // Still refresh in background
@@ -2165,6 +2201,7 @@ async function loadUser() {
             if (d?.user || d?.email) {
               currentUser = d.user || d;
               updateTopbarUser();
+              renderTrialBannerEditor();
               if (typeof updateTabsForFormat === 'function') updateTabsForFormat(currentFormat);
             }
           }).catch(()=>{});
@@ -2176,6 +2213,7 @@ async function loadUser() {
         currentUser = d.user || d;
         const username = currentUser.username || currentUser.email?.split('@')[0] || 'tu_usuario';
         document.getElementById('igUsername').textContent = username;
+        renderTrialBannerEditor();
         // FIX: refresh tab visibility now that currentUser is loaded (Marca tab gating)
         if (typeof updateTabsForFormat === 'function') updateTabsForFormat(currentFormat);
       }
@@ -2673,6 +2711,15 @@ function makeBlock(type, opts={}) {
 }
 
 function addTextBlock(text, opts={}) {
+  // Mejora #5: si el usuario tiene una fuente preferida guardada (de la última
+  // vez que cambió la fuente con applyPropFont), úsala por defecto en bloques
+  // nuevos. opts.fontFamily explícito siempre gana.
+  if (!opts.fontFamily) {
+    try {
+      const pref = localStorage.getItem('conteniza_pref_font');
+      if (pref) opts.fontFamily = pref;
+    } catch(_) {}
+  }
   return makeBlock('text', { text: text||'Texto', ...opts });
 }
 
@@ -2916,8 +2963,13 @@ function _normalizeTextChildren(ta, prop) {
 function applyPropFont() {
   const el = document.getElementById(selectedId); if (!el) return;
   const ta = el.querySelector('.eblock-text'); if (!ta) return;
-  ta.style.fontFamily = `'${document.getElementById('propFont').value}', sans-serif`;
+  const fontName = document.getElementById('propFont').value;
+  ta.style.fontFamily = `'${fontName}', sans-serif`;
   _normalizeTextChildren(ta, 'font-family'); // Fix #13
+  // Mejora #5: guardar fuente como preferida del usuario para que addTextBlock
+  // la use por defecto en bloques nuevos. Ahorra tiempo a usuarios que siempre
+  // usan la misma fuente.
+  try { localStorage.setItem('conteniza_pref_font', fontName); } catch(_) {}
   setTimeout(historySave, 100);
 }
 
@@ -3193,6 +3245,10 @@ function saveCurrentBlocks() {
 function loadSlide(idx) {
   saveCurrentBlocks();
   currentSlide = idx;
+  // Mejora #4: reset plantilla activa al cambiar slide. Cada slide del carrusel
+  // puede haberse hecho con plantilla distinta — no asumimos que la última
+  // aplicada sigue activa para el slide nuevo.
+  _activeTplId = null;
   // Clear canvas blocks
   document.getElementById('canvasBlocks').innerHTML = '';
   // Restore blocks
@@ -6173,6 +6229,14 @@ function sendBackward() {
 }
 
 /* ════ A5 — ALINEAR BLOQUES (centro horizontal/vertical, izq/der/arriba/abajo) ════ */
+/* ══ CERRAR PANEL DE PROPIEDADES (botón ✕) ══
+   Cierra el panel sin deseleccionar el bloque (el bloque sigue seleccionado
+   en el canvas, solo el panel se oculta). Para volver a abrirlo: click en el
+   bloque otra vez. */
+function closePropsBar() {
+  document.getElementById('propsBar')?.classList.remove('visible');
+}
+
 function alignBlock(direction) {
   const el = document.getElementById(selectedId);
   if (!el) { toast('Selecciona un bloque primero','info'); return; }
@@ -6792,6 +6856,11 @@ async function deleteDesign(id) {
 }
 
 /* ══ TEMPLATES PREDISEÑADOS ══ */
+// Mejora #4: id de la plantilla actualmente aplicada al slide. Permite
+// resaltar la card en el grid para que el usuario vea cuál tiene activa.
+// Se setea en applyTemplate() y se limpia al cambiar de slide.
+let _activeTplId = null;
+
 const TEMPLATES = [
   // POST
   {
@@ -6862,7 +6931,107 @@ const TEMPLATES = [
       { type:'text', text:'— Tu nombre aquí', x:8, y:76, w:84, fontSize:15, color:'rgba(255,255,255,.5)', align:'center' },
     ]
   },
+
+  // ═══ PLANTILLAS NUEVAS (8 más) ═══
+  // POST
+  {
+    id:'post_pregunta', label:'Pregunta Engagement', format:'post',
+    bg1:'#0c4a6e', bg2:'#0ea5e9', overlay:0,
+    blocks:[
+      { type:'text', text:'¿Sabías que…?', x:8, y:14, w:84, fontSize:46, bold:true, color:'#fff', align:'center' },
+      { type:'text', text:'Tu dato impactante o pregunta\nva aquí en 1-2 líneas', x:8, y:42, w:84, fontSize:22, color:'rgba(255,255,255,.92)', align:'center' },
+      { type:'text', text:'💬 Cuéntame en comentarios', x:8, y:78, w:84, fontSize:15, bold:true, color:'#fde047', align:'center' },
+    ]
+  },
+  {
+    id:'post_dato', label:'Dato Estadístico', format:'post',
+    bg1:'#312e81', bg2:'#7e22ce', overlay:0,
+    blocks:[
+      { type:'text', text:'87%', x:8, y:18, w:84, fontSize:120, bold:true, color:'#fbbf24', align:'center' },
+      { type:'text', text:'de las personas que ____\nlogran ____', x:8, y:55, w:84, fontSize:22, color:'#fff', align:'center' },
+      { type:'text', text:'Fuente: tu fuente aquí', x:8, y:82, w:84, fontSize:12, color:'rgba(255,255,255,.55)', align:'center' },
+    ]
+  },
+  {
+    id:'post_oferta', label:'Oferta / Promo', format:'post',
+    bg1:'#7c2d12', bg2:'#f97316', overlay:0,
+    blocks:[
+      { type:'text', text:'OFERTA', x:8, y:8, w:84, fontSize:18, bold:true, color:'#fff7ed', align:'center' },
+      { type:'text', text:'Tu producto\nestrella', x:8, y:20, w:84, fontSize:54, bold:true, color:'#fff', align:'center' },
+      { type:'text', text:'-50%', x:8, y:54, w:84, fontSize:80, bold:true, color:'#fde047', align:'center' },
+      { type:'text', text:'Solo por 48 horas', x:8, y:82, w:84, fontSize:18, bold:true, color:'rgba(255,255,255,.95)', align:'center' },
+    ]
+  },
+  // CARRUSEL
+  {
+    id:'carrusel_tutorial', label:'Tutorial Paso a Paso', format:'carousel',
+    bg1:'#0f172a', bg2:'#1e40af', overlay:0,
+    blocks:[
+      { type:'text', text:'CÓMO\nLOGRAR ___\nEN 7 PASOS', x:8, y:18, w:84, fontSize:42, bold:true, color:'#fff', align:'center' },
+      { type:'text', text:'Una guía completa para principiantes', x:8, y:62, w:84, fontSize:18, color:'rgba(255,255,255,.85)', align:'center' },
+      { type:'text', text:'Guarda este post 📌', x:8, y:80, w:84, fontSize:14, bold:true, color:'#fbbf24', align:'center' },
+    ]
+  },
+  {
+    id:'carrusel_cita', label:'Cita + Explicación', format:'carousel',
+    bg1:'#1e1b4b', bg2:'#831843', overlay:0,
+    blocks:[
+      { type:'text', text:'"', x:8, y:8, w:84, fontSize:100, bold:true, color:'rgba(255,255,255,.18)', align:'center' },
+      { type:'text', text:'Tu cita\ninspiradora\naquí', x:8, y:30, w:84, fontSize:36, bold:true, color:'#fff', align:'center' },
+      { type:'text', text:'— Autor', x:8, y:80, w:84, fontSize:16, color:'rgba(255,255,255,.7)', align:'center' },
+    ]
+  },
+  {
+    id:'carrusel_problema', label:'Problema → Solución', format:'carousel',
+    bg1:'#450a0a', bg2:'#0c4a6e', overlay:0,
+    blocks:[
+      { type:'text', text:'EL PROBLEMA', x:8, y:12, w:84, fontSize:18, bold:true, color:'#fca5a5', align:'center' },
+      { type:'text', text:'Lo que te impide\navanzar', x:8, y:24, w:84, fontSize:42, bold:true, color:'#fff', align:'center' },
+      { type:'text', text:'En las siguientes slides\nte muestro la solución →', x:8, y:74, w:84, fontSize:17, color:'rgba(255,255,255,.85)', align:'center' },
+    ]
+  },
+  // CUADRADO
+  {
+    id:'square_anuncio', label:'Anuncio / Aviso', format:'square',
+    bg1:'#fbbf24', bg2:'#f59e0b', overlay:0,
+    blocks:[
+      { type:'text', text:'📣', x:8, y:14, w:84, fontSize:50, color:'#1f2937', align:'center' },
+      { type:'text', text:'ANUNCIO', x:8, y:32, w:84, fontSize:20, bold:true, color:'#1f2937', align:'center' },
+      { type:'text', text:'Tu novedad\nimportante', x:8, y:46, w:84, fontSize:36, bold:true, color:'#1f2937', align:'center' },
+      { type:'text', text:'Más info en bio', x:8, y:82, w:84, fontSize:14, color:'rgba(31,41,55,.7)', align:'center' },
+    ]
+  },
+  {
+    id:'square_testimonio', label:'Testimonio Cliente', format:'square',
+    bg1:'#064e3b', bg2:'#10b981', overlay:0,
+    blocks:[
+      { type:'text', text:'⭐⭐⭐⭐⭐', x:8, y:14, w:84, fontSize:24, color:'#fde047', align:'center' },
+      { type:'text', text:'"Cambió mi forma\nde ver las cosas"', x:8, y:30, w:84, fontSize:30, bold:true, color:'#fff', align:'center' },
+      { type:'text', text:'— Cliente real', x:8, y:78, w:84, fontSize:14, color:'rgba(255,255,255,.85)', align:'center' },
+    ]
+  },
 ];
+
+/* ══ TOGGLE PANEL DE PLANTILLAS ══
+   El panel #tplContent existe en el DOM pero está oculto por defecto.
+   Cuando el usuario pulsa "▼ Mostrar" en el tab Diseño, se llama esta función:
+   1. Si está oculto: lo renderiza y lo muestra
+   2. Si está visible: lo oculta */
+function toggleTplPanel() {
+  const panel = document.getElementById('tplContent');
+  const btn   = document.getElementById('tplToggleBtn');
+  if (!panel) return;
+
+  const isHidden = panel.style.display === 'none' || panel.style.display === '';
+  if (isHidden) {
+    renderTemplates();
+    panel.style.display = 'block';
+    if (btn) btn.innerHTML = '▲ Ocultar';
+  } else {
+    panel.style.display = 'none';
+    if (btn) btn.innerHTML = '▼ Mostrar';
+  }
+}
 
 function renderTemplates() {
   const container = document.getElementById('tplContent');
@@ -6887,8 +7056,13 @@ function renderTemplates() {
 
 function renderTplCard(t) {
   const ratio = t.format === 'square' ? '1/1' : '4/5';
+  // Mejora #4: si esta plantilla está activa, añadir borde + badge ✓
+  const isActive = _activeTplId === t.id;
+  const activeBorder = isActive ? 'box-shadow:0 0 0 3px var(--brand), 0 4px 16px rgba(124,58,237,.5);' : '';
+  const activeBadge  = isActive ? `<div style="position:absolute;top:6px;right:6px;background:var(--brand);color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;z-index:3;box-shadow:0 2px 6px rgba(0,0,0,.4);">✓</div>` : '';
   return `
-    <div class="tpl-card" style="aspect-ratio:${ratio}" onclick="applyTemplate('${t.id}')">
+    <div class="tpl-card" style="aspect-ratio:${ratio};${activeBorder}position:relative;" onclick="applyTemplate('${t.id}')" title="${isActive ? 'Plantilla activa — click para reaplicar' : 'Aplicar plantilla'}">
+      ${activeBadge}
       <div class="tpl-card-bg" style="background:linear-gradient(135deg,${t.bg1},${t.bg2});"></div>
       <div class="tpl-card-content">
         ${t.blocks.slice(0,2).map(b => `
@@ -6934,7 +7108,12 @@ function applyTemplate(id) {
   selectedId = null;
   document.getElementById('propsBar').classList.remove('visible');
   historySave();
-  toast(`✅ Template "${tpl.label}" aplicado`, 'success');
+  // Mejora #4: trackear plantilla activa para resaltarla en el grid
+  _activeTplId = id;
+  // Re-render para que el indicador visual se actualice
+  if (document.getElementById('tplContent')?.style.display !== 'none') renderTemplates();
+  // Mejora #3: toast más descriptivo
+  toast(`✨ Plantilla "${tpl.label}" aplicada al canvas`, 'success');
   // Switch to build tab to see IA content
   switchIaTab('build');
 }
