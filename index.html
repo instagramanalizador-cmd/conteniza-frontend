@@ -468,6 +468,10 @@
           <hr style="border:none;border-top:1px solid rgba(255,255,255,.1);margin:4px 0;">
           <button title="Ver historial de generaciones guardadas" style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'" onclick="openSidebar();closeUbDropdown()">📜 Historial</button>
           <button title="Configurar logo, colores y tipografías de tu marca" style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'" onclick="showBrandScreen();closeUbDropdown()">🎨 Mi Marca</button>
+          <!-- Punto 5: acceso a Mis diseños desde el menú principal (abre modal) -->
+          <button title="Ver tus diseños guardados" style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'" onclick="openMyDesignsModal();closeUbDropdown()">📁 Mis diseños</button>
+          <!-- Punto 7: acceso para reabrir el wizard de personalización de IA -->
+          <button title="Editar las respuestas que personalizan tu IA" style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'" onclick="reopenProfileWizard();closeUbDropdown()">✏️ Personalizar IA</button>
           <button title="Volver a ver el tour de bienvenida" style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'" onclick="startIndexTour(true);closeUbDropdown()">🎓 Ver tour</button>
           <div style="border-top:1px solid rgba(255,255,255,.08);margin:4px 0;"></div>
           <button onclick="logout()" title="Cerrar sesión y salir" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:#FCA5A5;cursor:pointer;border:none;background:none;width:100%;text-align:left;" onmouseover="this.style.background='rgba(252,129,129,.1)'" onmouseout="this.style.background='none'">🚪 Cerrar sesión</button>
@@ -574,6 +578,13 @@
       <div class="form-group">
         <label class="form-label">Contraseña</label>
         <input type="password" id="authPassword" class="form-input" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <!-- Punto 4: checkbox de términos — solo visible en modo registro -->
+      <div class="form-group" id="termsGroup" style="display:none;">
+        <label style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--text-2);cursor:pointer;line-height:1.5;">
+          <input type="checkbox" id="authTerms" style="margin-top:2px;flex-shrink:0;cursor:pointer;">
+          <span>Acepto los <a href="terms.html" target="_blank" style="color:var(--brand);text-decoration:underline;">Términos</a> y la <a href="privacy.html" target="_blank" style="color:var(--brand);text-decoration:underline;">Política de Privacidad</a></span>
+        </label>
       </div>
       <button type="submit" class="btn btn-primary btn-lg" id="authSubmitBtn">Entrar</button>
     </form>
@@ -1160,6 +1171,8 @@ function toggleAuthMode() {
   document.getElementById('authToggleText').textContent = _isRegister ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?';
   document.getElementById('authToggleLink').textContent = _isRegister ? 'Inicia sesión' : 'Regístrate';
   (document.getElementById('nameGroup')||{style:{}}).style.display = _isRegister ? 'block' : 'none';
+  // Punto 4: el checkbox de términos solo se exige al registrarse
+  (document.getElementById('termsGroup')||{style:{}}).style.display = _isRegister ? 'block' : 'none';
 }
 
 async function handleAuth(event) {
@@ -1168,6 +1181,14 @@ async function handleAuth(event) {
   const password = document.getElementById('authPassword').value;
   if (!validateEmail(email))  { showNotification('Email inválido', 'error'); return; }
   if (password.length < 6)    { showNotification('Contraseña mínimo 6 caracteres', 'error'); return; }
+  // Punto 4: al registrarse, el checkbox de términos es obligatorio
+  if (_isRegister) {
+    const termsChecked = document.getElementById('authTerms')?.checked;
+    if (!termsChecked) {
+      showNotification('Debes aceptar los Términos y la Política de Privacidad para registrarte', 'error');
+      return;
+    }
+  }
 
   const btn = document.getElementById('authSubmitBtn');
   btn.disabled = true; btn.textContent = '…';
@@ -2818,6 +2839,92 @@ function showProfileWizard() {
 function _closeProfileWizard() {
   const modal = document.getElementById('profileWizardModal');
   if (modal) modal.style.display = 'none';
+}
+
+/* ══ Punto 7: REABRIR EL WIZARD DE PERSONALIZACIÓN ══
+   showProfileWizard() ya precarga las respuestas guardadas. Esta función
+   es el punto de entrada desde el menú: fuerza la apertura del wizard aunque
+   el usuario ya lo haya completado, para que pueda editar sus respuestas. */
+function reopenProfileWizard() {
+  // Limpiar la flag "skipped" para que no interfiera, y abrir el wizard
+  try { localStorage.removeItem(_PW_STORAGE_KEY); } catch(_) {}
+  if (typeof showProfileWizard === 'function') showProfileWizard();
+}
+
+/* ══ Punto 5: MODAL "MIS DISEÑOS" EN EL INDEX ══
+   Antes "Mis diseños" solo existía dentro del editor. Esta función abre un
+   modal en el index que lista los diseños guardados (trae de /api/designs)
+   y permite abrir cualquiera en el editor. */
+async function openMyDesignsModal() {
+  // Crear el modal si no existe
+  let modal = document.getElementById('myDesignsModal');
+  if (modal) modal.remove(); // siempre re-crear fresco
+
+  modal = document.createElement('div');
+  modal.id = 'myDesignsModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9000;display:flex;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto;backdrop-filter:blur(4px);';
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+  modal.innerHTML = `
+    <div style="background:#1a1a2e;border:1px solid rgba(255,255,255,.1);border-radius:16px;max-width:680px;width:100%;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.5);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div style="font-size:17px;font-weight:800;color:#fff;">📁 Mis diseños</div>
+        <button onclick="document.getElementById('myDesignsModal').remove()" title="Cerrar" aria-label="Cerrar" style="background:rgba(255,255,255,.08);border:none;color:rgba(255,255,255,.6);width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer;">✕</button>
+      </div>
+      <div id="myDesignsBody" style="min-height:120px;">
+        <div style="text-align:center;padding:40px 20px;color:rgba(255,255,255,.5);font-size:13px;">Cargando tus diseños…</div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+
+  // Cargar diseños del backend
+  const token = localStorage.getItem(KEYS.token);
+  const body  = document.getElementById('myDesignsBody');
+  if (!token) {
+    body.innerHTML = '<div style="text-align:center;padding:40px 20px;color:rgba(255,255,255,.5);font-size:13px;">Inicia sesión para ver tus diseños.</div>';
+    return;
+  }
+
+  try {
+    const r = await fetch(`${API_URL}/designs`, { headers: { 'Authorization': 'Bearer ' + token } });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Error cargando diseños');
+
+    const designs = d.designs || [];
+    if (!designs.length) {
+      body.innerHTML = `
+        <div style="text-align:center;padding:40px 20px;">
+          <div style="font-size:40px;margin-bottom:10px;">🎨</div>
+          <div style="color:#fff;font-weight:700;margin-bottom:6px;">Aún no tienes diseños guardados</div>
+          <div style="color:rgba(255,255,255,.5);font-size:12px;">Crea contenido y guárdalo desde el editor para verlo aquí.</div>
+        </div>`;
+      return;
+    }
+
+    // Grid de diseños
+    body.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;">
+        ${designs.map(ds => {
+          const safeName = (ds.name || 'Sin título').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          const thumb = ds.thumbnail || '';
+          const thumbHtml = thumb
+            ? `<img src="${thumb}" alt="${safeName}" style="width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:8px;display:block;background:#0f0f1e;">`
+            : `<div style="width:100%;aspect-ratio:4/5;border-radius:8px;background:#0f0f1e;display:flex;align-items:center;justify-content:center;font-size:28px;">🎨</div>`;
+          return `
+            <div onclick="openDesignInEditor('${ds.id}')" title="Abrir '${safeName}' en el editor" style="cursor:pointer;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:8px;background:rgba(255,255,255,.03);transition:all .15s;" onmouseover="this.style.borderColor='rgba(124,58,237,.6)'" onmouseout="this.style.borderColor='rgba(255,255,255,.08)'">
+              ${thumbHtml}
+              <div style="margin-top:6px;font-size:11px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeName}</div>
+            </div>`;
+        }).join('')}
+      </div>`;
+  } catch (e) {
+    body.innerHTML = `<div style="text-align:center;padding:40px 20px;color:#fca5a5;font-size:13px;">Error cargando diseños: ${e.message}</div>`;
+  }
+}
+
+/* Abre un diseño concreto en el editor. El editor lee ?design=ID al cargar. */
+function openDesignInEditor(designId) {
+  window.location.href = `editor.html?design=${encodeURIComponent(designId)}`;
 }
 
 function skipProfileWizard() {

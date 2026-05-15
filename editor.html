@@ -95,12 +95,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
   background:var(--bg);
   transition:padding-left .25s;
 }
-/* Cuando propsBar está visible, desplazar el canvas 160px a la derecha
+/* Cuando propsBar está visible, desplazar el canvas a la derecha
    para que el panel lateral no se solape con el slide. Cuando el usuario
    cierra el panel (✕ o deseleccionar), el canvas vuelve a su posición.
-   Solo escritorio: en móvil (≤700px) el panel va abajo, no a la izquierda. */
+   Solo escritorio: en móvil (≤700px) el panel va abajo, no a la izquierda.
+   260px: el panel mide ~200-220px + margen de separación visual. */
 @media(min-width:701px){
-  body:has(.props-bar.visible) .canvas-area{padding-left:160px;}
+  body:has(.props-bar.visible) .canvas-area{padding-left:260px;}
 }
 
 /* Instagram phone preview */
@@ -1291,6 +1292,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);dis
 
       <div class="prop-sep"></div>
 
+      <!-- ═══ FORMA (solo visible cuando shape seleccionado) ═══ -->
+      <div class="prop-group" id="propGroupShape" style="display:none;">
+        <span class="prop-label">Color forma</span>
+        <input type="color" id="propShapeColor" oninput="applyShapeColor(this.value)" title="Color de la figura" style="width:36px;height:32px;border:1px solid var(--border2);border-radius:6px;cursor:pointer;background:none;padding:2px;">
+      </div>
+
       <!-- ═══ IMAGEN (solo visible cuando bloque imagen seleccionado) ═══ -->
       <div class="prop-group" id="propGroupImage" style="display:none;">
         <span class="prop-label">Imagen</span>
@@ -1959,6 +1966,14 @@ window.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('resize', () => requestAnimationFrame(() => { resizeCanvas(); positionCanvasButtons(); }));
     historySave();
     startAutoSave();
+    // Punto 5: si se llegó con ?design=ID (desde "Mis diseños" del index),
+    // abrir ese diseño automáticamente una vez el editor está listo.
+    try {
+      const designId = new URLSearchParams(window.location.search).get('design');
+      if (designId && typeof loadDesign === 'function') {
+        setTimeout(() => loadDesign(designId), 400);
+      }
+    } catch(_) {}
   });
   document.addEventListener('keydown', handleKeyboard);
   document.getElementById('bgPresetRow').innerHTML =
@@ -2731,16 +2746,26 @@ function makeBlock(type, opts={}) {
     // ════ A10 — SHAPES (rect, circle, line) ════
     const shapeKind = opts.shapeKind || 'rect';
     el.dataset.shapeKind = shapeKind;
+    const fill = opts.color || '#7C3AED';
+    // Punto 1: guardar el color en dataset para persistencia y para que
+    // applyShapeColor() pueda leerlo/cambiarlo después de crear el shape.
+    el.dataset.shapeColor = fill;
     el.style.height = (opts.h ?? 20) + '%';
     const sh = document.createElement('div');
     sh.className = 'eblock-shape';
-    const fill = opts.color || '#7C3AED';
     if (shapeKind === 'rect') {
       sh.style.cssText = `width:100%;height:100%;background:${fill};border-radius:${opts.radius||0}px;`;
     } else if (shapeKind === 'circle') {
       sh.style.cssText = `width:100%;height:100%;background:${fill};border-radius:50%;`;
     } else if (shapeKind === 'line') {
-      sh.style.cssText = `width:100%;height:${opts.thickness||4}px;background:${fill};margin-top:auto;margin-bottom:auto;position:absolute;top:50%;left:0;transform:translateY(-50%);`;
+      // Punto 1: la línea visible sigue siendo fina, pero el contenedor sh
+      // ocupa el 100% del bloque y es transparente — así toda esa área
+      // captura clicks (antes solo los ~4px de la línea eran clickeables,
+      // por eso era "difícil seleccionar la figura").
+      sh.style.cssText = `width:100%;height:100%;display:flex;align-items:center;background:transparent;cursor:pointer;`;
+      const lineEl = document.createElement('div');
+      lineEl.style.cssText = `width:100%;height:${opts.thickness||4}px;background:${fill};`;
+      sh.appendChild(lineEl);
     }
     inner.appendChild(sh);
   }
@@ -2829,10 +2854,37 @@ function addTextBlock(text, opts={}) {
 function addShapeBlock(shapeKind) {
   const opts = { shapeKind, x: 30, y: 35, w: 30, h: 25, color: '#7C3AED' };
   if (shapeKind === 'circle') opts.h = 30;
-  if (shapeKind === 'line')   { opts.h = 5; opts.thickness = 4; opts.w = 60; opts.y = 50; }
+  // Punto 1: línea con h:8% (antes 5%) — el contenedor transparente de esa
+  // altura es la zona clickeable. La línea visible sigue siendo de 4px.
+  if (shapeKind === 'line')   { opts.h = 8; opts.thickness = 4; opts.w = 60; opts.y = 50; }
   const id = makeBlock('shape', opts);
-  toast('✅ Forma añadida','success');
+  toast('✅ Forma añadida — usa el panel para cambiar su color','success');
   return id;
+}
+
+/* ══ Punto 1: CAMBIAR COLOR DE UN SHAPE ══
+   Antes no existía forma de cambiar el color de un rectángulo/círculo/línea
+   después de crearlo (siempre quedaba morado). Esta función lee el color del
+   input del panel y lo aplica al elemento visual del shape + lo persiste en
+   el dataset para que sobreviva a save/load del slide. */
+function applyShapeColor(color) {
+  if (!selectedId) return;
+  const el = document.getElementById(selectedId);
+  if (!el || !el.dataset.shapeKind) return;
+  const shape = el.querySelector('.eblock-shape');
+  if (!shape) return;
+  const kind = el.dataset.shapeKind;
+  if (kind === 'line') {
+    // En line, el color va en el hijo interno (la franja visible)
+    const lineEl = shape.firstElementChild;
+    if (lineEl) lineEl.style.background = color;
+  } else {
+    // rect y circle: el color va en el propio .eblock-shape
+    shape.style.background = color;
+  }
+  el.dataset.shapeColor = color;
+  if (typeof saveCurrentBlocks === 'function') saveCurrentBlocks();
+  if (typeof historySave === 'function') setTimeout(historySave, 100);
 }
 
 function addLogoBlock(event) {
@@ -3018,6 +3070,18 @@ function updatePropsBar(id) {
   const isImageBlock = !!el.querySelector('img');
   const propGroupImage = document.getElementById('propGroupImage');
   if (propGroupImage) propGroupImage.style.display = isImageBlock ? '' : 'none';
+
+  // Punto 1: mostrar/ocultar grupo de color de forma según si el bloque es shape.
+  // Si lo es, precargar el color actual en el input.
+  const isShapeBlock = !!el.dataset.shapeKind;
+  const propGroupShape = document.getElementById('propGroupShape');
+  if (propGroupShape) {
+    propGroupShape.style.display = isShapeBlock ? '' : 'none';
+    if (isShapeBlock) {
+      const colorInput = document.getElementById('propShapeColor');
+      if (colorInput) colorInput.value = el.dataset.shapeColor || '#7C3AED';
+    }
+  }
 
   if (ta) {
     const font = ta.style.fontFamily.replace(/['"]/g,'').split(',')[0].trim();
@@ -3257,13 +3321,31 @@ function startResize(e, block, dir) {
   const sw = bRect.width, sh = bRect.height;
   const sl = bRect.left - wRect.left, st = bRect.top - wRect.top;
 
+  // Punto 2: si el bloque es una imagen y se arrastra una ESQUINA (dir de 2
+  // letras: nw/ne/sw/se), bloquear el aspect ratio para que el logo no se
+  // deforme. Los handles laterales (n/s/e/w) siguen con resize libre.
+  const isImage   = !!block.querySelector('img');
+  const isCorner  = dir.length === 2;
+  const lockRatio = isImage && isCorner;
+  const ratio     = sw / sh;
+
   const onMove = ev => {
     const dx = ev.clientX - sx, dy = ev.clientY - sy;
     const cW = wRect.width, cH = wRect.height;
-    if (dir.includes('e')) block.style.width  = Math.max(40, sw+dx)/cW*100 + '%';
-    if (dir.includes('s')) block.style.height = Math.max(20, sh+dy)/cH*100 + '%';
-    if (dir.includes('w')) { const nw=Math.max(40,sw-dx); block.style.width=nw/cW*100+'%'; block.style.left=(sl+dx)/cW*100+'%'; }
-    if (dir.includes('n')) { const nh=Math.max(20,sh-dy); block.style.height=nh/cH*100+'%'; block.style.top=(st+dy)/cH*100+'%'; }
+    if (lockRatio) {
+      // Resize proporcional: el desplazamiento horizontal manda, el alto se deriva
+      const newW = dir.includes('e') ? Math.max(40, sw + dx) : Math.max(40, sw - dx);
+      const newH = newW / ratio;
+      block.style.width  = newW/cW*100 + '%';
+      block.style.height = newH/cH*100 + '%';
+      if (dir.includes('w')) block.style.left = (sl + (sw - newW))/cW*100 + '%';
+      if (dir.includes('n')) block.style.top  = (st + (sh - newH))/cH*100 + '%';
+    } else {
+      if (dir.includes('e')) block.style.width  = Math.max(40, sw+dx)/cW*100 + '%';
+      if (dir.includes('s')) block.style.height = Math.max(20, sh+dy)/cH*100 + '%';
+      if (dir.includes('w')) { const nw=Math.max(40,sw-dx); block.style.width=nw/cW*100+'%'; block.style.left=(sl+dx)/cW*100+'%'; }
+      if (dir.includes('n')) { const nh=Math.max(20,sh-dy); block.style.height=nh/cH*100+'%'; block.style.top=(st+dy)/cH*100+'%'; }
+    }
   };
   const onUp = () => { document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); historySave(); };
   document.addEventListener('mousemove', onMove);
@@ -3280,15 +3362,30 @@ function startResizeTouch(e, block, dir) {
   const sw = bRect.width, sh = bRect.height;
   const sl = bRect.left - wRect.left, st = bRect.top - wRect.top;
 
+  // Punto 2: mismo lock de ratio que en startResize (mouse) — imágenes en esquinas
+  const isImage   = !!block.querySelector('img');
+  const isCorner  = dir.length === 2;
+  const lockRatio = isImage && isCorner;
+  const ratio     = sw / sh;
+
   const onMove = ev => {
     ev.preventDefault();
     const t = ev.touches[0];
     const dx = t.clientX-sx, dy = t.clientY-sy;
     const cW = wRect.width, cH = wRect.height;
-    if (dir.includes('e')) block.style.width  = Math.max(40,sw+dx)/cW*100+'%';
-    if (dir.includes('s')) block.style.height = Math.max(20,sh+dy)/cH*100+'%';
-    if (dir.includes('w')) { const nw=Math.max(40,sw-dx); block.style.width=nw/cW*100+'%'; block.style.left=(sl+dx)/cW*100+'%'; }
-    if (dir.includes('n')) { const nh=Math.max(20,sh-dy); block.style.height=nh/cH*100+'%'; block.style.top=(st+dy)/cH*100+'%'; }
+    if (lockRatio) {
+      const newW = dir.includes('e') ? Math.max(40, sw + dx) : Math.max(40, sw - dx);
+      const newH = newW / ratio;
+      block.style.width  = newW/cW*100 + '%';
+      block.style.height = newH/cH*100 + '%';
+      if (dir.includes('w')) block.style.left = (sl + (sw - newW))/cW*100 + '%';
+      if (dir.includes('n')) block.style.top  = (st + (sh - newH))/cH*100 + '%';
+    } else {
+      if (dir.includes('e')) block.style.width  = Math.max(40,sw+dx)/cW*100+'%';
+      if (dir.includes('s')) block.style.height = Math.max(20,sh+dy)/cH*100+'%';
+      if (dir.includes('w')) { const nw=Math.max(40,sw-dx); block.style.width=nw/cW*100+'%'; block.style.left=(sl+dx)/cW*100+'%'; }
+      if (dir.includes('n')) { const nh=Math.max(20,sh-dy); block.style.height=nh/cH*100+'%'; block.style.top=(st+dy)/cH*100+'%'; }
+    }
   };
   const onEnd = () => { document.removeEventListener('touchmove',onMove); document.removeEventListener('touchend',onEnd); historySave(); };
   document.addEventListener('touchmove', onMove, {passive:false});
