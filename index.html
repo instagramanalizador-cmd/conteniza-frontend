@@ -1140,18 +1140,19 @@ async function apiFetch(url, options = {}, timeoutMs = 30000) {
       if (isPublic) {
         return res; // que el caller lea res.json() y muestre el mensaje de error correcto
       }
-      const mainAppVisible = !document.getElementById('mainApp')?.classList.contains('hidden');
-      if (mainAppVisible) {
-        // Token expired while using the app — don't logout, just throw so caller handles gracefully
-        const err = new Error('Sesión expirada'); err.status = 401; throw err;
-      }
-      // Not in the app — do full logout
+      // Token expirado (TokenExpiredError). Da igual si la app está visible o no:
+      // el token ya no sirve, así que hacemos logout limpio, avisamos claramente
+      // y llevamos al login. Antes, si la app estaba visible, solo se lanzaba el
+      // error y la app quedaba en estado zombie (llamadas fallando en silencio,
+      // ej: el wizard "no guardaba" sin explicación).
       localStorage.removeItem(KEYS.token);
       localStorage.removeItem(KEYS.user);
       sessionStorage.removeItem('conteniza_user');
       currentUser = null;
+      // Cerrar el wizard si estuviera abierto (evita que el modal tape el aviso)
+      try { if (typeof _closeProfileWizard === 'function') _closeProfileWizard(); } catch(_) {}
       showNotification('Tu sesión expiró. Inicia sesión de nuevo.', 'error');
-      setTimeout(() => { showAuthScreen(); }, 1200);
+      setTimeout(() => { showAuthScreen(); }, 1400);
       const err = new Error('Sesión expirada'); err.status = 401; throw err;
     }
     return res;

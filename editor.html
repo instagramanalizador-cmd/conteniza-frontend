@@ -1980,6 +1980,20 @@ window.addEventListener('DOMContentLoaded', () => {
     BG_PRESETS.map(([c1,c2]) =>
       `<div class="bg-preset" style="background:linear-gradient(135deg,${c1},${c2});" onclick="applyBgPreset('${c1}','${c2}')"></div>`
     ).join('');
+
+  // Problema 3: cuando el panel de edición se abre/cierra, el .canvas-area
+  // cambia su padding-left (260px ↔ 0) con una transición de .25s, lo que
+  // desplaza el slide. Los botones flotantes T+ se posicionan con JS relativo
+  // al borde del slide, así que hay que recalcular su posición cuando el
+  // canvas termina de moverse. Escuchamos transitionend del padding-left.
+  const _canvasArea = document.getElementById('canvasArea');
+  if (_canvasArea) {
+    _canvasArea.addEventListener('transitionend', (ev) => {
+      if (ev.propertyName === 'padding-left') {
+        positionCanvasButtons();
+      }
+    });
+  }
 });
 
 function setupMobileDetect() {
